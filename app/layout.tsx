@@ -26,6 +26,7 @@ export const metadata: Metadata = {
     template: "%s · Vaquero HUB",
   },
   description: "Punto de venta y operación de Vaqueros SM.",
+  icons: { icon: "/favicon.svg" },
 };
 
 export const viewport: Viewport = {
