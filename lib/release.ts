@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.5.0";
-export const APP_RELEASE = "PWA táctil y versión visible";
+export const APP_VERSION = "0.5.1";
+export const APP_RELEASE = "Créditos de ProcesaLab";

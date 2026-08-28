@@ -117,7 +117,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
       {profileOpen ? (
         <aside className="profile-popover" aria-label="Información de usuario y versión">
           <header><span>S</span><div><strong>Salomon</strong><small>Administrador · La Piedad</small></div><button type="button" aria-label="Cerrar información" onClick={() => setProfileOpen(false)}><X aria-hidden="true" /></button></header>
-          <div className="version-easter-egg"><span>VAQUERO HUB</span><strong>Versión {APP_VERSION}</strong><small>{APP_RELEASE}</small><code>Siempre al día 🤠</code></div>
+          <div className="version-easter-egg"><span>VAQUERO HUB</span><strong>Versión {APP_VERSION}</strong><small>{APP_RELEASE}</small><code>Siempre al día 🤠</code><div className="version-credit">Creado por <strong>ProcesaLab</strong></div></div>
           <p>Este número cambia con cada entrega visible para identificar exactamente qué versión está instalada.</p>
         </aside>
       ) : null}

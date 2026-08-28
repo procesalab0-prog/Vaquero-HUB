@@ -374,6 +374,7 @@ code { font-family: var(--font-plex-mono), monospace; }
 .version-easter-egg { margin-top: 10px; padding: 18px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; background: var(--brand); color: #fff; text-align: center; }
 .version-easter-egg > span { color: var(--gold); font-family: var(--font-cormorant); font-size: 15px; font-weight: 700; letter-spacing: .12em; }
 .version-easter-egg > strong { margin-top: 6px; font-size: 24px; }.version-easter-egg > small { margin-top: 5px; color: #d8d0c9; }.version-easter-egg > code { margin-top: 14px; padding: 5px 8px; border-radius: 999px; background: rgba(255,255,255,.1); color: #fff; font-size: 10px; }
+.version-credit { width: 100%; margin-top: 15px; padding-top: 12px; border-top: 1px solid rgba(232, 197, 138, .22); color: #bdb4ac; font-size: 10px; letter-spacing: .03em; }.version-credit strong { color: var(--gold); font-size: 11px; }
 .profile-popover > p { margin: 11px 5px 3px; color: var(--muted); font-size: 10px; line-height: 1.5; text-align: center; }
 .mock-login { min-height: 100dvh; padding: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); text-align: center; }
 .mock-login img { width: 210px; height: auto; margin-bottom: 24px; }
