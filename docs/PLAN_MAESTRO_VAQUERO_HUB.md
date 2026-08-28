@@ -848,18 +848,29 @@ siempre mediante migrations.
 
 28. Seguridad
 
-Nunca:
+La seguridad deberá formar parte de la arquitectura desde el inicio; no se agregará al final como una capa aislada.
 
-* service_role en frontend
-* WooCommerce secret en frontend
-* secretos en Git
-* claves en código
-* acceso público accidental a tablas
-* desactivar RLS para “hacer que funcione”
+Principios obligatorios:
 
-Utilizar variables de entorno.
+* Aplicar correctamente RLS y permisos en Supabase. Nunca desactivar RLS para “hacer que funcione”.
+* Separar roles y privilegios, como mínimo administrador, gerente, cajero y almacén, aplicando siempre el principio de mínimo privilegio.
+* Nunca exponer `service_role`, claves privadas, credenciales de WooCommerce ni otros secretos en el frontend, el repositorio o el código cliente.
+* Mantener secretos únicamente en variables de entorno y servicios seguros apropiados para cada entorno.
+* Validar del lado servidor la identidad, el rol, los permisos, el alcance de sucursal y las reglas de negocio de toda operación crítica.
+* No confiar en botones ocultos, rutas no enlazadas ni otras restricciones de interfaz para proteger acciones sensibles.
+* Ventas, devoluciones, cancelaciones, descuentos, cambios de precio, movimientos de inventario y operaciones de caja deberán producir registros de auditoría trazables.
+* Proteger autenticación, sesiones y endpoints contra accesos no autorizados, abuso, repetición de solicitudes y escalamiento de privilegios.
+* Mantener dependencias actualizadas y revisar vulnerabilidades periódicamente.
+* Mantener backups, logs y monitoreo suficientes para detectar, investigar y recuperar incidentes.
+* Antes del piloto y de releases importantes, realizar una revisión específica de seguridad que intente encontrar vulnerabilidades antes de producción.
 
-Validar permisos también del lado servidor.
+Principio de seguridad:
+
+Asumir que usuarios internos o externos pueden intentar realizar acciones que no tienen permitidas. El sistema debe impedirlas desde la arquitectura y el backend, no solamente ocultarlas en la interfaz.
+
+Responsabilidad de los agentes:
+
+Claude Code y Codex deberán cuestionar activamente cómo una funcionalidad sensible podría explotarse, abusarse o utilizarse de forma incorrecta. Codex actuará también como revisor de seguridad y no aprobará una protección basada únicamente en la interfaz.
 
 ⸻
 
@@ -1169,10 +1180,17 @@ Buscar específicamente:
 * problemas offline
 * errores de caja
 * permisos incorrectos
+* escalamiento de privilegios y controles aplicados sólo en la interfaz
+* exposición de secretos, sesiones inseguras y endpoints sin autorización suficiente
+* abuso, repetición o manipulación de operaciones sensibles
 
 Para cada módulo crítico preguntar:
 
 “¿Cómo podría romperse esto en una tienda real?”
+
+Y para cada operación sensible preguntar:
+
+“¿Cómo podría explotarse o utilizarse incorrectamente, incluso por un usuario interno?”
 
 ⸻
 
@@ -1193,6 +1211,10 @@ Para cada módulo crítico preguntar:
 13. No agregar dependencias innecesarias.
 14. No sincronizar productos por nombre.
 15. No asumir reglas de negocio no confirmadas.
+16. Nunca depender únicamente de la interfaz para autorizar una operación sensible.
+17. Diseñar con mínimo privilegio, validación del servidor y auditoría desde el inicio.
+18. Entender el proceso humano real antes de automatizarlo o rediseñarlo.
+19. Reducir trabajo repetitivo y prevenir errores sin debilitar reglas de negocio ni seguridad.
 
 ⸻
 
@@ -1282,6 +1304,23 @@ Ante una diferencia de inventario deberá poder responderse:
 
 44. Experiencia del usuario
 
+Vaquero Hub debe adaptarse a la forma natural de trabajar de las personas y de Vaqueros SM; no deberá obligar a las personas a adaptarse innecesariamente al software.
+
+Antes de desarrollar un proceso importante, se deberá entender cómo trabaja realmente el usuario y después diseñar la solución.
+
+Principios obligatorios:
+
+* Reducir pasos innecesarios y evitar capturas repetitivas.
+* Utilizar lenguaje que los empleados entiendan y no exponer complejidad técnica innecesaria.
+* Priorizar las acciones más frecuentes.
+* Diseñar especialmente para operación rápida y táctil en iPad/POS.
+* Prevenir errores humanos cuando sea posible, en lugar de limitarse a mostrar errores después.
+* Automatizar tareas repetitivas cuando sea seguro y auditable.
+* Pedir confirmaciones principalmente cuando exista una consecuencia importante.
+* Observar el comportamiento real durante el piloto y modificar los flujos que provoquen confusión, lentitud o trabajo innecesario.
+* No replicar una mala experiencia de SICAR únicamente porque así funciona actualmente.
+* Mantener las reglas de negocio necesarias, pero buscar la interacción más sencilla para cumplirlas.
+
 Vaquero Hub debe ser más fácil de usar que SICAR para los procesos cotidianos.
 
 Especial prioridad:
@@ -1295,6 +1334,14 @@ Especial prioridad:
 * etiquetas
 
 No sacrificar simplicidad por agregar funciones.
+
+Principio humano:
+
+Si un empleado necesita aprender una forma innecesariamente complicada de trabajar únicamente porque así fue programado el sistema, primero debe cuestionarse el diseño del sistema.
+
+Objetivo:
+
+Vaquero Hub debe sentirse construido alrededor de la operación de Vaqueros SM, no hacer que Vaqueros SM tenga que adaptar toda su operación a Vaquero Hub.
 
 ⸻
 

@@ -7,6 +7,13 @@
 - En cada entrega registra cambios, pruebas, riesgos y qué continúa siendo una simulación.
 - Las instrucciones críticas del Plan Maestro tienen prioridad sobre atajos de implementación.
 
+## Principios permanentes
+
+- **Seguridad desde la arquitectura:** aplica mínimo privilegio, RLS y autorización real del lado servidor; nunca expongas secretos ni confíes únicamente en restricciones de interfaz. Toda operación sensible debe ser auditable y debe revisarse pensando cómo podría explotarse o utilizarse incorrectamente.
+- **El sistema se adapta al humano:** entiende primero el proceso real de Vaqueros SM; reduce pasos y captura repetitiva, prioriza operación táctil rápida, previene errores y no reproduzcas una mala experiencia de SICAR sólo por costumbre.
+- Si seguridad y comodidad entran en tensión, conserva las reglas de negocio y seguridad, pero busca la interacción más sencilla que las cumpla.
+- Estos principios aplican a Claude Code, Codex y cualquier agente que trabaje en el repositorio; la explicación completa vive en las secciones 28 y 44 del Plan Maestro.
+
 ## Versión visible de Vaquero HUB
 
 - La versión canónica que ve el usuario está en `lib/release.ts`.
