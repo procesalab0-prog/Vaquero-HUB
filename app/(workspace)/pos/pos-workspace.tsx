@@ -50,6 +50,10 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [toast, setToast] = useState("");
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [discountInput, setDiscountInput] = useState("");
+  const [extraDialog, setExtraDialog] = useState<"discount" | "layaway" | null>(null);
+  const [layawayCustomer, setLayawayCustomer] = useState("");
   const toastTimer = useRef<number | null>(null);
 
   useEffect(() => () => {
@@ -68,9 +72,17 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
     );
   }, [query, showCatalog, variants]);
 
-  const total = cart.reduce((sum, line) => sum + line.variant.price * line.quantity, 0);
+  const subtotal = cart.reduce((sum, line) => sum + line.variant.price * line.quantity, 0);
+  const discountAmount = subtotal * discountPercent / 100;
+  const total = subtotal - discountAmount;
   const quantity = cart.reduce((sum, line) => sum + line.quantity, 0);
   const giftCount = cart.filter((line) => line.giftReceipt).length;
+
+  function notify(message: string) {
+    setToast(message);
+    if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(""), 2600);
+  }
 
   function addVariant(variant: ProductVariant) {
     if (variant.stock < 1) return;
@@ -82,9 +94,7 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
         line.variant.id === variant.id ? { ...line, quantity: line.quantity + 1 } : line,
       );
     });
-    setToast(`Artículo agregado · ${variant.productName} ${variant.size}`);
-    if (toastTimer.current) window.clearTimeout(toastTimer.current);
-    toastTimer.current = window.setTimeout(() => setToast(""), 2600);
+    notify(`Artículo agregado · ${variant.productName} ${variant.size}`);
   }
 
   function updateLine(id: string, action: "increase" | "decrease" | "gift" | "remove") {
@@ -110,6 +120,24 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
     setCompleted(false);
     setQuery("");
     setShowCatalog(false);
+    setDiscountPercent(0);
+  }
+
+  function applyDiscount() {
+    const value = Math.min(100, Math.max(0, Number(discountInput)));
+    if (!Number.isFinite(value)) return;
+    setDiscountPercent(value);
+    setExtraDialog(null);
+    notify(value ? `Descuento de ${value}% aplicado` : "Descuento eliminado");
+  }
+
+  function createLayaway() {
+    if (!layawayCustomer.trim() || cart.length === 0) return;
+    setExtraDialog(null);
+    setCart([]);
+    setDiscountPercent(0);
+    setLayawayCustomer("");
+    notify("Apartado AP-000128 creado correctamente");
   }
 
   if (completed) {
@@ -120,9 +148,9 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
         <h2>{money.format(total)}</h2>
         <code>Folio V-000842 · {quantity} artículos</code>
         <div className="success-buttons">
-          <button className="secondary-button" type="button">Imprimir ticket</button>
+          <button className="secondary-button" type="button" onClick={() => window.print()}>Imprimir ticket</button>
           {giftCount > 0 ? (
-            <button className="gift-button" type="button"><Gift aria-hidden="true" />Ticket de regalo ({giftCount})</button>
+            <button className="gift-button" type="button" onClick={() => window.print()}><Gift aria-hidden="true" />Ticket de regalo ({giftCount})</button>
           ) : null}
           <button className="primary-button" type="button" onClick={newSale}>Nueva venta</button>
         </div>
@@ -238,16 +266,16 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
         </div>
 
         <footer className="sale-summary">
-          <div><span>Subtotal ({quantity} artículos)</span><span>{money.format(total)}</span></div>
-          <div><span>Descuentos</span><span>{money.format(0)}</span></div>
+          <div><span>Subtotal ({quantity} artículos)</span><span>{money.format(subtotal)}</span></div>
+          <div><span>Descuentos {discountPercent ? `(${discountPercent}%)` : ""}</span><span>−{money.format(discountAmount)}</span></div>
           <div className="grand-total"><strong>Total</strong><b>{money.format(total)}</b></div>
           <button className="pay-button" type="button" disabled={cart.length === 0} onClick={() => setCheckoutOpen(true)}>
             Cobrar<ChevronRight aria-hidden="true" />
           </button>
           <div className="sale-extras">
-            <button type="button" disabled={cart.length === 0}>Descuento</button>
-            <button type="button" disabled={cart.length === 0} onClick={() => setCart((current) => current.map((line) => ({ ...line, giftReceipt: true })))}>Regalo</button>
-            <button type="button">Apartar</button>
+            <button type="button" disabled={cart.length === 0} onClick={() => { setDiscountInput(String(discountPercent || "")); setExtraDialog("discount"); }}>Descuento</button>
+            <button type="button" disabled={cart.length === 0} onClick={() => { setCart((current) => current.map((line) => ({ ...line, giftReceipt: true }))); notify("Todos los artículos se marcaron como regalo"); }}>Regalo</button>
+            <button type="button" disabled={cart.length === 0} onClick={() => setExtraDialog("layaway")}>Apartar</button>
           </div>
         </footer>
       </aside>
@@ -270,6 +298,14 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
             <button className="secondary-button wide" type="button" onClick={() => setCheckoutOpen(false)}>Volver al carrito</button>
           </section>
         </div>
+      ) : null}
+
+      {extraDialog === "discount" ? (
+        <div className="modal-backdrop"><section className="checkout-modal compact-modal" role="dialog" aria-modal="true" aria-labelledby="discount-title"><p className="eyebrow">Venta en curso</p><h2 id="discount-title">Aplicar descuento</h2><div className="form-stack"><label><span>Porcentaje autorizado</span><input inputMode="decimal" value={discountInput} onChange={(event) => setDiscountInput(event.target.value)} placeholder="Ej. 10" /></label></div><div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setExtraDialog(null)}>Cancelar</button><button className="primary-button" type="button" onClick={applyDiscount}>Aplicar descuento</button></div></section></div>
+      ) : null}
+
+      {extraDialog === "layaway" ? (
+        <div className="modal-backdrop"><section className="checkout-modal compact-modal" role="dialog" aria-modal="true" aria-labelledby="layaway-title"><p className="eyebrow">Apartado</p><h2 id="layaway-title">Guardar apartado</h2><p>Los artículos saldrán del carrito y quedarán asociados al cliente.</p><div className="form-stack"><label><span>Nombre del cliente</span><input value={layawayCustomer} onChange={(event) => setLayawayCustomer(event.target.value)} placeholder="Nombre completo" /></label></div><div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setExtraDialog(null)}>Cancelar</button><button className="primary-button" type="button" onClick={createLayaway}>Crear apartado</button></div></section></div>
       ) : null}
     </div>
   );

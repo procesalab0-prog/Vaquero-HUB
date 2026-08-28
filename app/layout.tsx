@@ -21,19 +21,44 @@ const cormorant = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://vaquero-hub.vercel.app"),
+  applicationName: "Vaquero HUB",
   title: {
     default: "Vaquero HUB",
     template: "%s · Vaquero HUB",
   },
   description: "Punto de venta y operación de Vaqueros SM.",
-  icons: { icon: "/favicon.svg" },
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "Vaquero HUB" },
+  formatDetection: { telephone: false },
+  openGraph: {
+    type: "website",
+    locale: "es_MX",
+    siteName: "Vaquero HUB",
+    title: "Vaquero HUB · Vaqueros SM",
+    description: "Punto de venta, inventario y operación de Vaqueros SM.",
+    images: [{ url: "/share-vaquero-hub.png", width: 1200, height: 630, alt: "Vaquero HUB" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vaquero HUB · Vaqueros SM",
+    description: "Punto de venta, inventario y operación de Vaqueros SM.",
+    images: ["/share-vaquero-hub.png"],
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#17201b",
+  themeColor: "#8E2A1C",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -14,26 +14,44 @@ const tabs: Array<{ id: Section; label: string; description: string; icon: typeo
   { id: "labels", label: "Códigos y etiquetas", description: "Formato e impresión", icon: Barcode },
   { id: "appearance", label: "Apariencia y usuarios", description: "Marca, tema y permisos", icon: UserCog },
 ];
+const accentColors: Record<string, string> = { vino: "#8E2A1C", cuero: "#9A5D32", noche: "#241E1B" };
 
 export function SettingsWorkspace() {
   const [section, setSection] = useState<Section>("business");
   const [branches, setBranches] = useState<Branch[]>([{ id: 1, name: "La Piedad", address: "La Piedad, Michoacán", register: "Caja 01" }]);
   const [addingBranch, setAddingBranch] = useState(false);
+  const [editingBranchId, setEditingBranchId] = useState<number | null>(null);
   const [branchName, setBranchName] = useState("");
   const [saved, setSaved] = useState(false);
   const [accent, setAccent] = useState("vino");
+  const [preferences, setPreferences] = useState<Record<string, string | boolean>>({});
 
   function saveSettings() {
-    const payload = { version: 1, branches, accent, savedAt: new Date().toISOString() };
+    const payload = { version: 1, branches, accent, preferences, savedAt: new Date().toISOString() };
     window.localStorage.setItem("vaquero-hub:design-settings:v1", JSON.stringify(payload));
     setSaved(true);
   }
 
-  function addBranch() {
+  function saveBranch() {
     if (!branchName.trim()) return;
-    setBranches((current) => [...current, { id: Date.now(), name: branchName.trim(), address: "Dirección por configurar", register: "Sin cajas" }]);
+    setBranches((current) => editingBranchId
+      ? current.map((branch) => branch.id === editingBranchId ? { ...branch, name: branchName.trim() } : branch)
+      : [...current, { id: Date.now(), name: branchName.trim(), address: "Dirección por configurar", register: "Sin cajas" }]);
     setBranchName("");
     setAddingBranch(false);
+    setEditingBranchId(null);
+  }
+
+  function capturePreference(event: React.ChangeEvent<HTMLDivElement>) {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement)) return;
+    if (!target.name) return;
+    setPreferences((current) => ({ ...current, [target.name]: target instanceof HTMLInputElement && target.type === "checkbox" ? target.checked : target.value }));
+  }
+
+  function chooseAccent(value: string) {
+    setAccent(value);
+    document.documentElement.style.setProperty("--accent", accentColors[value]);
   }
 
   return (
@@ -44,18 +62,18 @@ export function SettingsWorkspace() {
         <nav className="settings-nav" aria-label="Secciones de ajustes">
           {tabs.map(({ id, label, description, icon: Icon }) => <button className={section === id ? "active" : ""} type="button" key={id} onClick={() => setSection(id)}><Icon aria-hidden="true" /><span><strong>{label}</strong><small>{description}</small></span><ChevronRight aria-hidden="true" /></button>)}
         </nav>
-        <div className="settings-panel">
-          {section === "business" ? <BusinessSettings /> : null}
-          {section === "stores" ? (
+        <div className="settings-panel" onChange={capturePreference}>
+          <div hidden={section !== "business"}><BusinessSettings /></div>
+          <div hidden={section !== "stores"}>
             <SettingsSection eyebrow="Estructura" title="Sucursales y cajas" description="Cada tienda tendrá inventario, cajas, usuarios y reportes independientes.">
-              <div className="branch-list">{branches.map((branch) => <article key={branch.id}><span className="branch-mark"><Store aria-hidden="true" /></span><div><strong>{branch.name}</strong><small>{branch.address}</small></div><span><b>{branch.register}</b><small>{branch.id === 1 ? "Activa" : "Por configurar"}</small></span><button type="button">Editar</button></article>)}</div>
-              {addingBranch ? <div className="add-branch"><label><span>Nombre de la sucursal</span><input value={branchName} onChange={(event) => setBranchName(event.target.value)} placeholder="Ej. Zamora Centro" /></label><div><button className="secondary-button" type="button" onClick={() => setAddingBranch(false)}>Cancelar</button><button className="primary-button" type="button" onClick={addBranch}>Agregar sucursal</button></div></div> : <button className="dashed-button" type="button" onClick={() => setAddingBranch(true)}><Plus aria-hidden="true" />Agregar otra tienda</button>}
+              <div className="branch-list">{branches.map((branch) => <article key={branch.id}><span className="branch-mark"><Store aria-hidden="true" /></span><div><strong>{branch.name}</strong><small>{branch.address}</small></div><span><b>{branch.register}</b><small>{branch.id === 1 ? "Activa" : "Por configurar"}</small></span><button type="button" onClick={() => { setEditingBranchId(branch.id); setBranchName(branch.name); setAddingBranch(true); }}>Editar</button></article>)}</div>
+              {addingBranch ? <div className="add-branch"><label><span>Nombre de la sucursal</span><input value={branchName} onChange={(event) => setBranchName(event.target.value)} placeholder="Ej. Zamora Centro" /></label><div><button className="secondary-button" type="button" onClick={() => { setAddingBranch(false); setEditingBranchId(null); setBranchName(""); }}>Cancelar</button><button className="primary-button" type="button" onClick={saveBranch}>{editingBranchId ? "Guardar sucursal" : "Agregar sucursal"}</button></div></div> : <button className="dashed-button" type="button" onClick={() => { setEditingBranchId(null); setBranchName(""); setAddingBranch(true); }}><Plus aria-hidden="true" />Agregar otra tienda</button>}
             </SettingsSection>
-          ) : null}
-          {section === "pos" ? <PosSettings /> : null}
-          {section === "tickets" ? <TicketSettings /> : null}
-          {section === "labels" ? <LabelSettings /> : null}
-          {section === "appearance" ? <AppearanceSettings accent={accent} setAccent={setAccent} /> : null}
+          </div>
+          <div hidden={section !== "pos"}><PosSettings /></div>
+          <div hidden={section !== "tickets"}><TicketSettings /></div>
+          <div hidden={section !== "labels"}><LabelSettings /></div>
+          <div hidden={section !== "appearance"}><AppearanceSettings accent={accent} setAccent={chooseAccent} /></div>
         </div>
       </div>
       {saved ? <div className="pos-toast" role="status"><span><Check aria-hidden="true" /></span>Preferencias guardadas en este navegador<button type="button" onClick={() => setSaved(false)}>Cerrar</button></div> : null}
@@ -68,7 +86,7 @@ function SettingsSection({ eyebrow, title, description, children }: { eyebrow: s
 }
 
 function BusinessSettings() {
-  return <SettingsSection eyebrow="Datos generales" title="Información del negocio" description="Se utiliza en el sistema, tickets y documentos."><div className="settings-form"><label><span>Nombre comercial</span><input defaultValue="Vaqueros SM" /></label><label><span>Nombre del sistema</span><input defaultValue="Vaquero HUB" /></label><label className="wide-field"><span>Razón social</span><input placeholder="Por definir" /></label><label><span>Teléfono</span><input placeholder="352 000 0000" /></label><label><span>Moneda</span><select defaultValue="MXN"><option value="MXN">MXN · Peso mexicano</option></select></label><label className="wide-field"><span>Correo de contacto</span><input type="email" placeholder="contacto@vaquerossm.com" /></label></div></SettingsSection>;
+  return <SettingsSection eyebrow="Datos generales" title="Información del negocio" description="Se utiliza en el sistema, tickets y documentos."><div className="settings-form"><label><span>Nombre comercial</span><input name="businessName" defaultValue="Vaqueros SM" /></label><label><span>Nombre del sistema</span><input name="systemName" defaultValue="Vaquero HUB" /></label><label className="wide-field"><span>Razón social</span><input name="legalName" placeholder="Por definir" /></label><label><span>Teléfono</span><input name="phone" placeholder="352 000 0000" /></label><label><span>Moneda</span><select name="currency" defaultValue="MXN"><option value="MXN">MXN · Peso mexicano</option></select></label><label className="wide-field"><span>Correo de contacto</span><input name="email" type="email" placeholder="contacto@vaquerossm.com" /></label></div></SettingsSection>;
 }
 
 function PosSettings() {
@@ -76,17 +94,17 @@ function PosSettings() {
 }
 
 function TicketSettings() {
-  return <SettingsSection eyebrow="Impresión" title="Tickets normales y de regalo" description="Personaliza el contenido que recibe el cliente."><div className="settings-form"><label className="wide-field"><span>Encabezado</span><input defaultValue="VAQUEROS SM · LA PIEDAD" /></label><label className="wide-field"><span>Mensaje de agradecimiento</span><textarea defaultValue="Gracias por tu compra. ¡Vuelve pronto!" /></label><label className="wide-field"><span>Mensaje del ticket de regalo</span><textarea defaultValue="Este artículo fue elegido especialmente para ti." /></label></div><div className="toggle-list compact"><Toggle title="Mostrar logotipo" description="Incluye la marca al inicio del ticket." checked /><Toggle title="Mostrar política de cambios" description="Texto configurable al pie del comprobante." checked /><Toggle title="Ocultar precios en ticket de regalo" description="Siempre conserva folio y códigos de producto." checked /></div></SettingsSection>;
+  return <SettingsSection eyebrow="Impresión" title="Tickets normales y de regalo" description="Personaliza el contenido que recibe el cliente."><div className="settings-form"><label className="wide-field"><span>Encabezado</span><input name="ticketHeader" defaultValue="VAQUEROS SM · LA PIEDAD" /></label><label className="wide-field"><span>Mensaje de agradecimiento</span><textarea name="ticketThanks" defaultValue="Gracias por tu compra. ¡Vuelve pronto!" /></label><label className="wide-field"><span>Mensaje del ticket de regalo</span><textarea name="giftMessage" defaultValue="Este artículo fue elegido especialmente para ti." /></label></div><div className="toggle-list compact"><Toggle title="Mostrar logotipo" description="Incluye la marca al inicio del ticket." checked /><Toggle title="Mostrar política de cambios" description="Texto configurable al pie del comprobante." checked /><Toggle title="Ocultar precios en ticket de regalo" description="Siempre conserva folio y códigos de producto." checked /></div></SettingsSection>;
 }
 
 function LabelSettings() {
-  return <SettingsSection eyebrow="Identificación" title="Códigos y etiquetas" description="Los códigos heredados de SICAR están protegidos y no se modifican."><div className="settings-form"><label><span>Simbología</span><select defaultValue="code128"><option value="code128">CODE 128</option><option value="ean13">EAN-13</option></select></label><label><span>Tamaño de etiqueta</span><select defaultValue="50x30"><option value="50x30">50 × 30 mm</option><option value="40x25">40 × 25 mm</option></select></label><label><span>Impresora</span><select defaultValue="pending"><option value="pending">Por configurar</option></select></label><label><span>Códigos nuevos</span><select defaultValue="automatic"><option value="automatic">Generación automática</option><option value="manual">Captura manual</option></select></label></div><div className="toggle-list compact"><Toggle title="Incluir precio" description="Muestra el precio de venta vigente." checked /><Toggle title="Incluir talla y color" description="Facilita identificar variantes físicamente." checked /></div></SettingsSection>;
+  return <SettingsSection eyebrow="Identificación" title="Códigos y etiquetas" description="Los códigos heredados de SICAR están protegidos y no se modifican."><div className="settings-form"><label><span>Simbología</span><select name="barcodeFormat" defaultValue="code128"><option value="code128">CODE 128</option><option value="ean13">EAN-13</option></select></label><label><span>Tamaño de etiqueta</span><select name="labelSize" defaultValue="50x30"><option value="50x30">50 × 30 mm</option><option value="40x25">40 × 25 mm</option></select></label><label><span>Impresora</span><select name="labelPrinter" defaultValue="pending"><option value="pending">Por configurar</option></select></label><label><span>Códigos nuevos</span><select name="newCodes" defaultValue="automatic"><option value="automatic">Generación automática</option><option value="manual">Captura manual</option></select></label></div><div className="toggle-list compact"><Toggle title="Incluir precio" description="Muestra el precio de venta vigente." checked /><Toggle title="Incluir talla y color" description="Facilita identificar variantes físicamente." checked /></div></SettingsSection>;
 }
 
 function AppearanceSettings({ accent, setAccent }: { accent: string; setAccent: (value: string) => void }) {
-  return <SettingsSection eyebrow="Marca y acceso" title="Apariencia y usuarios" description="La marca puede adaptarse sin perder claridad operativa."><div className="theme-options"><button className={accent === "vino" ? "selected vino" : "vino"} type="button" onClick={() => setAccent("vino")}><span /><strong>Vino Vaqueros</strong><small>Actual</small></button><button className={accent === "cuero" ? "selected cuero" : "cuero"} type="button" onClick={() => setAccent("cuero")}><span /><strong>Cuero</strong><small>Cálido</small></button><button className={accent === "noche" ? "selected noche" : "noche"} type="button" onClick={() => setAccent("noche")}><span /><strong>Noche</strong><small>Alto contraste</small></button></div><div className="toggle-list"><Toggle title="Mostrar “Powered by ProcesaLab”" description="Visible en acceso y documentos administrativos." checked /><Toggle title="Permitir tema por sucursal" description="Cada tienda puede elegir su acento visual." /></div><div className="permission-note"><UserCog aria-hidden="true" /><div><strong>Usuarios y permisos detallados</strong><p>Descuentos, cancelaciones, precios, inventario y cierres se controlarán por rol cuando conectemos autenticación.</p></div><button type="button">Configurar después</button></div></SettingsSection>;
+  return <SettingsSection eyebrow="Marca y acceso" title="Apariencia y usuarios" description="La marca puede adaptarse sin perder claridad operativa."><div className="theme-options"><button className={accent === "vino" ? "selected vino" : "vino"} type="button" onClick={() => setAccent("vino")}><span /><strong>Vino Vaqueros</strong><small>Actual</small></button><button className={accent === "cuero" ? "selected cuero" : "cuero"} type="button" onClick={() => setAccent("cuero")}><span /><strong>Cuero</strong><small>Cálido</small></button><button className={accent === "noche" ? "selected noche" : "noche"} type="button" onClick={() => setAccent("noche")}><span /><strong>Noche</strong><small>Alto contraste</small></button></div><div className="toggle-list"><Toggle title="Mostrar “Powered by ProcesaLab”" description="Visible en acceso y documentos administrativos." checked /><Toggle title="Permitir tema por sucursal" description="Cada tienda puede elegir su acento visual." /></div><div className="permission-note"><UserCog aria-hidden="true" /><div><strong>Usuarios y permisos detallados</strong><p>Descuentos, cancelaciones, precios, inventario y cierres se controlarán por rol cuando conectemos autenticación.</p></div><button type="button" disabled>Próximamente</button></div></SettingsSection>;
 }
 
 function Toggle({ title, description, checked = false }: { title: string; description: string; checked?: boolean }) {
-  return <label className="toggle-row"><span><strong>{title}</strong><small>{description}</small></span><input type="checkbox" aria-label={title} defaultChecked={checked} /><i aria-hidden="true" /></label>;
+  return <label className="toggle-row"><span><strong>{title}</strong><small>{description}</small></span><input name={title} type="checkbox" aria-label={title} defaultChecked={checked} /><i aria-hidden="true" /></label>;
 }

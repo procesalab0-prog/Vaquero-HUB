@@ -45,7 +45,7 @@ export function CashRegister() {
   return (
     <section className="module-page">
       <div className="section-heading">
-        <div><p className="eyebrow">Sesión abierta · Caja 01</p><h1>Control de caja</h1><p className="heading-copy">Abierta hoy a las 09:52 por Mariana López.</p></div>
+        <div><p className="eyebrow">Sesión abierta · Caja 01</p><h1>Control de caja</h1><p className="heading-copy">Abierta hoy a las 09:52 por Salomon.</p></div>
         <button className="secondary-button danger-outline" type="button" onClick={() => setOpen(false)}><LockKeyhole aria-hidden="true" />Realizar corte</button>
       </div>
 
@@ -74,7 +74,7 @@ export function CashRegister() {
           <div className="card-heading"><div><p className="eyebrow">Auditoría</p><h2>Movimientos manuales</h2></div><button className="text-button" type="button" onClick={() => setMovementType("Entrada")}><Plus aria-hidden="true" />Nuevo</button></div>
           <div className="movement-list">
             {movements.map((item) => (
-              <article key={item.id}><span className={item.type === "Entrada" ? "movement-kind income" : "movement-kind outcome"}>{item.type === "Entrada" ? <ArrowDownLeft aria-hidden="true" /> : <ArrowUpRight aria-hidden="true" />}</span><div><strong>{item.concept}</strong><small>{item.time} · Mariana López</small></div><b className={item.type === "Entrada" ? "positive" : "negative"}>{item.type === "Entrada" ? "+" : "−"}{money.format(item.amount)}</b></article>
+              <article key={item.id}><span className={item.type === "Entrada" ? "movement-kind income" : "movement-kind outcome"}>{item.type === "Entrada" ? <ArrowDownLeft aria-hidden="true" /> : <ArrowUpRight aria-hidden="true" />}</span><div><strong>{item.concept}</strong><small>{item.time} · Salomon</small></div><b className={item.type === "Entrada" ? "positive" : "negative"}>{item.type === "Entrada" ? "+" : "−"}{money.format(item.amount)}</b></article>
             ))}
           </div>
         </section>

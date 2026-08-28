@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import {
   Bell,
   Boxes,
@@ -14,6 +15,7 @@ import {
   Menu,
   Package,
   ShoppingCart,
+  X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -40,6 +42,20 @@ function moduleTitle(pathname: string) {
 
 export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(true);
+
+  if (!loggedIn) {
+    return (
+      <main className="mock-login">
+        <Image src="/brand/logo-vaquerosm-negro.png" alt="Vaqueros SM" width={210} height={80} priority />
+        <p className="eyebrow">Vaquero HUB</p><h1>Sesión cerrada</h1><p>La sesión local de Salomon terminó correctamente.</p>
+        <button className="primary-button" type="button" onClick={() => setLoggedIn(true)}>Entrar como Salomon</button>
+        <small>La autenticación segura se conectará con usuarios y permisos.</small>
+      </main>
+    );
+  }
 
   return (
     <div className="workspace-shell">
@@ -61,7 +77,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <button className="rail-link rail-logout" type="button">
+        <button className="rail-link rail-logout" type="button" onClick={() => setLogoutOpen(true)}>
           <LogOut aria-hidden="true" strokeWidth={1.8} />
           <span>Salir</span>
         </button>
@@ -79,14 +95,31 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="online-pill"><span />En línea</div>
           <div className="topbar-actions">
-            <button className="icon-button" type="button" aria-label="Notificaciones">
+            <button className="icon-button notification-trigger" type="button" aria-label="Notificaciones" aria-expanded={notificationsOpen} onClick={() => setNotificationsOpen((current) => !current)}>
               <Bell aria-hidden="true" strokeWidth={1.8} />
+              <span aria-hidden="true" />
             </button>
-            <div className="active-user"><span>ML</span><strong>Mariana López</strong></div>
+            <div className="active-user"><span>S</span><strong>Salomon</strong></div>
           </div>
         </header>
         <main className="workspace-main">{children}</main>
       </div>
+      {notificationsOpen ? (
+        <aside className="notifications-popover" aria-label="Notificaciones">
+          <header><strong>Notificaciones</strong><button type="button" aria-label="Cerrar notificaciones" onClick={() => setNotificationsOpen(false)}><X aria-hidden="true" /></button></header>
+          <article><span className="notification-dot warning" /><div><strong>Última pieza</strong><p>Bota Cuadra café, talla 26.</p></div><small>Ahora</small></article>
+          <article><span className="notification-dot" /><div><strong>Caja en orden</strong><p>La sesión lleva 8 ventas registradas.</p></div><small>14:32</small></article>
+          <Link href="/inventario" onClick={() => setNotificationsOpen(false)}>Ver inventario</Link>
+        </aside>
+      ) : null}
+      {logoutOpen ? (
+        <div className="modal-backdrop">
+          <section className="checkout-modal compact-modal" role="dialog" aria-modal="true" aria-labelledby="logout-title">
+            <p className="eyebrow">Seguridad</p><h2 id="logout-title">¿Cerrar sesión?</h2><p>Las operaciones guardadas permanecerán en el sistema.</p>
+            <div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setLogoutOpen(false)}>Cancelar</button><button className="primary-button" type="button" onClick={() => { setLogoutOpen(false); setLoggedIn(false); }}>Cerrar sesión</button></div>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }

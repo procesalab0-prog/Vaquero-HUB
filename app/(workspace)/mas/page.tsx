@@ -32,12 +32,10 @@ export default function MorePage() {
     <section className="module-page">
       <div className="section-heading"><div><p className="eyebrow">Vaquero HUB</p><h1>Todos los módulos</h1><p className="heading-copy">Herramientas actuales y módulos contemplados para el crecimiento.</p></div></div>
       <div className="module-grid">
-        {modules.map(({ href, title, description, icon: Icon, ready }) => (
-          <Link className={ready ? "module-card" : "module-card coming-soon"} href={href} key={title} aria-disabled={!ready}>
-            <span className="module-icon"><Icon aria-hidden="true" /></span>
-            <span><strong>{title}</strong><small>{description}</small></span>
-            {ready ? <ArrowRight aria-hidden="true" /> : <em>Próximamente</em>}
-          </Link>
+        {modules.map(({ href, title, description, icon: Icon, ready }) => ready ? (
+          <Link className="module-card" href={href} key={title}><span className="module-icon"><Icon aria-hidden="true" /></span><span><strong>{title}</strong><small>{description}</small></span><ArrowRight aria-hidden="true" /></Link>
+        ) : (
+          <article className="module-card coming-soon" key={title}><span className="module-icon"><Icon aria-hidden="true" /></span><span><strong>{title}</strong><small>{description}</small></span><em>Próximamente</em></article>
         ))}
       </div>
     </section>

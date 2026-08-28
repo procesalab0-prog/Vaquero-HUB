@@ -18,7 +18,7 @@ export default function DashboardPage() {
   return (
     <section className="module-page dashboard-page">
       <div className="section-heading">
-        <div><p className="eyebrow">Miércoles, 27 de agosto</p><h1>Buen día, Mariana</h1><p className="heading-copy">Esto es lo que está pasando en La Piedad.</p></div>
+        <div><p className="eyebrow">Miércoles, 27 de agosto</p><h1>Buen día, Salomon</h1><p className="heading-copy">Esto es lo que está pasando en La Piedad.</p></div>
         <Link className="primary-button" href="/pos"><ShoppingCart aria-hidden="true" />Nueva venta</Link>
       </div>
 

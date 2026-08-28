@@ -37,7 +37,8 @@ export function TicketsWorkspace() {
       <div className="section-heading"><div><p className="eyebrow">Ventas de hoy</p><h1>Tickets y comprobantes</h1><p className="heading-copy">Consulta ventas, reimprime el ticket o genera la copia sin precios para regalo.</p></div></div>
       <div className="toolbar-card">
         <label className="module-search"><Search aria-hidden="true" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar folio, método o código" aria-label="Buscar tickets" /></label>
-        <button className="secondary-button" type="button">Hoy</button><button className="secondary-button" type="button">Caja 01</button>
+        <label className="toolbar-select"><span>Periodo</span><select aria-label="Filtrar periodo" defaultValue="today"><option value="today">Hoy</option><option value="week">Esta semana</option></select></label>
+        <label className="toolbar-select"><span>Caja</span><select aria-label="Filtrar caja" defaultValue="register-1"><option value="register-1">Caja 01</option></select></label>
       </div>
       <div className="ticket-layout">
         <section className="content-card ticket-list-card">
