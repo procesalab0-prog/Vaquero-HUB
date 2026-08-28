@@ -1521,3 +1521,16 @@ Detalle de entrega 0.6.0:
 * Verificación en navegador: Inicio en escritorio y POS, Productos, Inventario y Caja en móvil a 390 × 844, sin errores de consola, sin overlays y sin desbordamiento horizontal.
 * Flujos comprobados: carrito móvil, apertura de cobro, efectivo exacto y cambio; matriz de 14 tallas; filtro de última pieza; corte de caja cuadrado; barra PWA móvil de 92 px.
 * Hallazgo corregido durante pruebas: el carrito móvil interceptaba inicialmente el modal de cobro. La bandeja ahora se cierra al cobrar y los modales usan una capa superior.
+
+Detalle de entrega 0.6.1 — Tickets térmicos editables:
+
+* Se implementaron las plantillas del brief para impresora térmica monocromática de 80 mm.
+* El ticket de venta incluye marca, sucursal, domicilio, teléfono, folio, fecha, cajero Salomon, Caja 01, artículos, variantes, códigos heredados, cantidades, subtotal, descuento, total, forma de pago, efectivo/cambio, código visual y política de cambios.
+* El ticket de regalo usa un folio `R-…`, no muestra precios ni forma de pago e incluye la política de cambio de talla o modelo.
+* Después de completar una venta, “Ver e imprimir ticket” y “Ver ticket de regalo” abren una vista previa real antes de ejecutar la impresión del navegador.
+* En Tickets y comprobantes se puede alternar entre venta y regalo, revisar la plantilla completa y después imprimir la vista seleccionada.
+* Las reimpresiones muestran fecha y hora de reimpresión debajo del folio.
+* Regla de impresión: sólo el comprobante de 80 mm se hace visible en papel; navegación, botones y resto de la aplicación quedan excluidos.
+* Continúa pendiente de confirmación del cliente: vigencia definitiva, uso parcial, cambios entre sucursales, dirección/teléfono finales y conexión física con la impresora.
+* Pruebas completadas para 0.6.1: ESLint, TypeScript y build correctos; venta en efectivo hasta confirmación; vista previa normal y de regalo; reimpresión histórica; estilos de impresión de 80 mm; sin errores de consola ni desbordamientos móvil/escritorio.
+* Los patrones gráficos de código de barras y QR son todavía representaciones visuales del brief; deberán sustituirse por códigos escaneables ligados a identificadores persistentes cuando se conecte el backend.

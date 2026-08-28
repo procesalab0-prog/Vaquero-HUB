@@ -18,9 +18,11 @@ import {
   Search,
   ShoppingCart,
   Trash2,
+  Printer,
   X,
 } from "lucide-react";
 import type { CartLine, PaymentMethod, ProductVariant } from "@/lib/domain";
+import { formatReceiptDate, ThermalReceipt, type ReceiptLine } from "@/components/thermal-receipt";
 
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 const frequentCategories = [
@@ -73,6 +75,9 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
   const [cashMode, setCashMode] = useState(false);
   const [cashInput, setCashInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [receiptMode, setReceiptMode] = useState<"sale" | "gift" | null>(null);
+  const [paymentUsed, setPaymentUsed] = useState<PaymentMethod>("cash");
+  const [receiptDate, setReceiptDate] = useState("");
   const toastTimer = useRef<number | null>(null);
   const submittingRef = useRef(false);
 
@@ -103,6 +108,9 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
   const giftCount = cart.filter((line) => line.giftReceipt).length;
   const cashTendered = Number(cashInput || 0);
   const change = Math.max(0, cashTendered - total);
+  const receiptLines: ReceiptLine[] = cart.map((line) => ({ name: line.variant.productName, variant: `${line.variant.color} · ${line.variant.size}`, code: line.variant.legacyCode, quantity: line.quantity, unitPrice: line.variant.price }));
+  const giftLines = receiptLines.filter((_, index) => cart[index]?.giftReceipt);
+  const paymentLabels: Record<PaymentMethod, string> = { cash: "Efectivo", card: "Tarjeta", transfer: "Transferencia" };
 
   function notify(message: string) {
     setToast(message);
@@ -141,6 +149,8 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
     if (method === "cash" && cashTendered < total) return;
     submittingRef.current = true;
     setSubmitting(true);
+    setPaymentUsed(method);
+    setReceiptDate(formatReceiptDate());
     setCheckoutOpen(false);
     setCompleted(true);
   }
@@ -156,6 +166,7 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
     setCashInput("");
     setSubmitting(false);
     submittingRef.current = false;
+    setReceiptMode(null);
   }
 
   function selectCategory(label: string) {
@@ -192,19 +203,21 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
 
   if (completed) {
     return (
-      <section className="sale-success">
-        <span className="success-seal"><Check aria-hidden="true" strokeWidth={2.5} /></span>
-        <p className="kicker">Venta completada</p>
-        <h2>{money.format(total)}</h2>
-        <code>Folio V-000842 · {quantity} artículos</code>
-        <div className="success-buttons">
-          <button className="secondary-button" type="button" onClick={() => window.print()}>Imprimir ticket</button>
-          {giftCount > 0 ? (
-            <button className="gift-button" type="button" onClick={() => window.print()}><Gift aria-hidden="true" />Ticket de regalo ({giftCount})</button>
-          ) : null}
-          <button className="primary-button" type="button" onClick={newSale}>Nueva venta</button>
-        </div>
-      </section>
+      <><section className="sale-success">
+          <span className="success-seal"><Check aria-hidden="true" strokeWidth={2.5} /></span>
+          <p className="kicker">Venta completada</p>
+          <h2>{money.format(total)}</h2>
+          <code>Folio V-000842 · {quantity} artículos</code>
+          <div className="success-buttons">
+            <button className="secondary-button" type="button" onClick={() => setReceiptMode("sale")}><Printer aria-hidden="true" />Ver e imprimir ticket</button>
+            {giftCount > 0 ? (
+              <button className="gift-button" type="button" onClick={() => setReceiptMode("gift")}><Gift aria-hidden="true" />Ver ticket de regalo ({giftCount})</button>
+            ) : null}
+            <button className="primary-button" type="button" onClick={newSale}>Nueva venta</button>
+          </div>
+        </section>
+        {receiptMode ? <div className="modal-backdrop receipt-modal-backdrop"><section className="receipt-modal" role="dialog" aria-modal="true" aria-labelledby="receipt-preview-title"><header><div><p className="eyebrow">Vista previa · 80 mm</p><h2 id="receipt-preview-title">{receiptMode === "sale" ? "Ticket de venta" : "Ticket de regalo"}</h2><p>Así saldrá de la impresora térmica.</p></div><button type="button" aria-label="Cerrar ticket" onClick={() => setReceiptMode(null)}><X aria-hidden="true" /></button></header><div className="receipt-paper-stage"><ThermalReceipt mode={receiptMode} folio="V-000842" date={receiptDate} items={receiptMode === "gift" ? giftLines : receiptLines} subtotal={subtotal} discount={discountAmount} total={total} method={paymentLabels[paymentUsed]} tendered={paymentUsed === "cash" ? cashTendered : total} change={paymentUsed === "cash" ? change : 0} /></div><div className="receipt-modal-actions"><button className="secondary-button" type="button" onClick={() => setReceiptMode(null)}>Volver</button><button className="primary-button" type="button" onClick={() => window.print()}><Printer aria-hidden="true" />Imprimir ahora</button></div></section></div> : null}
+      </>
     );
   }
 
