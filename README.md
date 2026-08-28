@@ -14,3 +14,7 @@ pnpm dev
 ```
 
 No hay conexiones a Supabase, WooCommerce ni proveedores de pago en esta etapa.
+
+## Versión de la interfaz
+
+El avatar **S** de la barra superior abre el easter egg con la versión instalada. La fuente canónica está en `lib/release.ts` y debe actualizarse en cada entrega visible, siguiendo `CLAUDE.md`.
