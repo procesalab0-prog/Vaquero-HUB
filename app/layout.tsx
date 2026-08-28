@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     default: "Vaquero HUB",
     template: "%s · Vaquero HUB",
   },
-  description: "Punto de venta y operación de Vaqueros SM.",
+  description: "Punto de venta y operación de Vaquero SM.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
@@ -42,14 +42,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_MX",
     siteName: "Vaquero HUB",
-    title: "Vaquero HUB · Vaqueros SM",
-    description: "Punto de venta, inventario y operación de Vaqueros SM.",
+    title: "Vaquero HUB · Vaquero SM",
+    description: "Punto de venta, inventario y operación de Vaquero SM.",
     images: [{ url: "/share-vaquero-hub.png", width: 1200, height: 630, alt: "Vaquero HUB" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Vaquero HUB · Vaqueros SM",
-    description: "Punto de venta, inventario y operación de Vaqueros SM.",
+    title: "Vaquero HUB · Vaquero SM",
+    description: "Punto de venta, inventario y operación de Vaquero SM.",
     images: ["/share-vaquero-hub.png"],
   },
 };

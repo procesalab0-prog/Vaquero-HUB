@@ -49,7 +49,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   if (!loggedIn) {
     return (
       <main className="mock-login">
-        <Image src="/brand/logo-vaquerosm-negro.png" alt="Vaqueros SM" width={210} height={80} priority />
+        <Image className="login-app-icon" src="/icons/icon-192.png" alt="Vaquero HUB" width={120} height={120} priority />
         <p className="eyebrow">Vaquero HUB</p><h1>Sesión cerrada</h1><p>La sesión local de Salomon terminó correctamente.</p>
         <button className="primary-button" type="button" onClick={() => setLoggedIn(true)}>Entrar como Salomon</button>
         <small>La autenticación segura se conectará con usuarios y permisos.</small>

@@ -1,6 +1,6 @@
 # Vaquero HUB
 
-Punto de venta y plataforma de operación para Vaqueros SM.
+Punto de venta y plataforma de operación para Vaquero SM.
 
 ## Estado actual
 

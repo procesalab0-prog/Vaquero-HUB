@@ -209,7 +209,7 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
             </div>
           ) : (
             <div className="pos-ready-state">
-              <Image src="/illustrations/pos-ready.png" alt="Cajero de Vaqueros SM escaneando una bota" width={242} height={210} priority />
+              <Image src="/illustrations/pos-ready.png" alt="Cajero de Vaquero SM escaneando una bota" width={242} height={210} priority />
               <h2>Listo para vender</h2>
               <p>Escanea el primer artículo o abre el catálogo. El carrito de la derecha se llena conforme agregas productos.</p>
               <div>

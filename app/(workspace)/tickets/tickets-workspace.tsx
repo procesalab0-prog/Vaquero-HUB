@@ -56,7 +56,7 @@ export function TicketsWorkspace() {
             <>
               <header><div><p className="eyebrow">Detalle de venta</p><h2>{selected.id}</h2></div><button type="button" aria-label="Cerrar detalle" onClick={() => setSelected(null)}><X aria-hidden="true" /></button></header>
               <div className="receipt-preview">
-                <strong>VAQUEROS SM</strong><small>La Piedad · Caja 01</small><code>{selected.id} · {selected.time}</code>
+                <strong>VAQUERO SM</strong><small>La Piedad · Caja 01</small><code>{selected.id} · {selected.time}</code>
                 <div className="receipt-lines">{selected.items.map((item, index) => <div key={`${item.code}-${index}`}><span><strong>{item.name}</strong><small>{item.variant} · <code>{item.code}</code></small></span><b>{money.format(item.price)}</b></div>)}</div>
                 <div className="receipt-total"><span>Total</span><strong>{money.format(selected.total)}</strong></div>
                 <small>Gracias por tu compra</small>

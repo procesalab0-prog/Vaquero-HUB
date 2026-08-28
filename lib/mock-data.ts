@@ -34,7 +34,7 @@ export const mockVariants: ProductVariant[] = [
   {
     id: "var-004",
     productName: "Cinturón vaquero bordado",
-    brand: "Vaqueros SM",
+    brand: "Vaquero SM",
     legacyCode: "000078421034",
     color: "Miel",
     size: "34",

@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Vaquero HUB",
     short_name: "Vaquero HUB",
-    description: "Sistema operativo de punto de venta e inventario para Vaqueros SM.",
+    description: "Sistema operativo de punto de venta e inventario para Vaquero SM.",
     start_url: "/inicio",
     scope: "/",
     display: "standalone",

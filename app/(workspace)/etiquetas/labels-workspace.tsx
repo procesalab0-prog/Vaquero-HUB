@@ -54,7 +54,7 @@ export function LabelsWorkspace({ variants }: { variants: ProductVariant[] }) {
         <aside className="content-card label-preview-panel">
           <div className="card-heading"><div><p className="eyebrow">Vista previa</p><h2>Etiqueta 50 × 30 mm</h2></div><Tags aria-hidden="true" /></div>
           <div className="product-label">
-            <span className="label-brand">VAQUEROS SM</span><strong>{preview.productName}</strong><small>{preview.color} · Talla {preview.size}</small>
+            <span className="label-brand">VAQUERO SM</span><strong>{preview.productName}</strong><small>{preview.color} · Talla {preview.size}</small>
             <div className="barcode-bars" aria-hidden="true" />
             <code>{preview.legacyCode}</code><b>{money.format(preview.price)}</b>
           </div>
