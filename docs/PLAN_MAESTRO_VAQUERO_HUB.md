@@ -1534,3 +1534,11 @@ Detalle de entrega 0.6.1 — Tickets térmicos editables:
 * Continúa pendiente de confirmación del cliente: vigencia definitiva, uso parcial, cambios entre sucursales, dirección/teléfono finales y conexión física con la impresora.
 * Pruebas completadas para 0.6.1: ESLint, TypeScript y build correctos; venta en efectivo hasta confirmación; vista previa normal y de regalo; reimpresión histórica; estilos de impresión de 80 mm; sin errores de consola ni desbordamientos móvil/escritorio.
 * Los patrones gráficos de código de barras y QR son todavía representaciones visuales del brief; deberán sustituirse por códigos escaneables ligados a identificadores persistentes cuando se conecte el backend.
+
+Detalle de entrega 0.6.2 — Zona segura del carrito móvil:
+
+* La bandeja “Venta en curso” queda separada 10 px de la barra inferior y respeta `safe-area-inset-bottom` en iPhone/PWA.
+* La altura máxima del carrito se calcula descontando navegación, zona segura, separación y margen superior; su contenido hace scroll sin mover la página.
+* La barra principal usa una capa superior a la bandeja para que nunca pueda quedar tapada y se mantiene disponible para navegación.
+* El fondo atenuado termina exactamente arriba de la barra inferior, por lo que no bloquea sus cinco accesos.
+* Pruebas completadas para 0.6.2: 375 × 667, 390 × 844 y 430 × 932; separación medida de 10 px, navegación de 92 px por encima de la bandeja, sin errores de consola ni desbordamiento horizontal.
