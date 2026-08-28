@@ -1,5 +1,12 @@
 # Instrucciones de entrega para Claude Code
 
+## Contexto obligatorio
+
+- Lee completo `docs/PLAN_MAESTRO_VAQUERO_HUB.md` antes de proponer o implementar cambios relevantes.
+- Actualiza su sección **Registro vivo del proyecto** cuando cambien alcance, experiencia, arquitectura, reglas operativas o estado de módulos.
+- En cada entrega registra cambios, pruebas, riesgos y qué continúa siendo una simulación.
+- Las instrucciones críticas del Plan Maestro tienen prioridad sobre atajos de implementación.
+
 ## Versión visible de Vaquero HUB
 
 - La versión canónica que ve el usuario está en `lib/release.ts`.

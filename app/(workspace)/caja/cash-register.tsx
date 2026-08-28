@@ -18,9 +18,13 @@ export function CashRegister() {
   const [amount, setAmount] = useState("");
   const [concept, setConcept] = useState("");
   const [message, setMessage] = useState("");
+  const [cutOpen, setCutOpen] = useState(false);
+  const [countedAmount, setCountedAmount] = useState("");
 
   const movementBalance = movements.reduce((sum, item) => sum + (item.type === "Entrada" ? item.amount : -item.amount), 0);
   const expected = 2500 + 16240 + movementBalance;
+  const counted = Number(countedAmount || 0);
+  const difference = counted - expected;
 
   function addMovement() {
     const parsed = Number(amount);
@@ -30,6 +34,13 @@ export function CashRegister() {
     setAmount("");
     setConcept("");
     setMessage("Movimiento registrado en la vista de diseño");
+  }
+
+  function closeRegister() {
+    if (!countedAmount || !Number.isFinite(counted) || counted < 0) return;
+    setCutOpen(false);
+    setOpen(false);
+    setCountedAmount("");
   }
 
   if (!open) {
@@ -46,23 +57,23 @@ export function CashRegister() {
     <section className="module-page">
       <div className="section-heading">
         <div><p className="eyebrow">Sesión abierta · Caja 01</p><h1>Control de caja</h1><p className="heading-copy">Abierta hoy a las 09:52 por Salomon.</p></div>
-        <button className="secondary-button danger-outline" type="button" onClick={() => setOpen(false)}><LockKeyhole aria-hidden="true" />Realizar corte</button>
+        <button className="secondary-button danger-outline" type="button" onClick={() => { setCountedAmount(""); setCutOpen(true); }}><LockKeyhole aria-hidden="true" />Realizar corte</button>
       </div>
 
       <div className="metric-grid cash-metrics">
-        <article><span>Fondo inicial</span><strong>{money.format(2500)}</strong><small>Registrado al abrir</small></article>
-        <article><span>Ventas del turno</span><strong>{money.format(16240)}</strong><small>8 operaciones</small></article>
-        <article><span>Movimientos</span><strong>{money.format(movementBalance)}</strong><small>{movements.length} movimientos manuales</small></article>
-        <article className="accent-metric"><span>Efectivo esperado</span><strong>{money.format(expected)}</strong><small>Antes de contar físicamente</small></article>
+        <article className="metric-card metric-cash"><span>Fondo inicial</span><strong>{money.format(2500)}</strong><small>Registrado al abrir</small></article>
+        <article className="metric-card metric-sales"><span>Ventas del turno</span><strong>{money.format(16240)}</strong><small>8 operaciones</small></article>
+        <article className="metric-card metric-units"><span>Movimientos</span><strong>{money.format(movementBalance)}</strong><small>{movements.length} movimientos manuales</small></article>
+        <article className="accent-metric metric-card"><span>Efectivo esperado</span><strong>{money.format(expected)}</strong><small>Antes de contar físicamente</small></article>
       </div>
 
       <div className="cash-columns">
         <section className="content-card">
           <div className="card-heading"><div><p className="eyebrow">Resumen</p><h2>Pagos registrados</h2></div></div>
           <div className="payment-summary-list">
-            <div><span className="payment-icon"><Banknote aria-hidden="true" /></span><span><strong>Efectivo</strong><small>4 ventas</small></span><b>{money.format(7290)}</b></div>
-            <div><span className="payment-icon"><CreditCard aria-hidden="true" /></span><span><strong>Tarjeta</strong><small>3 ventas</small></span><b>{money.format(6050)}</b></div>
-            <div><span className="payment-icon"><Landmark aria-hidden="true" /></span><span><strong>Transferencia</strong><small>1 venta</small></span><b>{money.format(2900)}</b></div>
+            <div className="cash-payment-row"><span className="payment-icon"><Banknote aria-hidden="true" /></span><span><strong>Efectivo</strong><small>4 ventas</small></span><b>{money.format(7290)}</b></div>
+            <div className="card-payment-row"><span className="payment-icon"><CreditCard aria-hidden="true" /></span><span><strong>Tarjeta</strong><small>3 ventas</small></span><b>{money.format(6050)}</b></div>
+            <div className="transfer-payment-row"><span className="payment-icon"><Landmark aria-hidden="true" /></span><span><strong>Transferencia</strong><small>1 venta</small></span><b>{money.format(2900)}</b></div>
           </div>
           <div className="cash-actions">
             <button type="button" onClick={() => setMovementType("Entrada")}><ArrowDownLeft aria-hidden="true" />Registrar entrada</button>
@@ -91,6 +102,20 @@ export function CashRegister() {
               <label><span>Concepto o motivo</span><input placeholder="Ej. pago a paquetería" value={concept} onChange={(event) => setConcept(event.target.value)} /></label>
             </div>
             <div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setMovementType(null)}>Cancelar</button><button className="primary-button" type="button" onClick={addMovement}>Guardar movimiento</button></div>
+          </section>
+        </div>
+      ) : null}
+
+      {cutOpen ? (
+        <div className="modal-backdrop">
+          <section className="checkout-modal cut-modal" role="dialog" aria-modal="true" aria-labelledby="cut-title">
+            <p className="eyebrow">Cierre guiado · Caja 01</p><h2 id="cut-title">Realizar corte</h2>
+            <div className="cut-progress" aria-label="Paso 1 de 2"><span className="active">1</span><i /><span>2</span></div>
+            <div className="cut-expected"><span>Efectivo esperado</span><strong>{money.format(expected)}</strong><small>Fondo, ventas y movimientos del turno</small></div>
+            <div className="form-stack"><label><span>Efectivo contado físicamente</span><input inputMode="decimal" placeholder="0.00" value={countedAmount} onChange={(event) => setCountedAmount(event.target.value)} /></label></div>
+            {countedAmount && Number.isFinite(counted) ? <div className={difference === 0 ? "cut-difference balanced" : "cut-difference unbalanced"}><span>Diferencia</span><strong>{difference > 0 ? "+" : ""}{money.format(difference)}</strong><small>{difference === 0 ? "Caja cuadrada" : difference > 0 ? "Sobrante por revisar" : "Faltante por revisar"}</small></div> : null}
+            <div className="cut-warning"><LockKeyhole aria-hidden="true" /><span>Al confirmar, la sesión quedará cerrada. Este paso debe generar un registro auditable cuando se conecte el backend.</span></div>
+            <div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setCutOpen(false)}>Cancelar</button><button className="danger-button" type="button" disabled={!countedAmount || !Number.isFinite(counted)} onClick={closeRegister}>Confirmar y cerrar caja</button></div>
           </section>
         </div>
       ) : null}

@@ -7,6 +7,8 @@ export type ProductVariant = {
   size: string;
   price: number;
   stock: number;
+  /** Ruta de la fotografía aprobada por el dueño. Si falta, la UI muestra un fallback neutro. */
+  image?: string;
 };
 
 export type CartLine = {

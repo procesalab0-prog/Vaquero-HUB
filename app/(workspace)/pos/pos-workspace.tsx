@@ -3,10 +3,14 @@
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Banknote,
   Barcode,
   Check,
   ChevronRight,
+  CreditCard,
+  Delete,
   Gift,
+  Landmark,
   ListFilter,
   Minus,
   PackageOpen,
@@ -14,18 +18,28 @@ import {
   Search,
   ShoppingCart,
   Trash2,
+  X,
 } from "lucide-react";
 import type { CartLine, PaymentMethod, ProductVariant } from "@/lib/domain";
 
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
-const frequentCategories = ["Botas", "Botines", "Texanas", "Cintos", "Camisas"];
+const frequentCategories = [
+  { label: "Botas", terms: ["bota", "botín"] },
+  { label: "Sombreros", terms: ["sombrero", "texana"] },
+  { label: "Cintos", terms: ["cinturón", "cinto"] },
+  { label: "Camisas", terms: ["camisa"] },
+];
 
 function ProductCard({ variant, onAdd }: { variant: ProductVariant; onAdd: () => void }) {
   const soldOut = variant.stock === 0;
   return (
     <button className="product-card" type="button" disabled={soldOut} onClick={onAdd}>
       <span className="product-card-media">
-        <PackageOpen aria-hidden="true" strokeWidth={1.6} />
+        {variant.image ? (
+          <Image src={variant.image} alt="" fill sizes="(max-width: 600px) 46vw, 180px" />
+        ) : (
+          <><PackageOpen aria-hidden="true" strokeWidth={1.6} /><small>Foto pendiente</small></>
+        )}
         {soldOut ? <em>Agotado</em> : null}
       </span>
       <span className="product-card-copy">
@@ -46,6 +60,7 @@ function ProductCard({ variant, onAdd }: { variant: ProductVariant; onAdd: () =>
 export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
   const [query, setQuery] = useState("");
   const [showCatalog, setShowCatalog] = useState(false);
+  const [activeCategory, setActiveCategory] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [completed, setCompleted] = useState(false);
@@ -54,7 +69,12 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
   const [discountInput, setDiscountInput] = useState("");
   const [extraDialog, setExtraDialog] = useState<"discount" | "layaway" | null>(null);
   const [layawayCustomer, setLayawayCustomer] = useState("");
+  const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+  const [cashMode, setCashMode] = useState(false);
+  const [cashInput, setCashInput] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const toastTimer = useRef<number | null>(null);
+  const submittingRef = useRef(false);
 
   useEffect(() => () => {
     if (toastTimer.current) window.clearTimeout(toastTimer.current);
@@ -62,7 +82,11 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
 
   const results = useMemo(() => {
     const term = query.trim().toLocaleLowerCase("es-MX");
-    if (!showCatalog && !term) return [];
+    if (!showCatalog && !term && !activeCategory) return [];
+    if (activeCategory) {
+      const category = frequentCategories.find((item) => item.label === activeCategory);
+      if (category) return variants.filter((variant) => category.terms.some((word) => variant.productName.toLocaleLowerCase("es-MX").includes(word)));
+    }
     if (!term) return variants;
     return variants.filter((variant) =>
       [variant.productName, variant.brand, variant.legacyCode, variant.color, variant.size]
@@ -70,13 +94,15 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
         .toLocaleLowerCase("es-MX")
         .includes(term),
     );
-  }, [query, showCatalog, variants]);
+  }, [activeCategory, query, showCatalog, variants]);
 
   const subtotal = cart.reduce((sum, line) => sum + line.variant.price * line.quantity, 0);
   const discountAmount = subtotal * discountPercent / 100;
   const total = subtotal - discountAmount;
   const quantity = cart.reduce((sum, line) => sum + line.quantity, 0);
   const giftCount = cart.filter((line) => line.giftReceipt).length;
+  const cashTendered = Number(cashInput || 0);
+  const change = Math.max(0, cashTendered - total);
 
   function notify(message: string) {
     setToast(message);
@@ -95,6 +121,7 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
       );
     });
     notify(`Artículo agregado · ${variant.productName} ${variant.size}`);
+    if ("vibrate" in navigator) navigator.vibrate(12);
   }
 
   function updateLine(id: string, action: "increase" | "decrease" | "gift" | "remove") {
@@ -110,7 +137,10 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
   }
 
   function completeSale(method: PaymentMethod) {
-    void method;
+    if (submittingRef.current) return;
+    if (method === "cash" && cashTendered < total) return;
+    submittingRef.current = true;
+    setSubmitting(true);
     setCheckoutOpen(false);
     setCompleted(true);
   }
@@ -121,6 +151,26 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
     setQuery("");
     setShowCatalog(false);
     setDiscountPercent(0);
+    setCartDrawerOpen(false);
+    setCashMode(false);
+    setCashInput("");
+    setSubmitting(false);
+    submittingRef.current = false;
+  }
+
+  function selectCategory(label: string) {
+    setShowCatalog(true);
+    setQuery("");
+    setActiveCategory((current) => current === label ? "" : label);
+  }
+
+  function appendCashKey(key: string) {
+    setCashInput((current) => {
+      if (key === "backspace") return current.slice(0, -1);
+      if (key === "exact") return total.toFixed(2);
+      const next = `${current}${key}`;
+      return next.length <= 8 ? next : current;
+    });
   }
 
   function applyDiscount() {
@@ -181,8 +231,8 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
         <div className="frequent-row">
           <span>Frecuentes</span>
           {frequentCategories.map((category) => (
-            <button type="button" key={category} onClick={() => { setShowCatalog(true); setQuery(category); }}>
-              {category}
+            <button className={activeCategory === category.label ? "selected" : ""} type="button" key={category.label} onClick={() => selectCategory(category.label)}>
+              {category.label}
             </button>
           ))}
         </div>
@@ -192,7 +242,7 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
             <>
               <div className="catalog-results-heading">
                 <div><span>Catálogo</span><strong>{results.length} resultados</strong></div>
-                <button type="button" onClick={() => { setQuery(""); setShowCatalog(false); }}>Cerrar</button>
+                <button type="button" onClick={() => { setQuery(""); setActiveCategory(""); setShowCatalog(false); }}>Cerrar</button>
               </div>
               <div className="product-grid">
                 {results.map((variant) => (
@@ -221,10 +271,12 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
         </div>
       </section>
 
-      <aside className="sale-panel" aria-label="Carrito de venta">
+      {cartDrawerOpen ? <button className="mobile-cart-backdrop" type="button" aria-label="Cerrar carrito" onClick={() => setCartDrawerOpen(false)} /> : null}
+      <aside className={cartDrawerOpen ? "sale-panel mobile-open" : "sale-panel"} aria-label="Carrito de venta">
         <header className="sale-panel-header">
-          <strong>Venta en curso</strong>
+          <strong><ShoppingCart aria-hidden="true" />Venta en curso</strong>
           <code>{quantity ? `${quantity} artículos` : "Ticket sin folio"}</code>
+          <button className="mobile-cart-close" type="button" aria-label="Cerrar carrito" onClick={() => setCartDrawerOpen(false)}><X aria-hidden="true" /></button>
         </header>
 
         <div className="sale-lines">
@@ -269,7 +321,7 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
           <div><span>Subtotal ({quantity} artículos)</span><span>{money.format(subtotal)}</span></div>
           <div><span>Descuentos {discountPercent ? `(${discountPercent}%)` : ""}</span><span>−{money.format(discountAmount)}</span></div>
           <div className="grand-total"><strong>Total</strong><b>{money.format(total)}</b></div>
-          <button className="pay-button" type="button" disabled={cart.length === 0} onClick={() => setCheckoutOpen(true)}>
+          <button className="pay-button" type="button" disabled={cart.length === 0} onClick={() => { setCartDrawerOpen(false); setCheckoutOpen(true); }}>
             Cobrar<ChevronRight aria-hidden="true" />
           </button>
           <div className="sale-extras">
@@ -280,6 +332,12 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
         </footer>
       </aside>
 
+      <button className="mobile-cart-toggle" type="button" onClick={() => setCartDrawerOpen(true)}>
+        <span><ShoppingCart aria-hidden="true" /><b>{quantity}</b></span>
+        <strong>{quantity ? `${quantity} artículos` : "Ver carrito"}</strong>
+        <b>{money.format(total)}</b>
+      </button>
+
       {toast ? (
         <div className="pos-toast" role="status"><span><Check aria-hidden="true" /></span>{toast}</div>
       ) : null}
@@ -289,13 +347,25 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
           <section className="checkout-modal" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
             <p className="kicker">Confirmar cobro</p>
             <h2 id="checkout-title">{money.format(total)}</h2>
-            <p>Selecciona el método registrado en la venta.</p>
-            <div className="payment-options">
-              <button type="button" onClick={() => completeSale("cash")}><strong>Efectivo</strong><small>Calcular cambio</small></button>
-              <button type="button" onClick={() => completeSale("card")}><strong>Tarjeta</strong><small>Terminal externa</small></button>
-              <button type="button" onClick={() => completeSale("transfer")}><strong>Transferencia</strong><small>Capturar referencia</small></button>
-            </div>
-            <button className="secondary-button wide" type="button" onClick={() => setCheckoutOpen(false)}>Volver al carrito</button>
+            {!cashMode ? (
+              <><p>Selecciona el método registrado en la venta.</p>
+              <div className="payment-options">
+                <button className="payment-cash" type="button" onClick={() => setCashMode(true)}><Banknote aria-hidden="true" /><strong>Efectivo</strong><small>Calcular cambio</small></button>
+                <button className="payment-card" type="button" disabled={submitting} onClick={() => completeSale("card")}><CreditCard aria-hidden="true" /><strong>Tarjeta</strong><small>Terminal externa</small></button>
+                <button className="payment-transfer" type="button" disabled={submitting} onClick={() => completeSale("transfer")}><Landmark aria-hidden="true" /><strong>Transferencia</strong><small>Referencia externa</small></button>
+              </div></>
+            ) : (
+              <div className="cash-keypad-flow">
+                <div className="cash-display"><span>Recibido</span><strong>{money.format(cashTendered)}</strong><small className={cashTendered >= total ? "enough" : ""}>{cashTendered >= total ? `Cambio: ${money.format(change)}` : `Faltan ${money.format(total - cashTendered)}`}</small></div>
+                <div className="cash-keypad">
+                  {["1", "2", "3", "4", "5", "6", "7", "8", "9", "00", "0"].map((key) => <button type="button" key={key} onClick={() => appendCashKey(key)}>{key}</button>)}
+                  <button type="button" aria-label="Borrar último dígito" onClick={() => appendCashKey("backspace")}><Delete aria-hidden="true" /></button>
+                  <button className="exact-key" type="button" onClick={() => appendCashKey("exact")}>Exacto</button>
+                </div>
+                <button className="confirm-cash-button" type="button" disabled={cashTendered < total || submitting} onClick={() => completeSale("cash")}>Confirmar efectivo</button>
+              </div>
+            )}
+            <button className="secondary-button wide" type="button" onClick={() => { if (cashMode) { setCashMode(false); setCashInput(""); } else { setCheckoutOpen(false); } }}>{cashMode ? "Cambiar método" : "Volver al carrito"}</button>
           </section>
         </div>
       ) : null}

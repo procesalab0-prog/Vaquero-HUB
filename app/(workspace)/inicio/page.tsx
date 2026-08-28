@@ -5,6 +5,7 @@ import {
   ArrowRight,
   CircleDollarSign,
   PackagePlus,
+  PackageCheck,
   ShoppingCart,
   Store,
   Tags,
@@ -23,10 +24,10 @@ export default function DashboardPage() {
       </div>
 
       <div className="metric-grid">
-        <article><span>Venta de hoy</span><strong>{money.format(16240)}</strong><small>8 tickets · promedio {money.format(2030)}</small></article>
-        <article><span>Caja esperada</span><strong>{money.format(18740)}</strong><small>Incluye fondo de {money.format(2500)}</small></article>
-        <article><span>Unidades vendidas</span><strong>14</strong><small>3 tickets de regalo</small></article>
-        <article><span>Inventario crítico</span><strong>2</strong><small>1 agotado · 1 última pieza</small></article>
+        <article className="metric-card metric-sales"><span className="metric-icon"><CircleDollarSign aria-hidden="true" /></span><span>Venta de hoy</span><strong>{money.format(16240)}</strong><small>8 tickets · promedio {money.format(2030)}</small></article>
+        <article className="metric-card metric-cash"><span className="metric-icon"><Store aria-hidden="true" /></span><span>Caja esperada</span><strong>{money.format(18740)}</strong><small>Incluye fondo de {money.format(2500)}</small></article>
+        <article className="metric-card metric-units"><span className="metric-icon"><PackageCheck aria-hidden="true" /></span><span>Unidades vendidas</span><strong>14</strong><small>3 tickets de regalo</small></article>
+        <article className="metric-card metric-alert"><span className="metric-icon"><AlertTriangle aria-hidden="true" /></span><span>Inventario crítico</span><strong>2</strong><small>1 agotado · 1 última pieza</small></article>
       </div>
 
       <div className="dashboard-columns">

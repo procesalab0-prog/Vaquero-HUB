@@ -10,6 +10,7 @@ export const mockVariants: ProductVariant[] = [
     size: "25",
     price: 4890,
     stock: 3,
+    image: "/products/bota.webp",
   },
   {
     id: "var-002",
@@ -20,6 +21,7 @@ export const mockVariants: ProductVariant[] = [
     size: "26",
     price: 4890,
     stock: 1,
+    image: "/products/bota.webp",
   },
   {
     id: "var-003",
@@ -30,6 +32,7 @@ export const mockVariants: ProductVariant[] = [
     size: "57",
     price: 2890,
     stock: 5,
+    image: "/products/sombrero.webp",
   },
   {
     id: "var-004",
@@ -40,6 +43,7 @@ export const mockVariants: ProductVariant[] = [
     size: "34",
     price: 890,
     stock: 8,
+    image: "/products/cinturon.webp",
   },
   {
     id: "var-005",
@@ -50,5 +54,6 @@ export const mockVariants: ProductVariant[] = [
     size: "M",
     price: 1690,
     stock: 0,
+    image: "/products/camisa.webp",
   },
 ];

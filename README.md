@@ -2,6 +2,8 @@
 
 Punto de venta y plataforma de operación para Vaquero SM.
 
+El contexto, las reglas críticas y el registro vivo se encuentran en [`docs/PLAN_MAESTRO_VAQUERO_HUB.md`](docs/PLAN_MAESTRO_VAQUERO_HUB.md).
+
 ## Estado actual
 
 La primera base incluye un POS navegable con datos simulados, carrito, cobro de demostración, tickets de regalo, productos e inventario. La apariencia se ajustará al sistema visual aprobado en Claude Design.
