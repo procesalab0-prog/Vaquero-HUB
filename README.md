@@ -6,6 +6,7 @@ Antes de implementar cualquier módulo, consulta:
 
 - [`docs/PLAN_MAESTRO_VAQUERO_HUB.md`](docs/PLAN_MAESTRO_VAQUERO_HUB.md): contexto canónico, reglas críticas y registro vivo.
 - [`docs/PLAN_CODEX.md`](docs/PLAN_CODEX.md): decisiones técnicas, milestones, criterios de aceptación y orden de ejecución.
+- [`docs/RUNBOOK_CORTE.md`](docs/RUNBOOK_CORTE.md): ensayos, migración, validación, rollback y encendido posterior de WooCommerce.
 
 **Roles:** Codex implementa, Claude Code revisa arquitectura, concurrencia, RLS, dinero e historial, y el merge lo aprueba una persona de ProcesaLab.
 

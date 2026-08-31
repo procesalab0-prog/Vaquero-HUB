@@ -407,6 +407,11 @@ prepararse antes en modo lectura, sin escribir en la tienda.
 
 ### 7.3 Runbook del corte (se ejecuta al final, se escribe antes)
 
+> El procedimiento completo — los tres ensayos previos, qué se migra,
+> el criterio de aceptación firmado por anticipado, la secuencia de la
+> noche, el rollback y el encendido de WooCommerce — está en
+> [`RUNBOOK_CORTE.md`](RUNBOOK_CORTE.md). Lo que sigue es el resumen.
+
 - **D-7:** ensayo completo con exportación real en staging. Medir cuánto
   tarda la importación y cuántos errores de datos aparecen.
 - **D-1:** confirmar que en SICAR no queden apartados, compras o
