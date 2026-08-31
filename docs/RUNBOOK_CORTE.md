@@ -79,9 +79,11 @@ informe:
 - Cuántos productos tienen precio o costo en cero.
 
 **Entregable:** un documento de mapeo columna de SICAR → campo de Vaquero
-Hub. De este ensayo depende el diseño del catálogo (milestone M2).
+Hub, y la lista de limpieza que el cliente trabaja en SICAR durante las
+semanas siguientes. De este ensayo depende el diseño del catálogo
+(milestone M2), por eso conviene correrlo desde la semana 2.
 
-## 4. Ensayo 2 — ¿Importa limpio? *(cuando ya existe inventario, tras M3)*
+## 4. Ensayo 2 — ¿Importa limpio? *(con el importador de M9)*
 
 Importación completa de una exportación real **en staging**. El entregable
 no es "importó bien": es el **reporte de reconciliación**, que debe
