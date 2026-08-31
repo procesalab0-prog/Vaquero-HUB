@@ -2,7 +2,10 @@
 
 Punto de venta y plataforma de operación para Vaquero SM.
 
-El contexto, las reglas críticas y el registro vivo se encuentran en [`docs/PLAN_MAESTRO_VAQUERO_HUB.md`](docs/PLAN_MAESTRO_VAQUERO_HUB.md).
+Antes de implementar cualquier módulo, consulta:
+
+- [`docs/PLAN_MAESTRO_VAQUERO_HUB.md`](docs/PLAN_MAESTRO_VAQUERO_HUB.md): contexto canónico, reglas críticas y registro vivo.
+- [`docs/PLAN_CODEX.md`](docs/PLAN_CODEX.md): milestones, criterios de aceptación y orden de ejecución.
 
 ## Estado actual
 
