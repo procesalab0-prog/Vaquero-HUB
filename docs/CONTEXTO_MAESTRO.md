@@ -1,7 +1,9 @@
 # VAQUERO HUB — Contexto Maestro del Proyecto
 
-> Documento vivo. Última actualización: 2026-08-31 (se agregó la sección 51 con
-> requerimientos adicionales entregados directamente por el cliente).
+> Documento vivo. Última actualización: 2026-08-31 (sección 51 con
+> requerimientos adicionales del cliente, y sección 52 con la
+> confirmación de secuencia: primero se construye todo el sistema, la
+> migración SICAR y la conexión WooCommerce se hacen al final).
 > Mantenido para guiar el trabajo conjunto de Claude Code + OpenAI Codex +
 > supervisión humana (ProcesaLab).
 
@@ -161,6 +163,11 @@ TIENDA FÍSICA → VAQUERO HUB → INVENTARIO CENTRAL ↔ WOOCOMMERCE
 
 Cuando se cree un producto nuevo en Vaquero Hub deberá existir una opción
 como: `[✓] Publicar también en tienda online`.
+
+> Mientras la integración WooCommerce no esté construida (Fase 6, ver
+> sección 52), este control debe permanecer oculto o deshabilitado en la
+> UI — no dejar una función a medias (un checkbox que no hace nada
+> confunde más de lo que ayuda).
 
 El sistema podrá: crear producto en Vaquero Hub → crear variantes → generar/
 asignar códigos → crear inventario → crear producto en WooCommerce → crear
@@ -389,12 +396,23 @@ correctamente y escalar compute posteriormente si aumenta la concurrencia.
 necesariamente usuarios Auth. Sólo cuentan como usuarios Auth si realmente
 inician sesión mediante Supabase Auth.
 
+> **Decisión pendiente antes de aprovisionar (ver sección 52):** confirmar
+> plan de Supabase (mínimo Pro para producción) y si se usará un proyecto
+> Supabase separado por entorno o branching de un solo proyecto — para no
+> tener que migrar de plan/proyecto después de haber cargado datos reales.
+
 ## 27. Entornos
 
 **OBLIGATORIO** separar: `DEVELOPMENT`, `STAGING`, `PRODUCTION`.
 
 Los agentes de IA **NO** deberán modificar directamente producción. Cambios
 de esquema: siempre mediante migrations.
+
+Como todavía no hay datos reales de SICAR (la migración se hace al final,
+ver sección 52), el entorno de `DEVELOPMENT`/`STAGING` se poblará con
+productos y ventas de prueba creados manualmente, no con el Excel real.
+Esto simplifica el desarrollo inicial, pero obliga a limpiar/aislar esos
+datos de prueba antes de correr la migración real (ver sección 52).
 
 ## 28. Seguridad
 
@@ -499,17 +517,27 @@ niveles, expiración, Wallet, WooCommerce.
 
 No intentar construir todo simultáneamente. Orden recomendado:
 
-1. **Fase 1** — Arquitectura, auth, DB, sucursales.
-2. **Fase 2** — Productos, variantes, códigos, importación SICAR.
-3. **Fase 3** — Inventario y movimientos.
-4. **Fase 4** — POS, ventas y caja.
-5. **Fase 5** — Devoluciones/apartados/compras según funciones reales
-   utilizadas.
-6. **Fase 6** — WooCommerce.
-7. **Fase 7** — Migración completa de datos.
+1. **Fase 1** — Arquitectura, auth, DB, sucursales, usuarios/roles.
+2. **Fase 2** — Productos, variantes, códigos: alta manual y carga masiva
+   **propia** de Vaquero Hub (sección 51.18). **Sin tocar todavía** el
+   Excel real exportado de SICAR.
+3. **Fase 3** — Inventario y movimientos, transferencias entre sucursales.
+4. **Fase 4** — POS, ventas, caja, cambios y devoluciones.
+5. **Fase 5** — Apartados, compras/proveedores, reportes, cotizaciones,
+   crédito a clientes, lealtad y el resto de la sección 51 cuyas reglas de
+   negocio ya estén confirmadas con el cliente.
+6. **Fase 6** — WooCommerce (alta automática de productos, sincronización
+   de inventario, webhooks).
+7. **Fase 7** — Migración completa de datos reales de SICAR.
 8. **Fase 8** — Pruebas.
 9. **Fase 9** — Piloto paralelo.
 10. **Fase 10** — Migración operacional.
+
+> **Confirmado con el cliente (2026-08-31):** una vez lista la base de
+> datos, se construyen las Fases 1 a 5 completas — es decir, todo el
+> sistema **excepto** WooCommerce y la migración de SICAR — y se valida
+> que funcionen bien antes de iniciar la Fase 6 y la Fase 7. Ver el
+> detalle y los riesgos de esta secuencia en la sección 52.
 
 ## 37. Cronograma conceptual
 
@@ -924,3 +952,93 @@ Extiende la sección 18/16 (generación e impresión de etiquetas):
 > Igual que el resto del documento: **no implementar hasta revisar y
 > aprobar el alcance de estas nuevas funciones**, en particular las que
 > dependen de reglas de negocio aún no confirmadas.
+
+---
+
+## 52. Confirmación de secuencia de implementación (2026-08-31)
+
+El cliente confirmó explícitamente: en cuanto esté lista la base de datos,
+**no se inicia la migración de SICAR ni la conexión con WooCommerce.**
+Esa parte se hace **hasta que el resto del sistema funcione bien.**
+
+### 52.1 Qué significa esto en términos concretos
+
+- Se construyen las **Fases 1 a 5** completas (sección 36): arquitectura/
+  auth/roles/sucursales → productos/variantes/códigos con alta manual y
+  carga masiva propia → inventario y movimientos/transferencias → POS,
+  ventas, caja, cambios y devoluciones → apartados, compras, reportes,
+  cotizaciones, crédito y lealtad.
+- **Fase 6 (WooCommerce)** y **Fase 7 (migración real de SICAR)** quedan
+  explícitamente en espera hasta que el cliente confirme que las Fases 1–5
+  funcionan bien en el día a día.
+- Esto **no contradice** la regla original de la sección 39/41 de no
+  construir toda la aplicación de un solo golpe: "construir todo lo que no
+  es SICAR/WooCommerce" se sigue haciendo por fases pequeñas y revisables,
+  una fase a la vez, sólo que ahora sin pausas de negocio entre la Fase 1
+  y la Fase 5 — la pausa se mueve a antes de la Fase 6/7.
+
+### 52.2 Algo que no cuadraba y ya se corrigió
+
+La sección 36 original mezclaba "importación SICAR" dentro de la Fase 2
+(productos/variantes/códigos), lo cual contradecía esta nueva instrucción.
+Se separó: la Fase 2 ahora es sólo alta manual y carga masiva **propia**
+de productos (útil de forma permanente, no sólo para la migración — ver
+sección 51.18); la carga del Excel real de SICAR sigue siendo la Fase 7,
+tal como ya estaba previsto por separado en la sección 6.
+
+Ambas funciones (carga masiva propia y migración SICAR) comparten
+componentes técnicos (parseo, limpieza, detección de duplicados/códigos
+vacíos — sección 4), pero son iniciativas distintas con momentos
+distintos: una es una función normal del sistema desde V1, la otra es un
+evento único que se hace cuando el resto ya está probado.
+
+### 52.3 Riesgo detectado: reglas de negocio pendientes vs. "hacer todo ya"
+
+Varias funciones de la sección 51 todavía no tienen su regla de negocio
+confirmada (ver las 10 preguntas abiertas al final de esa sección):
+cotizaciones, crédito a clientes, descuento de cumpleaños, envío de
+tickets por SMS/correo, detalle de ticket de regalo. Construirlas sin
+confirmar esas reglas es el mismo riesgo que la sección 41, regla 15, ya
+advertía ("no asumir reglas de negocio no confirmadas").
+
+Criterio recomendado para no frenar el avance general por esto:
+
+- **Construir ya** (reglas ya claras, sin preguntas pendientes): roles y
+  permisos, sucursales, productos/variantes/códigos, carga masiva propia,
+  inventario y movimientos, transferencias, POS, ventas, caja, cambios,
+  devoluciones, compras/proveedores, reportes de ventas/inventario/
+  descuentos, auditoría, tarjeta de lealtad escaneable (identificación del
+  cliente, sin la regla de descuento todavía).
+- **Construir con valores por defecto explícitos, marcados como
+  "sujeto a confirmación"**: apartados (usar los estados ya propuestos en
+  la sección 20 como default razonable), cotizaciones (vigencia y
+  conversión a venta con reglas simples iniciales).
+- **Dejar en espera hasta tener respuesta del cliente**: crédito a
+  clientes (falta definir límite/autorización/recargos), descuento por
+  cumpleaños (automático vs. autorizado), envío de tickets por SMS/correo
+  (depende de elegir proveedor externo — sección 51.8).
+
+### 52.4 Datos de prueba vs. datos reales de SICAR
+
+Como la migración real se hace al final, el desarrollo y las pruebas de
+las Fases 1–5 usarán productos/ventas creados manualmente (de prueba), no
+el Excel real de SICAR. Antes de ejecutar la Fase 7 (migración real) hay
+que:
+
+1. Vaciar o aislar los datos de prueba de `products`/`variants`/
+   `inventory_movements`/`sales` en el ambiente donde se vaya a importar
+   la información real, para que no choquen con códigos reales
+   (sección 5: nunca cambiar/regenerar códigos heredados).
+2. Confirmar que ningún código de prueba coincide por casualidad con un
+   código real de SICAR o WooCommerce.
+
+### 52.5 Antes de aprovisionar la base de datos
+
+Dos decisiones conviene cerrarlas antes de pagar/crear el proyecto de
+Supabase (evita tener que migrar de plan o de proyecto después con datos
+ya cargados):
+
+1. **Plan de Supabase:** mínimo Pro para producción (sección 26).
+2. **Estrategia de entornos:** proyecto separado por entorno vs. branching
+   de un solo proyecto Supabase para `DEVELOPMENT`/`STAGING`/`PRODUCTION`
+   (sección 27).
