@@ -345,6 +345,32 @@ para venta; abonar reduce el saldo; cancelar libera el stock.
 de `sale_payments` del periodo; convertir una cotización en venta genera
 la venta por el flujo normal de `create_sale`.
 
+### M9 — Importador de SICAR y reporte de reconciliación *(semana 10)*
+
+Construir la **herramienta** de migración no es hacer la migración. Esta
+herramienta se construye y se ensaya contra staging muchas veces antes de
+que exista una noche de corte.
+
+- Script de análisis (sólo lectura, se puede correr desde la semana 2):
+  cuenta filas, códigos únicos, duplicados, vacíos, ceros iniciales, y
+  deduce cómo SICAR codifica las variantes. **No escribe nada.** Su
+  salida es la lista de limpieza que el cliente trabaja durante semanas.
+- Importador completo, idempotente y re-ejecutable, que escribe **sólo en
+  staging** y siempre dentro de una transacción.
+- **Reporte de reconciliación automático** en cada corrida: filas leídas /
+  importadas / rechazadas con motivo, suma de existencias origen vs.
+  destino, valor a costo, duplicados, y excepciones que requieren
+  decisión humana.
+- Migración de compromisos abiertos, no sólo existencias: apartados con
+  saldo, créditos, compras pendientes (ver `RUNBOOK_CORTE.md` sección 1).
+- Los movimientos de la importación se registran como `INITIAL_IMPORT`,
+  igual que cualquier otro movimiento auditable.
+
+**Aceptación:** correr el importador dos veces seguidas sobre la misma
+exportación deja exactamente el mismo resultado; el reporte sale con cero
+rechazos y cero excepciones sin explicar; la suma de existencias cuadra
+al 100 % contra el archivo de origen.
+
 ## 6. Lo que Codex NO hace todavía
 
 | Bloqueado | Por qué | Cuándo |
@@ -490,7 +516,43 @@ final: si la impresora que se compre no soporta ese modo, cambia la
 arquitectura del POS. El lector de códigos Bluetooth en modo teclado (HID)
 sí funciona sin problema en iPad y no representa riesgo.
 
-## 10. Resumen del arranque
+## 10. Quién ejecuta el corte
+
+Regla que no cambia: **la migración la ejecuta un programa, no un agente
+improvisando.**
+
+Un agente escribiendo consultas en vivo contra producción la noche del
+corte no se puede ensayar, y por lo tanto no se puede garantizar que la
+corrida real se parezca al ensayo. Todo lo que pase esa noche tiene que
+haber pasado idéntico tres veces antes. Por eso el importador es código
+versionado, probado y re-ejecutable (M9), no una sesión de chat.
+
+| Quién | Qué hace |
+|---|---|
+| **Codex** | Construye el importador, el reporte de reconciliación y las validaciones automáticas. Corrige lo que los ensayos revelen. |
+| **Claude** | Revisa esa herramienta de forma adversarial, analiza los reportes de cada ensayo, diagnostica diferencias y ayuda a decidir. |
+| **ProcesaLab** | Ejecuta la herramienta contra producción, dirige la noche del corte y da el go / no-go. |
+| **Personal de la tienda** | Verifica los números: conteo físico y muestreo de códigos contra SICAR. |
+
+Dos límites que conviene tener claros desde ahora:
+
+1. **Ningún agente escribe en producción** (regla 9 de la sección 2). El
+   importador se ejecuta contra producción por una persona, con una
+   herramienta que ya se ensayó.
+2. **Los agentes no tienen memoria entre sesiones.** La noche del corte,
+   la sesión de Claude o de Codex será nueva y no recordará esta
+   conversación. Por eso el runbook, el criterio de aceptación y el
+   importador viven en el repositorio: **el repositorio es la memoria del
+   proyecto, no el agente.** Todo lo que haga falta esa noche tiene que
+   estar escrito y ejecutable sin depender de que un agente recuerde algo.
+
+Corolario práctico: el procedimiento debe poder completarse **sin ningún
+agente disponible**. Si esa noche no hay internet, o la sesión falla, la
+persona en sitio tiene que poder correr el importador, leer el reporte y
+decidir con el runbook en la mano. Un agente ahí es una ayuda, no una
+dependencia.
+
+## 11. Resumen del arranque
 
 1. **Hoy:** Codex arranca M0 (no necesita base de datos). En paralelo se
    define plan de Supabase y estrategia de entornos, y se pide la
