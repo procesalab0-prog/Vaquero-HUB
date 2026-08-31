@@ -15,6 +15,9 @@ proyecto:
   Codex: decisiones técnicas cerradas, reglas innegociables, milestones
   con criterios de aceptación, y la secuencia de corte de SICAR y
   conexión con WooCommerce.
+- [`docs/RUNBOOK_CORTE.md`](docs/RUNBOOK_CORTE.md) — procedimiento del
+  cambio de sistema: ensayos previos, qué se migra, criterio de
+  aceptación, la noche del corte, rollback y encendido de WooCommerce.
 
 **Roles:** Codex implementa, Claude Code revisa (arquitectura,
 concurrencia, RLS, dinero, historial), y el merge lo aprueba un humano.
