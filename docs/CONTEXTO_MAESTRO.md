@@ -526,9 +526,10 @@ No intentar construir todo simultáneamente. Orden recomendado:
 5. **Fase 5** — Apartados, compras/proveedores, reportes, cotizaciones,
    crédito a clientes, lealtad y el resto de la sección 51 cuyas reglas de
    negocio ya estén confirmadas con el cliente.
-6. **Fase 6** — WooCommerce (alta automática de productos, sincronización
-   de inventario, webhooks).
-7. **Fase 7** — Migración completa de datos reales de SICAR.
+6. **Fase 6** — Migración completa de datos reales de SICAR (corte con
+   tienda cerrada).
+7. **Fase 7** — WooCommerce (emparejamiento por código, alta automática de
+   productos, sincronización de inventario, webhooks).
 8. **Fase 8** — Pruebas.
 9. **Fase 9** — Piloto paralelo.
 10. **Fase 10** — Migración operacional.
@@ -536,8 +537,15 @@ No intentar construir todo simultáneamente. Orden recomendado:
 > **Confirmado con el cliente (2026-08-31):** una vez lista la base de
 > datos, se construyen las Fases 1 a 5 completas — es decir, todo el
 > sistema **excepto** WooCommerce y la migración de SICAR — y se valida
-> que funcionen bien antes de iniciar la Fase 6 y la Fase 7. Ver el
-> detalle y los riesgos de esta secuencia en la sección 52.
+> que funcionen bien antes de iniciar las Fases 6 y 7.
+
+> **Corrección de orden (2026-08-31):** las Fases 6 y 7 se invirtieron
+> respecto a la versión original de este documento. WooCommerce no puede
+> encenderse antes del corte de SICAR: hasta que el catálogo y las
+> existencias reales no estén cargados, Vaquero Hub no tiene inventario
+> válido que publicar y enviaría stock incorrecto a la tienda en línea.
+> El emparejamiento por código sí puede prepararse antes, pero en modo
+> sólo lectura. Ver sección 52 y `PLAN_CODEX.md` sección 7.
 
 ## 37. Cronograma conceptual
 
@@ -548,16 +556,27 @@ Prioridad: **CORRECTITUD > VELOCIDAD**.
 
 ## 38. Estrategia Claude + Codex
 
-Claude Code será principalmente: **IMPLEMENTADOR**.
-Codex será principalmente: **REVISOR / SEGUNDO INGENIERO**.
+**Actualizado 2026-08-31 — los roles se invirtieron respecto a la versión
+original de este documento:**
+
+Codex será principalmente: **IMPLEMENTADOR**.
+Claude Code será principalmente: **ARQUITECTO / REVISOR**.
 
 ```
-Claude propone/implementa → Codex revisa → tests → correcciones
-  → revisión humana → merge
+Claude define esquema y criterios → Codex implementa (PR)
+  → Claude revisa (concurrencia, RLS, dinero, idempotencia, historial)
+  → tests → correcciones → revisión humana → merge
 ```
 
 No permitir que ambos agentes modifiquen simultáneamente las mismas partes
-sin coordinación.
+sin coordinación. El plan de ejecución detallado para Codex (milestones,
+decisiones técnicas cerradas, criterios de aceptación y reglas
+innegociables) vive en [`PLAN_CODEX.md`](PLAN_CODEX.md).
+
+Lo que Claude revisa en cada PR sigue siendo la lista de la sección 40:
+race conditions, inconsistencias de inventario, duplicados, errores
+monetarios, RLS, WooCommerce, pérdida de historial, migración,
+concurrencia, offline, caja y permisos.
 
 ## 39. Instrucciones para Claude Code
 
@@ -1032,7 +1051,27 @@ que:
 2. Confirmar que ningún código de prueba coincide por casualidad con un
    código real de SICAR o WooCommerce.
 
-### 52.5 Antes de aprovisionar la base de datos
+### 52.5 Tres contactos distintos con SICAR (no confundirlos)
+
+Sólo el tercero es "la migración" que se pospone:
+
+1. **Exportación de muestra para análisis** — leer un Excel para diseñar
+   correctamente el catálogo (cómo codifica SICAR tallas, colores,
+   producto padre). Sin riesgo, no toca nada. **Conviene conseguirla
+   cuanto antes**, porque el modelo de datos de la Fase 2 depende de
+   ella.
+2. **Importación de una foto (snapshot) en staging** — para el piloto
+   paralelo de la sección 7. No toca producción.
+3. **Corte definitivo** — tienda cerrada, exportación final, importación a
+   producción, apertura al día siguiente ya con Vaquero Hub. Ésta es la
+   que va al final (Fase 6).
+
+El runbook completo del corte, con validaciones y plan de rollback, está
+en `PLAN_CODEX.md` sección 7.3. Punto clave: durante todo el proceso
+SICAR sólo se lee, nunca se escribe, por lo que el rollback siempre es
+"abrir mañana con SICAR como si nada".
+
+### 52.6 Antes de aprovisionar la base de datos
 
 Dos decisiones conviene cerrarlas antes de pagar/crear el proyecto de
 Supabase (evita tener que migrar de plan o de proyecto después con datos
