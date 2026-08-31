@@ -64,6 +64,80 @@ Mezclar los dos problemas es lo que lleva a estar a las 2 de la mañana sin
 saber si una diferencia es un error del importador o una bota que alguien
 se robó hace ocho meses.
 
+## 2.5 Estrategia: carga progresiva del catálogo, refresco final de existencias
+
+**Ésta es la decisión que hace manejable todo el corte.** No se migra todo
+la misma noche: se separan los datos según qué tan rápido cambian.
+
+| Tipo de dato | Qué tan volátil | Cuándo se carga |
+|---|---|---|
+| Catálogo: productos, variantes, códigos, tallas, colores, marcas, categorías, costos, precios | Cambia lento | **Semanas o meses antes**, y se vuelve a sincronizar periódicamente |
+| Proveedores y clientes | Cambia lento | Igual que el catálogo |
+| **Existencias** | Cambia con cada venta | **Sólo al final**, con la tienda cerrada |
+| **Apartados abiertos, saldos de crédito, compras pendientes** | Cambia a diario | **Sólo al final**, junto con las existencias |
+
+La consecuencia es grande: la noche del cambio ya no se migra un catálogo
+de 15,000 filas, sino que se refrescan existencias y compromisos sobre un
+catálogo que lleva semanas cargado, revisado y corregido. Eso pasa de
+horas a minutos, y el margen de sorpresa se reduce muchísimo.
+
+También permite algo valioso: **el emparejamiento con WooCommerce se puede
+hacer con semanas de anticipación**, en modo sólo lectura, en cuanto el
+catálogo está cargado. Así los conflictos aparecen con tiempo de sobra en
+lugar de la noche del cambio.
+
+### 2.5.1 Lo que esto exige de la herramienta
+
+El importador deja de ser un script de una sola vez y pasa a ser un
+**sincronizador re-ejecutable con dos modos**:
+
+- **Modo catálogo:** agrega lo nuevo, actualiza lo que cambió, no duplica
+  nada y no toca existencias. Se corre cada semana o quincena.
+- **Modo existencias y compromisos:** ajusta las existencias al valor real
+  de SICAR y carga apartados, créditos y compras pendientes. Se corre una
+  sola vez, la noche del cambio.
+
+Correr el sincronizador dos veces seguidas debe dejar exactamente el mismo
+resultado. Si duplica productos o inventa movimientos de inventario, está
+mal hecho.
+
+### 2.5.2 El límite que no se debe cruzar
+
+**El refresco de existencias sólo es seguro mientras Vaquero Hub no sea
+todavía el sistema de registro.** Una vez que la tienda opera de verdad
+con Vaquero Hub, sobrescribir existencias desde SICAR destruiría el
+historial real de movimientos.
+
+Esto tiene una implicación en la prueba paralela: el inventario que se
+genere durante el piloto **va a ser sobrescrito** por el refresco final.
+El piloto sirve para validar el proceso y comparar números, no para
+construir historial permanente. Conviene decírselo al personal para que
+nadie se frustre viendo que "se borró" su trabajo.
+
+### 2.5.3 Decisión pendiente: dónde se capturan los productos nuevos
+
+Durante los meses de transición va a llegar mercancía nueva. Hay que
+decidir, y no dejarlo al criterio del momento:
+
+- **Opción A:** se sigue capturando en SICAR hasta el cambio, y el
+  sincronizador la trae. Más lento para el personal, pero sin
+  divergencia.
+- **Opción B:** se captura en Vaquero Hub aprovechando que el alta es más
+  rápida, y esos productos no existen en SICAR. Entonces el sincronizador
+  debe **respetarlos y nunca borrarlos**, y esa mercancía no se puede
+  vender en SICAR.
+
+Lo peligroso es el punto medio: capturar en ambos lados sin regla clara.
+Ahí es donde nacen los códigos duplicados.
+
+### 2.5.4 Vale la pena preguntar
+
+Si SICAR permite acceso directo a su base de datos o exportaciones
+programadas, la sincronización periódica se puede automatizar en lugar de
+depender de que alguien exporte un Excel a mano cada semana. Conviene
+averiguarlo con el proveedor o con quien administre el servidor: cambiaría
+bastante el esfuerzo de toda esta etapa.
+
 ## 3. Ensayo 1 — ¿Entendemos los datos? *(antes de construir el catálogo)*
 
 No se importa nada. Sólo se lee una exportación real y se produce un
@@ -153,36 +227,43 @@ exactamente lo que convierte un corte en un desastre de dos semanas.
 
 **D-7**
 1. Ensayo general (sección 5).
-2. Congelar altas masivas de catálogo en SICAR hasta el corte.
+2. **Última sincronización de catálogo** en modo catálogo (sección 2.5).
+   A partir de aquí el catálogo ya no debería moverse.
+3. Congelar altas masivas de catálogo en SICAR hasta el cambio.
 
 **D-1**
-3. Confirmar que no queden apartados, compras ni devoluciones sin
+4. Confirmar que no queden apartados, compras ni devoluciones sin
    capturar en SICAR.
-4. Verificar respaldos y accesos.
+5. Verificar respaldos y accesos.
 
 **Día D, al cerrar la tienda**
-5. Corte final de caja en SICAR. **A partir de aquí SICAR no recibe ni un
+6. Corte final de caja en SICAR. **A partir de aquí SICAR no recibe ni un
    movimiento más.**
-6. Exportación final completa (todo lo de la sección 1).
-7. Respaldo de la base de Vaquero Hub → **punto de retorno**.
-8. Importación a producción.
-9. Reporte de reconciliación automático.
-10. Validación contra el criterio de la sección 6.2, incluido el muestreo
+7. Exportación final de existencias y compromisos abiertos.
+8. Respaldo de la base de Vaquero Hub → **punto de retorno**.
+9. Sincronizador en **modo existencias y compromisos** contra producción.
+   El catálogo ya está cargado desde hace semanas: aquí sólo se ajustan
+   existencias, apartados, créditos y compras pendientes.
+10. Reporte de reconciliación automático.
+11. Validación contra el criterio de la sección 6.2, incluido el muestreo
     físico. **Lo verifica el personal de la tienda, no sólo el
     desarrollador.**
-11. Decisión explícita go / no-go, dicha en voz alta y anotada.
-12. Si es go: se habilita el POS y se hace **una venta de prueba real**
+12. Decisión explícita go / no-go, dicha en voz alta y anotada.
+13. Si es go: se habilita el POS y se hace **una venta de prueba real**
     de principio a fin — escaneo, cobro mixto, ticket, cajón, y su
     cancelación.
 
 **Día D+1 — apertura**
-13. La tienda abre operando con Vaquero Hub.
-14. **SICAR queda en sólo consulta.** No se vuelve a capturar nada ahí.
-15. Presencia técnica en piso todo el día. No remota.
+14. La tienda abre operando con Vaquero Hub.
+15. **SICAR queda en sólo consulta.** No se vuelve a capturar nada ahí.
+16. **Se apaga el modo existencias del sincronizador.** A partir de aquí
+    Vaquero Hub es el sistema de registro y nada vuelve a sobrescribir su
+    inventario (sección 2.5.2).
+17. Presencia técnica en piso todo el día. No remota.
 
 **D+1 a D+7**
-16. Comparación diaria del corte de caja contra lo esperado.
-17. Conteos cíclicos por categoría para empezar a corregir la deriva
+18. Comparación diaria del corte de caja contra lo esperado.
+19. Conteos cíclicos por categoría para empezar a corregir la deriva
     heredada (sección 2).
 
 ### 6.4 Rollback

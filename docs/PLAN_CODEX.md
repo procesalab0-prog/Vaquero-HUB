@@ -355,8 +355,17 @@ que exista una noche de corte.
   cuenta filas, códigos únicos, duplicados, vacíos, ceros iniciales, y
   deduce cómo SICAR codifica las variantes. **No escribe nada.** Su
   salida es la lista de limpieza que el cliente trabaja durante semanas.
-- Importador completo, idempotente y re-ejecutable, que escribe **sólo en
-  staging** y siempre dentro de una transacción.
+- **Sincronizador re-ejecutable con dos modos** (ver `RUNBOOK_CORTE.md`
+  sección 2.5), no un script de una sola vez:
+  - *Modo catálogo:* agrega lo nuevo, actualiza lo que cambió, no duplica
+    y **no toca existencias**. Se corre cada semana o quincena durante
+    meses. Respeta y nunca borra los productos creados directamente en
+    Vaquero Hub.
+  - *Modo existencias y compromisos:* ajusta existencias al valor real de
+    SICAR y carga apartados, créditos y compras pendientes. Se corre una
+    sola vez, la noche del cambio, y después se apaga para siempre.
+- Escribe **sólo en staging** durante todo el desarrollo, y siempre dentro
+  de una transacción.
 - **Reporte de reconciliación automático** en cada corrida: filas leídas /
   importadas / rechazadas con motivo, suma de existencias origen vs.
   destino, valor a costo, duplicados, y excepciones que requieren
@@ -366,10 +375,17 @@ que exista una noche de corte.
 - Los movimientos de la importación se registran como `INITIAL_IMPORT`,
   igual que cualquier otro movimiento auditable.
 
-**Aceptación:** correr el importador dos veces seguidas sobre la misma
-exportación deja exactamente el mismo resultado; el reporte sale con cero
-rechazos y cero excepciones sin explicar; la suma de existencias cuadra
-al 100 % contra el archivo de origen.
+**Aceptación:** correr el sincronizador dos veces seguidas sobre la misma
+exportación deja exactamente el mismo resultado, sin productos duplicados
+ni movimientos de inventario inventados; una corrida en modo catálogo no
+altera ni una existencia; un producto creado directamente en Vaquero Hub
+sobrevive intacto a la sincronización; el reporte sale con cero rechazos y
+cero excepciones sin explicar; la suma de existencias cuadra al 100 %
+contra el archivo de origen.
+
+Por su naturaleza, este milestone conviene adelantarlo en cuanto exista el
+catálogo (M2): mientras antes empiecen las corridas periódicas contra
+datos reales, más tiempo tiene el cliente para limpiar SICAR.
 
 ## 6. Lo que Codex NO hace todavía
 
