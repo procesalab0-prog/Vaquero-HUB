@@ -1,5 +1,6 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import eslint from "@eslint/js";
+import prettier from "eslint-config-prettier";
 import next from "@next/eslint-plugin-next";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 import react from "eslint-plugin-react";
@@ -37,6 +38,7 @@ const eslintConfig = defineConfig([
       },
     },
   },
+  prettier,
 ]);
 
 export default eslintConfig;

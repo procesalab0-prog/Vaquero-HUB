@@ -16,12 +16,44 @@ La primera base incluye un POS navegable con datos simulados, carrito, cobro de 
 
 ## Desarrollo local
 
+Requisitos:
+
+- Node.js 24 o posterior.
+- pnpm 11.19.0.
+- Docker Desktop en ejecución para Supabase local.
+
+Instala las dependencias y levanta la aplicación junto con la base local:
+
 ```bash
 pnpm install
-pnpm dev
+pnpm dev:local
 ```
 
-No hay conexiones a Supabase, WooCommerce ni proveedores de pago en esta etapa.
+`dev:local` inicia Supabase, obtiene sus credenciales locales sin escribirlas en
+el repositorio y arranca Next.js. Para trabajar sólo en la interfaz puede usarse
+`pnpm dev`.
+
+La instancia hospedada de Supabase no se modifica durante el desarrollo. Los
+cambios de esquema se crean siempre como migraciones versionadas:
+
+```bash
+pnpm db:new -- nombre_descriptivo
+pnpm db:reset
+```
+
+## Verificación
+
+```bash
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+pnpm test:integration
+pnpm test:e2e
+```
+
+Las variables admitidas están documentadas en `.env.example`. Nunca copies una
+clave secreta a una variable `NEXT_PUBLIC_*` ni la compartas por chat.
 
 ## Versión de la interfaz
 
