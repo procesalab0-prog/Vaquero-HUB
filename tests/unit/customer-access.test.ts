@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   customerAuthIdentityAttributes,
+  customerRedirectUrl,
   parseCustomerIdentifier,
 } from "../../lib/customer-access";
 import {
@@ -36,6 +37,29 @@ describe("acceso y tarjeta del cliente", () => {
         value: "+523531234567",
       }),
     ).toEqual({ phone: "+523531234567", phone_confirm: true });
+  });
+
+  it("nunca adivina el destino del enlace de acceso", () => {
+    const original = process.env.CUSTOMER_APP_URL;
+
+    process.env.CUSTOMER_APP_URL = "https://mi.ejemplo.com";
+    expect(
+      customerRedirectUrl("https://cualquier-cosa.com/api/mi/acceso"),
+    ).toBe("https://mi.ejemplo.com/");
+
+    delete process.env.CUSTOMER_APP_URL;
+    expect(customerRedirectUrl("http://localhost:3000/api/mi/acceso")).toBe(
+      "http://localhost:3000/mi",
+    );
+
+    // Sin configuración y fuera de local: falla en lugar de mandar el token
+    // a un dominio adivinado.
+    expect(() =>
+      customerRedirectUrl("https://otro-host.com/api/mi/acceso"),
+    ).toThrow(/CUSTOMER_APP_URL_NOT_CONFIGURED/);
+
+    if (original === undefined) delete process.env.CUSTOMER_APP_URL;
+    else process.env.CUSTOMER_APP_URL = original;
   });
 
   it("persiste únicamente una tarjeta versionada con socio válido", () => {
