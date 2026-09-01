@@ -1,10 +1,19 @@
 import { describe, expect, it } from "vitest";
 
-import { isValidMemberNumber, memberCheckDigit, normalizeMexicanPhone } from "../../lib/customers";
+import {
+  isValidMemberNumber,
+  memberCheckDigit,
+  normalizeMexicanPhone,
+} from "../../lib/customers";
 
 describe("identidad de clientes", () => {
   it("normaliza variantes del mismo teléfono mexicano", () => {
-    for (const value of ["3531234567", "+52 353 123 4567", "0052 353 123 4567", "01 353 123 4567"]) {
+    for (const value of [
+      "3531234567",
+      "+52 353 123 4567",
+      "0052 353 123 4567",
+      "01 353 123 4567",
+    ]) {
       expect(normalizeMexicanPhone(value)).toBe("+523531234567");
     }
     expect(normalizeMexicanPhone("123")).toBeNull();

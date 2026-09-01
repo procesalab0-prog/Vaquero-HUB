@@ -3,14 +3,23 @@ import { normalizeMexicanPhone } from "./customers";
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export type CustomerIdentifier =
-  | { channel: "email"; value: string }
-  | { channel: "phone"; value: string };
+  { channel: "email"; value: string } | { channel: "phone"; value: string };
 
-export function parseCustomerIdentifier(raw: string): CustomerIdentifier | null {
+export function customerAuthIdentityAttributes(identifier: CustomerIdentifier) {
+  return identifier.channel === "email"
+    ? { email: identifier.value, email_confirm: true as const }
+    : { phone: identifier.value, phone_confirm: true as const };
+}
+
+export function parseCustomerIdentifier(
+  raw: string,
+): CustomerIdentifier | null {
   const value = raw.trim();
   if (value.includes("@")) {
     const email = value.toLowerCase();
-    return EMAIL_PATTERN.test(email) ? { channel: "email", value: email } : null;
+    return EMAIL_PATTERN.test(email)
+      ? { channel: "email", value: email }
+      : null;
   }
   const phone = normalizeMexicanPhone(value);
   return phone ? { channel: "phone", value: phone } : null;
