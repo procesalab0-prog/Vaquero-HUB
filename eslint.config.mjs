@@ -8,6 +8,8 @@ import reactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
+import { noServerImportInClient } from "./eslint-rules/no-server-import-in-client.mjs";
+
 const eslintConfig = defineConfig([
   globalIgnores([
     ".next/**",
@@ -25,6 +27,16 @@ const eslintConfig = defineConfig([
   jsxA11y.flatConfigs.recommended,
   next.configs["core-web-vitals"],
   {
+    plugins: {
+      vaquero: {
+        rules: {
+          "no-server-import-in-client": noServerImportInClient,
+        },
+      },
+    },
+    rules: {
+      "vaquero/no-server-import-in-client": "error",
+    },
     languageOptions: {
       globals: {
         ...globals.browser,

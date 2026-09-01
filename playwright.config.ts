@@ -1,6 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const localChrome = process.env.CI ? {} : { channel: "chrome" as const };
+const useProductionServer = Boolean(
+  process.env.CI || process.env.PLAYWRIGHT_USE_PRODUCTION,
+);
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -23,7 +26,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "pnpm dev --hostname 127.0.0.1 --port 3107",
+    command: useProductionServer
+      ? "pnpm start --hostname 127.0.0.1 --port 3107"
+      : "pnpm dev --hostname 127.0.0.1 --port 3107",
     url: "http://127.0.0.1:3107/inicio",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
