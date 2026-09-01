@@ -1589,3 +1589,32 @@ Detalle de entrega 0.6.2 — Zona segura del carrito móvil:
 * La barra principal usa una capa superior a la bandeja para que nunca pueda quedar tapada y se mantiene disponible para navegación.
 * El fondo atenuado termina exactamente arriba de la barra inferior, por lo que no bloquea sus cinco accesos.
 * Pruebas completadas para 0.6.2: 375 × 667, 390 × 844 y 430 × 932; separación medida de 10 px, navegación de 92 px por encima de la bandeja, sin errores de consola ni desbordamiento horizontal.
+
+⸻
+
+52. ARRANQUE DE IMPLEMENTACIÓN DEL BACKEND
+
+La propuesta técnica solicitada en la sección 50 fue entregada por Claude Code y aprobada por el usuario el 31 de agosto de 2026 para ejecución progresiva. Vive en `docs/PLAN_CODEX.md`; sus especificaciones detalladas viven en `docs/specs/` y el procedimiento de migración vive en `docs/RUNBOOK_CORTE.md`.
+
+Orden aprobado:
+
+M0 → M1 → M1B → M2 → M3 → M4 → M5 → M6 → M7 → M8 → M9.
+
+Infraestructura contratada:
+
+* Organización Supabase Pro de ProcesaLab.
+* Proyecto `Vaquero HUB` en `us-east-1`.
+* PostgreSQL 17; proyecto activo y saludable al momento del alta.
+* Proyecto inicialmente vacío: sin tablas, migraciones ni ramas remotas.
+* Desarrollo mediante Supabase local y migraciones versionadas.
+* Staging deberá crearse como ambiente aislado antes de aplicar M1 remotamente.
+* Ningún agente aplicará cambios directamente en la base de producción.
+
+Estado de M0:
+
+* Rama de trabajo: `codex/m0-fundaciones`.
+* Se conserva la interfaz existente; M0 agrega infraestructura sin reemplazar el diseño funcional.
+* Clientes de Supabase separados para navegador, sesión de servidor y administración privilegiada.
+* Código nuevo usa llaves `publishable` y `secret`; las llaves heredadas `anon` y `service_role` no forman parte de la interfaz de configuración.
+* La clave secreta queda protegida con `server-only` y una prueba impide importarla desde componentes cliente.
+* Supabase CLI, migración inicial, seed, Vitest, Playwright y CI quedan incorporados en M0.
