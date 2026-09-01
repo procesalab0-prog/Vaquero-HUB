@@ -2,9 +2,14 @@
 
 Punto de venta y plataforma de operación para Vaquero SM.
 
+**¿Retomando el proyecto?** Empieza por
+[`docs/ESTADO_Y_CONTINUIDAD.md`](docs/ESTADO_Y_CONTINUIDAD.md): dónde va
+todo, qué falta, qué frena y las reglas que no se negocian.
+
 Antes de implementar cualquier módulo, consulta:
 
 - [`docs/PLAN_MAESTRO_VAQUERO_HUB.md`](docs/PLAN_MAESTRO_VAQUERO_HUB.md): contexto canónico, reglas críticas y registro vivo.
+- [`docs/PLAN_OCTUBRE.md`](docs/PLAN_OCTUBRE.md): calendario vigente, alcance de octubre y plan de respaldo.
 - [`docs/PLAN_CODEX.md`](docs/PLAN_CODEX.md): decisiones técnicas, milestones, criterios de aceptación y orden de ejecución.
 - [`docs/RUNBOOK_CORTE.md`](docs/RUNBOOK_CORTE.md): ensayos, migración, validación, rollback y encendido posterior de WooCommerce.
 - [`docs/PREGUNTAS_CLIENTE.md`](docs/PREGUNTAS_CLIENTE.md): decisiones pendientes consolidadas, con urgencia y milestone bloqueado.
