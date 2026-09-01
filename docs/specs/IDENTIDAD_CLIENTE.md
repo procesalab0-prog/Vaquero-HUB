@@ -294,6 +294,24 @@ dato personal. Se pueden separar, y el modelo debe permitirlo desde que se
 crea la tabla: por eso `customers` nunca se borra físicamente y las claves
 foráneas desde `sales` jamás se rompen.
 
+**Implementado:** `public.anonymize_customer(customer_id, reason)` exige el
+permiso `customers.anonymize` (sólo `ADMIN`) y un motivo, vacía nombre,
+teléfono, correo y cumpleaños, y devuelve el `auth_user_id` que quedó
+huérfano. **El segundo paso no es opcional:** hay que borrar ese usuario de
+Auth, porque ahí sigue guardado el correo con el que entraba. El helper
+`lib/customers-admin.ts` hace los dos pasos.
+
+El **número de socio se conserva** a propósito: no es un dato personal y es
+lo que mantiene unidas las ventas históricas del registro.
+
+**Y una decisión que parece un descuido y no lo es:** el disparador
+`app.audit_customer_change()` registra sólo los *nombres* de los campos que
+cambiaron, nunca sus valores, a diferencia del disparador genérico que usan
+las demás tablas. Si la bitácora guardara el teléfono o el nombre
+anteriores, anonimizar no anonimizaría nada, porque los datos seguirían en
+una tabla que por diseño nunca se borra. Está anotado como comentario en la
+propia función para que nadie lo "corrija".
+
 ## 8. Reglas de negocio todavía pendientes
 
 Nada de esto se implementa hasta tener respuesta (bloquean M7):
