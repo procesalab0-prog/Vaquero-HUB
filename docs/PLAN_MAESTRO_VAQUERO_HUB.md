@@ -480,6 +480,17 @@ Funciones esperadas:
 * cortes
 * movimientos de caja
 
+Entrega digital de tickets:
+
+* Al terminar una venta, el empleado podrá imprimir el ticket, abrir su vista real, usar el menú nativo **Compartir** o enviarlo por WhatsApp.
+* WhatsApp abrirá una conversación con texto preparado y un enlace seguro al ticket; esta opción no dependerá de contratar un proveedor de SMS.
+* El envío automático por SMS o correo será opcional y quedará desacoplado mediante un proveedor externo por definir.
+* El ticket digital usará un identificador opaco y no enumerable. Nunca expondrá listados, datos de otros clientes, credenciales ni permitirá modificar la venta.
+* El ticket de regalo tendrá su propia vista compartible y seguirá ocultando los precios definidos por la política del negocio.
+* Una falla de WhatsApp, del menú Compartir, de SMS o de correo nunca deberá cancelar, duplicar ni revertir una venta ya cobrada.
+* El envío transaccional del comprobante y el consentimiento para promociones se tratarán como decisiones distintas. Compartir un ticket no habilita marketing.
+* Los intentos de entrega deberán dejar auditoría mínima de canal, estado, actor y fecha, sin copiar teléfonos, correos ni el contenido completo del ticket a los logs.
+
 ⸻
 
 15. iPad como POS

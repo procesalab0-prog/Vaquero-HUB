@@ -403,9 +403,15 @@ para venta; abonar reduce el saldo; cancelar libera el stock.
 - `quotes`, `quote_items` con estados `DRAFT`, `SENT`, `CONVERTED`,
   `EXPIRED`; una cotización **no** mueve inventario ni caja.
 - Ticket de regalo (mismo comprobante, sin precios).
-- Envío de ticket por correo/SMS: **bloqueado** hasta elegir proveedor
-  (sección 8). Se implementa desacoplado, de modo que una falla del
-  proveedor jamás afecte una venta ya cobrada.
+- Ticket digital mediante enlace seguro, opaco y no enumerable, sin
+  capacidad de modificar la venta ni consultar comprobantes ajenos.
+- Compartir nativo y apertura de WhatsApp con mensaje y enlace preparados:
+  **no requieren proveedor** y forman parte del alcance obligatorio.
+- Envío automático por correo/SMS: **bloqueado** hasta elegir proveedor
+  (sección 8). Se implementa desacoplado, de modo que una falla de cualquier
+  canal jamás afecte una venta ya cobrada.
+- El envío transaccional del ticket no concede consentimiento de marketing;
+  ambos eventos se registran por separado.
 
 **Aceptación:** los totales del reporte de ventas cuadran contra la suma
 de `sale_payments` del periodo; convertir una cotización en venta genera
@@ -565,7 +571,7 @@ indica qué milestone bloquea.
 | 2 | Descuento de cumpleaños: ¿automático o autorizado? ¿monto o porcentaje? ¿vigencia el día o el mes? | M7 |
 | 3 | Tarjeta de lealtad: ¿ya existe una tarjeta física con código impreso? | M7 |
 | 4 | Apartados: ¿plazo máximo? ¿enganche mínimo? ¿qué pasa al vencer? | M7 |
-| 5 | Envío de tickets: ¿proveedor de SMS/WhatsApp/correo? ¿obligatorio o a petición? | M8 |
+| 5 | Envío automático de tickets: ¿proveedor de SMS/correo y envío obligatorio o a petición? Compartir nativo y WhatsApp con enlace ya están aprobados sin proveedor. | M8 |
 | 6 | Ticket de regalo: ¿oculta sólo precios unitarios o también totales? | M8 |
 | 7 | Cotizaciones: ¿vigencia? ¿conversión parcial a venta? | M8 |
 | 8 | Cambios: ¿se permite cambio por producto de distinto precio? ¿cómo se maneja la diferencia? | M5 |
