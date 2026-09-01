@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Cake, CheckCircle2, ContactRound, Plus, Search, ShieldCheck, Smartphone } from "lucide-react";
+import { Cake, CheckCircle2, ContactRound, ExternalLink, Plus, Search, ShieldCheck, Smartphone } from "lucide-react";
+import Link from "next/link";
 
 import { requirePermission } from "@/lib/auth/authorization";
 import { formatCustomerPhone } from "@/lib/customers";
@@ -100,6 +101,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
             <button className="primary-button" type="submit">Registrar cliente</button>
           </form>
         </details>
+        <Link className="secondary-button customer-portal-link" href="/mi" target="_blank" rel="noopener noreferrer"><ExternalLink aria-hidden="true" />Abrir Mi Vaquero</Link>
       </div>
 
       <div className="customer-list">

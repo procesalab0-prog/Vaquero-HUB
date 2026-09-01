@@ -146,13 +146,16 @@ descuento se hace con un `UPDATE` condicional que es atómico por sí mismo:
 
 ```sql
 UPDATE inventory_by_location
-   SET qty = qty - p_qty
+   SET qty = qty + p_qty
  WHERE variant_id = p_variant_id
    AND location_id = p_location_id
-   AND qty >= p_qty
-RETURNING qty + p_qty AS previous_stock, qty AS new_stock;
+   AND qty + p_qty >= reserved_qty
+RETURNING qty - p_qty AS previous_stock, qty AS new_stock;
 -- Si no devuelve fila -> error 'INSUFFICIENT_STOCK'
 ```
+
+`p_qty` siempre lleva signo: negativo saca y positivo ingresa. Comparar
+contra `reserved_qty` impide vender mercancía comprometida en apartados.
 
 Con `previous_stock` y `new_stock` devueltos por ese mismo `UPDATE` se
 inserta el registro en `inventory_movements`. Así el movimiento nunca
@@ -287,6 +290,22 @@ del cliente en el POS. La PWA del cliente, OTP, QR/1D offline y la prueba
 con lectores quedan en la siguiente entrega de M1B; requieren aviso de
 privacidad aprobado, dominio de cliente y configuración de SMS/correo.
 
+**Estado de ejecución 0.9.0:** la segunda entrega de M1B incorpora **Mi
+Vaquero**, una PWA de cliente preparada para operar en un subdominio
+dedicado y disponible provisionalmente en `/mi`. El acceso sin contraseña
+por correo queda implementado para clientes ya registrados; el acceso por
+teléfono permanece cerrado por configuración hasta contratar y validar un
+proveedor de SMS. La tarjeta muestra un QR y un CODE128 reales con el mismo
+número de socio de ocho dígitos y conserva sin conexión únicamente ese
+número, nunca nombre, teléfono ni correo. Una RPC `security definer`
+limitada al cliente autenticado entrega sólo su propia tarjeta; el alta de
+la identidad se realiza del lado servidor, con respuesta genérica y límite
+de frecuencia para reducir enumeración y abuso. Continúan pendientes la
+configuración de dominio/DNS y SMS, el aviso de privacidad definitivo y la
+prueba física con los lectores de la tienda en iPhone y Android. Puntos,
+recompensas e historial siguen expresamente fuera de alcance hasta definir
+las reglas del negocio.
+
 > Este milestone recorre las semanas siguientes aproximadamente una
 > semana. El total sigue dentro del objetivo de 8–12 semanas de la
 > sección 37 del contexto maestro.
@@ -296,7 +315,7 @@ privacidad aprobado, dominio de cliente y configuración de SMS/correo.
 - Tablas: `brands`, `categories`, `products` (padre), `variants`,
   `variant_attributes` (talla, color), `barcodes` (1..N por variante).
 - **Desde ahora** las columnas de aterrizaje de la migración futura:
-  `legacy_sicar_code`, `legacy_barcode`, `woocommerce_product_id`,
+  `legacy_sicar_code`, `woocommerce_product_id`,
   `woocommerce_variation_id` (nulables, únicas cuando no son nulas).
   Se crean hoy aunque se llenen dentro de meses.
 - Generador de variantes por matriz talla × color (sección 18).

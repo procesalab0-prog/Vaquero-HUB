@@ -242,7 +242,8 @@ reporte de la sección 51.4 del contexto maestro busca vigilar.
 
 ```sql
 create schema if not exists app;
-revoke all on schema app from anon, authenticated;
+revoke all on schema app from anon;
+grant usage on schema app to authenticated;
 
 create or replace function app.current_user_id()
 returns uuid
@@ -311,7 +312,7 @@ create or replace function public.verify_supervisor_pin(
   p_pin           text,
   p_permission    text
 )
-returns uuid
+returns jsonb
 language plpgsql
 security definer
 set search_path = ''
@@ -320,7 +321,7 @@ declare
   v_user public.app_users;
 begin
   if (select app.current_user_id()) is null then
-    raise exception 'NOT_AUTHENTICATED' using errcode = '28000';
+    return jsonb_build_object('status', 'NOT_AUTHENTICATED');
   end if;
 
   select * into v_user
@@ -329,11 +330,11 @@ begin
 
   if not found then
     perform pg_sleep(0.5);
-    raise exception 'INVALID_CREDENTIALS' using errcode = '28000';
+    return jsonb_build_object('status', 'INVALID_CREDENTIALS');
   end if;
 
   if v_user.pin_locked_until is not null and v_user.pin_locked_until > now() then
-    raise exception 'PIN_LOCKED' using errcode = '28000';
+    return jsonb_build_object('status', 'PIN_LOCKED', 'locked_until', v_user.pin_locked_until);
   end if;
 
   if v_user.supervisor_pin_hash is null
@@ -351,14 +352,14 @@ begin
     values ((select app.current_user_id()), 'supervisor_pin.failed', 'app_users',
             v_user.id::text, jsonb_build_object('permission', p_permission));
 
-    raise exception 'INVALID_CREDENTIALS' using errcode = '28000';
+    return jsonb_build_object('status', 'INVALID_CREDENTIALS');
   end if;
 
   if not exists (
     select 1 from public.role_permissions rp
     where rp.role_id = v_user.role_id and rp.permission_code = p_permission
   ) then
-    raise exception 'INSUFFICIENT_PERMISSION' using errcode = '42501';
+    return jsonb_build_object('status', 'INSUFFICIENT_PERMISSION');
   end if;
 
   update public.app_users
@@ -369,7 +370,7 @@ begin
   values ((select app.current_user_id()), 'supervisor_pin.authorized', 'app_users',
           v_user.id::text, jsonb_build_object('permission', p_permission));
 
-  return v_user.id;
+  return jsonb_build_object('status', 'AUTHORIZED', 'supervisor_user_id', v_user.id);
 end;
 $$;
 ```
@@ -379,6 +380,8 @@ entre "empleado inexistente" y "PIN incorrecto" para no filtrar qué
 códigos de empleado existen; el bloqueo tras cinco intentos evita que un
 PIN de cuatro dígitos se pueda adivinar por fuerza bruta; y **tanto el
 intento fallido como la autorización exitosa quedan en la bitácora**.
+Los resultados inválidos se devuelven como estado, no como excepción:
+una excepción revertiría el contador de intentos y su auditoría.
 
 El PIN se guarda con `extensions.crypt(p_pin, extensions.gen_salt('bf'))`
 y jamás viaja ni se almacena en claro.
@@ -445,6 +448,9 @@ create or replace function public.update_my_profile(
   p_full_name text default null,
   p_new_pin   text default null
 ) returns void
+language plpgsql
+security definer
+set search_path = ''
 ```
 
 Sólo toca `full_name` y `supervisor_pin_hash` del usuario autenticado.

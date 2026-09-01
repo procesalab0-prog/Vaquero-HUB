@@ -175,8 +175,8 @@ Debe existir una relación explícita.
 Ejemplo conceptual:
 
 internal_variant_id
-legacy_barcode
 legacy_sicar_code
+barcodes.code (source = SICAR)
 woocommerce_product_id
 woocommerce_variation_id
 woocommerce_sku/code
@@ -1674,3 +1674,14 @@ Entrega visible 0.8.0 — Clientes e identidad segura (M1B, primera entrega):
 * El POS permite asociar un cliente desde el carrito mediante el mismo campo de búsqueda. Las ventas continúan simuladas hasta M4, por lo que esta selección todavía no genera historial ni puntos.
 * Consentimiento del programa y marketing se guardan por separado. El alta exige registrar la versión exacta del aviso entregado; el aviso legal definitivo sigue pendiente del cliente y no debe sustituirse por texto inventado.
 * Continúa pendiente dentro de M1B: PWA de cliente en subdominio separado, OTP por SMS/correo, QR y código 1D reales, tarjeta disponible sin sesión y pruebas físicas con lector 2D en iPhone/Android. No se activan puntos, redención, niveles, cumpleaños, crédito ni apartados porque sus reglas siguen sin confirmar.
+
+Entrega visible 0.9.0 — Mi Vaquero y tarjeta digital (M1B, segunda entrega):
+
+* Se incorpora la PWA independiente **Mi Vaquero**, preparada para un subdominio dedicado y disponible provisionalmente en `/mi` mientras se configura el dominio del cliente.
+* El acceso sin contraseña por correo funciona exclusivamente para clientes ya registrados. La identidad Auth se crea y vincula del lado servidor; la respuesta pública es genérica y existe un límite de frecuencia por cliente. El acceso por teléfono queda desactivado hasta configurar y validar un proveedor de SMS.
+* La tarjeta genera un QR y un código CODE128 reales con el mismo número de socio de ocho dígitos. El personal puede abrir Mi Vaquero desde Clientes para explicar o probar el flujo.
+* La PWA conserva sin conexión únicamente la versión del formato y el número de socio; nombre, teléfono, correo, sesión y datos operativos no forman parte de la tarjeta offline.
+* El cliente autenticado sólo puede leer su propia tarjeta mediante una RPC dedicada. No puede consultar directamente `customers`, perfiles de empleados ni la búsqueda interna.
+* El service worker sólo guarda el shell y recursos estáticos de Mi Vaquero; nunca cachea API, Supabase ni respuestas con datos personales.
+* Continúan pendientes antes del piloto: dominio/DNS de cliente, proveedor y plantilla SMS, aviso de privacidad definitivo y prueba física del QR/CODE128 con los lectores reales en iPhone y Android. No se implementan puntos, recompensas, niveles ni historial hasta aprobar sus reglas.
+* Se integró la revisión adversarial de Claude Code en `docs/AUDITORIA_SPECS.md`: sus nueve hallazgos quedaron resueltos o especificados antes de M2/M3. Las preguntas que requieren respuesta de Vaqueros SM viven consolidadas en `docs/PREGUNTAS_CLIENTE.md`, sin duplicar las reglas canónicas.

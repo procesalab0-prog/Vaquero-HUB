@@ -34,7 +34,6 @@ create table public.variants (
 
   -- Aterrizaje de la migración. Se crean ahora, se llenan mucho después.
   legacy_sicar_code       text unique,
-  legacy_barcode          text,
   woocommerce_product_id  bigint,
   woocommerce_variation_id bigint unique,
 
@@ -60,12 +59,12 @@ begin
      and new.legacy_sicar_code is distinct from old.legacy_sicar_code then
     raise exception 'LEGACY_CODE_IMMUTABLE';
   end if;
-  if old.legacy_barcode is not null
-     and new.legacy_barcode is distinct from old.legacy_barcode then
-    raise exception 'LEGACY_CODE_IMMUTABLE';
-  end if;
   return new;
 end $$;
+
+create trigger variants_protect_legacy_codes
+before update on public.variants
+for each row execute function app.fn_protect_legacy_codes();
 ```
 
 Una vez que un código de SICAR aterriza en una variante, **nadie lo
@@ -87,7 +86,7 @@ create table public.attribute_values (
   scale_code    text references public.size_scales(code),
   value         text not null,
   display_order numeric not null default 0,
-  unique (type_code, scale_code, value)
+  unique nulls not distinct (type_code, scale_code, value)
 );
 
 create table public.variant_attributes (
@@ -158,6 +157,11 @@ SICAR. Escanear cualquiera de ellos debe encontrar la misma variante.
 `code` es único global: dos variantes no pueden compartir código. Ése es
 el caso de prueba «código duplicado» de la sección 42 del contexto
 maestro.
+
+`barcodes` es el único hogar de todo código físico, incluidos los de
+SICAR (`source = 'SICAR'`). Un disparador impide cambiar o borrar `code` y
+`variant_id` cuando el origen es SICAR. No existe una segunda copia en
+`variants`, porque dos fuentes de verdad acabarían divergiendo.
 
 ## 2. Generación de códigos para productos nuevos
 
@@ -258,6 +262,9 @@ La cajera no busca como está capturado el producto. Requisitos:
 - Por código parcial tecleado.
 - Resultados agrupados por producto padre, mostrando las tallas
   disponibles con su existencia, no una lista plana de 16 renglones.
+- La disponibilidad parte de todas las variantes y usa `left join` con
+  `coalesce(inventory_by_location.qty, 0)`. Una sucursal nueva todavía no
+  tiene renglones de inventario y aun así debe mostrar la variante en cero.
 
 Ese último punto es la diferencia entre una búsqueda usable y una que
 frustra: quien vende quiere ver «Bota Cuadra X — Negro: 25, 26, 27

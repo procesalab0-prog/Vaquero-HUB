@@ -61,14 +61,18 @@ create table public.inventory_movements (
   occurred_at    timestamptz not null default now(),
   variant_id     uuid not null references public.variants(id),
   location_id    uuid not null references public.locations(id),
-  movement_type  text not null,
+  movement_type  text not null check (movement_type in (
+    'INITIAL_IMPORT','SALE','RETURN','PURCHASE','TRANSFER_OUT',
+    'TRANSFER_IN','ADJUSTMENT','CANCELLATION','COUNT'
+  )),
   quantity       numeric(12,3) not null check (quantity <> 0),
   previous_qty   numeric(12,3) not null,
   new_qty        numeric(12,3) not null,
   reference_type text,
   reference_id   text,
   user_id        uuid references public.app_users(id),
-  metadata       jsonb not null default '{}'::jsonb
+  metadata       jsonb not null default '{}'::jsonb,
+  constraint movement_balances check (new_qty = previous_qty + quantity)
 );
 
 create index on public.inventory_movements (variant_id, location_id, id);
@@ -117,7 +121,6 @@ create or replace function app.apply_movement(
   p_qty            numeric,      -- con signo
   p_reference_type text,
   p_reference_id   text,
-  p_user_id        uuid,
   p_metadata       jsonb default '{}'::jsonb
 ) returns bigint
 language plpgsql
@@ -128,7 +131,31 @@ declare
   v_prev numeric(12,3);
   v_new  numeric(12,3);
   v_id   bigint;
+  v_user uuid;
+  v_permission text;
 begin
+  v_user := (select app.current_user_id());
+  if v_user is null then
+    raise exception 'NOT_AUTHENTICATED' using errcode = '28000';
+  end if;
+  if not (select app.can_access_location(p_location_id)) then
+    raise exception 'LOCATION_FORBIDDEN' using errcode = '42501';
+  end if;
+  v_permission := case p_type
+    when 'SALE' then 'pos.sell'
+    when 'RETURN' then 'returns.create'
+    when 'CANCELLATION' then 'sales.cancel'
+    when 'PURCHASE' then 'purchases.receive'
+    when 'TRANSFER_OUT' then 'transfers.create'
+    when 'TRANSFER_IN' then 'transfers.receive'
+    when 'COUNT' then 'inventory.count'
+    when 'ADJUSTMENT' then 'inventory.adjust'
+    when 'INITIAL_IMPORT' then 'inventory.adjust'
+  end;
+  if v_permission is null or not (select app.has_perm(v_permission)) then
+    raise exception 'PERMISSION_DENIED' using errcode = '42501';
+  end if;
+
   -- Red de seguridad: la fila normalmente ya existe desde M2.
   insert into public.inventory_by_location (variant_id, location_id, qty)
   values (p_variant_id, p_location_id, 0)
@@ -151,7 +178,7 @@ begin
     previous_qty, new_qty, reference_type, reference_id, user_id, metadata
   ) values (
     p_variant_id, p_location_id, p_type, p_qty,
-    v_prev, v_new, p_reference_type, p_reference_id, p_user_id, p_metadata
+    v_prev, v_new, p_reference_type, p_reference_id, v_user, p_metadata
   ) returning id into v_id;
 
   return v_id;
@@ -173,6 +200,11 @@ siquiera bajo concurrencia.
 
 **La condición es `>= reserved_qty`, no `>= 0`.** Una venta no puede
 consumir mercancía apartada de otro cliente.
+
+**El autor se deriva de la sesión y la ubicación se valida dentro de la
+función.** Una función `SECURITY DEFINER` nunca recibe `user_id` como dato
+confiable ni delega la autorización a la interfaz, porque se salta la RLS
+de las tablas que escribe.
 
 ## 4. Ajustes
 
@@ -275,6 +307,11 @@ Queda visible como saldo en tránsito hasta que alguien con
 - **Aprobar y recibir no pueden ser la misma persona en la misma
   operación** cuando el traspaso es entre sucursales distintas. Es
   separación de funciones básica.
+
+Las transiciones se ejecutan mediante una RPC transaccional, no con
+`UPDATE` directo. Al recibir, la RPC deriva `received_by` de `auth.uid()`
+y rechaza la operación si coincide con `approved_by`; las columnas de
+actor tampoco se aceptan como parámetros del cliente.
 
 ## 8. Pruebas obligatorias
 

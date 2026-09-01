@@ -33,7 +33,7 @@ siguiente son los **compromisos abiertos**:
 | Compras pedidas y no recibidas | Llega mercancía que el sistema no espera |
 | Notas de crédito / saldos a favor pendientes | El cliente llega a usarlas y no existen |
 | Clientes (datos, teléfono, cumpleaños) | Base de lealtad y crédito |
-| Códigos heredados: `legacy_sicar_code`, `legacy_barcode` | Sin esto no hay forma de emparejar con WooCommerce después |
+| Códigos heredados: `legacy_sicar_code` y filas en `barcodes` con `source = 'SICAR'` | Sin esto no hay forma de emparejar con WooCommerce después |
 
 Antes del ensayo 2 hay que confirmar con el cliente **qué de esto usa
 realmente** — puede que no lleven crédito, o que no tengan compras

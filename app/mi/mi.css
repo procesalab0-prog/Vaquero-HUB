@@ -1,0 +1,331 @@
+.mi-app {
+  min-height: 100svh;
+  background:
+    radial-gradient(circle at 10% -10%, rgba(180, 95, 62, 0.24), transparent 32rem),
+    #f4f2ef;
+  color: #211a17;
+  font-family: var(--font-archivo), sans-serif;
+}
+
+.mi-header {
+  min-height: 88px;
+  padding: max(18px, env(safe-area-inset-top)) 24px 18px;
+  background: #8e2a1c;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.mi-header img {
+  width: 154px;
+  height: auto;
+  object-fit: contain;
+}
+
+.mi-connectivity {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mi-connectivity svg { width: 15px; height: 15px; }
+.mi-connectivity.online { background: rgba(36, 116, 74, 0.36); }
+
+.mi-content {
+  width: min(100% - 32px, 520px);
+  margin: 0 auto;
+  padding: 34px 0 calc(40px + env(safe-area-inset-bottom));
+}
+
+.mi-title { margin-bottom: 24px; }
+.mi-title p {
+  margin: 0 0 7px;
+  color: #8e2a1c;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.mi-title h1 {
+  margin: 0;
+  font-family: var(--font-cormorant), serif;
+  font-size: clamp(36px, 10vw, 52px);
+  line-height: 0.98;
+}
+.mi-title > span {
+  display: block;
+  margin-top: 12px;
+  color: #665c57;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.member-card {
+  position: relative;
+  overflow: hidden;
+  padding: 22px;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 110% 0%, rgba(255,255,255,.24), transparent 44%),
+    linear-gradient(145deg, #a93b29 0%, #7d2117 74%);
+  box-shadow: 0 24px 55px rgba(73, 32, 22, 0.24);
+  color: #fff;
+}
+
+.member-card::after {
+  position: absolute;
+  inset: auto -60px -90px auto;
+  width: 210px;
+  height: 210px;
+  border: 24px solid rgba(255,255,255,.06);
+  border-radius: 50%;
+  content: "";
+}
+
+.member-card-brand {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-cormorant), serif;
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: .05em;
+}
+.member-card-brand img { object-fit: contain; }
+
+.member-qr {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: min(100%, 286px);
+  aspect-ratio: 1;
+  margin: 20px auto 16px;
+  padding: 8px;
+  border-radius: 19px;
+  background: #fff;
+  place-items: center;
+  color: #5d534e;
+}
+.member-qr img { width: 100%; height: 100%; border-radius: 12px; }
+
+.member-number {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.member-number small { font-size: 10px; letter-spacing: .18em; opacity: .78; }
+.member-number strong {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: clamp(27px, 9vw, 38px);
+  letter-spacing: .1em;
+}
+
+.member-barcode {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 13px;
+  background: #fff;
+}
+.member-barcode svg { display: block; width: 100%; height: 60px; }
+
+.mi-safe-note,
+.mi-program-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 17px;
+  border: 1px solid #ded8d2;
+  border-radius: 18px;
+  background: rgba(255,255,255,.78);
+}
+.mi-safe-note svg,
+.mi-program-status svg { flex: 0 0 auto; width: 22px; height: 22px; color: #24744a; }
+.mi-program-status svg { color: #8e2a1c; }
+.mi-safe-note span,
+.mi-program-status span { display: flex; flex-direction: column; gap: 4px; }
+.mi-safe-note strong,
+.mi-program-status strong { font-size: 14px; }
+.mi-safe-note small,
+.mi-program-status small { color: #706761; font-size: 12px; line-height: 1.45; }
+
+.mi-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+.mi-actions button {
+  min-height: 52px;
+  border: 1px solid #d5cdc7;
+  border-radius: 15px;
+  background: #fff;
+  color: #342b27;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+.mi-actions button svg { width: 18px; height: 18px; }
+.mi-actions .danger { grid-column: 1 / -1; color: #9b241b; }
+
+.mi-access-card {
+  padding: 26px;
+  border: 1px solid #ded8d2;
+  border-radius: 25px;
+  background: rgba(255,255,255,.9);
+  box-shadow: 0 18px 46px rgba(56, 39, 30, .1);
+}
+.mi-access-icon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  border-radius: 17px;
+  background: #f3ded8;
+  color: #8e2a1c;
+  place-items: center;
+}
+.mi-access-icon svg { width: 28px; height: 28px; }
+.mi-access-card h2 { margin: 18px 0 7px; font-size: 23px; }
+.mi-access-card > p { margin: 0 0 22px; color: #6a605a; font-size: 14px; line-height: 1.5; }
+.mi-access-card form { display: grid; gap: 12px; }
+.mi-access-card label { font-size: 13px; font-weight: 800; }
+
+.mi-input {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  padding: 0 15px;
+  border: 1.5px solid #cfc6c0;
+  border-radius: 15px;
+  background: #fff;
+}
+.mi-input:focus-within { border-color: #8e2a1c; box-shadow: 0 0 0 3px rgba(142,42,28,.1); }
+.mi-input svg { width: 20px; height: 20px; color: #8e2a1c; }
+.mi-input input {
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  outline: 0;
+  padding: 0 10px;
+  background: transparent;
+  color: #211a17;
+  font: inherit;
+  font-size: 16px;
+}
+
+.mi-code-input {
+  width: 100%;
+  min-height: 64px;
+  border: 1.5px solid #cfc6c0;
+  border-radius: 15px;
+  outline: 0;
+  background: #fff;
+  color: #211a17;
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 30px;
+  letter-spacing: .28em;
+  text-align: center;
+}
+.mi-code-input:focus { border-color: #8e2a1c; box-shadow: 0 0 0 3px rgba(142,42,28,.1); }
+
+.mi-primary {
+  min-height: 56px;
+  border: 0;
+  border-radius: 15px;
+  background: #982f21;
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+}
+.mi-primary:disabled { opacity: .56; }
+.mi-link-button {
+  min-height: 46px;
+  border: 0;
+  background: transparent;
+  color: #8e2a1c;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+}
+.mi-channel-note { color: #7c716b; font-size: 11px; line-height: 1.4; text-align: center; }
+.mi-privacy { display: flex; align-items: center; gap: 7px; margin-top: 18px !important; font-size: 11px !important; }
+.mi-privacy svg { width: 16px; height: 16px; color: #24744a; }
+
+.mi-message {
+  margin-top: 14px;
+  padding: 13px 15px;
+  border: 1px solid #b9d7c4;
+  border-radius: 13px;
+  background: #edf8f0;
+  color: #205e3d;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.mi-message.error { border-color: #e7b8b2; background: #fff0ed; color: #8a251d; }
+
+.mi-install {
+  margin-top: 22px;
+  border: 1px solid #ded8d2;
+  border-radius: 17px;
+  background: rgba(255,255,255,.7);
+}
+.mi-install summary {
+  min-height: 56px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+}
+.mi-install summary svg { width: 19px; height: 19px; color: #8e2a1c; }
+.mi-install > div { display: grid; gap: 7px; padding: 0 16px 18px; }
+.mi-install strong { margin-top: 6px; font-size: 13px; }
+.mi-install span { color: #6d635e; font-size: 12px; line-height: 1.5; }
+
+.mi-app footer {
+  padding: 18px 20px calc(18px + env(safe-area-inset-bottom));
+  color: #786e68;
+  font-size: 11px;
+  letter-spacing: .06em;
+  text-align: center;
+}
+
+@media (min-width: 700px) {
+  .mi-header { padding-left: 42px; padding-right: 42px; }
+  .mi-content { padding-top: 46px; }
+}
+
+@media (max-width: 370px) {
+  .mi-header { padding-left: 16px; padding-right: 16px; }
+  .mi-header img { width: 132px; }
+  .mi-content { width: min(100% - 22px, 520px); }
+  .member-card { padding: 17px; border-radius: 22px; }
+  .mi-access-card { padding: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mi-app *, .mi-app *::before, .mi-app *::after { scroll-behavior: auto !important; transition: none !important; }
+}

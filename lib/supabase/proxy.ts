@@ -31,7 +31,12 @@ export async function updateSession(request: NextRequest) {
 
   const { data } = await supabase.auth.getClaims();
   const pathname = request.nextUrl.pathname;
-  const publicPath = pathname.startsWith("/login") || pathname.startsWith("/auth");
+  const publicPath = pathname.startsWith("/login")
+    || pathname.startsWith("/auth")
+    || pathname === "/mi"
+    || pathname.startsWith("/mi/")
+    || pathname === "/api/mi"
+    || pathname.startsWith("/api/mi/");
 
   if (!data?.claims && !publicPath) {
     const url = request.nextUrl.clone();

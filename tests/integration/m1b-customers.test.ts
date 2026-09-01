@@ -14,6 +14,7 @@ const state = {
   admin: null as Fixture | null,
   cashier: null as Fixture | null,
   warehouse: null as Fixture | null,
+  customer: null as Fixture | null,
   locationId: "",
   customerId: "",
   memberNumber: "",
@@ -80,6 +81,43 @@ describe.sequential("M1B: clientes, identidad y RLS", () => {
       expect(error).toBeNull();
       expect(data?.map((customer: { id: string }) => customer.id)).toContain(state.customerId);
     }
+  });
+
+  it("expone al cliente autenticado sólo su tarjeta mediante RPC", async () => {
+    const server = createClient(url, secretKey, { auth: { autoRefreshToken: false, persistSession: false } });
+    const email = `cliente-${runCode}@vaquero.test`;
+    const { data: authData, error: authError } = await server.auth.admin.createUser({ email, password, email_confirm: true, app_metadata: { account_type: "customer" } });
+    expect(authError).toBeNull();
+    const customerUserId = authData.user!.id;
+    const { error: linkError } = await server.from("customers").update({ auth_user_id: customerUserId }).eq("id", state.customerId);
+    expect(linkError).toBeNull();
+
+    const customerClient = publicClient();
+    const { error: signInError } = await customerClient.auth.signInWithPassword({ email, password });
+    expect(signInError).toBeNull();
+    state.customer = { id: customerUserId, client: customerClient };
+
+    const card = await customerClient.rpc("get_my_customer_card");
+    expect(card.error).toBeNull();
+    expect(card.data).toEqual([{ customer_id: state.customerId, member_number: state.memberNumber, full_name: "Cliente de Prueba" }]);
+
+    const directCustomers = await customerClient.from("customers").select("id, phone_e164");
+    const internalUsers = await customerClient.from("app_users").select("id");
+    const internalSearch = await customerClient.rpc("search_customers", { p_query: "Cliente", p_limit: 10 });
+    expect(directCustomers.data).toEqual([]);
+    expect(internalUsers.data).toEqual([]);
+    expect(internalSearch.error).not.toBeNull();
+  });
+
+  it("limita solicitudes de acceso y reserva esa operación sólo al servidor", async () => {
+    const server = createClient(url, secretKey, { auth: { autoRefreshToken: false, persistSession: false } });
+    const first = await server.rpc("reserve_customer_auth_request", { p_customer_id: state.customerId, p_min_interval_seconds: 60 });
+    const second = await server.rpc("reserve_customer_auth_request", { p_customer_id: state.customerId, p_min_interval_seconds: 60 });
+    const cashierAttempt = await state.cashier!.client.rpc("reserve_customer_auth_request", { p_customer_id: state.customerId, p_min_interval_seconds: 60 });
+    expect(first.error).toBeNull();
+    expect(first.data).toBe(true);
+    expect(second.data).toBe(false);
+    expect(cashierAttempt.error).not.toBeNull();
   });
 
   it("almacén y anon no pueden consultar ni crear clientes", async () => {

@@ -315,3 +315,19 @@ Nada de esto se implementa hasta tener respuesta (bloquean M7):
 9. ¿El descuento de cumpleaños y las promociones se mandan sólo a quien
    dio consentimiento de marketing, o el negocio asume que registrarse ya
    lo incluye? Conviene que sea lo primero.
+
+## 9. Estado implementado en 0.9.0
+
+La identidad base y la tarjeta digital ya existen en **Mi Vaquero**. La
+PWA está preparada para un host dedicado y, hasta configurar el dominio,
+se publica en `/mi`. El acceso por correo no crea cuentas públicas: sólo
+acepta clientes previamente registrados y vincula su identidad en el
+servidor. SMS se mantiene desactivado hasta configurar proveedor.
+
+El QR, el CODE128 y el número visible codifican exactamente el mismo
+`member_number`. Sin conexión se guarda únicamente ese número en un
+formato versionado; no se conservan nombre, teléfono, correo, puntos ni
+historial. La lectura online se limita a la tarjeta propia mediante
+`get_my_customer_card()`. Sigue siendo obligatoria la prueba física con
+los lectores reales y no se habilitan puntos o redenciones hasta resolver
+las reglas de la sección 8.
