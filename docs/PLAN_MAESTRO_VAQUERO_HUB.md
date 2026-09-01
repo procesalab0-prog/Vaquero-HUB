@@ -1696,3 +1696,9 @@ Corrección operativa 0.9.2 — Correo passwordless y CI:
 * Las identidades de clientes destinadas exclusivamente a acceso por enlace mágico se crean como correo o teléfono confirmado, según la recomendación de Supabase para usuarios passwordless importados. Esto permite mantener deshabilitado el autorregistro público sin que Auth confunda el primer acceso con un alta.
 * Las identidades ya vinculadas se sincronizan y confirman del lado servidor antes de solicitar el OTP. Recibir el enlace o código continúa siendo la prueba de posesión del canal; ninguna credencial privilegiada se expone al cliente.
 * El CI aplica el formato pendiente que detenía el job antes de lint y pruebas. La actualización de Checkout, Setup Node y PNPM Setup para eliminar la advertencia de Node 20 queda pendiente de una credencial GitHub con alcance `workflow`.
+
+Corrección operativa 0.9.3 — Migración reproducible en CI:
+
+* La migración del índice `customers_updated_by_idx` ahora usa `if not exists`, porque el índice ya forma parte de la migración base de clientes.
+* Esto permite levantar una base local limpia en GitHub Actions sin fallar por intentar crear dos veces el mismo índice.
+* El ajuste es idempotente y no altera datos ni permisos en producción.
