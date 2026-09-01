@@ -5,6 +5,8 @@ Punto de venta y plataforma de operación para Vaquero SM.
 **¿Retomando el proyecto?** Empieza por
 [`docs/ESTADO_Y_CONTINUIDAD.md`](docs/ESTADO_Y_CONTINUIDAD.md): dónde va
 todo, qué falta, qué frena y las reglas que no se negocian.
+La lista ordenada de qué implementar está en
+[`docs/COLA_DE_TRABAJO.md`](docs/COLA_DE_TRABAJO.md).
 
 Antes de implementar cualquier módulo, consulta:
 
