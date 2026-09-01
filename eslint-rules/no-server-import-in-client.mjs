@@ -1,6 +1,8 @@
 const protectedServerModules = new Set([
   "@/lib/supabase/admin",
   "@/lib/supabase/server",
+  "@/lib/auth-throttle",
+  "@/lib/customers-admin",
 ]);
 
 export const noServerImportInClient = {
