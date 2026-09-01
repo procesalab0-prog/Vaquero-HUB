@@ -27,6 +27,10 @@ La aplicación se llama **Mi Tienda SM**; el proyecto, Vaquero Hub.
 3. [`PLAN_OCTUBRE.md`](PLAN_OCTUBRE.md) — el calendario vigente y por qué.
 4. La especificación del milestone que toque, en [`specs/`](specs/).
 
+**¿Listo para implementar?** La lista ordenada de qué sigue está en
+[`COLA_DE_TRABAJO.md`](COLA_DE_TRABAJO.md): se toma de arriba hacia abajo,
+saltando lo bloqueado.
+
 ## 2. Dónde vamos
 
 ### Terminado y en `main`
