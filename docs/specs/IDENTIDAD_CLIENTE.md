@@ -49,38 +49,106 @@ siempre en formato E.164 (`+523531234567`) con restricción de unicidad
 sobre el valor normalizado. Sin esto se generan clientes duplicados con
 saldos de puntos partidos, y recomponerlos después es un dolor.
 
-## 3. La tarjeta en el teléfono: qué conviene construir
+## 3. La tarjeta en el teléfono: una segunda PWA
 
-### 3.1 Lo que sí va en V1
+La tarjeta de lealtad vive en una **PWA propia para clientes**, construida
+desde el mismo código y el mismo despliegue que el sistema interno, pero
+en un **subdominio aparte**.
 
-1. **Búsqueda por teléfono en el POS.** La cajera teclea el número o los
-   últimos cuatro dígitos. Funciona para todos, siempre, sin tarjeta, sin
-   app y sin cuenta. Es el mecanismo universal y el que hay que hacer
-   rápido.
-2. **Página con su código QR**, accesible por un enlace firmado que se le
-   manda por SMS o WhatsApp. El cliente la guarda en su pantalla de
-   inicio. Sin contraseña.
+### 3.1 Por qué subdominio y no una ruta `/cliente`
 
-### 3.2 Lo que conviene dejar para después
+Dos PWA en el mismo origen se pueden separar por alcance de manifiesto,
+pero comparten almacenamiento, cookies y service worker. Eso trae dos
+problemas concretos:
 
-**Pase de Apple Wallet / Google Wallet.** Es la mejor experiencia —vive
-en la cartera del teléfono, funciona sin señal y puede mostrar el saldo de
-puntos actualizado— pero exige cuenta de desarrollador de Apple,
-certificados de firma y un servicio web para actualizar los pases. Es
-trabajo real y acotado, pero es *pulido*: no conviene construirlo antes de
-saber si el programa de lealtad tiene tracción.
+1. **Sesiones mezcladas.** Si una cajera abre la vista de cliente en el
+   iPad de la tienda para ayudar a alguien a registrarse, esa sesión de
+   cliente queda en el mismo almacenamiento que la sesión del personal.
+   Con orígenes distintos, esa clase de problema no existe.
+2. **Instalación limpia.** Cada origen instala su propia PWA con su propio
+   ícono, su propio service worker y su propio almacenamiento, sin trucos
+   de alcance.
 
-### 3.3 Advertencia de hardware
+Propuesta: `hub.<dominio>` para el sistema interno y `mi.<dominio>` (o
+`puntos.<dominio>`) para clientes. Un solo proyecto de Next.js y un solo
+despliegue en Vercel resuelven ambos.
+
+### 3.2 Qué muestra la PWA de cliente
+
+Las tres representaciones del **mismo número de socio**, juntas en una
+pantalla:
+
+| Representación | Para qué sirve | Nota |
+|---|---|---|
+| **QR** | Lectura principal en caja | Requiere lector imager 2D |
+| **Código de barras 1D** | Compatibilidad | Su valor real es para tarjetas **impresas**; en pantalla es la más débil de las tres |
+| **Código numérico** | Cuando fallan los dos anteriores | Se teclea a mano. **Debe llevar dígito verificador** |
+
+Más el saldo de puntos, el historial de compras, sus apartados y el aviso
+de cumpleaños.
+
+### 3.3 El código numérico lleva dígito verificador
+
+No es un detalle menor. Si la cajera teclea mal un número de socio sin
+dígito verificador, puede caer **en otro cliente existente** y abonarle
+los puntos a quien no era. Con un dígito verificador (algoritmo de Luhn,
+como las tarjetas bancarias), la mayoría de los errores de dedo fallan de
+inmediato en lugar de acertarle en silencio a la cuenta equivocada.
+
+Formato sugerido: 8 dígitos, el último verificador. Corto para leerse en
+voz alta.
+
+### 3.4 La búsqueda por teléfono sigue siendo el piso
+
+Aunque exista la PWA, **la búsqueda por teléfono en el POS no se
+elimina**. Es el camino que funciona sin tarjeta, sin app, sin cuenta y
+sin batería. Una parte de la clientela no va a instalar nada, y el
+teléfono es lo único que todos traen siempre y se saben de memoria.
+
+Con esto no hacen falta tarjetas físicas impresas de entrada. Si más
+adelante aparece la demanda, ahí es donde el código de barras 1D se vuelve
+útil de verdad.
+
+### 3.5 Requisito: la tarjeta funciona sin sesión
+
+En iPhone, una PWA instalada puede perder su almacenamiento si pasa mucho
+tiempo sin abrirse, y una sesión caducada dejaría al cliente sin tarjeta
+justo cuando la necesita, formado en la caja.
+
+Por eso: **el número de socio, su QR y su código de barras se guardan en
+el dispositivo y se dibujan sin conexión y sin sesión válida.** Volver a
+autenticarse sólo hace falta para ver el saldo actualizado y el historial.
+La tarjeta nunca deja de funcionar.
+
+### 3.6 Advertencia de hardware
 
 **Un lector láser de una dimensión no lee bien la pantalla de un
 teléfono.** Si la tarjeta va a vivir en el celular, el lector Bluetooth
-tiene que ser un **imager 2D**, no un láser lineal. Esto se cruza
-directamente con la decisión de hardware pendiente: hay que definirlo
-antes de comprar.
+tiene que ser un **imager 2D**, no un láser lineal — y esto aplica tanto
+al QR como al código de barras en pantalla. Hay que definirlo antes de
+comprar el hardware.
 
-Y de todos modos conviene que la búsqueda por teléfono sea el camino
-principal: una parte de la clientela no va a usar el celular para esto, y
-así no hacen falta tarjetas físicas impresas.
+### 3.7 El pase de Wallet, después
+
+Apple Wallet y Google Wallet siguen siendo la experiencia más duradera —
+viven en la cartera del teléfono y muestran el saldo sin abrir nada — pero
+exigen cuenta de desarrollador, certificados de firma y un servicio de
+actualización.
+
+No compiten con la PWA: se **suman** a ella. Una vez que la PWA existe,
+agregar un botón "Agregar a Apple Wallet" es incremental, porque el modelo
+de datos ya está. Primero la PWA, que hace todo; el pase después, si el
+programa agarra tracción.
+
+### 3.8 Fricción de instalación en iPhone
+
+En Android el navegador ofrece instalar la PWA solo. En iPhone hay que
+entrar por Safari, Compartir, y "Agregar a pantalla de inicio" — nadie lo
+descubre por su cuenta.
+
+Esto no es un problema técnico sino de operación: **la cajera acompaña al
+cliente la primera vez.** Conviene tener un instructivo corto en el
+mostrador y contemplar el paso dentro del entrenamiento del personal.
 
 ## 4. Seguridad: el cliente y el empleado comparten Auth
 
@@ -143,3 +211,9 @@ Nada de esto se implementa hasta tener respuesta (bloquean M7):
 4. Si se devuelve una compra, ¿se retiran los puntos que generó?
 5. ¿El descuento de cumpleaños es automático o lo autoriza un supervisor?
 6. ¿Habrá niveles de cliente, o un solo esquema para todos?
+7. **¿Qué se exige para redimir puntos?** El número de socio es copiable
+   —basta una foto de la pantalla—, así que conviene distinguir: *acumular*
+   puntos en la cuenta de otro es inofensivo, pero *gastarlos* no. Hay que
+   definir si redimir exige un segundo dato (por ejemplo los últimos
+   cuatro dígitos del teléfono) o autorización de supervisor a partir de
+   cierto monto.
