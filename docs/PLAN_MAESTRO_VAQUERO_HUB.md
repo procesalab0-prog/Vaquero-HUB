@@ -1641,3 +1641,7 @@ Entrega visible 0.7.0 — Acceso y administración segura:
 * La edición masiva de permisos permanece deliberadamente de sólo lectura hasta implementar una operación transaccional que no pueda dejar un rol parcialmente actualizado.
 * Sin variables de Supabase, la web pública conserva el modo demostración 0.6.2. Al configurar variables, activa el acceso real; las primeras pruebas remotas apuntarán únicamente a staging.
 * Supabase producción continúa sin migraciones de negocio y no se usará para estas pruebas.
+* Vercel Production y Preview quedaron conectados el 31 de agosto de 2026 exclusivamente al proyecto Supabase de staging `zsezjtswqeijboezvado`; las credenciales se guardan como variables secretas de Vercel y no forman parte del repositorio.
+* El ambiente de staging cuenta con la sucursal inicial `LAP` (La Piedad) y el primer administrador `SALOMON` (Salomon), asignado a esa sucursal. Su contraseña temporal se entrega fuera del repositorio y deberá rotarse.
+* El autorregistro quedó deshabilitado también en la configuración alojada de Supabase Auth, no sólo en la configuración local.
+* La integración real fue validada de extremo a extremo en la web publicada: inicio de sesión, sesión protegida, identidad y sucursal, Administración, rol ADMIN con 29 permisos y bitácora de auditoría. No se observaron errores de consola durante la verificación.
