@@ -1714,3 +1714,10 @@ Configuración operativa de Auth — Redirección de Mi Vaquero:
 * El proyecto Supabase de staging usa `https://vaquero-hub.vercel.app/mi` como `Site URL`.
 * La misma dirección está registrada explícitamente en `Redirect URLs`.
 * No debe restaurarse `http://localhost:3000` como destino del entorno publicado: cuando una URL solicitada no está autorizada, Supabase usa el `Site URL` y el enlace de un solo uso puede consumirse antes de llegar a la PWA.
+
+Corrección operativa 0.9.5 — Sesión persistente y acceso multidispositivo:
+
+* Cada dispositivo conserva su propia sesión de Mi Vaquero mediante el almacenamiento persistente de Supabase; cerrar y volver a abrir la PWA no exige autenticarse de nuevo mientras la sesión siga vigente.
+* Supabase mantiene habilitadas sesiones simultáneas: `Enforce single session per user` está apagado y los límites de duración e inactividad están en `0` (`never`). Nunca deben copiarse access tokens o refresh tokens entre dispositivos.
+* Para acceder desde otro equipo, el cliente solicita un código nuevo en ese dispositivo. La plantilla de correo de Mi Vaquero incluye el OTP de seis dígitos y mantiene como alternativa el enlace de un solo uso.
+* La plantilla canónica vive en `supabase/templates/magic-link.html` y la configuración local la declara en `supabase/config.toml`; el proyecto hospedado debe mantener el mismo asunto y HTML en Auth > Email Templates.

@@ -128,7 +128,7 @@ export function CustomerPwa({ configured, phoneOtpEnabled }: CustomerPwaProps) {
       if (!response.ok) throw new Error(payload.message ?? "INVALID_IDENTIFIER");
       setStep("verify");
       setNotice(parsed.channel === "email"
-        ? "Revisa tu correo. Puedes abrir el enlace recibido o escribir aquí el código de seis dígitos."
+        ? "Revisa tu correo y escribe aquí el código de seis dígitos. El enlace también puede abrir Mi Vaquero en el dispositivo donde lo pulses."
         : "Escribe el código de seis dígitos que enviamos por SMS.");
     } catch (requestError) {
       setError(requestError instanceof Error && requestError.message !== "INVALID_IDENTIFIER" ? requestError.message : "No fue posible solicitar el acceso.");
@@ -213,6 +213,7 @@ export function CustomerPwa({ configured, phoneOtpEnabled }: CustomerPwaProps) {
             <label htmlFor="customer-token">Código de seis dígitos</label>
             <input className="mi-code-input" id="customer-token" value={token} onChange={(event) => setToken(event.target.value.replace(/\D/g, "").slice(0, 6))} autoComplete="one-time-code" inputMode="numeric" placeholder="000000" />
             <button className="mi-primary" disabled={busy} type="submit">{busy ? "Verificando…" : "Activar tarjeta"}</button>
+            <small className="mi-channel-note">La sesión quedará guardada en este dispositivo. Puedes repetir este acceso en otros equipos.</small>
             <button className="mi-link-button" type="button" onClick={() => { setStep("identify"); setToken(""); setNotice(""); }}>Usar otro teléfono o correo</button>
           </form>}
           <p className="mi-privacy"><ShieldCheck aria-hidden="true" />El acceso no te registra para recibir promociones.</p>
