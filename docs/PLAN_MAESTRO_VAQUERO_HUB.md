@@ -1708,3 +1708,9 @@ Corrección operativa 0.9.4 — Auditoría de clientes en integración:
 * La prueba de privacidad valida todos los eventos de auditoría de un cliente, no sólo un supuesto registro único.
 * Se reconoce como comportamiento correcto que existan eventos separados al crear el cliente y al vincular su identidad de acceso.
 * Cada evento debe conservar `before_data` y `after_data` vacíos y no incluir el teléfono del cliente en sus metadatos.
+
+Configuración operativa de Auth — Redirección de Mi Vaquero:
+
+* El proyecto Supabase de staging usa `https://vaquero-hub.vercel.app/mi` como `Site URL`.
+* La misma dirección está registrada explícitamente en `Redirect URLs`.
+* No debe restaurarse `http://localhost:3000` como destino del entorno publicado: cuando una URL solicitada no está autorizada, Supabase usa el `Site URL` y el enlace de un solo uso puede consumirse antes de llegar a la PWA.
