@@ -10,7 +10,8 @@
 
 ## 0. Cómo usar este documento
 
-- Codex trabaja **un milestone a la vez**, en el orden M0 → M9.
+- Codex trabaja **un milestone a la vez**, en el orden
+  M0 → M1 → M1B → M2 → … → M9.
 - Los milestones con especificación detallada la tienen en
   [`specs/`](specs/). Esa especificación manda sobre el resumen del
   milestone en la sección 5 de este documento:
@@ -233,6 +234,51 @@ y la base local corriendo; CI en verde.
 otra sucursal, no puede cambiar precios y no puede modificar permisos —
 demostrado con tests, no con revisión visual.
 
+### M1B — Clientes y PWA de cliente *(semana 2)*
+
+Se adelanta respecto del plan original por dos razones: la tabla de
+clientes la necesitan las ventas de M4 y los apartados de M7, y construir
+la tarjeta temprano permite **probar el lector con una pantalla de
+teléfono real en la semana 3, no en la 8**. Es el mismo argumento que con
+la impresora: el riesgo de hardware se retira temprano o se paga caro.
+
+Especificación completa en
+[`specs/IDENTIDAD_CLIENTE.md`](specs/IDENTIDAD_CLIENTE.md).
+
+**Se construye ahora:**
+
+- Tabla `customers` con el modelo de identidad: `phone_e164` normalizado y
+  único, `member_number` con dígito verificador, `email`, `birthdate`,
+  `auth_user_id` nulable y `woocommerce_customer_id` nulable. Los dos
+  últimos se crean desde ahora aunque se llenen mucho después.
+- Alta, búsqueda y edición de clientes del lado del personal.
+- **Búsqueda por teléfono en el POS**, que es el mecanismo universal.
+- **Segunda PWA en subdominio propio**, del mismo código y despliegue:
+  inicio de sesión por código SMS (sin contraseña) y pantalla de tarjeta
+  con QR, código de barras y código numérico.
+- La tarjeta se dibuja **sin conexión y sin sesión válida**, con el número
+  de socio guardado en el dispositivo.
+
+**No se construye todavía** (bloqueado por reglas de negocio, ver
+sección 8): motor de puntos, redención, descuento de cumpleaños, niveles,
+apartados y crédito. La tarjeta identifica al cliente; los puntos llegan
+cuando el negocio defina cómo se ganan y cómo se gastan.
+
+**Aceptación:**
+- Dos clientes capturados con el mismo teléfono en formatos distintos
+  (`3531234567` y `+52 353 123 4567`) son detectados como duplicado.
+- Un número de socio con un dígito mal tecleado es rechazado por el
+  verificador, no encuentra a otro cliente.
+- La tarjeta se ve correctamente con el teléfono en modo avión y con la
+  sesión caducada.
+- **El lector Bluetooth de la tienda lee el QR desde la pantalla de un
+  iPhone y de un Android.** Si falla, se escala de inmediato: cambia la
+  decisión de hardware.
+
+> Este milestone recorre las semanas siguientes aproximadamente una
+> semana. El total sigue dentro del objetivo de 8–12 semanas de la
+> sección 37 del contexto maestro.
+
 ### M2 — Catálogo: productos, variantes y códigos *(semana 2)*
 
 - Tablas: `brands`, `categories`, `products` (padre), `variants`,
@@ -321,16 +367,19 @@ parcial mueve exactamente lo recibido y deja el resto pendiente.
 
 ### M7 — Clientes, apartados, crédito y lealtad *(semana 8)*
 
-- `customers` (con fecha de nacimiento para el descuento de cumpleaños),
-  `customer_cards` (identificador escaneable QR/código de barras,
-  sección 51.11).
+La identidad del cliente y su tarjeta ya se construyeron en M1B. Aquí se
+agrega lo que depende de que existan ventas y de que el negocio defina sus
+reglas.
+
 - `layaways`, `layaway_items`, `layaway_payments` con estados `OPEN`,
   `PARTIALLY_PAID`, `PAID`, `CANCELLED`, `EXPIRED`.
-- **Bloqueados hasta tener reglas de negocio** (sección 8): crédito a
-  clientes, descuento de cumpleaños, puntos de lealtad. Se deja el modelo
-  de datos preparado, no la regla.
-- Recordatorio: un cliente **no** es un usuario de Supabase Auth
-  (sección 26 del contexto maestro).
+- Historial de compras del cliente, visible también en su PWA.
+- **Bloqueados hasta tener reglas de negocio** (sección 8): motor de
+  puntos, redención, crédito a clientes, descuento de cumpleaños y
+  niveles. Se deja el modelo de datos preparado, no la regla.
+- Recordatorio: un cliente sólo es usuario de Supabase Auth si de verdad
+  inicia sesión en su PWA, y aun así no obtiene ningún permiso interno
+  (sección 26 del contexto maestro y `specs/IDENTIDAD_CLIENTE.md`).
 
 **Aceptación:** apartar mercancía reserva stock y no lo deja disponible
 para venta; abonar reduce el saldo; cancelar libera el stock.
