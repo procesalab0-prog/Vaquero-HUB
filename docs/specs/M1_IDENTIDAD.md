@@ -25,7 +25,7 @@
 |---|---|---|---|
 | Dueño / administración | Sí | Supabase Auth | `app_users`, rol `ADMIN` |
 | Trabajadores | Sí, la crea el administrador | Supabase Auth | `app_users`, roles `MANAGER` / `CASHIER` / `WAREHOUSE` |
-| Cliente con tarjeta de lealtad | **No** | Código escaneable de su tarjeta | `customers` (M7), sin usuario de Auth |
+| Cliente con tarjeta de lealtad | **Opcional y perezosa** | Su teléfono, o el QR de su tarjeta | `customers` (M7); usuario de Auth sólo si algún día inicia sesión |
 
 **Administración y trabajadores son el mismo sistema, no dos.** Una sola
 aplicación, un solo inicio de sesión, una sola tabla de empleados. El rol
@@ -33,22 +33,25 @@ decide qué se ve. No se construyen dos aplicaciones separadas; sí se
 construye una vista de POS propia, pensada para tocar en iPad, que no es
 el panel de administración encogido.
 
-**El cliente no inicia sesión.** Es un registro de CRM identificado por el
-código de su tarjeta, que la cajera escanea. Tres razones por las que esto
-no debe cambiarse a la ligera:
+**El cliente sí puede tener cuenta, pero nunca se le exige.** El registro
+del cliente y su cuenta de acceso son cosas distintas: el registro existe
+desde su primera compra, y la cuenta se crea sólo si algún día quiere
+entrar a ver sus puntos. En la caja jamás se pide crear una cuenta — se
+pide el teléfono.
 
-1. **Costo:** Supabase cobra por usuarios activos de Auth. Miles de
-   clientes como cuentas es un costo mensual recurrente; como filas de una
-   tabla, no cuestan nada.
-2. **Adopción:** pedir que se cree una cuenta en la caja, con gente
-   formada atrás, mata el programa de lealtad. Escanear toma dos segundos.
-3. **Seguridad:** mezclar clientes en el mismo sistema de roles que los
-   empleados es la vía directa a que un cliente pueda consultar tablas
-   internas.
+El detalle importante para este milestone: **un cliente autenticado no
+obtiene absolutamente ningún acceso por el simple hecho de estar
+autenticado.** Como `app.current_user_id()`, `app.has_perm()` y
+`app.can_access_location()` parten todas de un registro en `app_users`, y
+un cliente no lo tiene, las políticas lo niegan por construcción.
 
-Si en el futuro se quiere un portal donde el cliente consulte sus puntos,
-sería una **superficie aparte** con su propio modelo de permisos, jamás un
-rol más dentro del sistema de empleados. No forma parte de V1.
+De ahí una regla que no se rompe: **ninguna política se escribe sobre
+`auth.uid() is not null`.** Estar autenticado no significa nada por sí
+solo.
+
+El modelo completo de identidad del cliente, la tarjeta en el teléfono y
+el enlace con WooCommerce está en
+[`IDENTIDAD_CLIENTE.md`](IDENTIDAD_CLIENTE.md).
 
 ## 2. Esquemas y convenciones
 
