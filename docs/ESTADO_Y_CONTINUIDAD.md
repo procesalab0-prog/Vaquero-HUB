@@ -47,7 +47,7 @@ PostgreSQL 17, plan Pro.
 | **M2** — catálogo, variantes, códigos, etiquetas | [Escrita](specs/M2_CATALOGO.md) |
 | **M3** — inventario, movimientos, traspasos | [Escrita](specs/M3_INVENTARIO.md) |
 | **M4** — POS, pagos mixtos, caja | [Escrita](specs/M4_POS_Y_CAJA.md) |
-| **M5** — devoluciones, cambios, cancelaciones | **Falta** |
+| **M5** — devoluciones, cambios, cancelaciones | [Escrita](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md) |
 | **M9** — importador y sincronizador de SICAR | Falta |
 
 Recorridos a después de octubre: M6 compras, M7 apartados y lealtad, M8
@@ -122,7 +122,6 @@ Cuando el trabajo se divida en dos cuentas, el reparto ya está escrito en
 
 | Qué | Dónde |
 |---|---|
-| Falta la especificación de M5 | Este documento, §2 |
 | No existe función de anonimización de clientes | Issue #8 |
 | Mudanza de la PWA de clientes a subdominio propio | Issue #8 |
 | Las specs se escribieron sin contemplar la interfaz que ya existía | Issue #4 |
