@@ -19,6 +19,7 @@
   - [`specs/M1_IDENTIDAD.md`](specs/M1_IDENTIDAD.md)
   - [`specs/IDENTIDAD_CLIENTE.md`](specs/IDENTIDAD_CLIENTE.md) — cubre M1B
   - [`specs/M2_CATALOGO.md`](specs/M2_CATALOGO.md)
+  - [`specs/M3_INVENTARIO.md`](specs/M3_INVENTARIO.md)
 - Cada milestone se entrega en uno o más PRs pequeños y revisables.
 - Un milestone no se considera terminado hasta que cumple sus **criterios
   de aceptación** y su **Definition of Done** (sección 3.3).
