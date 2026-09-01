@@ -200,7 +200,101 @@ admitirlo desde M7: `phone_e164`, `email`, `auth_user_id` y
 `woocommerce_customer_id` existen desde que se crea la tabla, aunque se
 llenen mucho más tarde.
 
-## 7. Reglas de negocio todavía pendientes
+## 7. La vista del personal
+
+### 7.1 Búsqueda
+
+Desde el POS y desde administración se busca al cliente por cualquiera de
+estos caminos, todos contra el mismo registro:
+
+- **Teléfono** — completo o los últimos cuatro dígitos.
+- **Número de socio** — tecleado o escaneado.
+- **Nombre** — tolerante a acentos y mayúsculas, igual que la búsqueda de
+  productos.
+- **Correo.**
+- **QR de su tarjeta.**
+
+En el POS la búsqueda tiene que ser de un solo campo: la cajera teclea o
+escanea lo que sea y el sistema decide qué es. Obligarla a elegir «buscar
+por teléfono» o «buscar por nombre» antes de escribir es un paso de más
+en el peor momento posible.
+
+### 7.2 Panel de clientes y cuentas activas
+
+Vista de administración con lo que un dueño quiere saber para juzgar si el
+programa sirve:
+
+- Total de clientes registrados.
+- **Cuántos tienen cuenta creada**, es decir, cuántos instalaron la PWA y
+  entraron de verdad. Recordar que la cuenta es opcional: la mayoría de
+  los clientes van a existir sin ella.
+- Clientes activos a 30 y 90 días (los que compraron).
+- Altas nuevas por semana.
+- Cumpleaños del mes.
+
+### 7.3 Permisos y un riesgo que conviene ver de frente
+
+`customers.manage` ya lo tiene el rol `CASHIER`, porque necesita dar de
+alta y encontrar clientes para poder venderles. Eso está bien.
+
+Lo que **no** debería tener el mismo permiso es **exportar la lista
+completa**. La base de clientes es el activo que más comúnmente se va por
+la puerta cuando alguien renuncia. Propuesta:
+
+- Ver y buscar clientes: `customers.manage` (cajera incluida).
+- **Exportar en lote: permiso aparte**, sólo administración, y **cada
+  exportación queda registrada en la bitácora** con quién, cuándo y
+  cuántos registros.
+
+No conviene enmascarar el teléfono en pantalla: la cajera lo necesita
+para trabajar, y ocultarlo sólo rompe el flujo sin evitar nada.
+
+### 7.4 Datos personales: decidirlo al inicio sale barato
+
+Un programa de lealtad que guarda nombre, teléfono, correo, fecha de
+nacimiento e historial de compras **es tratamiento de datos personales**,
+con las obligaciones que eso implica en México. No soy quien deba dar la
+opinión legal —conviene que lo revise quien lleve ese tema del cliente—
+pero sí hay tres consecuencias de diseño que es mucho más barato resolver
+ahora que después:
+
+**1. Consentimiento registrado, no supuesto.**
+
+```sql
+customers
+  privacy_consent_at       timestamptz
+  privacy_notice_version   text
+  marketing_consent        boolean not null default false
+  marketing_consent_at     timestamptz
+```
+
+El consentimiento para el programa de lealtad y el consentimiento para
+recibir promociones **son cosas distintas**. Alguien puede querer acumular
+puntos y no querer mensajes. Esto se cruza directo con el envío de tickets
+por SMS o correo (sección 51.8 del contexto maestro) y con el descuento de
+cumpleaños: sin la segunda casilla, mandar promociones es una decisión que
+nadie tomó explícitamente.
+
+**2. Aviso de privacidad al registrarse**, tanto en la PWA como en la
+captura del POS, con su versión guardada. Si el aviso cambia, se sabe
+quién aceptó cuál.
+
+**3. Borrado contra historial: se anonimiza, no se borra.**
+
+Aquí hay un choque real entre dos reglas del proyecto. Si un cliente pide
+que eliminen sus datos, la regla 7 del contexto maestro dice que nunca se
+borra historial. Ambas se cumplen así:
+
+- Se **anonimiza el registro del cliente**: se vacían nombre, teléfono,
+  correo y fecha de nacimiento, y se marca como anonimizado.
+- **Las ventas siguen intactas**, apuntando al mismo registro ya anónimo.
+
+Una venta es un registro contable y fiscal; el nombre del comprador es un
+dato personal. Se pueden separar, y el modelo debe permitirlo desde que se
+crea la tabla: por eso `customers` nunca se borra físicamente y las claves
+foráneas desde `sales` jamás se rompen.
+
+## 8. Reglas de negocio todavía pendientes
 
 Nada de esto se implementa hasta tener respuesta (bloquean M7):
 
@@ -217,3 +311,7 @@ Nada de esto se implementa hasta tener respuesta (bloquean M7):
    definir si redimir exige un segundo dato (por ejemplo los últimos
    cuatro dígitos del teléfono) o autorización de supervisor a partir de
    cierto monto.
+8. ¿Quién redacta el aviso de privacidad y qué dice? (sección 7.4)
+9. ¿El descuento de cumpleaños y las promociones se mandan sólo a quien
+   dio consentimiento de marketing, o el negocio asume que registrarse ya
+   lo incluye? Conviene que sea lo primero.
