@@ -55,6 +55,22 @@ pnpm test:e2e
 Las variables admitidas están documentadas en `.env.example`. Nunca copies una
 clave secreta a una variable `NEXT_PUBLIC_*` ni la compartas por chat.
 
+## Primer administrador
+
+M1 deshabilita el registro público: los empleados sólo pueden ser creados por
+un administrador. Después de aplicar la migración en un ambiente nuevo, define
+en una terminal segura las variables `ADMIN_*` de `.env.example` y ejecuta:
+
+```bash
+pnpm bootstrap:admin
+```
+
+El script usa `SUPABASE_SECRET_KEY` únicamente en Node.js, confirma el correo y
+crea el perfil con rol `ADMIN`. Si falla la creación del perfil, elimina el
+usuario de Auth para no dejar una identidad incompleta. Retira las variables
+`ADMIN_PASSWORD` y `SUPABASE_SECRET_KEY` de la terminal al terminar; nunca las
+expongas al navegador ni las guardes en Git.
+
 ## Versión de la interfaz
 
 El avatar **S** de la barra superior abre el easter egg con la versión instalada. La fuente canónica está en `lib/release.ts` y debe actualizarse en cada entrega visible, siguiendo `CLAUDE.md`.

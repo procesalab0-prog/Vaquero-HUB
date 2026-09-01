@@ -1612,9 +1612,20 @@ Infraestructura contratada:
 
 Estado de M0:
 
-* Rama de trabajo: `codex/m0-fundaciones`.
+* M0 fue fusionado a `main` mediante el PR #1 el 31 de agosto de 2026; commit squash `e24caac`.
+* CI, migración limpia, pruebas de integración, build de producción y E2E móvil/escritorio quedaron en verde antes del merge.
 * Se conserva la interfaz existente; M0 agrega infraestructura sin reemplazar el diseño funcional.
 * Clientes de Supabase separados para navegador, sesión de servidor y administración privilegiada.
 * Código nuevo usa llaves `publishable` y `secret`; las llaves heredadas `anon` y `service_role` no forman parte de la interfaz de configuración.
 * La clave secreta queda protegida con `server-only` y una prueba impide importarla desde componentes cliente.
 * Supabase CLI, migración inicial, seed, Vitest, Playwright y CI quedan incorporados en M0.
+
+Estado de M1:
+
+* Rama de trabajo: `codex/m1-identidad`.
+* La rama de staging de Supabase está activa y aislada de producción; M0 fue aplicado y validado ahí.
+* La base de producción continúa sin migraciones de negocio. M1 se ensaya primero en staging.
+* M1 comienza por la capa de seguridad: sucursales, empleados, roles, permisos, asignaciones, auditoría, funciones privadas y RLS deny-by-default.
+* El autorregistro de empleados queda deshabilitado; el primer administrador se crea con un script de servidor que nunca expone la clave secreta.
+* La verificación de PIN devuelve estados controlados en vez de lanzar una excepción para credenciales inválidas. Esto permite que PostgreSQL confirme el contador de intentos, el bloqueo y la auditoría; lanzar una excepción revertiría esas escrituras.
+* La web 0.6.2 es la base obligatoria de M1. Autenticación y administración se integrarán a su navegación, sistema visual, ergonomía touch-first y PWA sin reemplazar ni romper Inicio, POS, Caja, Productos, Inventario, Tickets, Etiquetas o Ajustes.
