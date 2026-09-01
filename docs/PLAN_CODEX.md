@@ -32,6 +32,7 @@
   - [`specs/IDENTIDAD_CLIENTE.md`](specs/IDENTIDAD_CLIENTE.md) — cubre M1B
   - [`specs/M2_CATALOGO.md`](specs/M2_CATALOGO.md)
   - [`specs/M3_INVENTARIO.md`](specs/M3_INVENTARIO.md)
+  - [`specs/M4_POS_Y_CAJA.md`](specs/M4_POS_Y_CAJA.md)
   - [`specs/ESCANEO.md`](specs/ESCANEO.md) — transversal, se introduce en M2
 - Cada milestone se entrega en uno o más PRs pequeños y revisables.
 - Un milestone no se considera terminado hasta que cumple sus **criterios
