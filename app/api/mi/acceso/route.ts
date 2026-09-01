@@ -5,6 +5,7 @@ import {
   customerRedirectUrl,
   parseCustomerIdentifier,
 } from "@/lib/customer-access";
+import { requestSourceHash } from "@/lib/auth-throttle";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,18 @@ export async function POST(request: Request) {
     }
 
     const admin = createAdminClient();
+
+    // Techo por origen, antes de tocar la tabla de clientes: el límite por
+    // cliente no frena a quien recorre muchos identificadores distintos.
+    const sourceHash = requestSourceHash(request);
+    if (sourceHash) {
+      const { data: allowed } = await admin.rpc(
+        "reserve_auth_request_by_source",
+        { p_source_hash: sourceHash },
+      );
+      if (allowed === false) return delayedGeneric(startedAt);
+    }
+
     const column = identifier.channel === "phone" ? "phone_e164" : "email";
     const { data: customer, error: customerError } = await admin
       .from("customers")
