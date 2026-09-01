@@ -213,6 +213,18 @@ quien cierra decida. Lo ideal sigue siendo contar con la tienda cerrada.
 Al cerrar, cada diferencia genera un movimiento `COUNT` con referencia al
 conteo. Nada se ajusta en silencio.
 
+### 5.1 Contar con el teléfono
+
+El conteo se hace escaneando con la cámara del teléfono, andando el
+pasillo. Ver [`ESCANEO.md`](ESCANEO.md) para el componente y sus
+requisitos — en particular el *beep* de confirmación, que es lo que
+permite contar mirando el anaquel y no la pantalla.
+
+Requisito propio de este milestone: **al abrir un conteo se precargan en
+el dispositivo las variantes de su alcance**, y las cantidades contadas se
+encolan si se cae la señal. El conteo es justamente lo que más se hace en
+la bodega y al fondo de la tienda, donde peor llega el wifi.
+
 ## 6. Traspasos
 
 ```sql

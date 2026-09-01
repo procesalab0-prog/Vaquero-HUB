@@ -263,6 +263,17 @@ Ese último punto es la diferencia entre una búsqueda usable y una que
 frustra: quien vende quiere ver «Bota Cuadra X — Negro: 25, 26, 27
 disponibles», no dieciséis líneas.
 
+### 7.1 Escaneo con la cámara
+
+Aquí se introduce el componente de escaneo por cámara, especificado en
+[`ESCANEO.md`](ESCANEO.md). En M2 su uso es consultar un producto
+escaneando su código; el uso pesado llega en M3 (conteos) y M6
+(recepción).
+
+Un requisito de este milestone: **verificar que la cámara funciona dentro
+de la PWA instalada**, en un iPhone y un Android reales, no sólo desde el
+navegador. Es una falla conocida que aparece tarde y de la peor forma.
+
 ## 8. RLS
 
 - Lectura del catálogo: cualquier usuario activo con `products.read`.
