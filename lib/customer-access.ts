@@ -25,6 +25,14 @@ export function parseCustomerIdentifier(
   return phone ? { channel: "phone", value: phone } : null;
 }
 
+/**
+ * Destino del enlace de acceso del cliente.
+ *
+ * Este valor decide a dónde viaja un token de autenticación, así que no se
+ * adivina: fuera de desarrollo local exige `CUSTOMER_APP_URL` configurada.
+ * Si falta, se lanza el error y no se envía nada — es preferible que el
+ * acceso no funcione a que el enlace llegue a un dominio equivocado.
+ */
 export function customerRedirectUrl(requestUrl: string) {
   const configured = process.env.CUSTOMER_APP_URL?.trim();
   if (configured) return new URL("/", configured).toString();
@@ -33,5 +41,8 @@ export function customerRedirectUrl(requestUrl: string) {
   if (request.hostname === "localhost" || request.hostname === "127.0.0.1") {
     return new URL("/mi", request.origin).toString();
   }
-  return "https://vaquero-hub.vercel.app/mi";
+
+  throw new Error(
+    "CUSTOMER_APP_URL_NOT_CONFIGURED: falta configurar el origen de la PWA de clientes.",
+  );
 }

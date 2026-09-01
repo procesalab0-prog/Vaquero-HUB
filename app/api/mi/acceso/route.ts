@@ -126,8 +126,13 @@ export async function POST(request: Request) {
     });
     return delayedGeneric(startedAt);
   } catch (error) {
+    // La respuesta al cliente sigue siendo genérica para no filtrar qué
+    // identificadores existen, pero el registro del servidor sí necesita el
+    // detalle: sin él, una falla sistemática de envío es indistinguible de
+    // un identificador que no existe, y nadie se entera.
     console.error("[api/mi/acceso] request failed", {
-      code: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+      name: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+      message: error instanceof Error ? error.message : String(error),
     });
     return delayedGeneric(startedAt);
   }
