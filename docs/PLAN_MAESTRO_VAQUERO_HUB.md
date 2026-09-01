@@ -1,13 +1,13 @@
-VAQUERO HUB — CONTEXTO MAESTRO DEL PROYECTO
+MI TIENDA SM — CONTEXTO MAESTRO DEL PROYECTO
 
 1. Descripción general
 
-Proyecto: Vaquero Hub
+Proyecto: Mi Tienda SM
 Cliente: Vaqueros SM
 Desarrollador: ProcesaLab
 Ubicación actual del negocio: La Piedad, Michoacán, México.
 
-Vaquero Hub será un sistema propio de gestión para Vaqueros SM que sustituirá progresivamente las funciones de SICAR que actualmente utiliza el negocio.
+Mi Tienda SM será un sistema propio de gestión para Vaqueros SM que sustituirá progresivamente las funciones de SICAR que actualmente utiliza el negocio.
 
 No se busca copiar absolutamente todas las funciones existentes de SICAR. Se busca reemplazar correctamente las funciones que Vaqueros SM realmente utiliza, documentarlas y posteriormente mejorarlas.
 
@@ -92,7 +92,7 @@ Una bota puede existir en:
 
 Actualmente la captura puede resultar lenta y repetitiva.
 
-Vaquero Hub deberá permitir crear:
+Mi Tienda SM deberá permitir crear:
 
 PRODUCTO PADRE
 
@@ -162,7 +162,7 @@ Por lo tanto:
 
 Código SICAR
 ↕
-Código Vaquero Hub
+Código Mi Tienda SM
 ↕
 Código WooCommerce
 
@@ -203,7 +203,7 @@ Auditoría y limpieza
 
 ↓
 
-Importación Vaquero Hub
+Importación Mi Tienda SM
 
 ↓
 
@@ -235,11 +235,11 @@ Durante las pruebas SICAR continuará funcionando.
 
 7. Prueba paralela
 
-Antes de sustituir SICAR, Vaquero Hub deberá probarse en una tienda real.
+Antes de sustituir SICAR, Mi Tienda SM deberá probarse en una tienda real.
 
 Durante la prueba:
 
-Una venta real puede registrarse tanto en SICAR como en Vaquero Hub únicamente con fines de comparación.
+Una venta real puede registrarse tanto en SICAR como en Mi Tienda SM únicamente con fines de comparación.
 
 NO significa cobrar dos veces.
 
@@ -262,13 +262,13 @@ El objetivo es demostrar que ambos sistemas producen resultados equivalentes.
 
 8. WooCommerce
 
-WooCommerce deberá integrarse directamente con Vaquero Hub.
+WooCommerce deberá integrarse directamente con Mi Tienda SM.
 
 La página actual puede continuar funcionando.
 
-Vaquero Hub deberá comunicarse con WooCommerce mediante API y webhooks.
+Mi Tienda SM deberá comunicarse con WooCommerce mediante API y webhooks.
 
-El objetivo final es que Vaquero Hub sea la fuente principal de verdad para inventario y operación.
+El objetivo final es que Mi Tienda SM sea la fuente principal de verdad para inventario y operación.
 
 WooCommerce será un canal de venta.
 
@@ -276,7 +276,7 @@ Conceptualmente:
 
 TIENDA FÍSICA
 ↓
-VAQUERO HUB
+MI TIENDA SM
 ↓
 INVENTARIO CENTRAL
 ↑
@@ -286,13 +286,13 @@ WOOCOMMERCE
 
 9. Alta automática en WooCommerce
 
-Cuando se cree un producto nuevo en Vaquero Hub deberá existir una opción como:
+Cuando se cree un producto nuevo en Mi Tienda SM deberá existir una opción como:
 
 [✓] Publicar también en tienda online
 
 El sistema podrá:
 
-1. Crear producto en Vaquero Hub.
+1. Crear producto en Mi Tienda SM.
 2. Crear variantes.
 3. Generar/asignar códigos.
 4. Crear inventario.
@@ -335,7 +335,7 @@ Bota X talla 27 = 3
 
 Se vende una en POS.
 
-Vaquero Hub:
+Mi Tienda SM:
 
 3 → 2
 
@@ -351,7 +351,7 @@ WooCommerce
 ↓
 Webhook
 ↓
-Vaquero Hub
+Mi Tienda SM
 ↓
 Movimiento de inventario
 ↓
@@ -457,7 +457,7 @@ Una mercancía en tránsito NO deberá aparecer simultáneamente como disponible
 
 14. Punto de venta
 
-Vaquero Hub deberá incluir POS.
+Mi Tienda SM deberá incluir POS.
 
 Funciones esperadas:
 
@@ -497,7 +497,7 @@ Entrega digital de tickets:
 
 El cliente puede operar principalmente desde iPads.
 
-Por ello Vaquero Hub deberá diseñarse touch-first y funcionar correctamente en Safari/iPadOS.
+Por ello Mi Tienda SM deberá diseñarse touch-first y funcionar correctamente en Safari/iPadOS.
 
 Preferentemente como:
 
@@ -507,7 +507,7 @@ El usuario podrá instalarla en pantalla de inicio.
 
 Experiencia deseada:
 
-VAQUERO HUB
+MI TIENDA SM
 
 ↓
 
@@ -577,7 +577,7 @@ SICAR
 
 como en:
 
-Vaquero Hub.
+Mi Tienda SM.
 
 NO imprimir doble código para mantener ambos sistemas.
 
@@ -585,7 +585,7 @@ NO imprimir doble código para mantener ambos sistemas.
 
 18. Productos nuevos
 
-Para productos nuevos Vaquero Hub podrá:
+Para productos nuevos Mi Tienda SM podrá:
 
 * generar código
 * generar SKU
@@ -619,7 +619,7 @@ y generar variantes automáticamente.
 
 19. Compras y proveedores
 
-Vaquero Hub deberá contemplar:
+Mi Tienda SM deberá contemplar:
 
 SUPPLIERS
 
@@ -968,7 +968,7 @@ No implementar offline improvisado.
 
 Objetivo futuro:
 
-VAQUERO HUB = fuente principal operacional
+MI TIENDA SM = fuente principal operacional
 
 WooCommerce = canal online
 
@@ -978,7 +978,7 @@ Definir ownership de cada campo.
 
 Ejemplo:
 
-Vaquero Hub:
+Mi Tienda SM:
 
 * stock
 * códigos
@@ -1017,7 +1017,7 @@ No construir procesamiento de tarjetas desde cero.
 
 Utilizar proveedor/terminal externo.
 
-Vaquero Hub deberá registrar:
+Mi Tienda SM deberá registrar:
 
 * método
 * referencia
@@ -1315,7 +1315,7 @@ Ante una diferencia de inventario deberá poder responderse:
 
 44. Experiencia del usuario
 
-Vaquero Hub debe adaptarse a la forma natural de trabajar de las personas y de Vaqueros SM; no deberá obligar a las personas a adaptarse innecesariamente al software.
+Mi Tienda SM debe adaptarse a la forma natural de trabajar de las personas y de Vaqueros SM; no deberá obligar a las personas a adaptarse innecesariamente al software.
 
 Antes de desarrollar un proceso importante, se deberá entender cómo trabaja realmente el usuario y después diseñar la solución.
 
@@ -1332,7 +1332,7 @@ Principios obligatorios:
 * No replicar una mala experiencia de SICAR únicamente porque así funciona actualmente.
 * Mantener las reglas de negocio necesarias, pero buscar la interacción más sencilla para cumplirlas.
 
-Vaquero Hub debe ser más fácil de usar que SICAR para los procesos cotidianos.
+Mi Tienda SM debe ser más fácil de usar que SICAR para los procesos cotidianos.
 
 Especial prioridad:
 
@@ -1352,7 +1352,7 @@ Si un empleado necesita aprender una forma innecesariamente complicada de trabaj
 
 Objetivo:
 
-Vaquero Hub debe sentirse construido alrededor de la operación de Vaqueros SM, no hacer que Vaqueros SM tenga que adaptar toda su operación a Vaquero Hub.
+Mi Tienda SM debe sentirse construido alrededor de la operación de Vaqueros SM, no hacer que Vaqueros SM tenga que adaptar toda su operación a Mi Tienda SM.
 
 ⸻
 
@@ -1360,26 +1360,26 @@ Vaquero Hub debe sentirse construido alrededor de la operación de Vaqueros SM, 
 
 Nombre:
 
-VAQUERO HUB
+MI TIENDA SM
 
 Sistema interno desarrollado para Vaqueros SM.
 
 Puede utilizarse visualmente:
 
-VAQUERO HUB
+MI TIENDA SM
 
 Powered by ProcesaLab
 
 Posibles módulos:
 
-Vaquero Hub POS
-Vaquero Hub Inventario
-Vaquero Hub Web
-Vaquero Hub Clientes
-Vaquero Hub Compras
-Vaquero Hub Sucursales
-Vaquero Hub Analytics
-Vaquero Hub Admin
+Mi Tienda SM POS
+Mi Tienda SM Inventario
+Mi Tienda SM Web
+Mi Tienda SM Clientes
+Mi Tienda SM Compras
+Mi Tienda SM Sucursales
+Mi Tienda SM Analytics
+Mi Tienda SM Admin
 
 ⸻
 
@@ -1457,7 +1457,7 @@ Estos precios aún pueden ajustarse comercialmente.
 
 49. Principio central del proyecto
 
-Vaquero Hub NO debe ser simplemente:
+Mi Tienda SM NO debe ser simplemente:
 
 “otro SICAR”.
 
@@ -1473,7 +1473,7 @@ procesos manuales
 
 ↓
 
-VAQUERO HUB
+MI TIENDA SM
 
 Una sola plataforma operacional para:
 
@@ -1536,7 +1536,7 @@ Estado actual antes de la entrega 0.6.0:
 * Rutas actuales: Inicio, POS, Productos, Inventario, Caja, Tickets, Etiquetas, Ajustes y Más módulos.
 * Datos todavía simulados y guardado local para algunas preferencias de diseño.
 * Sin Supabase, autenticación real, WooCommerce, procesamiento de pagos ni hardware conectado.
-* PWA con nombre Vaquero HUB, iconos ladrillo, imagen social y navegación táctil móvil.
+* PWA con nombre Mi Tienda SM, iconos ladrillo, imagen social y navegación táctil móvil.
 * Usuario visible de demostración: Salomon.
 * El avatar S abre la versión instalada y el crédito de ProcesaLab.
 * Los códigos heredados mostrados en la interfaz no se regeneran.
@@ -1614,7 +1614,7 @@ M0 → M1 → M1B → M2 → M3 → M4 → M5 → M6 → M7 → M8 → M9.
 Infraestructura contratada:
 
 * Organización Supabase Pro de ProcesaLab.
-* Proyecto `Vaquero HUB` en `us-east-1`.
+* Proyecto `Mi Tienda SM` en `us-east-1`.
 * PostgreSQL 17; proyecto activo y saludable al momento del alta.
 * Proyecto inicialmente vacío: sin tablas, migraciones ni ramas remotas.
 * Desarrollo mediante Supabase local y migraciones versionadas.
@@ -1721,3 +1721,10 @@ Corrección operativa 0.9.5 — Sesión persistente y acceso multidispositivo:
 * Supabase mantiene habilitadas sesiones simultáneas: `Enforce single session per user` está apagado y los límites de duración e inactividad están en `0` (`never`). Nunca deben copiarse access tokens o refresh tokens entre dispositivos.
 * Para acceder desde otro equipo, el cliente solicita un código nuevo en ese dispositivo. La plantilla de correo de Mi Vaquero incluye el OTP de seis dígitos y mantiene como alternativa el enlace de un solo uso.
 * La plantilla canónica vive en `supabase/templates/magic-link.html` y la configuración local la declara en `supabase/config.toml`; el proyecto hospedado debe mantener el mismo asunto y HTML en Auth > Email Templates.
+
+Cambio de identidad 0.9.6 — Mi Tienda SM:
+
+* El nombre público y operativo del sistema cambia de su denominación anterior a **Mi Tienda SM**.
+* El nuevo nombre debe utilizarse en interfaz, acceso de empleados, PWA, metadatos, vista previa al compartir, tickets, correos y documentación.
+* **Vaquero SM** continúa siendo la identidad del negocio; Mi Tienda SM es el nombre del sistema de operación.
+* Los identificadores técnicos ya desplegados —URL de Vercel, `project_id`, claves de almacenamiento, nombre del paquete y nombre de este archivo maestro— se conservan por compatibilidad y no deben renombrarse sin una migración específica.

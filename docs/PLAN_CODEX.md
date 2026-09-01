@@ -1,6 +1,6 @@
 # PLAN DE EJECUCIÓN — CODEX
 
-> Plan operativo para que Codex construya Vaquero Hub a partir del día en
+> Plan operativo para que Codex construya Mi Tienda SM a partir del día en
 > que exista acceso a la base de datos. Complementa a
 > [`PLAN_MAESTRO_VAQUERO_HUB.md`](PLAN_MAESTRO_VAQUERO_HUB.md), no lo sustituye: el
 > contexto maestro dice **qué** se construye y por qué; este documento
@@ -319,7 +319,7 @@ las reglas del negocio.
   `woocommerce_variation_id` (nulables, únicas cuando no son nulas).
   Se crean hoy aunque se llenen dentro de meses.
 - Generador de variantes por matriz talla × color (sección 18).
-- Carga masiva propia (CSV/XLSX con plantilla de Vaquero Hub), con
+- Carga masiva propia (CSV/XLSX con plantilla de Mi Tienda SM), con
   validación previa: códigos duplicados, códigos vacíos, ceros iniciales,
   espacios accidentales (sección 51.18).
 - Selección múltiple en el listado para acciones en lote.
@@ -451,7 +451,7 @@ que exista una noche de corte.
   - *Modo catálogo:* agrega lo nuevo, actualiza lo que cambió, no duplica
     y **no toca existencias**. Se corre cada semana o quincena durante
     meses. Respeta y nunca borra los productos creados directamente en
-    Vaquero Hub.
+    Mi Tienda SM.
   - *Modo existencias y compromisos:* ajusta existencias al valor real de
     SICAR y carga apartados, créditos y compras pendientes. Se corre una
     sola vez, la noche del cambio, y después se apaga para siempre.
@@ -469,7 +469,7 @@ que exista una noche de corte.
 **Aceptación:** correr el sincronizador dos veces seguidas sobre la misma
 exportación deja exactamente el mismo resultado, sin productos duplicados
 ni movimientos de inventario inventados; una corrida en modo catálogo no
-altera ni una existencia; un producto creado directamente en Vaquero Hub
+altera ni una existencia; un producto creado directamente en Mi Tienda SM
 sobrevive intacto a la sincronización; el reporte sale con cero rechazos y
 cero excepciones sin explicar; la suma de existencias cuadra al 100 %
 contra el archivo de origen.
@@ -483,7 +483,7 @@ datos reales, más tiempo tiene el cliente para limpiar SICAR.
 | Bloqueado | Por qué | Cuándo |
 |---|---|---|
 | Importar el Excel real de SICAR | El corte requiere tienda cerrada y datos finales | Fase 7, al final |
-| Escribir en WooCommerce (stock, productos) | Vaquero Hub no puede ser fuente de verdad sin catálogo real | Después del corte SICAR |
+| Escribir en WooCommerce (stock, productos) | Mi Tienda SM no puede ser fuente de verdad sin catálogo real | Después del corte SICAR |
 | Webhooks de WooCommerce en producción | Mismo motivo | Después del corte SICAR |
 | Cola offline / PWA offline completa | Se diseña antes de implementarse (sección 31) | Post-piloto |
 | CFDI / facturación | Se integra un PAC, no se construye | Cuando el cliente lo pida |
@@ -501,7 +501,7 @@ Correcto tal como está planteado. Un POS con inventario no admite un corte
 "en caliente": cualquier exportación tomada con la tienda abierta queda
 obsoleta en el momento en que se vende una pieza más. El corte es:
 cerrar → exportar → importar → validar → abrir al día siguiente ya con
-Vaquero Hub.
+Mi Tienda SM.
 
 Conviene distinguir **tres contactos distintos con SICAR**, que no son la
 misma cosa:
@@ -520,7 +520,7 @@ Sólo el punto 3 es lo que se está posponiendo.
 
 Es cierto que WooCommerce no obliga a cerrar nada, porque se sincroniza en
 vivo por API. Pero **no puede activarse antes del corte de SICAR**: hasta
-que el catálogo real no esté cargado en Vaquero Hub, el sistema no tiene
+que el catálogo real no esté cargado en Mi Tienda SM, el sistema no tiene
 existencias válidas que publicar, y encendería la sincronización enviando
 stock incorrecto a la tienda en línea o recibiendo pedidos de productos
 que no existen todavía en la base.
@@ -529,7 +529,7 @@ La secuencia segura es:
 
 ```
 Construir M0–M8
-  → Corte SICAR (catálogo y existencias reales ya en Vaquero Hub)
+  → Corte SICAR (catálogo y existencias reales ya en Mi Tienda SM)
   → WooCommerce en modo lectura: emparejar por código, ensayo en seco
   → Comparar diferencias sin escribir nada
   → Encender sincronización real
@@ -553,14 +553,14 @@ prepararse antes en modo lectura, sin escribir en la tienda.
   1. Corte final en SICAR y dejarlo sin más movimientos.
   2. Exportación final: productos, existencias, apartados con saldo,
      clientes con crédito, compras pendientes.
-  3. Respaldo de la base de Vaquero Hub (punto de retorno).
+  3. Respaldo de la base de Mi Tienda SM (punto de retorno).
   4. Importación a producción.
   5. Validación automática: conteo de filas, suma de existencias por
      sucursal, cero códigos duplicados, cero códigos vacíos.
   6. Verificación manual por muestreo: 30–50 códigos contra SICAR y un
      conteo físico de una sección.
   7. Aprobación humana explícita → se habilita el POS.
-- **Día D+1:** la tienda abre operando con Vaquero Hub. SICAR queda en
+- **Día D+1:** la tienda abre operando con Mi Tienda SM. SICAR queda en
   **sólo consulta**; no se vuelve a capturar nada ahí.
 - **D+1 a D+7:** comparación diaria de cortes y monitoreo cercano.
 

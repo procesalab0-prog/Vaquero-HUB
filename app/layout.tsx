@@ -22,10 +22,10 @@ const cormorant = Cormorant_Garamond({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://vaquero-hub.vercel.app"),
-  applicationName: "Vaquero HUB",
+  applicationName: "Mi Tienda SM",
   title: {
-    default: "Vaquero HUB",
-    template: "%s · Vaquero HUB",
+    default: "Mi Tienda SM",
+    template: "%s · Mi Tienda SM",
   },
   description: "Punto de venta y operación de Vaquero SM.",
   manifest: "/manifest.webmanifest",
@@ -36,21 +36,21 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "Vaquero HUB" },
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "Mi Tienda SM" },
   formatDetection: { telephone: false },
   openGraph: {
     type: "website",
     locale: "es_MX",
-    siteName: "Vaquero HUB",
-    title: "Vaquero HUB · Vaquero SM",
+    siteName: "Mi Tienda SM",
+    title: "Mi Tienda SM · Vaquero SM",
     description: "Punto de venta, inventario y operación de Vaquero SM.",
-    images: [{ url: "/share-vaquero-hub-v2.png", width: 1200, height: 630, alt: "Vaquero HUB" }],
+    images: [{ url: "/share-mi-tienda-sm.png", width: 1200, height: 630, alt: "Mi Tienda SM" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Vaquero HUB · Vaquero SM",
+    title: "Mi Tienda SM · Vaquero SM",
     description: "Punto de venta, inventario y operación de Vaquero SM.",
-    images: ["/share-vaquero-hub-v2.png"],
+    images: ["/share-mi-tienda-sm.png"],
   },
 };
 

@@ -25,9 +25,9 @@ export default async function LoginPage({
     <main className="login-screen">
       <section className="login-card">
         <div className="login-brand">
-          <Image src="/icons/icon-192.png" alt="Vaquero HUB" width={104} height={104} priority />
+          <Image src="/icons/icon-192.png" alt="Mi Tienda SM" width={104} height={104} priority />
           <p className="eyebrow">Vaquero SM</p>
-          <h1>Bienvenido a Vaquero HUB</h1>
+          <h1>Bienvenido a Mi Tienda SM</h1>
           <p>Tu punto de venta, inventario y operación en un solo lugar.</p>
         </div>
         {configured ? (

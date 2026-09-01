@@ -61,7 +61,7 @@ export function SettingsWorkspace() {
 
   return (
     <section className="module-page settings-page">
-      <div className="section-heading"><div><p className="eyebrow">Administración</p><h1>Personaliza Vaquero HUB</h1><p className="heading-copy">Configura cómo se ve y opera el sistema para cada sucursal.</p></div><button className="primary-button" type="button" onClick={saveSettings}><Save aria-hidden="true" />Guardar cambios</button></div>
+      <div className="section-heading"><div><p className="eyebrow">Administración</p><h1>Personaliza Mi Tienda SM</h1><p className="heading-copy">Configura cómo se ve y opera el sistema para cada sucursal.</p></div><button className="primary-button" type="button" onClick={saveSettings}><Save aria-hidden="true" />Guardar cambios</button></div>
       <div className="design-mode-notice"><strong>Vista de configuración</strong><span>Los cambios se guardan sólo en este navegador. Cuando conectemos Supabase se aplicarán por negocio, sucursal y permisos del dueño.</span></div>
       <div className="settings-layout">
         <nav className="settings-nav" aria-label="Secciones de ajustes">

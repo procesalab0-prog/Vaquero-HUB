@@ -40,7 +40,7 @@ export function LabelsWorkspace({ variants }: { variants: ProductVariant[] }) {
   return (
     <section className="module-page labels-page">
       <div className="section-heading"><div><p className="eyebrow">Productos y variantes</p><h1>Etiquetas y códigos de barras</h1><p className="heading-copy">Usa los códigos existentes de SICAR o prepara etiquetas para productos nuevos.</p></div><button className="primary-button" type="button" disabled={!totalLabels} onClick={printLabels}><Printer aria-hidden="true" />Imprimir {totalLabels || ""} etiquetas</button></div>
-      <div className="rule-notice"><Info aria-hidden="true" /><div><strong>Los códigos heredados nunca se regeneran</strong><span>El mismo código físico seguirá identificando la misma variante en SICAR, Vaquero HUB y WooCommerce.</span></div></div>
+      <div className="rule-notice"><Info aria-hidden="true" /><div><strong>Los códigos heredados nunca se regeneran</strong><span>El mismo código físico seguirá identificando la misma variante en SICAR, Mi Tienda SM y WooCommerce.</span></div></div>
       <div className="labels-layout">
         <section className="content-card labels-selector">
           <label className="module-search"><Search aria-hidden="true" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar producto, talla o código" aria-label="Buscar productos para etiquetar" /></label>

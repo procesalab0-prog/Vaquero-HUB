@@ -14,7 +14,7 @@
 - Si seguridad y comodidad entran en tensión, conserva las reglas de negocio y seguridad, pero busca la interacción más sencilla que las cumpla.
 - Estos principios aplican a Claude Code, Codex y cualquier agente que trabaje en el repositorio; la explicación completa vive en las secciones 28 y 44 del Plan Maestro.
 
-## Versión visible de Vaquero HUB
+## Versión visible de Mi Tienda SM
 
 - La versión canónica que ve el usuario está en `lib/release.ts`.
 - En **cada entrega con cambios visibles o funcionales**, incrementa `APP_VERSION` y actualiza `APP_RELEASE`.

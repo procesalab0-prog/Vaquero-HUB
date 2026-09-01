@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Vaquero HUB",
-    short_name: "Vaquero HUB",
+    name: "Mi Tienda SM",
+    short_name: "Mi Tienda SM",
     description: "Sistema operativo de punto de venta e inventario para Vaquero SM.",
     start_url: "/inicio",
     scope: "/",

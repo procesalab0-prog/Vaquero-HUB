@@ -182,16 +182,16 @@ Se usa **código por SMS o enlace mágico por correo**, nunca contraseña.
 
 ## 6. Cómo se conecta con WooCommerce
 
-La regla del contexto maestro (sección 32) se sostiene: **Vaquero Hub es
+La regla del contexto maestro (sección 32) se sostiene: **Mi Tienda SM es
 dueño del cliente y del saldo de puntos; WooCommerce es un canal.**
 
 - El cliente sigue entrando a la tienda en línea con su cuenta de
-  WooCommerce. Vaquero Hub no necesita ser el login de la web.
+  WooCommerce. Mi Tienda SM no necesita ser el login de la web.
 - Al llegar un pedido en línea, se empareja al cliente por teléfono o
   correo normalizado. Si no existe, se crea el registro desde los datos
   del pedido.
 - Los puntos ganados en línea caen en el **mismo saldo** que los de la
-  tienda física, porque el saldo vive en Vaquero Hub.
+  tienda física, porque el saldo vive en Mi Tienda SM.
 - Se guarda `woocommerce_customer_id` para no volver a emparejar por texto
   después.
 

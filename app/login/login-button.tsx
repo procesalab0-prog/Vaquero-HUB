@@ -6,7 +6,7 @@ export function LoginButton() {
   const { pending } = useFormStatus();
   return (
     <button className="primary-button login-submit" type="submit" disabled={pending}>
-      {pending ? "Verificando…" : "Entrar a Vaquero HUB"}
+      {pending ? "Verificando…" : "Entrar a Mi Tienda SM"}
     </button>
   );
 }

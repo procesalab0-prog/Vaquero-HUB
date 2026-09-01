@@ -69,7 +69,7 @@ for each row execute function app.fn_protect_legacy_codes();
 
 Una vez que un código de SICAR aterriza en una variante, **nadie lo
 cambia**: ni un administrador, ni la interfaz, ni un script. Es el puente
-entre la tienda física, Vaquero Hub y WooCommerce.
+entre la tienda física, Mi Tienda SM y WooCommerce.
 
 ### 1.3 Atributos: talla, color y lo que venga
 
@@ -206,7 +206,7 @@ Dos requisitos que se olvidan y luego duelen:
 
 ## 4. Carga masiva
 
-Plantilla propia de Vaquero Hub en CSV o XLSX. El requisito duro:
+Plantilla propia de Mi Tienda SM en CSV o XLSX. El requisito duro:
 
 **Valida todo antes de escribir nada.** Primero corre en seco y devuelve
 un reporte; sólo si el usuario lo acepta, escribe — y escribe dentro de

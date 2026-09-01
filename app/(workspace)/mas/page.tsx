@@ -30,7 +30,7 @@ const modules = [
 export default function MorePage() {
   return (
     <section className="module-page">
-      <div className="section-heading"><div><p className="eyebrow">Vaquero HUB</p><h1>Todos los módulos</h1><p className="heading-copy">Herramientas actuales y módulos contemplados para el crecimiento.</p></div></div>
+      <div className="section-heading"><div><p className="eyebrow">Mi Tienda SM</p><h1>Todos los módulos</h1><p className="heading-copy">Herramientas actuales y módulos contemplados para el crecimiento.</p></div></div>
       <div className="module-grid">
         {modules.map(({ href, title, description, icon: Icon, ready }) => ready ? (
           <Link className="module-card" href={href} key={title}><span className="module-icon"><Icon aria-hidden="true" /></span><span><strong>{title}</strong><small>{description}</small></span><ArrowRight aria-hidden="true" /></Link>

@@ -70,8 +70,8 @@ export function WorkspaceShell({ children, identity }: { children: React.ReactNo
   if (!identity && !loggedIn) {
     return (
       <main className="mock-login">
-        <Image className="login-app-icon" src="/icons/icon-192.png" alt="Vaquero HUB" width={120} height={120} priority />
-        <p className="eyebrow">Vaquero HUB</p><h1>Sesión cerrada</h1><p>La sesión local de {activeIdentity.name} terminó correctamente.</p>
+        <Image className="login-app-icon" src="/icons/icon-192.png" alt="Mi Tienda SM" width={120} height={120} priority />
+        <p className="eyebrow">Mi Tienda SM</p><h1>Sesión cerrada</h1><p>La sesión local de {activeIdentity.name} terminó correctamente.</p>
         <button className="primary-button" type="button" onClick={() => setLoggedIn(true)}>Entrar como Salomon</button>
         <small>La autenticación segura se conectará con usuarios y permisos.</small>
       </main>
@@ -81,7 +81,7 @@ export function WorkspaceShell({ children, identity }: { children: React.ReactNo
   return (
     <div className="workspace-shell">
       <aside className="nav-rail" aria-label="Navegación principal">
-        <Link className="rail-brand" href="/pos" aria-label="Vaquero HUB">
+        <Link className="rail-brand" href="/pos" aria-label="Mi Tienda SM">
           <Image src="/brand/emblema-blanco.png" alt="" width={64} height={42} priority />
         </Link>
         <nav className="rail-links">
@@ -143,7 +143,7 @@ export function WorkspaceShell({ children, identity }: { children: React.ReactNo
       {profileOpen ? (
         <aside className="profile-popover" aria-label="Información de usuario y versión">
           <header><span>{initial}</span><div><strong>{activeIdentity.name}</strong><small>{activeIdentity.role} · {activeLocation?.name ?? "Sin sucursal"}</small></div><button type="button" aria-label="Cerrar información" onClick={() => setProfileOpen(false)}><X aria-hidden="true" /></button></header>
-          <div className="version-easter-egg"><span>VAQUERO HUB</span><strong>Versión {APP_VERSION}</strong><small>{APP_RELEASE}</small><code>Siempre al día 🤠</code><div className="version-credit">Creado por <strong>ProcesaLab</strong></div></div>
+          <div className="version-easter-egg"><span>MI TIENDA SM</span><strong>Versión {APP_VERSION}</strong><small>{APP_RELEASE}</small><code>Siempre al día 🤠</code><div className="version-credit">Creado por <strong>ProcesaLab</strong></div></div>
           <p>Este número cambia con cada entrega visible para identificar exactamente qué versión está instalada.</p>
         </aside>
       ) : null}

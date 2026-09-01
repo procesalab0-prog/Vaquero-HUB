@@ -1,6 +1,6 @@
 export const BUSINESS_PROFILE = {
   name: "Vaquero SM",
-  systemName: "Vaquero HUB",
+  systemName: "Mi Tienda SM",
   website: "vaquerosm.com",
   instagram: "@vaquerosm",
 } as const;

@@ -1,4 +1,4 @@
-# Vaquero HUB
+# Mi Tienda SM
 
 Punto de venta y plataforma de operación para Vaquero SM.
 

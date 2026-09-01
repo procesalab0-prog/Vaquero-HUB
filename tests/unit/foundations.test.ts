@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-describe("fundaciones de Vaquero HUB", () => {
+describe("fundaciones de Mi Tienda SM", () => {
   it("mantiene los importes monetarios como enteros", () => {
     const totalCents = 1_299 + 2_501;
 

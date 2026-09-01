@@ -54,10 +54,10 @@ Hay dos filosofías y **no deben mezclarse**:
 **Decisión recomendada: migrar fiel.** Un conteo físico de ~15,000 filas
 toma días con la tienda cerrada y no es realista. Además, migrar fiel hace
 que la validación de esa noche sea una pregunta binaria y sin ambigüedad:
-*¿Vaquero Hub dice exactamente lo mismo que SICAR? Sí o no.*
+*¿Mi Tienda SM dice exactamente lo mismo que SICAR? Sí o no.*
 
 La corrección del inventario físico se hace **después**, con conteos
-cíclicos por categoría usando el módulo de conteos de Vaquero Hub, ya con
+cíclicos por categoría usando el módulo de conteos de Mi Tienda SM, ya con
 la tienda operando normal.
 
 Mezclar los dos problemas es lo que lleva a estar a las 2 de la mañana sin
@@ -104,9 +104,9 @@ mal hecho.
 
 ### 2.5.2 El límite que no se debe cruzar
 
-**El refresco de existencias sólo es seguro mientras Vaquero Hub no sea
+**El refresco de existencias sólo es seguro mientras Mi Tienda SM no sea
 todavía el sistema de registro.** Una vez que la tienda opera de verdad
-con Vaquero Hub, sobrescribir existencias desde SICAR destruiría el
+con Mi Tienda SM, sobrescribir existencias desde SICAR destruiría el
 historial real de movimientos.
 
 Esto tiene una implicación en la prueba paralela: el inventario que se
@@ -115,7 +115,7 @@ El piloto sirve para validar el proceso y comparar números, no para
 construir historial permanente. Conviene decírselo al personal para que
 nadie se frustre viendo que "se borró" su trabajo.
 
-Mientras Vaquero Hub no sea el sistema de registro, conviene aprovechar
+Mientras Mi Tienda SM no sea el sistema de registro, conviene aprovechar
 esa libertad: **correr el refresco de existencias al inicio de cada día de
 prueba paralela.** Si la jornada empieza con ambos sistemas cuadrados
 exactamente, cualquier diferencia al cierre del turno es una diferencia
@@ -136,7 +136,7 @@ decidir, y no dejarlo al criterio del momento:
 - **Opción A:** se sigue capturando en SICAR hasta el cambio, y el
   sincronizador la trae. Más lento para el personal, pero sin
   divergencia.
-- **Opción B:** se captura en Vaquero Hub aprovechando que el alta es más
+- **Opción B:** se captura en Mi Tienda SM aprovechando que el alta es más
   rápida, y esos productos no existen en SICAR. Entonces el sincronizador
   debe **respetarlos y nunca borrarlos**, y esa mercancía no se puede
   vender en SICAR.
@@ -166,8 +166,8 @@ informe:
 - Categorías, marcas y proveedores existentes.
 - Cuántos productos tienen precio o costo en cero.
 
-**Entregable:** un documento de mapeo columna de SICAR → campo de Vaquero
-Hub, y la lista de limpieza que el cliente trabaja en SICAR durante las
+**Entregable:** un documento de mapeo columna de SICAR → campo de Mi Tienda
+SM, y la lista de limpieza que el cliente trabaja en SICAR durante las
 semanas siguientes. De este ensayo depende el diseño del catálogo
 (milestone M2), por eso conviene correrlo desde la semana 2.
 
@@ -179,9 +179,9 @@ generarse automáticamente en cada corrida:
 
 - Filas leídas / importadas / rechazadas, con el motivo de cada rechazo.
 - Productos padre creados y variantes creadas.
-- **Suma total de existencias en SICAR vs. en Vaquero Hub** — tiene que
+- **Suma total de existencias en SICAR vs. en Mi Tienda SM** — tiene que
   cuadrar exacto.
-- Valor del inventario a costo: SICAR vs. Vaquero Hub.
+- Valor del inventario a costo: SICAR vs. Mi Tienda SM.
 - Códigos duplicados y vacíos, y qué se hizo con cada uno.
 - Lista de excepciones que requieren decisión humana.
 
@@ -231,7 +231,7 @@ medianoche:
 - [ ] Apartados abiertos: cantidad y saldo total **cuadran exacto**.
 - [ ] Saldos de crédito: total **cuadra exacto**.
 - [ ] Conteo físico de una sección completa (ej. una pared de botas):
-      cuadra contra Vaquero Hub.
+      cuadra contra Mi Tienda SM.
 
 **Si cualquiera falla: se hace rollback y se reprograma. Sin heroísmos.**
 La tentación de "ya casi, lo parcho y seguimos" a las 2 de la mañana es
@@ -254,7 +254,7 @@ exactamente lo que convierte un corte en un desastre de dos semanas.
 6. Corte final de caja en SICAR. **A partir de aquí SICAR no recibe ni un
    movimiento más.**
 7. Exportación final de existencias y compromisos abiertos.
-8. Respaldo de la base de Vaquero Hub → **punto de retorno**.
+8. Respaldo de la base de Mi Tienda SM → **punto de retorno**.
 9. Sincronizador en **modo existencias y compromisos** contra producción.
    El catálogo ya está cargado desde hace semanas: aquí sólo se ajustan
    existencias, apartados, créditos y compras pendientes.
@@ -268,10 +268,10 @@ exactamente lo que convierte un corte en un desastre de dos semanas.
     cancelación.
 
 **Día D+1 — apertura**
-14. La tienda abre operando con Vaquero Hub.
+14. La tienda abre operando con Mi Tienda SM.
 15. **SICAR queda en sólo consulta.** No se vuelve a capturar nada ahí.
 16. **Se apaga el modo existencias del sincronizador.** A partir de aquí
-    Vaquero Hub es el sistema de registro y nada vuelve a sobrescribir su
+    Mi Tienda SM es el sistema de registro y nada vuelve a sobrescribir su
     inventario (sección 2.5.2).
 17. Presencia técnica en piso todo el día. No remota.
 
@@ -294,7 +294,7 @@ un mes en modo consulta.
 
 ### 7.1 Prueba de operación — semanas antes del corte
 
-Con la foto de datos en staging, el personal usa Vaquero Hub en paralelo
+Con la foto de datos en staging, el personal usa Mi Tienda SM en paralelo
 con SICAR durante varios turnos (la prueba paralela de la sección 7 del
 contexto maestro). Al cierre de cada turno se comparan ventas, productos,
 cantidades, efectivo, tarjetas, devoluciones y cortes.
@@ -320,7 +320,7 @@ distinto y conviene decírselos así.
 ## 8. WooCommerce, después del corte
 
 WooCommerce no requiere cerrar la tienda, pero sí requiere que el catálogo
-real ya esté en Vaquero Hub. Se hace en el mismo fin de semana del corte o
+real ya esté en Mi Tienda SM. Se hace en el mismo fin de semana del corte o
 en los días inmediatos: **mientras más se tarde, más se desactualiza el
 stock publicado en línea.**
 
@@ -339,8 +339,8 @@ Se leen todos los productos y variaciones de WooCommerce y se emparejan
 grupos:
 
 1. **Existe en ambos y el código coincide** → listo para vincular.
-2. **Sólo en WooCommerce** → ¿se da de alta en Vaquero Hub o se despublica?
-3. **Sólo en Vaquero Hub** → ¿se publica o se queda sólo en tienda física?
+2. **Sólo en WooCommerce** → ¿se da de alta en Mi Tienda SM o se despublica?
+3. **Sólo en Mi Tienda SM** → ¿se publica o se queda sólo en tienda física?
 4. **Mismo código pero difiere precio, nombre o existencia** → lista de
    conflictos a resolver uno por uno.
 
@@ -362,6 +362,6 @@ reporte.** El grupo 4 es el que trae las sorpresas.
 
 ### 8.4 Primera semana
 
-Comparación diaria entre existencias de Vaquero Hub y de WooCommerce, con
+Comparación diaria entre existencias de Mi Tienda SM y de WooCommerce, con
 alerta ante cualquier divergencia. Es la ventana donde aparecen los
 problemas de idempotencia y de pedidos concurrentes entre el POS y la web.

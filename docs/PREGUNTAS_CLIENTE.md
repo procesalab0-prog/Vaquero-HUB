@@ -34,7 +34,7 @@ usa**. Esta lista es el índice, no la fuente de verdad.
 | 1.4 | ¿Y para cinturones — centímetros, pulgadas o letra? | M2 | 🔴 |
 | 1.5 | ¿Manejan el mismo modelo en varios anchos, o el ancho no aplica? | M2 | 🔴 |
 | 1.6 | ¿Quieren ver el margen en la pantalla de producto, o sólo el precio? | M2 | 🟡 |
-| 1.7 | La carga masiva, ¿parte del Excel exportado de SICAR o de una plantilla propia de Vaquero Hub? | M2 | 🟡 |
+| 1.7 | La carga masiva, ¿parte del Excel exportado de SICAR o de una plantilla propia de Mi Tienda SM? | M2 | 🟡 |
 | 1.8 | ¿Qué impresora de etiquetas usan hoy (marca y modelo)? | M2 | 🟡 |
 
 ## 2. Inventario y traspasos
@@ -103,7 +103,7 @@ queda detenido hasta tenerlas.
 | 8.1 | **Una exportación de muestra de SICAR, cuanto antes.** No es la migración: es leer un archivo para diseñar bien el catálogo. De ella depende M2 | M2, M9 | 🔴 |
 | 8.2 | **¿SICAR permite acceso directo a su base de datos o exportaciones programadas?** Si sí, la sincronización semanal se automatiza en lugar de depender de que alguien exporte a mano durante meses | M9 | 🔴 |
 | 8.3 | **De todo lo migrable, ¿qué usan realmente?** Apartados con saldo, crédito de clientes, compras pedidas y no recibidas, notas de crédito pendientes. Lo que no se use, no se migra | M9 | 🟡 |
-| 8.4 | Durante la transición, **¿dónde se capturan los productos nuevos?** En SICAR hasta el cambio, o en Vaquero Hub aprovechando que el alta es más rápida. Lo peligroso es el punto medio | M2, M9 | 🔴 |
+| 8.4 | Durante la transición, **¿dónde se capturan los productos nuevos?** En SICAR hasta el cambio, o en Mi Tienda SM aprovechando que el alta es más rápida. Lo peligroso es el punto medio | M2, M9 | 🔴 |
 | 8.5 | ¿Cuál es el día más flojo de la semana, y qué temporadas hay que evitar para el cambio? | Corte | ⚪ |
 
 ## 9. Hardware
