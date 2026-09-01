@@ -22,13 +22,17 @@ export function getSupabaseLocalEnv() {
 
   const url = values.API_URL;
   const publishableKey = values.PUBLISHABLE_KEY ?? values.ANON_KEY;
+  const secretKey = values.SECRET_KEY ?? values.SERVICE_ROLE_KEY;
 
-  if (!url || !publishableKey) {
-    throw new Error("Supabase local no devolvió API_URL y una clave pública.");
+  if (!url || !publishableKey || !secretKey) {
+    throw new Error(
+      "Supabase local no devolvió API_URL y sus claves pública y secreta.",
+    );
   }
 
   return {
     NEXT_PUBLIC_SUPABASE_URL: url,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishableKey,
+    SUPABASE_SECRET_KEY: secretKey,
   };
 }
