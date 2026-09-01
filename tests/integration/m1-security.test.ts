@@ -217,6 +217,27 @@ describe.sequential("M1: matriz de identidad, permisos y RLS", () => {
     expect(deleteResult.error).not.toBeNull();
   });
 
+  it("la clave de servidor sólo puede anexar a la bitácora", async () => {
+    const server = createClient(url, secretKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { data: rows } = await server.from("audit_log").select("id").limit(1);
+    const auditId = rows?.[0]?.id;
+    expect(auditId).toBeTruthy();
+
+    const updateResult = await server
+      .from("audit_log")
+      .update({ action: "server-forged" })
+      .eq("id", auditId);
+    const deleteResult = await server
+      .from("audit_log")
+      .delete()
+      .eq("id", auditId);
+
+    expect(updateResult.error).not.toBeNull();
+    expect(deleteResult.error).not.toBeNull();
+  });
+
   it("8. anon no tiene acceso a ninguna tabla de M1", async () => {
     const anon = publicClient();
     for (const table of [
