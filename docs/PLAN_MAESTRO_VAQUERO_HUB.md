@@ -1702,3 +1702,9 @@ Corrección operativa 0.9.3 — Migración reproducible en CI:
 * La migración del índice `customers_updated_by_idx` ahora usa `if not exists`, porque el índice ya forma parte de la migración base de clientes.
 * Esto permite levantar una base local limpia en GitHub Actions sin fallar por intentar crear dos veces el mismo índice.
 * El ajuste es idempotente y no altera datos ni permisos en producción.
+
+Corrección operativa 0.9.4 — Auditoría de clientes en integración:
+
+* La prueba de privacidad valida todos los eventos de auditoría de un cliente, no sólo un supuesto registro único.
+* Se reconoce como comportamiento correcto que existan eventos separados al crear el cliente y al vincular su identidad de acceso.
+* Cada evento debe conservar `before_data` y `after_data` vacíos y no incluir el teléfono del cliente en sus metadatos.

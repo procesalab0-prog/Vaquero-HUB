@@ -211,15 +211,17 @@ describe.sequential("M1B: clientes, identidad y RLS", () => {
       .eq("id", state.customerId);
     expect(deleteAttempt.error).not.toBeNull();
 
-    const { data: audit, error } = await state
+    const { data: audits, error } = await state
       .admin!.client.from("audit_log")
       .select("before_data, after_data, metadata")
       .eq("entity_type", "customers")
-      .eq("entity_id", state.customerId)
-      .single();
+      .eq("entity_id", state.customerId);
     expect(error).toBeNull();
-    expect(audit?.before_data).toBeNull();
-    expect(audit?.after_data).toBeNull();
-    expect(JSON.stringify(audit?.metadata)).not.toContain("3531234567");
+    expect(audits?.length).toBeGreaterThan(0);
+    for (const audit of audits ?? []) {
+      expect(audit.before_data).toBeNull();
+      expect(audit.after_data).toBeNull();
+      expect(JSON.stringify(audit.metadata)).not.toContain("3531234567");
+    }
   });
 });
