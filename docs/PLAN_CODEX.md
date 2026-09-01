@@ -10,7 +10,12 @@
 
 ## 0. Cómo usar este documento
 
-- Codex trabaja **un milestone a la vez**, en el orden M0 → M8.
+- Codex trabaja **un milestone a la vez**, en el orden M0 → M9.
+- Los milestones con especificación detallada la tienen en
+  [`specs/`](specs/). Esa especificación manda sobre el resumen del
+  milestone en la sección 5 de este documento:
+  - [`specs/M0_FUNDACIONES.md`](specs/M0_FUNDACIONES.md)
+  - [`specs/M1_IDENTIDAD.md`](specs/M1_IDENTIDAD.md)
 - Cada milestone se entrega en uno o más PRs pequeños y revisables.
 - Un milestone no se considera terminado hasta que cumple sus **criterios
   de aceptación** y su **Definition of Done** (sección 3.3).
