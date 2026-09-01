@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import type { CartLine, PaymentMethod, ProductVariant } from "@/lib/domain";
 import { formatReceiptDate, ThermalReceipt, type ReceiptLine } from "@/components/thermal-receipt";
+import { useWorkspace } from "@/components/workspace-context";
 
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 const frequentCategories = [
@@ -60,6 +61,7 @@ function ProductCard({ variant, onAdd }: { variant: ProductVariant; onAdd: () =>
 }
 
 export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
+  const { identity, activeLocation } = useWorkspace();
   const [query, setQuery] = useState("");
   const [showCatalog, setShowCatalog] = useState(false);
   const [activeCategory, setActiveCategory] = useState("");
@@ -216,7 +218,7 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
             <button className="primary-button" type="button" onClick={newSale}>Nueva venta</button>
           </div>
         </section>
-        {receiptMode ? <div className="modal-backdrop receipt-modal-backdrop"><section className="receipt-modal" role="dialog" aria-modal="true" aria-labelledby="receipt-preview-title"><header><div><p className="eyebrow">Vista previa · 80 mm</p><h2 id="receipt-preview-title">{receiptMode === "sale" ? "Ticket de venta" : "Ticket de regalo"}</h2><p>Así saldrá de la impresora térmica.</p></div><button type="button" aria-label="Cerrar ticket" onClick={() => setReceiptMode(null)}><X aria-hidden="true" /></button></header><div className="receipt-paper-stage"><ThermalReceipt mode={receiptMode} folio="V-000842" date={receiptDate} items={receiptMode === "gift" ? giftLines : receiptLines} subtotal={subtotal} discount={discountAmount} total={total} method={paymentLabels[paymentUsed]} tendered={paymentUsed === "cash" ? cashTendered : total} change={paymentUsed === "cash" ? change : 0} /></div><div className="receipt-modal-actions"><button className="secondary-button" type="button" onClick={() => setReceiptMode(null)}>Volver</button><button className="primary-button" type="button" onClick={() => window.print()}><Printer aria-hidden="true" />Imprimir ahora</button></div></section></div> : null}
+        {receiptMode ? <div className="modal-backdrop receipt-modal-backdrop"><section className="receipt-modal" role="dialog" aria-modal="true" aria-labelledby="receipt-preview-title"><header><div><p className="eyebrow">Vista previa · 80 mm</p><h2 id="receipt-preview-title">{receiptMode === "sale" ? "Ticket de venta" : "Ticket de regalo"}</h2><p>Así saldrá de la impresora térmica.</p></div><button type="button" aria-label="Cerrar ticket" onClick={() => setReceiptMode(null)}><X aria-hidden="true" /></button></header><div className="receipt-paper-stage"><ThermalReceipt mode={receiptMode} folio="V-000842" date={receiptDate} items={receiptMode === "gift" ? giftLines : receiptLines} subtotal={subtotal} discount={discountAmount} total={total} method={paymentLabels[paymentUsed]} tendered={paymentUsed === "cash" ? cashTendered : total} change={paymentUsed === "cash" ? change : 0} cashierName={identity.name} location={activeLocation} /></div><div className="receipt-modal-actions"><button className="secondary-button" type="button" onClick={() => setReceiptMode(null)}>Volver</button><button className="primary-button" type="button" onClick={() => window.print()}><Printer aria-hidden="true" />Imprimir ahora</button></div></section></div> : null}
       </>
     );
   }

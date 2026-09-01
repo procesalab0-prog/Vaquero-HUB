@@ -26,6 +26,13 @@ const statusMessages: Record<string, string> = {
   "empleado-creado": "Empleado creado y listo para iniciar sesión.",
   "empleado-actualizado": "Empleado actualizado correctamente.",
   "empleado-error": "No fue posible guardar el empleado. Revisa datos, permisos y configuración.",
+  "empleado-configuracion-error": "La creación de accesos no está configurada en este ambiente.",
+  "empleado-datos-invalidos": "Revisa los datos: todos son obligatorios y la contraseña debe tener al menos 12 caracteres.",
+  "empleado-relacion-invalida": "El rol o la sucursal seleccionados ya no están disponibles.",
+  "empleado-correo-existe": "Ese correo ya tiene un acceso registrado. Busca al empleado o solicita recuperar su cuenta.",
+  "empleado-acceso-error": "Supabase no pudo crear el acceso del empleado. Inténtalo nuevamente.",
+  "empleado-perfil-error": "El acceso no se completó porque el código o correo del empleado ya están en uso.",
+  "empleado-sucursal-error": "El acceso se creó, pero falta asignar una sucursal. El empleado quedó inactivo para proteger la operación.",
   "sucursal-creada": "Sucursal creada correctamente.",
   "sucursal-actualizada": "Sucursal actualizada correctamente.",
   "sucursal-error": "No fue posible guardar la sucursal.",
@@ -34,6 +41,7 @@ const statusMessages: Record<string, string> = {
 export default async function AdministrationPage({ searchParams }: { searchParams: Promise<{ tab?: string; status?: string }> }) {
   const params = await searchParams;
   const tab: Tab = tabs.some((item) => item.id === params.tab) ? params.tab as Tab : "empleados";
+  const statusIsError = Boolean(params.status && (params.status.includes("error") || params.status === "empleado-correo-existe"));
   if (!isSupabaseConfigured()) return <AdministrationPreview tab={tab} />;
   await requirePermission(tab === "bitacora" ? "audit.read" : tab === "sucursales" ? "locations.manage" : tab === "roles" ? "roles.manage" : "users.manage");
   const supabase = await createClient();
@@ -54,7 +62,7 @@ export default async function AdministrationPage({ searchParams }: { searchParam
   return (
     <section className="module-page admin-page">
       <div className="section-heading"><div><p className="eyebrow">Control seguro</p><h1>Personas, tiendas y permisos</h1><p className="heading-copy">Administra quién puede hacer qué y conserva evidencia de los cambios.</p></div><span className="security-badge"><ShieldCheck aria-hidden="true" />Protegido por RLS</span></div>
-      {params.status ? <div className={params.status.endsWith("error") ? "admin-status error" : "admin-status"} role="status">{statusMessages[params.status] ?? "Operación terminada."}</div> : null}
+      {params.status ? <div className={statusIsError ? "admin-status error" : "admin-status"} role="status">{statusMessages[params.status] ?? "Operación terminada."}</div> : null}
       <nav className="admin-tabs" aria-label="Administración">
         {tabs.map(({ id, label, icon: Icon }) => <Link className={tab === id ? "active" : ""} href={`/administracion?tab=${id}`} key={id}><Icon aria-hidden="true" />{label}</Link>)}
       </nav>

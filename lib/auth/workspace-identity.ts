@@ -13,7 +13,7 @@ type ProfileRow = {
   is_active: boolean;
   roles: { code: string; name: string } | Array<{ code: string; name: string }> | null;
   user_locations: Array<{
-    locations: { id: string; name: string; code: string } | Array<{ id: string; name: string; code: string }> | null;
+    locations: { id: string; name: string; code: string; address: string | null; phone: string | null } | Array<{ id: string; name: string; code: string; address: string | null; phone: string | null }> | null;
   }> | null;
 };
 
@@ -31,7 +31,7 @@ export async function getWorkspaceIdentity(): Promise<WorkspaceIdentity | null> 
 
   const { data, error } = await supabase
     .from("app_users")
-    .select("id, full_name, employee_code, is_active, roles(code, name), user_locations(locations(id, name, code))")
+    .select("id, full_name, employee_code, is_active, roles(code, name), user_locations(locations(id, name, code, address, phone))")
     .eq("id", userId)
     .single();
 
@@ -44,7 +44,7 @@ export async function getWorkspaceIdentity(): Promise<WorkspaceIdentity | null> 
   const role = first(profile.roles);
   const locations = (profile.user_locations ?? [])
     .map((entry) => first(entry.locations))
-    .filter((location): location is { id: string; name: string; code: string } => Boolean(location));
+    .filter((location): location is { id: string; name: string; code: string; address: string | null; phone: string | null } => Boolean(location));
 
   return {
     id: profile.id,

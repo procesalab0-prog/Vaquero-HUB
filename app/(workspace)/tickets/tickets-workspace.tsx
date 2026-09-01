@@ -3,6 +3,7 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { FileText, Gift, Printer, Search, X } from "lucide-react";
 import { formatReceiptDate, ThermalReceipt, type ReceiptLine } from "@/components/thermal-receipt";
+import { useWorkspace } from "@/components/workspace-context";
 
 type Ticket = {
   id: string;
@@ -24,6 +25,7 @@ const tickets: Ticket[] = [
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 
 export function TicketsWorkspace() {
+  const { identity, activeLocation } = useWorkspace();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Ticket | null>(null);
   const [receiptMode, setReceiptMode] = useState<"sale" | "gift">("sale");
@@ -67,7 +69,7 @@ export function TicketsWorkspace() {
             <>
               <header><div><p className="eyebrow">Detalle de venta</p><h2>{selected.id}</h2></div><button type="button" aria-label="Cerrar detalle" onClick={() => setSelected(null)}><X aria-hidden="true" /></button></header>
               <div className="receipt-type-switch" aria-label="Tipo de ticket"><button className={receiptMode === "sale" ? "selected" : ""} type="button" onClick={() => setReceiptMode("sale")}>Venta</button><button className={receiptMode === "gift" ? "selected gift" : "gift"} type="button" onClick={() => setReceiptMode("gift")}><Gift aria-hidden="true" />Regalo</button></div>
-              <div className="receipt-paper-stage compact-stage"><ThermalReceipt mode={receiptMode} folio={selected.id} date={`27/08/2026 ${selected.time}`} items={receiptLines} subtotal={receiptSubtotal} discount={Math.max(0, receiptSubtotal - selected.total)} total={selected.total} method={selected.method} tendered={selected.total} change={0} reprintLabel={reprintDate} /></div>
+              <div className="receipt-paper-stage compact-stage"><ThermalReceipt mode={receiptMode} folio={selected.id} date={`27/08/2026 ${selected.time}`} items={receiptLines} subtotal={receiptSubtotal} discount={Math.max(0, receiptSubtotal - selected.total)} total={selected.total} method={selected.method} tendered={selected.total} change={0} reprintLabel={reprintDate} cashierName={identity.name} location={activeLocation} /></div>
               <div className="detail-actions"><button className="primary-button" type="button" onClick={() => window.print()}><Printer aria-hidden="true" />Imprimir esta vista</button></div>
               <p className="demo-caption">Revisa la vista de 80 mm antes de imprimir. El ticket de regalo oculta precios y forma de pago.</p>
             </>

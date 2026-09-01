@@ -9,6 +9,12 @@ import { isSupabaseAdminConfigured } from "@/lib/supabase/config";
 
 const adminPath = "/administracion";
 
+class EmployeeCreationError extends Error {
+  constructor(readonly status: string, cause?: unknown) {
+    super(status, { cause });
+  }
+}
+
 function textField(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
 }
@@ -17,7 +23,7 @@ export async function createEmployee(formData: FormData) {
   let status = "empleado-error";
   try {
     const { supabase } = await requirePermission("users.manage");
-    if (!isSupabaseAdminConfigured()) throw new Error("ADMIN_NOT_CONFIGURED");
+    if (!isSupabaseAdminConfigured()) throw new EmployeeCreationError("empleado-configuracion-error");
 
     const fullName = textField(formData, "full_name");
     const employeeCode = textField(formData, "employee_code").toUpperCase();
@@ -26,14 +32,14 @@ export async function createEmployee(formData: FormData) {
     const roleId = textField(formData, "role_id");
     const locationId = textField(formData, "location_id");
     if (!fullName || !employeeCode || !email || password.length < 12 || !roleId || !locationId) {
-      throw new Error("INVALID_INPUT");
+      throw new EmployeeCreationError("empleado-datos-invalidos");
     }
 
     const [{ data: role }, { data: location }] = await Promise.all([
       supabase.from("roles").select("id").eq("id", roleId).single(),
       supabase.from("locations").select("id").eq("id", locationId).eq("is_active", true).single(),
     ]);
-    if (!role || !location) throw new Error("INVALID_RELATION");
+    if (!role || !location) throw new EmployeeCreationError("empleado-relacion-invalida");
 
     const admin = createAdminClient();
     const { data: authData, error: authError } = await admin.auth.admin.createUser({
@@ -42,7 +48,10 @@ export async function createEmployee(formData: FormData) {
       email_confirm: true,
       app_metadata: { account_type: "employee" },
     });
-    if (authError || !authData.user) throw new Error("AUTH_CREATE_FAILED");
+    if (authError || !authData.user) {
+      const errorCode = authError && "code" in authError ? authError.code : null;
+      throw new EmployeeCreationError(errorCode === "email_exists" ? "empleado-correo-existe" : "empleado-acceso-error", authError);
+    }
 
     const { error: profileError } = await admin.from("app_users").insert({
       id: authData.user.id,
@@ -52,8 +61,9 @@ export async function createEmployee(formData: FormData) {
       role_id: roleId,
     });
     if (profileError) {
-      await admin.auth.admin.deleteUser(authData.user.id);
-      throw new Error("PROFILE_CREATE_FAILED");
+      const { error: cleanupError } = await admin.auth.admin.deleteUser(authData.user.id);
+      if (cleanupError) console.error("[administracion/createEmployee] auth cleanup failed", { userId: authData.user.id, code: cleanupError.code });
+      throw new EmployeeCreationError("empleado-perfil-error", profileError);
     }
 
     const { error: locationError } = await admin.from("user_locations").insert({
@@ -62,11 +72,12 @@ export async function createEmployee(formData: FormData) {
     });
     if (locationError) {
       await admin.from("app_users").update({ is_active: false }).eq("id", authData.user.id);
-      throw new Error("LOCATION_ASSIGNMENT_FAILED");
+      throw new EmployeeCreationError("empleado-sucursal-error", locationError);
     }
     status = "empleado-creado";
-  } catch {
-    status = "empleado-error";
+  } catch (error) {
+    status = error instanceof EmployeeCreationError ? error.status : "empleado-error";
+    console.error("[administracion/createEmployee] failed", { status, message: error instanceof Error ? error.message : "UNKNOWN_ERROR" });
   }
   revalidatePath(adminPath);
   redirect(`${adminPath}?tab=empleados&status=${status}`);

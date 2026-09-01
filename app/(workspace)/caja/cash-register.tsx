@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, Banknote, Check, CreditCard, Landmark, LockKeyhole, Plus } from "lucide-react";
+import { useWorkspace } from "@/components/workspace-context";
 
 type Movement = { id: number; time: string; type: "Entrada" | "Retiro"; concept: string; amount: number };
 
@@ -12,6 +13,8 @@ const initialMovements: Movement[] = [
 ];
 
 export function CashRegister() {
+  const { identity, activeLocation } = useWorkspace();
+  const employeeName = identity.name.trim().split(/\s+/)[0] || identity.name;
   const [open, setOpen] = useState(true);
   const [movements, setMovements] = useState(initialMovements);
   const [movementType, setMovementType] = useState<Movement["type"] | null>(null);
@@ -47,7 +50,7 @@ export function CashRegister() {
     return (
       <section className="module-page cash-closed-state">
         <span><LockKeyhole aria-hidden="true" /></span><p className="eyebrow">Caja 01</p><h1>Caja cerrada</h1>
-        <p>Abre una sesión para registrar ventas y movimientos en La Piedad.</p>
+        <p>Abre una sesión para registrar ventas y movimientos en {activeLocation?.name ?? "tu sucursal"}.</p>
         <button className="primary-button" type="button" onClick={() => setOpen(true)}>Abrir caja con {money.format(2500)}</button>
       </section>
     );
@@ -56,7 +59,7 @@ export function CashRegister() {
   return (
     <section className="module-page">
       <div className="section-heading">
-        <div><p className="eyebrow">Sesión abierta · Caja 01</p><h1>Control de caja</h1><p className="heading-copy">Abierta hoy a las 09:52 por Salomon.</p></div>
+        <div><p className="eyebrow">Sesión abierta · Caja 01</p><h1>Control de caja</h1><p className="heading-copy">Abierta hoy a las 09:52 por {employeeName}.</p></div>
         <button className="secondary-button danger-outline" type="button" onClick={() => { setCountedAmount(""); setCutOpen(true); }}><LockKeyhole aria-hidden="true" />Realizar corte</button>
       </div>
 
@@ -85,7 +88,7 @@ export function CashRegister() {
           <div className="card-heading"><div><p className="eyebrow">Auditoría</p><h2>Movimientos manuales</h2></div><button className="text-button" type="button" onClick={() => setMovementType("Entrada")}><Plus aria-hidden="true" />Nuevo</button></div>
           <div className="movement-list">
             {movements.map((item) => (
-              <article key={item.id}><span className={item.type === "Entrada" ? "movement-kind income" : "movement-kind outcome"}>{item.type === "Entrada" ? <ArrowDownLeft aria-hidden="true" /> : <ArrowUpRight aria-hidden="true" />}</span><div><strong>{item.concept}</strong><small>{item.time} · Salomon</small></div><b className={item.type === "Entrada" ? "positive" : "negative"}>{item.type === "Entrada" ? "+" : "−"}{money.format(item.amount)}</b></article>
+              <article key={item.id}><span className={item.type === "Entrada" ? "movement-kind income" : "movement-kind outcome"}>{item.type === "Entrada" ? <ArrowDownLeft aria-hidden="true" /> : <ArrowUpRight aria-hidden="true" />}</span><div><strong>{item.concept}</strong><small>{item.time} · {employeeName}</small></div><b className={item.type === "Entrada" ? "positive" : "negative"}>{item.type === "Entrada" ? "+" : "−"}{money.format(item.amount)}</b></article>
             ))}
           </div>
         </section>

@@ -3,9 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Barcode, Check, ChevronRight, MonitorCog, Plus, ReceiptText, Save, Store, UserCog } from "lucide-react";
+import { useWorkspace } from "@/components/workspace-context";
+import { BUSINESS_PROFILE, LA_PIEDAD_STORE } from "@/lib/business-profile";
 
 type Section = "business" | "stores" | "pos" | "tickets" | "labels" | "appearance";
-type Branch = { id: number; name: string; address: string; register: string };
+type Branch = { id: number | string; name: string; address: string; register: string };
 
 const tabs: Array<{ id: Section; label: string; description: string; icon: typeof Store }> = [
   { id: "business", label: "Negocio", description: "Nombre y datos comerciales", icon: Store },
@@ -18,10 +20,12 @@ const tabs: Array<{ id: Section; label: string; description: string; icon: typeo
 const accentColors: Record<string, string> = { vino: "#8E2A1C", cuero: "#9A5D32", noche: "#241E1B" };
 
 export function SettingsWorkspace() {
+  const { activeLocation } = useWorkspace();
+  const currentLocation = activeLocation ?? LA_PIEDAD_STORE;
   const [section, setSection] = useState<Section>("business");
-  const [branches, setBranches] = useState<Branch[]>([{ id: 1, name: "La Piedad", address: "La Piedad, Michoacán", register: "Caja 01" }]);
+  const [branches, setBranches] = useState<Branch[]>([{ id: currentLocation.id, name: currentLocation.name, address: currentLocation.address ?? "Dirección por configurar", register: "Caja 01" }]);
   const [addingBranch, setAddingBranch] = useState(false);
-  const [editingBranchId, setEditingBranchId] = useState<number | null>(null);
+  const [editingBranchId, setEditingBranchId] = useState<number | string | null>(null);
   const [branchName, setBranchName] = useState("");
   const [saved, setSaved] = useState(false);
   const [accent, setAccent] = useState("vino");
@@ -64,10 +68,10 @@ export function SettingsWorkspace() {
           {tabs.map(({ id, label, description, icon: Icon }) => <button className={section === id ? "active" : ""} type="button" key={id} onClick={() => setSection(id)}><Icon aria-hidden="true" /><span><strong>{label}</strong><small>{description}</small></span><ChevronRight aria-hidden="true" /></button>)}
         </nav>
         <div className="settings-panel" onChange={capturePreference}>
-          <div hidden={section !== "business"}><BusinessSettings /></div>
+          <div hidden={section !== "business"}><BusinessSettings phone={currentLocation.phone ?? ""} address={currentLocation.address ?? ""} /></div>
           <div hidden={section !== "stores"}>
             <SettingsSection eyebrow="Estructura" title="Sucursales y cajas" description="Cada tienda tendrá inventario, cajas, usuarios y reportes independientes.">
-              <div className="branch-list">{branches.map((branch) => <article key={branch.id}><span className="branch-mark"><Store aria-hidden="true" /></span><div><strong>{branch.name}</strong><small>{branch.address}</small></div><span><b>{branch.register}</b><small>{branch.id === 1 ? "Activa" : "Por configurar"}</small></span><button type="button" onClick={() => { setEditingBranchId(branch.id); setBranchName(branch.name); setAddingBranch(true); }}>Editar</button></article>)}</div>
+              <div className="branch-list">{branches.map((branch) => <article key={branch.id}><span className="branch-mark"><Store aria-hidden="true" /></span><div><strong>{branch.name}</strong><small>{branch.address}</small></div><span><b>{branch.register}</b><small>{branch.id === currentLocation.id ? "Activa" : "Por configurar"}</small></span><button type="button" onClick={() => { setEditingBranchId(branch.id); setBranchName(branch.name); setAddingBranch(true); }}>Editar</button></article>)}</div>
               {addingBranch ? <div className="add-branch"><label><span>Nombre de la sucursal</span><input value={branchName} onChange={(event) => setBranchName(event.target.value)} placeholder="Ej. Zamora Centro" /></label><div><button className="secondary-button" type="button" onClick={() => { setAddingBranch(false); setEditingBranchId(null); setBranchName(""); }}>Cancelar</button><button className="primary-button" type="button" onClick={saveBranch}>{editingBranchId ? "Guardar sucursal" : "Agregar sucursal"}</button></div></div> : <button className="dashed-button" type="button" onClick={() => { setEditingBranchId(null); setBranchName(""); setAddingBranch(true); }}><Plus aria-hidden="true" />Agregar otra tienda</button>}
             </SettingsSection>
           </div>
@@ -86,8 +90,8 @@ function SettingsSection({ eyebrow, title, description, children }: { eyebrow: s
   return <section><div className="settings-heading"><p className="eyebrow">{eyebrow}</p><h2>{title}</h2><p>{description}</p></div>{children}</section>;
 }
 
-function BusinessSettings() {
-  return <SettingsSection eyebrow="Datos generales" title="Información del negocio" description="Se utiliza en el sistema, tickets y documentos."><div className="settings-form"><label><span>Nombre comercial</span><input name="businessName" defaultValue="Vaquero SM" /></label><label><span>Nombre del sistema</span><input name="systemName" defaultValue="Vaquero HUB" /></label><label className="wide-field"><span>Razón social</span><input name="legalName" placeholder="Por definir" /></label><label><span>Teléfono</span><input name="phone" placeholder="352 000 0000" /></label><label><span>Moneda</span><select name="currency" defaultValue="MXN"><option value="MXN">MXN · Peso mexicano</option></select></label><label className="wide-field"><span>Correo de contacto</span><input name="email" type="email" placeholder="contacto@vaquerohub.mx" /></label></div></SettingsSection>;
+function BusinessSettings({ phone, address }: { phone: string; address: string }) {
+  return <SettingsSection eyebrow="Datos generales" title="Información del negocio" description="Se utiliza en el sistema, tickets y documentos."><div className="settings-form"><label><span>Nombre comercial</span><input name="businessName" defaultValue={BUSINESS_PROFILE.name} /></label><label><span>Nombre del sistema</span><input name="systemName" defaultValue={BUSINESS_PROFILE.systemName} /></label><label className="wide-field"><span>Razón social</span><input name="legalName" placeholder="Por definir" /></label><label><span>Teléfono</span><input name="phone" defaultValue={phone} /></label><label><span>Moneda</span><select name="currency" defaultValue="MXN"><option value="MXN">MXN · Peso mexicano</option></select></label><label className="wide-field"><span>Dirección</span><input name="address" defaultValue={address} /></label><label><span>Instagram</span><input name="instagram" defaultValue={BUSINESS_PROFILE.instagram} /></label><label><span>Sitio web</span><input name="website" defaultValue={BUSINESS_PROFILE.website} /></label><label className="wide-field"><span>Correo de contacto</span><input name="email" type="email" placeholder="Por definir" /></label></div></SettingsSection>;
 }
 
 function PosSettings() {

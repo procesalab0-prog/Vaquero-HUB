@@ -1,4 +1,6 @@
 import Image from "next/image";
+import type { WorkspaceLocation } from "@/lib/auth/types";
+import { BUSINESS_PROFILE, LA_PIEDAD_STORE } from "@/lib/business-profile";
 
 export type ReceiptLine = {
   name: string;
@@ -20,6 +22,8 @@ type ThermalReceiptProps = {
   tendered?: number;
   change?: number;
   reprintLabel?: string;
+  cashierName?: string;
+  location?: WorkspaceLocation | null;
 };
 
 const number = new Intl.NumberFormat("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -32,13 +36,16 @@ function saleFolioToGift(folio: string) {
   return `R-${folio.replace(/^V-/, "")}-1`;
 }
 
-export function ThermalReceipt({ mode, folio, date, items, subtotal = 0, discount = 0, total = 0, method = "Efectivo", tendered, change = 0, reprintLabel }: ThermalReceiptProps) {
+export function ThermalReceipt({ mode, folio, date, items, subtotal = 0, discount = 0, total = 0, method = "Efectivo", tendered, change = 0, reprintLabel, cashierName = "Salomon", location }: ThermalReceiptProps) {
   const receiptFolio = mode === "gift" ? saleFolioToGift(folio) : folio;
+  const receiptLocation = location ?? LA_PIEDAD_STORE;
+  const receiptAddress = receiptLocation.address ?? "Dirección por configurar";
+  const receiptPhone = receiptLocation.phone ?? "Teléfono por configurar";
   return (
     <article className={`thermal-receipt print-receipt ${mode === "gift" ? "gift-receipt" : "sale-receipt"}`} aria-label={mode === "gift" ? "Vista previa del ticket de regalo" : "Vista previa del ticket de venta"}>
       <header className="receipt-brand">
         <Image src="/brand/logo-vaquerosm-negro.png" alt="Vaquero SM" width={300} height={200} priority />
-        {mode === "sale" ? <p>VAQUERO SM · SUCURSAL LA PIEDAD<br />Av. Lázaro Cárdenas 480, Centro<br />La Piedad, Michoacán · Tel. 352 145 6880</p> : null}
+        {mode === "sale" ? <p>{BUSINESS_PROFILE.name.toLocaleUpperCase("es-MX")} · SUCURSAL {receiptLocation.name.toLocaleUpperCase("es-MX")}<br />{receiptAddress}<br />Tel. {receiptPhone}</p> : null}
       </header>
 
       {mode === "gift" ? <div className="gift-receipt-title">TICKET DE REGALO</div> : null}
@@ -46,7 +53,7 @@ export function ThermalReceipt({ mode, folio, date, items, subtotal = 0, discoun
       <section className="receipt-meta">
         <div><span>Folio</span><code>{receiptFolio}</code></div>
         <div><span>Fecha</span><span>{date}</span></div>
-        {mode === "sale" ? <><div><span>Cajero</span><span>Salomon</span></div><div><span>Caja</span><span>Caja 01</span></div></> : <div><span>Sucursal</span><span>La Piedad</span></div>}
+        {mode === "sale" ? <><div><span>Cajero</span><span>{cashierName}</span></div><div><span>Caja</span><span>Caja 01</span></div></> : <div><span>Sucursal</span><span>{receiptLocation.name}</span></div>}
         {reprintLabel ? <strong className="reprint-label">REIMPRESIÓN {reprintLabel}</strong> : null}
       </section>
 
@@ -72,7 +79,7 @@ export function ThermalReceipt({ mode, folio, date, items, subtotal = 0, discoun
       <footer className="thermal-footer">
         {mode === "sale" ? <div className="receipt-barcode" aria-hidden="true" /> : <div className="receipt-qr" aria-hidden="true" />}
         <code>{receiptFolio}</code>
-        {mode === "sale" ? <><p>Cambios dentro de 15 días con este ticket<br />y etiqueta original. No aplica en oferta.</p><strong>¡Gracias por su compra!</strong><span>vaquerosm.com</span></> : <><p>Presenta este ticket para cambio de talla o modelo dentro de 15 días. No incluye importes ni forma de pago. Sujeto a existencia en la sucursal.</p><strong>VAQUERO SM · LA PIEDAD</strong></>}
+        {mode === "sale" ? <><p>Cambios dentro de 15 días con este ticket<br />y etiqueta original. No aplica en oferta.</p><strong>¡Gracias por su compra!</strong><span>{BUSINESS_PROFILE.website}</span></> : <><p>Presenta este ticket para cambio de talla o modelo dentro de 15 días. No incluye importes ni forma de pago. Sujeto a existencia en la sucursal.</p><strong>{BUSINESS_PROFILE.name.toLocaleUpperCase("es-MX")} · {receiptLocation.name.toLocaleUpperCase("es-MX")}</strong></>}
       </footer>
     </article>
   );

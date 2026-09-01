@@ -10,16 +10,22 @@ import {
   Store,
   Tags,
 } from "lucide-react";
+import { DashboardGreeting } from "./dashboard-greeting";
 
 export const metadata: Metadata = { title: "Inicio" };
 
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 
+function currentDateLabel() {
+  const label = new Intl.DateTimeFormat("es-MX", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Mexico_City" }).format(new Date());
+  return label.charAt(0).toLocaleUpperCase("es-MX") + label.slice(1);
+}
+
 export default function DashboardPage() {
   return (
     <section className="module-page dashboard-page">
       <div className="section-heading">
-        <div><p className="eyebrow">Miércoles, 27 de agosto</p><h1>Buen día, Salomon</h1><p className="heading-copy">Esto es lo que está pasando en La Piedad.</p></div>
+        <DashboardGreeting dateLabel={currentDateLabel()} />
         <Link className="primary-button" href="/pos"><ShoppingCart aria-hidden="true" />Nueva venta</Link>
       </div>
 

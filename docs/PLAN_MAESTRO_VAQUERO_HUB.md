@@ -1578,7 +1578,7 @@ Detalle de entrega 0.6.1 — Tickets térmicos editables:
 * En Tickets y comprobantes se puede alternar entre venta y regalo, revisar la plantilla completa y después imprimir la vista seleccionada.
 * Las reimpresiones muestran fecha y hora de reimpresión debajo del folio.
 * Regla de impresión: sólo el comprobante de 80 mm se hace visible en papel; navegación, botones y resto de la aplicación quedan excluidos.
-* Continúa pendiente de confirmación del cliente: vigencia definitiva, uso parcial, cambios entre sucursales, dirección/teléfono finales y conexión física con la impresora.
+* Continúa pendiente de confirmación del cliente: vigencia definitiva, uso parcial, cambios entre sucursales y conexión física con la impresora.
 * Pruebas completadas para 0.6.1: ESLint, TypeScript y build correctos; venta en efectivo hasta confirmación; vista previa normal y de regalo; reimpresión histórica; estilos de impresión de 80 mm; sin errores de consola ni desbordamientos móvil/escritorio.
 * Los patrones gráficos de código de barras y QR son todavía representaciones visuales del brief; deberán sustituirse por códigos escaneables ligados a identificadores persistentes cuando se conecte el backend.
 
@@ -1645,3 +1645,10 @@ Entrega visible 0.7.0 — Acceso y administración segura:
 * El ambiente de staging cuenta con la sucursal inicial `LAP` (La Piedad) y el primer administrador `SALOMON` (Salomon), asignado a esa sucursal. Su contraseña temporal se entrega fuera del repositorio y deberá rotarse.
 * El autorregistro quedó deshabilitado también en la configuración alojada de Supabase Auth, no sólo en la configuración local.
 * La integración real fue validada de extremo a extremo en la web publicada: inicio de sesión, sesión protegida, identidad y sucursal, Administración, rol ADMIN con 29 permisos y bitácora de auditoría. No se observaron errores de consola durante la verificación.
+
+Entrega visible 0.7.1 — Identidad y datos de tienda:
+
+* Inicio, Caja, tickets de venta y tickets de regalo toman el nombre del empleado autenticado y la sucursal activa; se eliminan las referencias operativas fijas a Salomon.
+* La dirección y el teléfono de cada ticket provienen de la ubicación activa en Supabase. La Piedad queda registrada como `Av. Mariano Jiménez 706, Col. Jardines del Carmen, C.P. 59389, La Piedad de Cabadas, Michoacán`, teléfono `352 145 6880`.
+* Ajustes reutiliza la misma ficha de negocio y sucursal para evitar diferencias entre configuración, tickets y documentos.
+* El alta de empleados distingue correo existente, datos inválidos, configuración, perfil y asignación de sucursal; los errores del servidor dejan registro técnico sin exponer contraseñas ni secretos.

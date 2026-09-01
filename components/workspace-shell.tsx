@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { APP_RELEASE, APP_VERSION } from "@/lib/release";
 import {
   Bell,
@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { WorkspaceIdentity } from "@/lib/auth/types";
+import { WorkspaceContext } from "@/components/workspace-context";
+import { LA_PIEDAD_STORE } from "@/lib/business-profile";
 
 const navigation: Array<{ href: string; label: string; icon: LucideIcon; secondary?: boolean }> = [
   { href: "/inicio", label: "Inicio", icon: House },
@@ -29,6 +31,15 @@ const navigation: Array<{ href: string; label: string; icon: LucideIcon; seconda
   { href: "/caja", label: "Caja", icon: CircleDollarSign },
   { href: "/mas", label: "Más", icon: Grid2X2 },
 ];
+
+const demoIdentity: WorkspaceIdentity = {
+  id: "demo",
+  name: "Salomon",
+  employeeCode: "SALOMON",
+  role: "Administrador",
+  roleCode: "ADMIN",
+  locations: [LA_PIEDAD_STORE],
+};
 
 function moduleTitle(pathname: string) {
   if (pathname.startsWith("/inicio")) return "Inicio";
@@ -49,17 +60,10 @@ export function WorkspaceShell({ children, identity }: { children: React.ReactNo
   const [profileOpen, setProfileOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(true);
-  const demoIdentity: WorkspaceIdentity = {
-    id: "demo",
-    name: "Salomon",
-    employeeCode: "SALOMON",
-    role: "Administrador",
-    roleCode: "ADMIN",
-    locations: [{ id: "demo-la-piedad", name: "La Piedad", code: "LAP" }],
-  };
   const activeIdentity = identity ?? demoIdentity;
   const [activeLocationId, setActiveLocationId] = useState(activeIdentity.locations[0]?.id ?? "");
   const activeLocation = activeIdentity.locations.find((location) => location.id === activeLocationId);
+  const workspaceContext = useMemo(() => ({ identity: activeIdentity, activeLocation: activeLocation ?? null }), [activeIdentity, activeLocation]);
   const initial = activeIdentity.name.trim().charAt(0).toUpperCase() || "V";
 
   if (!identity && !loggedIn) {
@@ -123,7 +127,9 @@ export function WorkspaceShell({ children, identity }: { children: React.ReactNo
             <button className="active-user" type="button" aria-label={`Abrir información de ${activeIdentity.name} y versión`} aria-expanded={profileOpen} onClick={() => { setNotificationsOpen(false); setProfileOpen((current) => !current); }}><span>{initial}</span><strong>{activeIdentity.name}</strong></button>
           </div>
         </header>
-        <main className="workspace-main">{children}</main>
+        <WorkspaceContext.Provider value={workspaceContext}>
+          <main className="workspace-main">{children}</main>
+        </WorkspaceContext.Provider>
       </div>
       {notificationsOpen ? (
         <aside className="notifications-popover" aria-label="Notificaciones">
