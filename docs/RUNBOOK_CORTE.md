@@ -94,8 +94,9 @@ El importador deja de ser un script de una sola vez y pasa a ser un
 - **Modo catálogo:** agrega lo nuevo, actualiza lo que cambió, no duplica
   nada y no toca existencias. Se corre cada semana o quincena.
 - **Modo existencias y compromisos:** ajusta las existencias al valor real
-  de SICAR y carga apartados, créditos y compras pendientes. Se corre una
-  sola vez, la noche del cambio.
+  de SICAR y carga apartados, créditos y compras pendientes. Se corre **al
+  inicio de cada día de prueba paralela** y una última vez la noche del
+  cambio (ver 2.5.2).
 
 Correr el sincronizador dos veces seguidas debe dejar exactamente el mismo
 resultado. Si duplica productos o inventa movimientos de inventario, está
@@ -113,6 +114,19 @@ genere durante el piloto **va a ser sobrescrito** por el refresco final.
 El piloto sirve para validar el proceso y comparar números, no para
 construir historial permanente. Conviene decírselo al personal para que
 nadie se frustre viendo que "se borró" su trabajo.
+
+Mientras Vaquero Hub no sea el sistema de registro, conviene aprovechar
+esa libertad: **correr el refresco de existencias al inicio de cada día de
+prueba paralela.** Si la jornada empieza con ambos sistemas cuadrados
+exactamente, cualquier diferencia al cierre del turno es una diferencia
+real —un error de captura o un defecto del sistema— y no ruido arrastrado
+de pruebas anteriores. Sin eso, la comparación de fin de turno pierde
+valor rápidamente.
+
+Tiene además un efecto secundario muy conveniente: para cuando llegue la
+noche del cambio, ese refresco se habrá corrido diez o quince veces y
+habrá dejado de ser un procedimiento nuevo. Los ensayos de las secciones 3
+a 5 salen prácticamente gratis del propio plan de pruebas.
 
 ### 2.5.3 Decisión pendiente: dónde se capturan los productos nuevos
 
