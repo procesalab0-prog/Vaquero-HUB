@@ -2,7 +2,7 @@
 
 > Plan operativo para que Codex construya Vaquero Hub a partir del día en
 > que exista acceso a la base de datos. Complementa a
-> [`CONTEXTO_MAESTRO.md`](CONTEXTO_MAESTRO.md), no lo sustituye: el
+> [`PLAN_MAESTRO_VAQUERO_HUB.md`](PLAN_MAESTRO_VAQUERO_HUB.md), no lo sustituye: el
 > contexto maestro dice **qué** se construye y por qué; este documento
 > dice **cómo, en qué orden y con qué criterios de aceptación**.
 >
@@ -24,7 +24,7 @@
 - Cada milestone se entrega en uno o más PRs pequeños y revisables.
 - Un milestone no se considera terminado hasta que cumple sus **criterios
   de aceptación** y su **Definition of Done** (sección 3.3).
-- Si algo de este plan choca con `CONTEXTO_MAESTRO.md`, **gana el contexto
+- Si algo de este plan choca con `PLAN_MAESTRO_VAQUERO_HUB.md`, **gana el contexto
   maestro** y se levanta la discrepancia antes de implementar.
 - Si una regla de negocio necesaria no está confirmada (sección 8), Codex
   **no la inventa**: implementa lo que sí está definido y deja la parte

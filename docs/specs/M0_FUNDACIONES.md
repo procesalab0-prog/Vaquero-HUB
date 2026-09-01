@@ -36,9 +36,11 @@ construcción exponer la llave de servicio al navegador.
 
 - `.env.example` con los nombres de variables y sin un solo valor real.
 - Variables de cliente: únicamente `NEXT_PUBLIC_SUPABASE_URL` y
-  `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-- Variable de servidor: `SUPABASE_SERVICE_ROLE_KEY`, que **jamás** se
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+- Variable de servidor: `SUPABASE_SECRET_KEY`, que **jamás** se
   importa desde un componente de cliente.
+- Las llaves heredadas `anon` y `service_role` no se usarán en código nuevo;
+  Supabase recomienda las llaves `publishable` y `secret` actuales.
 - Dos clientes de Supabase en módulos separados y con nombres explícitos:
   uno para el navegador y otro para el servidor. El módulo del servidor
   lleva la directiva `import 'server-only'` en la primera línea, para que
