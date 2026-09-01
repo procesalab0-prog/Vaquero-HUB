@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.7.1";
-export const APP_RELEASE = "Identidad y datos de tienda";
+export const APP_VERSION = "0.8.0";
+export const APP_RELEASE = "Clientes e identidad segura";

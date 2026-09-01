@@ -24,7 +24,7 @@ const modules = [
   { href: "#", title: "Transferencias", description: "Movimientos controlados entre sucursales.", icon: Boxes, ready: false },
   { href: "/administracion", title: "Usuarios y permisos", description: "Empleados, sucursales, roles y bitácora protegidos.", icon: Users, ready: true },
   { href: "#", title: "Reportes", description: "Ventas, inventario, caja y conciliación.", icon: BarChart3, ready: false },
-  { href: "#", title: "Clientes y lealtad", description: "Historial, recompensas y promociones futuras.", icon: Gift, ready: false },
+  { href: "/clientes", title: "Clientes", description: "Alta, búsqueda y número de socio; lealtad se activará al definir sus reglas.", icon: Gift, ready: true },
 ];
 
 export default function MorePage() {

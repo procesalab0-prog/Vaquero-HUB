@@ -50,6 +50,7 @@ function moduleTitle(pathname: string) {
   if (pathname.startsWith("/etiquetas")) return "Etiquetas";
   if (pathname.startsWith("/ajustes")) return "Ajustes";
   if (pathname.startsWith("/administracion")) return "Administración";
+  if (pathname.startsWith("/clientes")) return "Clientes";
   if (pathname.startsWith("/mas")) return "Más módulos";
   return "Punto de venta";
 }
@@ -85,7 +86,7 @@ export function WorkspaceShell({ children, identity }: { children: React.ReactNo
         </Link>
         <nav className="rail-links">
           {navigation.map(({ href, label, icon: Icon }) => {
-            const morePath = ["/mas", "/tickets", "/etiquetas", "/ajustes", "/administracion"];
+            const morePath = ["/mas", "/tickets", "/etiquetas", "/ajustes", "/administracion", "/clientes"];
             const active = href === "/mas"
               ? morePath.some((path) => pathname.startsWith(path))
               : pathname.startsWith(href);

@@ -279,6 +279,14 @@ cuando el negocio defina cómo se ganan y cómo se gastan.
   iPhone y de un Android.** Si falla, se escala de inmediato: cambia la
   decisión de hardware.
 
+**Estado de ejecución 0.8.0:** la primera entrega de M1B implementa el
+modelo `customers`, normalización mexicana de teléfono, número de socio
+con dígito verificador, consentimiento versionado, auditoría sin duplicar
+datos personales, RLS, alta/edición/búsqueda del personal y asociación
+del cliente en el POS. La PWA del cliente, OTP, QR/1D offline y la prueba
+con lectores quedan en la siguiente entrega de M1B; requieren aviso de
+privacidad aprobado, dominio de cliente y configuración de SMS/correo.
+
 > Este milestone recorre las semanas siguientes aproximadamente una
 > semana. El total sigue dentro del objetivo de 8–12 semanas de la
 > sección 37 del contexto maestro.

@@ -19,11 +19,14 @@ import {
   ShoppingCart,
   Trash2,
   Printer,
+  UserRoundPlus,
   X,
 } from "lucide-react";
 import type { CartLine, PaymentMethod, ProductVariant } from "@/lib/domain";
 import { formatReceiptDate, ThermalReceipt, type ReceiptLine } from "@/components/thermal-receipt";
+import { CustomerLookup } from "@/components/customer-lookup";
 import { useWorkspace } from "@/components/workspace-context";
+import type { CustomerSummary } from "@/lib/customers";
 
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 const frequentCategories = [
@@ -73,6 +76,8 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
   const [discountInput, setDiscountInput] = useState("");
   const [extraDialog, setExtraDialog] = useState<"discount" | "layaway" | null>(null);
   const [layawayCustomer, setLayawayCustomer] = useState("");
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerSummary | null>(null);
+  const [customerLookupOpen, setCustomerLookupOpen] = useState(false);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [cashMode, setCashMode] = useState(false);
   const [cashInput, setCashInput] = useState("");
@@ -169,6 +174,7 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
     setSubmitting(false);
     submittingRef.current = false;
     setReceiptMode(null);
+    setSelectedCustomer(null);
   }
 
   function selectCategory(label: string) {
@@ -294,6 +300,12 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
           <button className="mobile-cart-close" type="button" aria-label="Cerrar carrito" onClick={() => setCartDrawerOpen(false)}><X aria-hidden="true" /></button>
         </header>
 
+        <button className={selectedCustomer ? "sale-customer selected" : "sale-customer"} type="button" onClick={() => setCustomerLookupOpen(true)}>
+          <UserRoundPlus aria-hidden="true" />
+          <span>{selectedCustomer ? <><strong>{selectedCustomer.full_name}</strong><small>Socio {selectedCustomer.member_number}</small></> : <><strong>Agregar cliente</strong><small>Teléfono, socio, nombre o correo</small></>}</span>
+          <ChevronRight aria-hidden="true" />
+        </button>
+
         <div className="sale-lines">
           {cart.length === 0 ? (
             <div className="empty-sale">
@@ -392,6 +404,8 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
       {extraDialog === "layaway" ? (
         <div className="modal-backdrop"><section className="checkout-modal compact-modal" role="dialog" aria-modal="true" aria-labelledby="layaway-title"><p className="eyebrow">Apartado</p><h2 id="layaway-title">Guardar apartado</h2><p>Los artículos saldrán del carrito y quedarán asociados al cliente.</p><div className="form-stack"><label><span>Nombre del cliente</span><input value={layawayCustomer} onChange={(event) => setLayawayCustomer(event.target.value)} placeholder="Nombre completo" /></label></div><div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setExtraDialog(null)}>Cancelar</button><button className="primary-button" type="button" onClick={createLayaway}>Crear apartado</button></div></section></div>
       ) : null}
+
+      {customerLookupOpen ? <div className="modal-backdrop"><CustomerLookup selected={selectedCustomer} onSelect={setSelectedCustomer} onClose={() => setCustomerLookupOpen(false)} /></div> : null}
     </div>
   );
 }

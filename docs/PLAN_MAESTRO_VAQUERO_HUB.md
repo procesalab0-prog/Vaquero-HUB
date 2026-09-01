@@ -1652,3 +1652,14 @@ Entrega visible 0.7.1 — Identidad y datos de tienda:
 * La dirección y el teléfono de cada ticket provienen de la ubicación activa en Supabase. La Piedad queda registrada como `Av. Mariano Jiménez 706, Col. Jardines del Carmen, C.P. 59389, La Piedad de Cabadas, Michoacán`, teléfono `352 145 6880`.
 * Ajustes reutiliza la misma ficha de negocio y sucursal para evitar diferencias entre configuración, tickets y documentos.
 * El alta de empleados distingue correo existente, datos inválidos, configuración, perfil y asignación de sucursal; los errores del servidor dejan registro técnico sin exponer contraseñas ni secretos.
+
+Entrega visible 0.8.0 — Clientes e identidad segura (M1B, primera entrega):
+
+* Se incorpora el módulo real de Clientes con alta, edición y una búsqueda única por teléfono, últimos cuatro dígitos, número de socio, nombre o correo.
+* El teléfono se normaliza en PostgreSQL a E.164 mexicano; formatos como `3531234567`, `+52 353 123 4567`, `0052…` y `01…` chocan contra la misma restricción única y no pueden dividir a una persona en cuentas duplicadas.
+* Cada cliente recibe un número de socio de ocho dígitos con verificador Luhn. PostgreSQL valida el dígito y rechaza números alterados.
+* `customers` usa RLS deny-by-default. `customers.manage` permite atención individual a ADMIN, MANAGER y CASHIER; `customers.export` queda separado y se concede inicialmente sólo a ADMIN. No existe permiso de borrado físico.
+* Alta y edición se ejecutan por RPC del servidor con autorización real. La auditoría registra actor, entidad y campos modificados sin copiar teléfono, correo, nombre ni fecha de nacimiento a la bitácora.
+* El POS permite asociar un cliente desde el carrito mediante el mismo campo de búsqueda. Las ventas continúan simuladas hasta M4, por lo que esta selección todavía no genera historial ni puntos.
+* Consentimiento del programa y marketing se guardan por separado. El alta exige registrar la versión exacta del aviso entregado; el aviso legal definitivo sigue pendiente del cliente y no debe sustituirse por texto inventado.
+* Continúa pendiente dentro de M1B: PWA de cliente en subdominio separado, OTP por SMS/correo, QR y código 1D reales, tarjeta disponible sin sesión y pruebas físicas con lector 2D en iPhone/Android. No se activan puntos, redención, niveles, cumpleaños, crédito ni apartados porque sus reglas siguen sin confirmar.
