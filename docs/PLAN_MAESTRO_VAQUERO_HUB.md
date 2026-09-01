@@ -1685,3 +1685,8 @@ Entrega visible 0.9.0 — Mi Vaquero y tarjeta digital (M1B, segunda entrega):
 * El service worker sólo guarda el shell y recursos estáticos de Mi Vaquero; nunca cachea API, Supabase ni respuestas con datos personales.
 * Continúan pendientes antes del piloto: dominio/DNS de cliente, proveedor y plantilla SMS, aviso de privacidad definitivo y prueba física del QR/CODE128 con los lectores reales en iPhone y Android. No se implementan puntos, recompensas, niveles ni historial hasta aprobar sus reglas.
 * Se integró la revisión adversarial de Claude Code en `docs/AUDITORIA_SPECS.md`: sus nueve hallazgos quedaron resueltos o especificados antes de M2/M3. Las preguntas que requieren respuesta de Vaqueros SM viven consolidadas en `docs/PREGUNTAS_CLIENTE.md`, sin duplicar las reglas canónicas.
+
+Corrección operativa 0.9.1 — Enlace de acceso a Mi Vaquero:
+
+* Se corrigió el permiso de uso del esquema privado `app` para `service_role`. Sin ese permiso, el trigger de actualización de `customers` rechazaba con 403 el enlace entre el cliente y su identidad Auth, por lo que la operación se revertía antes de solicitar el correo mágico.
+* El permiso se limita a `USAGE` del esquema: no concede acceso nuevo a tablas, funciones ni datos. Las operaciones continúan sujetas a sus permisos explícitos y el secreto permanece exclusivamente en servidor.
