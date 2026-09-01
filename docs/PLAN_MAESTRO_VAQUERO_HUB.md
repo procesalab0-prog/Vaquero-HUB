@@ -1622,10 +1622,22 @@ Estado de M0:
 
 Estado de M1:
 
-* Rama de trabajo: `codex/m1-identidad`.
+* La base de identidad y RLS fue fusionada a `main` mediante el PR #2 el 31 de agosto de 2026; commit squash `6e0600d`.
 * La rama de staging de Supabase está activa y aislada de producción; M0 fue aplicado y validado ahí.
 * La base de producción continúa sin migraciones de negocio. M1 se ensaya primero en staging.
 * M1 comienza por la capa de seguridad: sucursales, empleados, roles, permisos, asignaciones, auditoría, funciones privadas y RLS deny-by-default.
 * El autorregistro de empleados queda deshabilitado; el primer administrador se crea con un script de servidor que nunca expone la clave secreta.
 * La verificación de PIN devuelve estados controlados en vez de lanzar una excepción para credenciales inválidas. Esto permite que PostgreSQL confirme el contador de intentos, el bloqueo y la auditoría; lanzar una excepción revertiría esas escrituras.
 * La web 0.6.2 es la base obligatoria de M1. Autenticación y administración se integrarán a su navegación, sistema visual, ergonomía touch-first y PWA sin reemplazar ni romper Inicio, POS, Caja, Productos, Inventario, Tickets, Etiquetas o Ajustes.
+
+Entrega visible 0.7.0 — Acceso y administración segura:
+
+* El inicio de sesión usa Supabase Auth con correo y contraseña; no existe autorregistro público.
+* Las rutas operativas refrescan y validan la sesión mediante `getClaims()` en el proxy. Un usuario autenticado sin perfil activo de empleado no obtiene acceso.
+* La barra y el avatar existentes muestran la identidad, rol y sucursal reales; si un empleado tiene varias sucursales puede seleccionar la ubicación activa desde la cabecera.
+* El módulo Administración se integra a Más módulos y Ajustes con cuatro vistas: empleados, sucursales, matriz de roles/permisos y bitácora.
+* Crear y editar empleados y sucursales exige validación explícita de permiso en una Server Action y vuelve a pasar por las políticas RLS. La creación de una identidad de Auth utiliza la clave secreta sólo en servidor.
+* La bitácora se presenta como sólo lectura; la interfaz no ofrece editar o borrar eventos.
+* La edición masiva de permisos permanece deliberadamente de sólo lectura hasta implementar una operación transaccional que no pueda dejar un rol parcialmente actualizado.
+* Sin variables de Supabase, la web pública conserva el modo demostración 0.6.2. Al configurar variables, activa el acceso real; las primeras pruebas remotas apuntarán únicamente a staging.
+* Supabase producción continúa sin migraciones de negocio y no se usará para estas pruebas.

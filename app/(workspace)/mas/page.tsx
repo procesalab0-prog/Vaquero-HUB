@@ -22,7 +22,7 @@ const modules = [
   { href: "#", title: "Compras", description: "Órdenes, recepción y diferencias de mercancía.", icon: PackageCheck, ready: false },
   { href: "#", title: "Proveedores", description: "Contactos, condiciones y catálogo por proveedor.", icon: Truck, ready: false },
   { href: "#", title: "Transferencias", description: "Movimientos controlados entre sucursales.", icon: Boxes, ready: false },
-  { href: "#", title: "Usuarios y permisos", description: "Roles y autorización de acciones sensibles.", icon: Users, ready: false },
+  { href: "/administracion", title: "Usuarios y permisos", description: "Empleados, sucursales, roles y bitácora protegidos.", icon: Users, ready: true },
   { href: "#", title: "Reportes", description: "Ventas, inventario, caja y conciliación.", icon: BarChart3, ready: false },
   { href: "#", title: "Clientes y lealtad", description: "Historial, recompensas y promociones futuras.", icon: Gift, ready: false },
 ];

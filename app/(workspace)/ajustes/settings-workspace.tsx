@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Barcode, Check, ChevronRight, MonitorCog, Plus, ReceiptText, Save, Store, UserCog } from "lucide-react";
 
 type Section = "business" | "stores" | "pos" | "tickets" | "labels" | "appearance";
@@ -102,7 +103,7 @@ function LabelSettings() {
 }
 
 function AppearanceSettings({ accent, setAccent }: { accent: string; setAccent: (value: string) => void }) {
-  return <SettingsSection eyebrow="Marca y acceso" title="Apariencia y usuarios" description="La marca puede adaptarse sin perder claridad operativa."><div className="theme-options"><button className={accent === "vino" ? "selected vino" : "vino"} type="button" onClick={() => setAccent("vino")}><span /><strong>Vino Vaquero</strong><small>Actual</small></button><button className={accent === "cuero" ? "selected cuero" : "cuero"} type="button" onClick={() => setAccent("cuero")}><span /><strong>Cuero</strong><small>Cálido</small></button><button className={accent === "noche" ? "selected noche" : "noche"} type="button" onClick={() => setAccent("noche")}><span /><strong>Noche</strong><small>Alto contraste</small></button></div><div className="toggle-list"><Toggle title="Mostrar “Powered by ProcesaLab”" description="Visible en acceso y documentos administrativos." checked /><Toggle title="Permitir tema por sucursal" description="Cada tienda puede elegir su acento visual." /></div><div className="permission-note"><UserCog aria-hidden="true" /><div><strong>Usuarios y permisos detallados</strong><p>Descuentos, cancelaciones, precios, inventario y cierres se controlarán por rol cuando conectemos autenticación.</p></div><button type="button" disabled>Próximamente</button></div></SettingsSection>;
+  return <SettingsSection eyebrow="Marca y acceso" title="Apariencia y usuarios" description="La marca puede adaptarse sin perder claridad operativa."><div className="theme-options"><button className={accent === "vino" ? "selected vino" : "vino"} type="button" onClick={() => setAccent("vino")}><span /><strong>Vino Vaquero</strong><small>Actual</small></button><button className={accent === "cuero" ? "selected cuero" : "cuero"} type="button" onClick={() => setAccent("cuero")}><span /><strong>Cuero</strong><small>Cálido</small></button><button className={accent === "noche" ? "selected noche" : "noche"} type="button" onClick={() => setAccent("noche")}><span /><strong>Noche</strong><small>Alto contraste</small></button></div><div className="toggle-list"><Toggle title="Mostrar “Powered by ProcesaLab”" description="Visible en acceso y documentos administrativos." checked /><Toggle title="Permitir tema por sucursal" description="Cada tienda puede elegir su acento visual." /></div><div className="permission-note"><UserCog aria-hidden="true" /><div><strong>Usuarios y permisos detallados</strong><p>Administra empleados, sucursales, roles y la bitácora con validación real del servidor.</p></div><Link href="/administracion">Abrir administración</Link></div></SettingsSection>;
 }
 
 function Toggle({ title, description, checked = false }: { title: string; description: string; checked?: boolean }) {
