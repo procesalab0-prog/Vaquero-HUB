@@ -60,9 +60,16 @@ const statusMessages: Record<string, string> = {
   "producto-creado": "Producto y variantes guardados correctamente.",
   "producto-duplicado":
     "Ese SKU o código de barras ya existe. No se guardó ningún renglón.",
+  "producto-combinacion-repetida":
+    "Hay dos renglones con la misma talla y el mismo color. Deja uno solo: " +
+    "si la variante ya existía y se dio de baja, se reactiva en vez de crearla otra vez.",
   "producto-datos-invalidos":
-    "Completa producto, categoría, color, códigos, costo, precio y al menos una talla.",
+    "Completa producto, categoría, color, costo, precio y al menos una talla. " +
+    "El SKU y el código de barras los genera el sistema.",
   "producto-sin-permiso": "Tu rol no tiene permiso para crear productos.",
+  "producto-cliente-desactualizado":
+    "Esta pantalla intentó mandar el SKU o el código de barras, que ahora los " +
+    "genera la base de datos. Recarga la página para tomar la versión nueva.",
   "producto-error":
     "No fue posible crear el producto. Revisa los datos e inténtalo de nuevo.",
   "catalogo-pendiente":

@@ -3,7 +3,7 @@
 > Especificación transversal: la generación vive en M2, la colisión con
 > datos heredados vive en M9, y la impresión en las etiquetas de M2.5.
 >
-> Fecha: 2026-09-02.
+> Fecha: 2026-09-02. Revisado contra la implementación el mismo día.
 
 ## 1. Por qué esto merece su propia especificación
 
@@ -38,9 +38,13 @@ adentro**, que es lo que hace posible diagnosticar un problema en el piso
 de venta sin abrir la base de datos.
 
 ```sql
-create sequence public.variant_serial_seq
+create sequence app.variant_serial_seq
   as bigint start with 1000000 minvalue 1000000 maxvalue 999999999 no cycle;
 ```
+
+Vive en el esquema privado `app` —no en `public`— para que la interfaz no
+pueda reservar números por su cuenta. Sólo la llama el generador, que es
+`security definer`.
 
 Los huecos son aceptables: si un alta falla después de tomar el número, ese
 número se pierde. Mismo criterio que los folios de venta — un hueco en la
@@ -96,7 +100,68 @@ El código se toma de la secuencia **dentro** de `create_catalog_product`,
 no antes ni desde la interfaz. Si el alta falla, no queda un código
 suelto asignado a nada.
 
-## 5. Cuándo NO se genera: el código del proveedor
+### 4.3 La simbología quedó fija en el código, no detrás de una constante
+
+Hay que decirlo con precisión porque cambia qué protege qué. La
+implementación emite EAN-13 con prefijo `20`, y ese formato está escrito en
+**tres lugares**: el generador dentro de `create_catalog_product`, la
+función `app.is_valid_generated_barcode`, y la restricción
+`barcodes_generated_identity_check` que la usa.
+
+No es un defecto —EAN-13 es la recomendación de arriba y el formato correcto
+mientras nadie diga lo contrario—, pero sí cambia el cálculo: si la
+respuesta a la pregunta 1.1 llega y dice Code128, no es cambiar una
+constante, son tres cambios coordinados **y los códigos ya generados se
+quedan en EAN-13 para siempre**, porque son inmutables.
+
+Consecuencia práctica: **la compuerta de la sección 8 dejó de ser una
+precaución y pasó a ser la única mitigación.** Ningún código se genera en
+producción antes de esa comprobación.
+
+## 5. Una identidad por artículo no basta: hace falta una por combinación
+
+Este es el hueco que abrió el propio generador, y conviene entender por qué
+apareció justo al mejorar las cosas.
+
+Antes, quien llamaba mandaba el código de barras. Si el alta traía dos
+renglones con la misma talla y el mismo color, el segundo chocaba contra la
+unicidad de `barcodes.code` y el alta entera se caía. **Esa protección era
+accidental**: no había ninguna regla sobre combinaciones repetidas, sólo
+sobre códigos repetidos.
+
+Al generar ahora una identidad nueva para cada renglón, los dos duplicados
+reciben SKU y código distintos, y el alta pasa sin ruido.
+
+El resultado es peor que un error visible: el mismo artículo físico queda
+con dos identidades, la existencia se parte entre las dos y un escaneo cae
+en una o en otra según qué etiqueta se pegó en la caja. **El inventario por
+talla —la razón de ser del proyecto— deja de cuadrar sin que nadie lo
+note**, y se descubre meses después contando físicamente.
+
+La regla:
+
+- **Dentro de un producto, no puede haber dos variantes con el mismo
+  conjunto de atributos.** Sin excepciones por estado: cuenta también una
+  variante dada de baja, porque el artículo físico es el mismo.
+- Un producto **sí** puede tener una variante sin atributos —una hebilla,
+  un accesorio sin variaciones—, pero **una sola**.
+- Si la variante existía y se dio de baja, se **reactiva**; no se crea otra.
+  La vieja carga el historial.
+
+Y una advertencia sobre dónde vive el control: **la deduplicación de la
+interfaz no cuenta.** La carga masiva de M2.4 y el importador de M9 entran
+por la misma función sin pasar por la pantalla. El control vive en la base.
+
+Está resuelto con restricciones diferidas —se comprueban al cerrar la
+transacción, no renglón por renglón— porque durante el alta una variante
+pasa por estados intermedios, ya creada y todavía sin todos sus atributos,
+que un control inmediato leería como duplicados falsos. El efecto secundario
+de diferirlas es que el error sale **fuera** del `exception` de
+`create_catalog_product`: llega como `DUPLICATE_VARIANT_ATTRIBUTES` y no
+traducido a `CATALOG_DUPLICATE_VALUE`. Quien escriba una pantalla nueva
+tiene que atender ese nombre.
+
+## 6. Cuándo NO se genera: el código del proveedor
 
 Muchas botas llegan con el código del fabricante ya impreso en la caja.
 Usarlo evita reetiquetar, que es trabajo real.
@@ -120,7 +185,7 @@ Regla:
 Esto conecta con la recepción de mercancía de M6 y con el etiquetado
 masivo de M2.5.
 
-## 6. Un código generado no se edita: se agrega otro
+## 7. Un código generado no se edita: se agrega otro
 
 Si un código quedó mal impreso o hay que reemitirlo, **no se modifica la
 fila**. Se agrega un código nuevo a la variante y se marca como primario;
@@ -134,7 +199,7 @@ nuevo.
 **El esquema ya lo permite** — `barcodes` admite varios por variante, con
 un único primario — así que esto no requiere cambios, sólo respetarlo.
 
-## 7. Colisión con los datos heredados: verificación previa
+## 8. Colisión con los datos heredados: verificación previa
 
 Riesgo concreto: un código que generemos hoy podría coincidir con uno que
 la migración de SICAR traiga mañana. Ahí no habría salida limpia, porque
@@ -157,20 +222,40 @@ Esta comprobación es parte del ensayo 1 del runbook y depende de conseguir
 la exportación de muestra — que es la primera urgencia de
 `PREGUNTAS_CLIENTE.md`.
 
-## 8. Qué queda bloqueado y qué no
+### 8.1 Regla para el importador de M9
+
+**El importador no inventa SKU: los toma de `app.variant_serial_seq`, igual
+que el alta manual.** El SKU es identidad nuestra; el código de SICAR viaja
+aparte, en `legacy_sicar_code`, y ése sí se conserva tal cual.
+
+El motivo es concreto y silencioso. `service_role` puede escribir en
+`variants` directamente, y la restricción de formato sólo exige que el SKU
+sea un número con verificador válido — no que venga de la secuencia. Un
+importador que numere por su cuenta desde, digamos, `2000000` deja la
+colisión programada: el día que la secuencia llegue ahí, el alta de un
+producto nuevo se cae con violación de unicidad, meses después, sin relación
+aparente con la migración que lo causó.
+
+Aplica lo mismo a cualquier guion de respaldo o de reparación que cree
+variantes desde el servidor.
+
+## 9. Qué queda bloqueado y qué no
 
 | Parte | Estado |
 |---|---|
-| La secuencia, el SKU y su verificador | **Se puede construir ya** |
-| Generación dentro del alta de producto | **Se puede construir ya** |
-| Elección de simbología | Detrás de una constante; se decide con la pregunta 1.1 |
-| Encender la generación en producción | Espera la comprobación de la sección 7 |
-| Adoptar códigos de proveedor | Espera la regla operativa de la sección 5 |
+| La secuencia, el SKU y su verificador | **Construido** en `20260902023531` |
+| Generación dentro del alta de producto | **Construido**; el alta rechaza identidades del cliente |
+| Unicidad de la combinación de atributos | **Construido** en `20260902041500` (sección 5) |
+| Elección de simbología | EAN-13 con prefijo `20`, fija en tres lugares (sección 4.3) |
+| Encender la generación en producción | **Espera la comprobación de la sección 8** |
+| Registrar un código de proveedor | Sin función que lo permita todavía (sección 6) |
+| Reemitir un código | El esquema lo permite; falta la función (sección 7) |
 
-En corto: **el generador se construye ahora**; lo único que espera es qué
-simbología emite y la luz verde de que no choca con SICAR.
+En corto: **el generador ya está**. Lo que falta es la luz verde de que no
+choca con SICAR, y las dos funciones que dan de alta códigos que no salen
+del generador.
 
-## 9. Pruebas obligatorias
+## 10. Pruebas obligatorias
 
 | # | Escenario | Resultado esperado |
 |---|---|---|
@@ -182,11 +267,15 @@ simbología emite y la luz verde de que no choca con SICAR.
 | 6 | Reemitir un código | Se agrega uno nuevo; el anterior sigue escaneando |
 | 7 | Intentar cambiar el SKU de una variante | Rechazado |
 | 8 | Código de proveedor repetido entre dos tallas | Rechazado al registrarlo |
+| 9 | Dos renglones con la misma talla y el mismo color | Rechazado; el producto entero se revierte |
+| 10 | Un producto con una sola variante sin atributos | Aceptado; con dos, rechazado |
 
 La prueba 3 es la que justifica el dígito verificador y conviene que
-exista aunque parezca redundante.
+exista aunque parezca redundante. Las pruebas 9 y 10 cubren el hueco que
+abrió el generador (sección 5) y son las que se rompen primero si alguien
+cambia el alta sin leer esa sección.
 
-## 10. Preguntas abiertas
+## 11. Preguntas abiertas
 
 1. ¿Qué simbología imprime SICAR hoy? (pregunta 1.1)
 2. ¿Qué impresora de etiquetas usan, y qué anchos admite? Define si un
