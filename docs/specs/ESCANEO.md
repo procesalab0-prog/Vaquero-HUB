@@ -3,7 +3,7 @@
 > Especificación transversal: es un componente compartido, no un
 > milestone. Se introduce en M2 y su uso pesado está en M3 y M6.
 >
-> Última actualización: 2026-09-01.
+> Última actualización: 2026-09-02.
 
 ## 1. Dónde se usa y dónde no
 
@@ -19,6 +19,13 @@ físico para cobrar, cámara para moverse.**
 | Tarjeta de lealtad del cliente | Cámara o lector 2D | Ver sección 6 |
 
 La cámara no reemplaza al lector: lo complementa donde el lector estorba.
+
+**Y no es una función nueva que estemos proponiendo: SICAR ya la tiene como
+opción y el personal la usa.** Eso cambia su prioridad. No es un extra
+agradable que se puede recortar si aprieta el calendario; es algo que hoy
+tienen y que, si Mi Tienda SM no lo trae, se vive como un retroceso —de los
+que hacen que la gente extrañe el sistema viejo aunque el nuevo sea mejor en
+todo lo demás.
 
 ## 2. Cómo se implementa
 
@@ -108,7 +115,48 @@ riesgo de la decisión de hardware: la tarjeta digital funciona igual.
   aplicación debe detectarlo y explicar el camino, no quedarse mostrando
   una cámara negra.
 
-## 8. Pruebas
+## 8. La cámara como banco de pruebas de los códigos generados
+
+Hay un hueco que hoy no cierra nada, y la cámara lo cierra barato.
+
+El generador de M2 ya emite EAN-13 y las pruebas de
+[`CODIGOS_Y_SKU.md`](CODIGOS_Y_SKU.md) los dan por buenos — pero esa
+verificación es **aritmética, no física**: recalcula el dígito de control
+dentro de la base de datos. Nadie ha comprobado todavía que un código
+generado, impreso en una etiqueta, **de verdad se lea con un aparato**.
+
+Por qué importa más de lo que parece: un código generado es inmutable y
+termina pegado en cajas. Si resulta que se imprime demasiado angosto, con
+poco margen o con un contraste que no perdona, no hay corrección posible —
+hay que reetiquetar todo lo que ya salió.
+
+La cadena a comprobar es corta:
+
+```
+código generado  →  jsbarcode lo dibuja  →  se imprime  →  se escanea
+                                                            ↓
+                                        ¿devuelve los mismos 13 dígitos?
+```
+
+Lo bueno es que **no depende de nada bloqueado**. `jsbarcode` ya está en las
+dependencias, y la cámara no necesita ni el lector Bluetooth ni el
+controlador de la impresora, que son la fase de hardware. Se puede correr
+hoy, antes que M2.5.
+
+Vale la pena escanear en los dos soportes, porque fallan distinto:
+
+- **En pantalla**, que es la prueba rápida de que el dibujo está bien.
+- **Impreso**, que es la prueba de verdad: ahí es donde aparecen el ancho
+  de barra, el margen y el contraste, y donde una etiqueta térmica gastada
+  se comporta distinto a un PNG en un monitor.
+
+**Lo que esta prueba no cubre, y conviene no confundir:** que un código
+nuestro sea legible no dice nada sobre si choca con uno heredado de SICAR.
+Eso es la compuerta de la sección 8 de `CODIGOS_Y_SKU.md`, que compara
+contra la exportación de muestra y sigue bloqueada. Son dos riesgos
+distintos y ninguno tapa al otro.
+
+## 9. Pruebas
 
 | # | Escenario | Resultado esperado |
 |---|---|---|
@@ -120,8 +168,15 @@ riesgo de la decisión de hardware: la tarjeta digital funciona igual.
 | 6 | Permiso de cámara denegado | Explica cómo reactivarlo, no muestra pantalla negra |
 | 7 | Conteo con la red caída a media sesión | Sigue escaneando y encola; sincroniza al volver |
 | 8 | Escanear el QR de una tarjeta de lealtad en pantalla | Encuentra al cliente |
+| 9 | Escanear en pantalla un EAN-13 recién generado | Devuelve los mismos 13 dígitos |
+| 10 | Escanear el mismo código impreso en una etiqueta real | Lo detecta y coincide |
+| 11 | Escanear una etiqueta impresa de SICAR | Lo detecta; sirve de referencia de legibilidad |
 
-## 9. Preguntas abiertas
+Las pruebas 9 y 10 son la sección 8 y conviene correrlas antes que el resto:
+no dependen de M3 ni del hardware, y lo que descubren ya no se puede
+corregir después.
+
+## 10. Preguntas abiertas
 
 1. ¿El personal usaría su propio teléfono para conteos, o el negocio
    pondría dispositivos? Cambia si hay que contemplar Android además de
