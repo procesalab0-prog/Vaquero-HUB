@@ -1919,3 +1919,19 @@ Entrega visible 0.15.0 — escaneo con cámara:
 - Las pruebas automatizadas cubren permiso previo, lectura, filtrado, código
   inexistente y permiso denegado. La aprobación física sigue pendiente: PWA
   instalada en iPhone/Android y coincidencia de códigos en pantalla e impresos.
+
+Entrega visible 0.16.0 — edición segura de catálogo:
+
+- Productos permite editar datos generales del producto, costo/estado de una
+  variante y precio de venta desde una sola ventana táctil, en bloques separados
+  para que quede claro qué alcance tiene cada guardado.
+- PostgreSQL expone tres funciones `SECURITY DEFINER` de propósito limitado.
+  Datos y estado requieren `products.update`; el costo exige además permiso para
+  verlo; el precio exige `products.price_update`.
+- SKU, código principal, talla y color se muestran como identidad protegida de
+  sólo lectura. Las firmas no aceptan SKU, códigos, `legacy_sicar_code` ni IDs de
+  WooCommerce, y los disparadores de inmutabilidad permanecen como segunda capa.
+- Cada actualización conserva actor, antes y después en `audit_log`. Cajero,
+  almacén y sesión anónima no pueden usar las funciones de edición.
+- La interfaz conserva objetivos táctiles de 44–48 px, desplazamiento interno
+  del modal y una sola columna para la identidad en teléfono.

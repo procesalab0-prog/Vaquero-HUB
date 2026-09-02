@@ -221,3 +221,32 @@ test("ofrece dar de alta un código que no existe", async ({ page }) => {
     page.getByRole("dialog", { name: "Nuevo producto" }),
   ).toBeVisible();
 });
+
+test("edita datos y precio sin habilitar SKU ni código", async ({ page }) => {
+  await page.goto("/productos");
+  await page
+    .getByRole("button", {
+      name: "Editar Bota Cuadra piel de venado, Café, talla 25",
+    })
+    .click();
+
+  const dialog = page.getByRole("dialog", {
+    name: "Editar producto y variante",
+  });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByLabel("SKU")).toHaveAttribute("readonly", "");
+  await expect(dialog.getByLabel("Código principal")).toHaveAttribute(
+    "readonly",
+    "",
+  );
+
+  await dialog.getByLabel("Nombre del producto").fill("Bota Cuadra editada");
+  await dialog.getByRole("button", { name: "Guardar datos generales" }).click();
+  await expect(page.getByText("Vista previa agregada")).toBeVisible();
+  await expect(page.getByText("Bota Cuadra editada").first()).toBeVisible();
+
+  await dialog.getByLabel("Precio").fill("2499");
+  await dialog.getByRole("button", { name: "Cambiar precio" }).click();
+  await expect(page.getByText("$2,499.00").first()).toBeVisible();
+  await expect(page.locator("html")).toHaveJSProperty("scrollWidth", 390);
+});

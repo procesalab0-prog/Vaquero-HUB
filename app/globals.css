@@ -1102,6 +1102,28 @@ code {
   border-bottom: 1px solid var(--border);
   font-size: 14px;
 }
+.table-row.editable {
+  min-width: 900px;
+  grid-template-columns: 1.6fr 1fr 0.8fr 0.7fr 0.5fr auto;
+}
+.table-edit-button {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: var(--surface);
+  color: var(--brand);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+.table-edit-button svg {
+  width: 16px;
+}
 .table-row:last-child {
   border-bottom: 0;
 }
@@ -1875,6 +1897,69 @@ code {
 }
 .product-modal .modal-actions {
   margin-top: 20px;
+}
+.edit-product-modal {
+  width: min(720px, 100%);
+}
+.edit-section {
+  margin: 18px 0 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.edit-section legend {
+  padding: 0 7px;
+  color: var(--brand);
+  font-weight: 750;
+}
+.edit-section > p {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.edit-section .settings-form {
+  margin-bottom: 14px;
+}
+.identity-section {
+  background: var(--surface-raised);
+}
+.identity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.identity-grid label,
+.price-edit-section > label {
+  display: grid;
+  gap: 6px;
+}
+.identity-grid label > span,
+.price-edit-section > label > span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+.identity-grid input[readonly] {
+  background: #f3f4f6;
+  color: #5f6670;
+}
+.toggle-field {
+  min-height: 50px;
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+}
+.toggle-field input {
+  width: 20px;
+  height: 20px;
+}
+.edit-save-button {
+  min-height: 46px;
+}
+.price-edit-section > label {
+  max-width: 260px;
+  margin-bottom: 14px;
 }
 .barcode-modal-copy {
   margin: 0 0 18px;
@@ -4993,6 +5078,16 @@ a:active {
     padding: 12px 14px max(12px, env(safe-area-inset-bottom));
     border-top: 1px solid var(--border);
     background: var(--surface);
+  }
+  .identity-grid {
+    grid-template-columns: 1fr;
+  }
+  .edit-section {
+    padding: 14px 12px;
+  }
+  .edit-save-button {
+    width: 100%;
+    justify-content: center;
   }
   .scanner-modal {
     padding: 16px 12px;

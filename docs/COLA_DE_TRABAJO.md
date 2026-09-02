@@ -222,16 +222,16 @@ sale gratis la respuesta a la pregunta 2 de la sección 10 de
 ## 1. M2.2 — Alta de catálogo y generador de variantes
 
 **Especificación:** [`specs/M2_CATALOGO.md`](specs/M2_CATALOGO.md) §3
-**Estado:** alta y agregado de variantes terminados; falta edición.
+**Estado:** alta, agregado y edición segura terminados en 0.16.0.
 
 Es la función que resuelve el dolor que originó el proyecto: dar de alta
 una bota con ocho tallas sin capturar ocho veces.
 
 Qué construir:
 
-- Ya existen `create_catalog_product(...)` para el alta atómica y
-  `add_variants_to_product(...)` para ampliar un producto sin recrearlo.
-  Falta completar edición.
+- Ya existen `create_catalog_product(...)` para el alta atómica,
+  `add_variants_to_product(...)` para ampliar un producto sin recrearlo y las
+  tres funciones de edición separadas por privilegio.
 - Funciones `SECURITY DEFINER` en `public` para editar
   marcas, categorías, productos y variantes. Todas validan permisos
   explícitamente (`products.create`, `products.update`,
@@ -308,10 +308,11 @@ symbology, source)`.** La función cubre los dos casos que no salen del
    M9, igual que `legacy_sicar_code`. Repetir la misma solicitud es idempotente;
    intentar usar el código en otra talla falla sin cambiar su primario.
 
-3. **Siguiente: edición de producto y variante.** Funciones `SECURITY DEFINER` en
-   `public` que validan permiso explícitamente, porque al ser definer se
-   saltaron la RLS. Recordar que el SKU y los códigos generados son
-   inmutables: la edición toca nombre, marca, categoría, precio y estado.
+3. **Terminado en 0.16.0: edición de producto y variante.** Tres funciones
+   `SECURITY DEFINER` separan datos generales, costo/estado y precio. Validan
+   `products.update`, visibilidad de costos y `products.price_update`; SKU,
+   códigos y campos de migración no aparecen en sus firmas. Productos los
+   muestra como identidad de sólo lectura y cada cambio queda en la bitácora.
 
 **Un artículo sin color no se puede dar de alta desde la pantalla.** La
 matriz exige al menos un color y al menos una talla, y la base ya acepta una

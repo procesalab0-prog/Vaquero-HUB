@@ -61,9 +61,10 @@ Opciones:
 1. El lector de cámara quedó construido en 0.15.0. Probarlo dentro de la PWA
    instalada y validar un código generado tanto en pantalla como impreso con
    iPhone y Android reales.
-2. Completar edición de producto y variante sin permitir cambios a SKU,
-   códigos generados ni campos de SICAR/WooCommerce.
-3. M2.4: carga masiva con corrida en seco y escritura atómica.
+2. La edición segura de producto y variante quedó terminada en 0.16.0: separa
+   datos generales, costo/estado y precio por permiso, y no acepta SKU,
+   códigos ni campos de SICAR/WooCommerce.
+3. **Siguiente:** M2.4, carga masiva con corrida en seco y escritura atómica.
 4. M2.5: plantillas y etiquetas desde computadora de trastienda.
 5. M3: inventario, movimientos y traspasos.
 
@@ -88,9 +89,8 @@ combinaciones.
 
 ## Riesgo de calendario y conexión real
 
-La estimación de Claude del 2 de septiembre permanece alrededor del 30 % del
-alcance de octubre; el lector es transversal y no cambia materialmente ese
-porcentaje. M0, M1 y M1B están terminados; M2 continúa en curso; M3, M4 y M5
+La estimación al cerrar la edición segura queda alrededor del 33 % del alcance
+de octubre. M0, M1 y M1B están terminados; M2 continúa en curso; M3, M4 y M5
 tienen especificación pero no implementación operativa completa; M9 sigue
 bloqueado por la muestra de SICAR.
 

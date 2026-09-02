@@ -7,6 +7,10 @@
 > alta una bota con ocho tallas sin capturar ocho veces.** Si al final de
 > M2 eso no se siente rápido, el milestone no está terminado por más que
 > las pruebas pasen.
+>
+> Estado al 2026-09-02: alta, búsqueda, agregado de variantes, códigos
+> externos, cámara y edición individual segura están implementados. Continúan
+> carga masiva, acciones de precio en lote, etiquetas y validación física.
 
 ## 1. Modelo de datos
 
@@ -122,14 +126,14 @@ lo elija.
 
 Escalas iniciales a sembrar:
 
-| Escala | Valores |
-|---|---|
-| `CALZADO_MX` | 22 a 31, en medias tallas |
-| `ROPA_LETRA` | CH, M, G, XG, XXG |
-| `ROPA_NUMERO` | 28 a 44, pantalones |
-| `SOMBRERO` | por definir con el cliente |
-| `CINTO` | por definir con el cliente |
-| `UNITALLA` | valor único, para bolsas y carteras |
+| Escala        | Valores                             |
+| ------------- | ----------------------------------- |
+| `CALZADO_MX`  | 22 a 31, en medias tallas           |
+| `ROPA_LETRA`  | CH, M, G, XG, XXG                   |
+| `ROPA_NUMERO` | 28 a 44, pantalones                 |
+| `SOMBRERO`    | por definir con el cliente          |
+| `CINTO`       | por definir con el cliente          |
+| `UNITALLA`    | valor único, para bolsas y carteras |
 
 `UNITALLA` existe para que una bolsa siga siendo una variante y el sistema
 no tenga dos caminos distintos según si el producto tiene tallas o no.
@@ -168,10 +172,10 @@ SICAR (`source = 'SICAR'`). Un disparador impide cambiar o borrar `code` y
 **Decisión pendiente, y depende del ensayo 1 del runbook:** hay que ver
 qué simbología imprime SICAR hoy antes de elegir.
 
-| Opción | A favor | En contra |
-|---|---|---|
-| **EAN-13 con prefijo interno** (rango 20–29, reservado para uso en tienda) | Lo lee cualquier lector, incluso láser barato. Dígito verificador incluido. Encaja en plantillas de etiqueta estándar | Sólo numérico, 13 dígitos fijos |
-| **Code128** | Alfanumérico, longitud libre | Etiqueta más ancha; sin verificador propio |
+| Opción                                                                     | A favor                                                                                                               | En contra                                  |
+| -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| **EAN-13 con prefijo interno** (rango 20–29, reservado para uso en tienda) | Lo lee cualquier lector, incluso láser barato. Dígito verificador incluido. Encaja en plantillas de etiqueta estándar | Sólo numérico, 13 dígitos fijos            |
+| **Code128**                                                                | Alfanumérico, longitud libre                                                                                          | Etiqueta más ancha; sin verificador propio |
 
 Recomendación por defecto: **EAN-13 con prefijo interno**, salvo que
 SICAR use Code128 hoy — en cuyo caso conviene igualarlo para que las
@@ -293,21 +297,21 @@ navegador. Es una falla conocida que aparece tarde y de la peor forma.
 
 ## 9. Pruebas obligatorias
 
-| # | Escenario | Resultado esperado |
-|---|---|---|
-| 1 | Generar 2 colores × 8 tallas | Exactamente 16 variantes, cada una con su código |
-| 2 | Listar tallas de calzado | Orden 25, 25.5, 26… nunca alfabético |
-| 3 | Alta de una bota con 8 tallas, cronometrada | Menos de un minuto |
-| 4 | Dar de alta un código que ya existe | Rechazado |
-| 5 | Intentar cambiar `legacy_sicar_code` ya poblado | `LEGACY_CODE_IMMUTABLE` |
-| 6 | Agregar la talla 29 a un producto existente | Las variantes previas quedan intactas |
-| 7 | Carga masiva con duplicados | Nada se escribe; reporte señala cuáles |
-| 8 | Carga masiva válida corrida dos veces | La segunda no duplica nada |
-| 9 | Cambio de precio en lote a 300 variantes | 300 renglones en `audit_log` |
-| 10 | `CASHIER` intenta cambiar un precio | Rechazado |
-| 11 | `CASHIER` consulta una variante | No ve el costo |
-| 12 | Borrar una variante con movimientos | Rechazado; sólo se desactiva |
-| 13 | Escanear cualquiera de los códigos de una variante | Encuentra la misma variante |
+| #   | Escenario                                          | Resultado esperado                               |
+| --- | -------------------------------------------------- | ------------------------------------------------ |
+| 1   | Generar 2 colores × 8 tallas                       | Exactamente 16 variantes, cada una con su código |
+| 2   | Listar tallas de calzado                           | Orden 25, 25.5, 26… nunca alfabético             |
+| 3   | Alta de una bota con 8 tallas, cronometrada        | Menos de un minuto                               |
+| 4   | Dar de alta un código que ya existe                | Rechazado                                        |
+| 5   | Intentar cambiar `legacy_sicar_code` ya poblado    | `LEGACY_CODE_IMMUTABLE`                          |
+| 6   | Agregar la talla 29 a un producto existente        | Las variantes previas quedan intactas            |
+| 7   | Carga masiva con duplicados                        | Nada se escribe; reporte señala cuáles           |
+| 8   | Carga masiva válida corrida dos veces              | La segunda no duplica nada                       |
+| 9   | Cambio de precio en lote a 300 variantes           | 300 renglones en `audit_log`                     |
+| 10  | `CASHIER` intenta cambiar un precio                | Rechazado                                        |
+| 11  | `CASHIER` consulta una variante                    | No ve el costo                                   |
+| 12  | Borrar una variante con movimientos                | Rechazado; sólo se desactiva                     |
+| 13  | Escanear cualquiera de los códigos de una variante | Encuentra la misma variante                      |
 
 ## 10. Criterios de aceptación
 

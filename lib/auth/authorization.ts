@@ -17,5 +17,5 @@ export async function requirePermission(permissionCode: string) {
     .maybeSingle();
   if (!permission) throw new Error("NOT_AUTHORIZED");
 
-  return { supabase, userId };
+  return { supabase, userId, roleId: profile.role_id };
 }
