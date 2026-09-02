@@ -1084,7 +1084,9 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
       const denied = await client.rpc("validate_catalog_import", {
         p_rows: invalidRows,
       });
-      expect(denied.error?.message).toContain("NOT_AUTHORIZED");
+      expect(denied.error?.message).toMatch(
+        /NOT_AUTHORIZED|permission denied for function/,
+      );
     }
   });
 });
