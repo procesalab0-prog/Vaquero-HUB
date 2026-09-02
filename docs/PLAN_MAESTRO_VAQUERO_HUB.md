@@ -1659,6 +1659,10 @@ Entrega visible 0.7.0 — Acceso y administración segura:
 - Las credenciales se guardan como variables protegidas de Vercel y no forman
   parte del repositorio. Nunca se reutiliza la clave secreta de un entorno en el
   otro.
+- El 2 de septiembre de 2026 se restauraron en Vercel Preview la URL, clave
+  pública y clave secreta propias de staging. La clave privilegiada se rotó y
+  las credenciales anteriores de staging fueron revocadas; Producción no fue
+  modificada durante esa rotación.
 - El ambiente de staging cuenta con la sucursal inicial `LAP` (La Piedad) y el primer administrador `SALOMON` (Salomon), asignado a esa sucursal. Su contraseña temporal se entrega fuera del repositorio y deberá rotarse.
 - El autorregistro quedó deshabilitado también en la configuración alojada de Supabase Auth, no sólo en la configuración local.
 - La integración real fue validada de extremo a extremo en la web publicada: inicio de sesión, sesión protegida, identidad y sucursal, Administración, rol ADMIN con 29 permisos y bitácora de auditoría. No se observaron errores de consola durante la verificación.
