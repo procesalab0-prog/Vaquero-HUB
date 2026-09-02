@@ -48,6 +48,24 @@ saltando lo bloqueado.
 Veintitrés migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
+### Entornos alojados
+
+- **Producción:** Vercel Production usa la rama `main` de Supabase, proyecto
+  `drubkjlmfbdeglucakmg`. Las 23 migraciones del repositorio fueron aplicadas
+  y verificadas el 2 de septiembre de 2026.
+- **Pruebas:** la rama Supabase `staging`, referencia
+  `zsezjtswqeijboezvado`, se reserva para Vercel Preview y validaciones previas
+  a producción. Sus tres variables fueron restauradas como valores exclusivos
+  de Preview el 2 de septiembre de 2026.
+- Los dos entornos usan credenciales distintas. Las claves viven únicamente en
+  variables protegidas de Vercel; nunca se copian al repositorio.
+- La clave secreta de staging se rotó después de separar los ambientes. Las
+  claves anteriores quedaron revocadas y sólo permanece activa la credencial
+  identificada para Vercel Preview.
+- Producción aún no recibió cuentas ni datos operativos. El esquema está listo,
+  pero el primer administrador debe darse de alta de forma segura antes de
+  probar los flujos autenticados.
+
 ### Falta para el alcance de octubre
 
 | Milestone                                        | Estado de la especificación                                                                                                   |

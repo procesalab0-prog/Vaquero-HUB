@@ -1616,8 +1616,10 @@ Infraestructura contratada:
 - PostgreSQL 17; proyecto activo y saludable al momento del alta.
 - Proyecto inicialmente vacío: sin tablas, migraciones ni ramas remotas.
 - Desarrollo mediante Supabase local y migraciones versionadas.
-- Staging deberá crearse como ambiente aislado antes de aplicar M1 remotamente.
-- Ningún agente aplicará cambios directamente en la base de producción.
+- Staging existe como rama aislada y debe recibir y validar cada migración antes
+  de promoverla.
+- Producción sólo recibe migraciones versionadas ya verificadas, con autorización
+  explícita del usuario y una comprobación posterior de esquema, RLS y operación.
 
 Estado de M0:
 
@@ -1633,7 +1635,8 @@ Estado de M1:
 
 - La base de identidad y RLS fue fusionada a `main` mediante el PR #2 el 31 de agosto de 2026; commit squash `6e0600d`.
 - La rama de staging de Supabase está activa y aislada de producción; M0 fue aplicado y validado ahí.
-- La base de producción continúa sin migraciones de negocio. M1 se ensaya primero en staging.
+- M1 y las migraciones posteriores se ensayan primero en staging. El 2 de septiembre
+  de 2026, las 23 migraciones existentes se promovieron y verificaron en `main`.
 - M1 comienza por la capa de seguridad: sucursales, empleados, roles, permisos, asignaciones, auditoría, funciones privadas y RLS deny-by-default.
 - El autorregistro de empleados queda deshabilitado; el primer administrador se crea con un script de servidor que nunca expone la clave secreta.
 - La verificación de PIN devuelve estados controlados en vez de lanzar una excepción para credenciales inválidas. Esto permite que PostgreSQL confirme el contador de intentos, el bloqueo y la auditoría; lanzar una excepción revertiría esas escrituras.
@@ -1648,9 +1651,18 @@ Entrega visible 0.7.0 — Acceso y administración segura:
 - Crear y editar empleados y sucursales exige validación explícita de permiso en una Server Action y vuelve a pasar por las políticas RLS. La creación de una identidad de Auth utiliza la clave secreta sólo en servidor.
 - La bitácora se presenta como sólo lectura; la interfaz no ofrece editar o borrar eventos.
 - La edición masiva de permisos permanece deliberadamente de sólo lectura hasta implementar una operación transaccional que no pueda dejar un rol parcialmente actualizado.
-- Sin variables de Supabase, la web pública conserva el modo demostración 0.6.2. Al configurar variables, activa el acceso real; las primeras pruebas remotas apuntarán únicamente a staging.
-- Supabase producción continúa sin migraciones de negocio y no se usará para estas pruebas.
-- Vercel Production y Preview quedaron conectados el 31 de agosto de 2026 exclusivamente al proyecto Supabase de staging `zsezjtswqeijboezvado`; las credenciales se guardan como variables secretas de Vercel y no forman parte del repositorio.
+- Sin variables de Supabase, la web conserva el modo demostración 0.6.2. Cuando
+  existen, activa el acceso real.
+- Desde el 2 de septiembre de 2026, Vercel Production apunta exclusivamente a
+  Supabase `main` (`drubkjlmfbdeglucakmg`). Vercel Preview debe apuntar
+  exclusivamente a la rama `staging` (`zsezjtswqeijboezvado`).
+- Las credenciales se guardan como variables protegidas de Vercel y no forman
+  parte del repositorio. Nunca se reutiliza la clave secreta de un entorno en el
+  otro.
+- El 2 de septiembre de 2026 se restauraron en Vercel Preview la URL, clave
+  pública y clave secreta propias de staging. La clave privilegiada se rotó y
+  las credenciales anteriores de staging fueron revocadas; Producción no fue
+  modificada durante esa rotación.
 - El ambiente de staging cuenta con la sucursal inicial `LAP` (La Piedad) y el primer administrador `SALOMON` (Salomon), asignado a esa sucursal. Su contraseña temporal se entrega fuera del repositorio y deberá rotarse.
 - El autorregistro quedó deshabilitado también en la configuración alojada de Supabase Auth, no sólo en la configuración local.
 - La integración real fue validada de extremo a extremo en la web publicada: inicio de sesión, sesión protegida, identidad y sucursal, Administración, rol ADMIN con 29 permisos y bitácora de auditoría. No se observaron errores de consola durante la verificación.
@@ -1709,8 +1721,11 @@ Corrección operativa 0.9.4 — Auditoría de clientes en integración:
 
 Configuración operativa de Auth — Redirección de Mi Vaquero:
 
-- El proyecto Supabase de staging usa `https://vaquero-hub.vercel.app/mi` como `Site URL`.
-- La misma dirección está registrada explícitamente en `Redirect URLs`.
+- Supabase `main` usa `https://vaquero-hub.vercel.app` como `Site URL` y
+  `https://vaquero-hub.vercel.app/mi` está registrada explícitamente en
+  `Redirect URLs`.
+- Staging debe autorizar el dominio de Preview que se use para probar correos;
+  el enlace jamás debe apuntar a producción por accidente durante una prueba.
 - No debe restaurarse `http://localhost:3000` como destino del entorno publicado: cuando una URL solicitada no está autorizada, Supabase usa el `Site URL` y el enlace de un solo uso puede consumirse antes de llegar a la PWA.
 
 Corrección operativa 0.9.5 — Sesión persistente y acceso multidispositivo:
@@ -1747,6 +1762,9 @@ Entrega visible 0.10.0 — M2, catálogo real y generador de variantes:
   staging `zsezjtswqeijboezvado` y registradas en su historial. La prueba
   remota generó y encontró ocho variantes dentro de una transacción que fue
   revertida; no dejó datos de prueba.
+- El 2 de septiembre de 2026, la cadena completa de 23 migraciones se aplicó en
+  orden a Supabase `main`; se comprobaron 17 tablas públicas con RLS activo,
+  las funciones críticas y los catálogos de roles y permisos.
 - La verificación móvil automatizada confirma una superficie táctil mínima de
   48 px para las tallas, ocho selecciones desde una sola captura y ausencia de
   desbordamiento horizontal.
@@ -1819,8 +1837,9 @@ Entrega visible 0.12.0 — ampliar variantes sin perder identidad:
   transacción y nunca modifica las variantes anteriores.
 - La comprobación de combinación se serializa por producto para impedir que dos
   usuarios concurrentes creen el mismo artículo físico con identidades distintas.
-- Las migraciones deben aplicarse al staging conectado a Vercel antes de probar
-  esta función en la web; no deben aplicarse al proyecto `drub…` por error.
+- Las migraciones deben aplicarse y probarse en staging antes de promoverse a
+  `main`. La promoción de esta entrega a `main` quedó completada el 2 de
+  septiembre de 2026.
 
 Entrega visible 0.13.0 — códigos externos y reimpresión segura:
 
