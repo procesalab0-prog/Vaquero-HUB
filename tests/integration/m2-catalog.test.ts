@@ -334,14 +334,24 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
   });
 
   it("agrega una talla sin cambiar las identidades existentes", async () => {
-    const originalIdentities = new Map(
-      state.variantIds.map((id, index) => [
-        id,
-        {
-          sku: state.skus[index],
-          barcode: state.primaryBarcodes[index],
-        },
-      ]),
+    const before = await state.admin!.client.rpc("search_catalog", {
+      p_query: `Bota matriz ${runCode}`,
+      p_limit: 30,
+    });
+    expect(before.error).toBeNull();
+    const originalIdentities = new Map<
+      string,
+      { sku: string; barcode: string }
+    >(
+      before.data.map(
+        (row: { variant_id: string; sku: string; primary_barcode: string }) => [
+          row.variant_id,
+          {
+            sku: row.sku,
+            barcode: row.primary_barcode,
+          },
+        ],
+      ),
     );
     const [colorId] = Object.values(state.colorIds);
     const { data, error } = await state.warehouse!.client.rpc(
