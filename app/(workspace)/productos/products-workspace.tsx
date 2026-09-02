@@ -63,6 +63,8 @@ const statusMessages: Record<string, string> = {
   "producto-creado": "Producto y variantes guardados correctamente.",
   "variantes-agregadas":
     "Las nuevas variantes se agregaron sin cambiar los SKU ni códigos existentes.",
+  "variantes-error":
+    "No fue posible agregar las variantes. Revisa los datos e inténtalo de nuevo.",
   "producto-duplicado":
     "Ese SKU o código de barras ya existe. No se guardó ningún renglón.",
   "producto-combinacion-repetida":

@@ -122,6 +122,53 @@ problema. La colisión queda programada para el día que la secuencia llegue a
 ese número, meses después, sin relación aparente con la migración que la
 causó. Aplica igual a cualquier guion de respaldo o reparación.
 
+## Regla nueva, y de las importantes: una migración fusionada no se edita
+
+**Si una migración ya está en `main`, no se corrige tocando su archivo: se
+corrige con una migración nueva.**
+
+Salió de un caso concreto y vale la pena entenderlo, porque el error es
+razonable y el resultado es de los que no se ven.
+
+Al construir `add_variants_to_product` se encontró una carrera real en el
+control de combinaciones repetidas: la comprobación es diferida, corre al
+cerrar la transacción y toma su propia instantánea, así que dos
+transacciones que agregan la misma talla al mismo producto pueden comprobar
+sin verse y confirmar las dos. **El hallazgo es correcto y el candado que lo
+cierra es el correcto** — reproducido ensanchando la ventana: sin candado
+quedan dos variantes con la misma talla; con candado, una se rechaza.
+
+Lo que falló fue dónde se escribió: dentro de `20260902041500`, que ya
+estaba fusionada.
+
+El corredor de migraciones lleva cuenta de lo que ya ejecutó **por versión,
+no por contenido**. Un archivo que cambia después de haber corrido no vuelve
+a correr. Así que el candado queda en toda base nueva y **no** en la que ya
+existe, que es justamente la que tiene los datos.
+
+Y lo peor: **CI no puede detectarlo.** Corre `supabase db reset`, que
+reconstruye desde cero, así que siempre ve el archivo editado y siempre pasa
+en verde. La divergencia sólo aparece en el proyecto real, en forma de
+variantes duplicadas que nadie sabe explicar.
+
+Comprobado en las dos direcciones:
+
+| Base | Con el archivo editado | Con migración aparte |
+|---|---|---|
+| Nueva, desde cero | candado presente | candado presente |
+| Que ya aplicó `20260902041500` | **candado ausente** | candado presente |
+
+Cerrado en `20260902150000`, que hace `create or replace` de la función.
+Esa forma deja el mismo estado final se haya aplicado o no la versión
+anterior, y por eso es la segura.
+
+Es la quinta vez en este proyecto que aparece el mismo patrón —un control
+que parece estar puesto y no lo está donde importa—, y la primera en que el
+disfraz fue el propio proceso en vez del código.
+
+**Excepción única:** una migración que todavía no se ha fusionado sí se
+edita libremente. La regla arranca en el momento en que entra a `main`.
+
 ## Integrado en esta entrega
 
 - Acceso del cliente sin adivinar el destino. Ya se configuró
@@ -136,6 +183,9 @@ causó. Aplica igual a cualquier guion de respaldo o reparación.
 - Revisión del generador: una sola variante por combinación de atributos,
   con las diez pruebas obligatorias de `specs/CODIGOS_Y_SKU.md` ejecutadas
   contra un PostgreSQL real.
+- `add_variants_to_product`, y el candado que serializa la comprobación de
+  combinaciones repetidas, movido a migración propia para que llegue también
+  a las bases que ya existen.
 
 ---
 
@@ -348,6 +398,9 @@ No se empieza hasta tener respuesta. Todas están en
 ## Antes de dar por terminada cualquier tarea
 
 - [ ] Migración versionada que aplica limpio sobre base vacía.
+- [ ] **Ninguna migración ya fusionada fue modificada.** `git diff` contra
+      `main` no debe tocar un archivo de `supabase/migrations/` que ya
+      existía ahí. Si hay que corregir algo, va en un archivo nuevo.
 - [ ] RLS activo en toda tabla nueva, con prueba de que un rol sin permiso
       no puede leer ni escribir.
 - [ ] Pruebas de la lógica crítica: dinero, inventario, caja.
@@ -356,6 +409,8 @@ No se empieza hasta tener respuesta. Todas están en
 - [ ] El PR responde qué se modificó, por qué, riesgos, pruebas,
       migraciones e impacto.
 
-Y una pregunta encima de todo, porque tres hallazgos de la auditoría
-fueron exactamente de ese tipo: **¿este control de verdad hace lo que
-dice?** Que el código exista no significa que funcione.
+Y una pregunta encima de todo, porque cinco hallazgos ya fueron
+exactamente de ese tipo: **¿este control de verdad hace lo que dice, y lo
+hace donde importa?** Que el código exista no significa que funcione, y que
+CI esté en verde no significa que el control haya llegado a la base que
+tiene los datos.
