@@ -42,6 +42,46 @@ desarrollo. No son códigos externos ni se modificaron en esta corrección. Se
 deben identificar como pruebas o mercancía real cuando llegue la exportación;
 los códigos generados son inmutables y no se borran por suposición.
 
+## Los 18 productos de prueba no se pueden borrar
+
+Salió al revisar el estado verificado, y conviene saberlo antes de abrir.
+
+Producción contiene 18 códigos `GENERATED` creados durante el desarrollo.
+**No se pueden eliminar, ni con el máximo privilegio.** Comprobado ejecutando
+la cadena completa:
+
+| Intento | Resultado |
+|---|---|
+| Borrar el código `GENERATED` | `GENERATED_BARCODE_IMMUTABLE` |
+| Borrar la variante | La bloquea la llave foránea del código |
+| Borrar el producto | La bloquea la llave foránea de la variante |
+
+No es un defecto: es la inmutabilidad que protege los códigos reales,
+funcionando. Pero deja una consecuencia operativa.
+
+**Lo único que se puede hacer es darlos de baja**, y eso basta *si* todo lo
+que los consume respeta la baja. `search_catalog` **sí devuelve las variantes
+dadas de baja** —a propósito, porque hacen falta para reactivarlas—, así que
+el filtro tiene que estar del lado de quien consume.
+
+Ya quedó cubierto lo que existe hoy: la pantalla de productos las marca
+**Dada de baja** y el registro de códigos ya no las ofrece. Lo que falta es la
+parte que todavía no se construye: **el POS no debe venderlas**, escrito como
+regla dura en §2.2 de [`specs/M4_POS_Y_CAJA.md`](specs/M4_POS_Y_CAJA.md) con
+sus dos pruebas obligatorias. Sin eso, el primer día de operación se puede
+cobrar un artículo de prueba.
+
+Antes de abrir, conviene darlos de baja:
+
+```sql
+-- Primero mirarlos, y decidir cuáles son prueba y cuáles mercancía real.
+select p.name, v.sku, b.code, v.is_active
+from public.variants v
+join public.products p on p.id = v.product_id
+join public.barcodes b on b.variant_id = v.id and b.source = 'GENERATED'
+order by v.sku;
+```
+
 ## Decisión del dueño: quién registra códigos de proveedor
 
 `register_variant_barcode` exige actualmente `products.update`, permiso de

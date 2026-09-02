@@ -285,6 +285,32 @@ Un requisito de este milestone: **verificar que la cámara funciona dentro
 de la PWA instalada**, en un iPhone y un Android reales, no sólo desde el
 navegador. Es una falla conocida que aparece tarde y de la peor forma.
 
+### 7.2 Qué significa dar de baja una variante, y qué no
+
+La columna `is_active` existía desde el primer esquema y **ninguna regla decía
+qué hace**. Conviene fijarla ahora, porque ya tiene consecuencias.
+
+Dar de baja **no borra nada**: la identidad de la variante es inmutable, su
+código sigue pegado en cajas y su historial no se toca. Sólo significa
+«esto ya no se vende».
+
+Por eso `search_catalog` **sí devuelve las variantes dadas de baja**, con el
+campo `is_active` al lado. Es deliberado: quien administra necesita
+encontrarlas para reactivarlas, y la regla del proyecto es que una variante
+que vuelve se reactiva, no se recrea.
+
+La contraparte es obligatoria: **quien consuma la búsqueda tiene que
+distinguirlas.** Si el estado se pierde en el camino —por ejemplo al mapear a
+un tipo de la interfaz que no lo incluye—, lo que ya no se vende se ve
+idéntico a lo vendible. Eso ya pasó una vez.
+
+Dos consecuencias concretas:
+
+- La pantalla de productos las marca **Dada de baja**.
+- `register_variant_barcode` **rechaza** una variante o un producto inactivo,
+  así que ninguna interfaz debe ofrecerlos para registrar un código: sólo
+  produciría un «variante no encontrada» que no explica nada.
+
 ## 8. RLS
 
 - Lectura del catálogo: cualquier usuario activo con `products.read`.

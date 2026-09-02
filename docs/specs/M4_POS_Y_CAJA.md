@@ -151,6 +151,28 @@ Cancelar una venta **no la borra**: cambia `status` y genera documentos
 compensatorios. `sales.status` es la única columna que puede cambiar, y el
 disparador debe permitir exactamente eso y nada más.
 
+### 2.2 El POS no vende lo que está dado de baja
+
+**`create_sale` rechaza cualquier renglón cuya variante o cuyo producto tenga
+`is_active = false`.** La comprobación va dentro de la transacción, junto a la
+lectura del precio, no en la pantalla.
+
+El motivo no es hipotético. `search_catalog` devuelve a propósito las
+variantes dadas de baja —hacen falta para reactivarlas, ver §7.1 de
+[`M2_CATALOGO.md`](M2_CATALOGO.md)—, así que el POS las va a recibir en los
+resultados. Si nadie las filtra, se venden.
+
+Y hay un caso que lo vuelve concreto desde el primer día: **producción ya
+contiene productos de prueba que no se pueden borrar.** Sus códigos son
+`GENERATED` y por lo tanto inmutables; la variante no se puede borrar porque
+el código la referencia, y el producto tampoco porque la variante lo
+referencia. Lo único que se puede hacer es darlos de baja. Si el POS no
+respeta esa baja, el primer día de operación se puede cobrar un artículo de
+prueba.
+
+Prueba obligatoria: **intentar vender una variante dada de baja se rechaza**,
+y el mensaje dice por qué.
+
 ## 3. La única forma en que el dinero cuadra
 
 ### 3.1 Todo en centavos enteros
@@ -422,6 +444,8 @@ Ver la discusión de arquitectura en `PLAN_CODEX.md` sección 9.1.
 | 17 | `UPDATE` o `DELETE` sobre una venta | Rechazado por el disparador |
 | 18 | `CASHIER` consulta ventas de otra sucursal | Cero filas |
 | 19 | `CASHIER` consulta el costo de un renglón | No lo ve |
+| 20 | Vender una variante dada de baja | Rechazado, con el motivo (§2.2) |
+| 21 | Vender un producto dado de baja con variante activa | Rechazado igual |
 
 ## 11. Criterios de aceptación
 

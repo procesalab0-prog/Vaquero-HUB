@@ -13,6 +13,12 @@ export type ProductVariant = {
   size: string;
   price: number;
   cost?: number;
+  /**
+   * Una variante dada de baja sigue existiendo y sigue apareciendo en la
+   * búsqueda: su identidad es inmutable y su historial no se borra. Por eso el
+   * estado tiene que viajar hasta la interfaz — si se pierde aquí, lo inactivo
+   * se ve idéntico a lo vendible.
+   */
   isActive?: boolean;
   stock: number;
   /** Ruta de la fotografía aprobada por el dueño. Si falta, la UI muestra un fallback neutro. */

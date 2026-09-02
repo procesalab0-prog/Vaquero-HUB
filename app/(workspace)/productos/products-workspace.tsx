@@ -665,6 +665,9 @@ export function ProductsWorkspace({
               </span>
               <strong>
                 {item.productName}
+                {item.isActive === false ? (
+                  <em className="variant-inactive">Dada de baja</em>
+                ) : null}
                 <small>{item.brand}</small>
               </strong>
             </div>
@@ -974,12 +977,17 @@ export function ProductsWorkspace({
                     }
                     required
                   >
-                    {variants.map((variant) => (
-                      <option value={variant.id} key={variant.id}>
-                        {variant.productName} · {variant.color} · talla{" "}
-                        {variant.size}
-                      </option>
-                    ))}
+                    {/* Sólo las activas: `register_variant_barcode` exige que la
+                        variante y su producto lo estén, así que ofrecer una dada
+                        de baja sólo produce un «variante no encontrada». */}
+                    {variants
+                      .filter((variant) => variant.isActive !== false)
+                      .map((variant) => (
+                        <option value={variant.id} key={variant.id}>
+                          {variant.productName} · {variant.color} · talla{" "}
+                          {variant.size}
+                        </option>
+                      ))}
                   </select>
                 </label>
                 <label>

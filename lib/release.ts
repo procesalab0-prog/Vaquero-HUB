@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.17.0";
-export const APP_RELEASE = "Carga masiva segura de catálogo";
+export const APP_VERSION = "0.17.1";
+export const APP_RELEASE = "Lo dado de baja se distingue";
