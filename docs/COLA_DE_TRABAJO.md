@@ -6,6 +6,10 @@
 > Para entender el proyecto antes de tocarlo, empezar por
 > [`ESTADO_Y_CONTINUIDAD.md`](ESTADO_Y_CONTINUIDAD.md).
 >
+> Lo que **no** se resuelve programando —migraciones correctivas que faltan
+> en producción, consultas de verificación, decisiones de negocio abiertas—
+> vive en [`PENDIENTES.md`](PENDIENTES.md).
+>
 > Última actualización: 2026-09-02, tras revisar el generador de identidad.
 
 ## Cómo usar esta cola

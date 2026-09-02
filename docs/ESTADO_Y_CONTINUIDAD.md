@@ -31,6 +31,11 @@ La aplicación se llama **Mi Tienda SM**; el proyecto, Vaquero Hub.
 [`COLA_DE_TRABAJO.md`](COLA_DE_TRABAJO.md): se toma de arriba hacia abajo,
 saltando lo bloqueado.
 
+**¿Retomas el proyecto o vienes de una revisión?** Empieza por
+[`PENDIENTES.md`](PENDIENTES.md): reúne lo que hay que correr contra la base
+real, lo que falta decidir y lo que no se resuelve programando. Buena parte
+de eso no la puede hacer un agente.
+
 ## 2. Dónde vamos
 
 ### Terminado y en `main`
@@ -112,6 +117,13 @@ tumbar la fecha son cinco cosas que dependen del cliente y del hardware:
 Si retomas el proyecto y sólo puedes empujar una cosa, empuja éstas antes
 que el código.
 
+**Y hay dos que no dependen del cliente sino de nosotros**, detalladas en
+[`PENDIENTES.md`](PENDIENTES.md): aplicar a producción y staging las dos
+migraciones correctivas que todavía no llegaron, y decidir quién puede
+registrar el código de un proveedor. La primera importa porque desde el 2 de
+septiembre esos entornos tienen el esquema aplicado, y **una migración que ya
+corrió allá no se vuelve a ejecutar nunca.**
+
 ## 5. Las reglas que no se negocian
 
 Están completas en `PLAN_CODEX.md` §2. Las que más se rompen por descuido:
@@ -164,5 +176,12 @@ no protegían.** Un `revoke` que rompía consultas en vez de negarlas, un
 contador de intentos que se revertía con la excepción que lo seguía, una
 función que confiaba en el id de usuario que le pasaban por parámetro.
 
-Conviene revisar con esa pregunta encima: _¿este control de verdad hace lo
-que dice?_ Que exista el código no significa que funcione.
+Las revisiones de M2 sumaron dos más, y son las más incómodas porque **CI
+estaba en verde en los dos casos**: un control que existía pero no llegaba a
+la base con los datos, y un candado escrito dentro de una migración ya
+aplicada, que por eso no vuelve a ejecutarse.
+
+Conviene revisar con esa pregunta encima, en su forma completa: _¿este
+control de verdad hace lo que dice, y lo hace donde importa?_ Que exista el
+código no significa que funcione, y que CI pase no significa que haya
+llegado a producción.
