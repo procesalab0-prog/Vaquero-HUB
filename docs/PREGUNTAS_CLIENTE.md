@@ -36,6 +36,8 @@ usa**. Esta lista es el índice, no la fuente de verdad.
 | 1.6 | ¿Quieren ver el margen en la pantalla de producto, o sólo el precio? | M2 | 🟡 |
 | 1.7 | La carga masiva, ¿parte del Excel exportado de SICAR o de una plantilla propia de Mi Tienda SM? | M2 | 🟡 |
 | 1.8 | ¿Qué impresora de etiquetas usan hoy (marca y modelo)? | M2 | 🟡 |
+| 1.9 | ¿Quieren el SKU impreso en la etiqueta además del código de barras? Ayuda a buscar a mano cuando el código no escanea | M2 | 🟡 |
+| 1.10 | ¿Hoy reetiquetan todo lo que llega, o aprovechan el código del fabricante cuando ya viene impreso? | M2, M6 | 🟡 |
 
 ## 2. Inventario y traspasos
 

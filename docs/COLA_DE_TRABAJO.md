@@ -87,9 +87,16 @@ Qué construir:
 - **Falta el generador de código y de SKU, y es lo siguiente en orden.**
   Hoy `create_catalog_product` **exige** que quien llama mande el código de
   barras, así que la interfaz tiene que inventarlo — que es justo de donde
-  salen los duplicados y los formatos inconsistentes. La especificación
-  dice que el sistema lo genera. Mientras eso no exista, el alta rápida de
-  una bota con ocho tallas no se puede cumplir de verdad.
+  salen los duplicados y los formatos inconsistentes.
+
+  **Especificación completa:** [`specs/CODIGOS_Y_SKU.md`](specs/CODIGOS_Y_SKU.md).
+  Lo esencial: una sola secuencia interna de la que salen el SKU y el
+  código de barras, para que no se desincronicen; dígito verificador en el
+  SKU porque alguien lo va a teclear y un error de dedo no debe caer en
+  otro artículo; y la simbología detrás de una constante mientras SICAR no
+  conteste. **No se enciende la generación en producción** hasta comprobar
+  contra la exportación de muestra que ningún código heredado empieza con
+  el prefijo elegido (sección 7 de esa especificación).
 - Interfaz: matriz talla × color **editable antes de guardar**, porque no
   todo color viene en todas las tallas.
 
