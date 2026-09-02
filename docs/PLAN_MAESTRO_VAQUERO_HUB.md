@@ -1961,6 +1961,10 @@ Entrega visible 0.17.0 — carga masiva segura de catálogo:
 - Las tres migraciones de esta entrega se aplicaron y probaron primero en
   staging. Las dos migraciones correctivas conservan el historial alojado en
   lugar de reescribir una migración ya aplicada.
+- Después de CI verde se promovieron las mismas tres migraciones a producción
+  y se verificaron permisos, endurecimiento y publicación de la versión 0.17.0
+  en Vercel. La pantalla real mostró el recorrido completo sin usar datos de
+  demostración ni dejar una importación de prueba.
 - La interfaz mantiene un recorrido táctil de tres pasos y cancela claramente
   ante errores. La siguiente entrega de M2 es M2.5: selección en lote y
   plantillas de etiquetas desde la computadora de trastienda.

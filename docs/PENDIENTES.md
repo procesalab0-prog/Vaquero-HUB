@@ -31,6 +31,12 @@ También se verificó que ambos entornos contienen el candado y el rechazo
 directamente el disparador interno. En producción se probó el rechazo del
 prefijo dentro de una transacción revertida.
 
+La carga masiva 0.17.0 y sus dos migraciones correctivas se aplicaron primero
+en staging y después en producción. En ambos entornos `anon` no puede ejecutar
+la validación ni la confirmación; `authenticated` sólo entra a funciones que
+vuelven a exigir `products.create`. La publicación real en Vercel quedó
+verificada el 2 de septiembre de 2026.
+
 ## Compuerta pendiente de SICAR
 
 No se debe habilitar la generación de códigos para operación real hasta
