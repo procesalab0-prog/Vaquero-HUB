@@ -35,7 +35,7 @@ export function parseCustomerIdentifier(
  */
 export function customerRedirectUrl(requestUrl: string) {
   const configured = process.env.CUSTOMER_APP_URL?.trim();
-  if (configured) return new URL("/", configured).toString();
+  if (configured) return new URL(configured).toString();
 
   const request = new URL(requestUrl);
   if (request.hostname === "localhost" || request.hostname === "127.0.0.1") {

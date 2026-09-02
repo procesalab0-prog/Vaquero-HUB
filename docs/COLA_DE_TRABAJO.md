@@ -18,36 +18,39 @@
   está definido y se deja el resto fuera del PR, marcado como bloqueado.
 - Al terminar una tarea, se marca aquí.
 
-## Esperando revisión o merge
+## Integrado en esta entrega
 
-| PR | Qué | Nota |
-|---|---|---|
-| #7 | El enlace de acceso del cliente ya no adivina su destino | **Antes de fusionar hay que definir `CUSTOMER_APP_URL` en Vercel**, o el acceso de clientes deja de funcionar |
-| #9 | Especificaciones de M4 y M5, continuidad y esta cola | Sólo documentos |
-| #10 | Esquema de M2: catálogo, variantes, atributos y códigos | Las pruebas de integración nunca se han ejecutado; **mirar CI antes de fusionar** |
+- Acceso del cliente sin adivinar el destino. Ya se configuró
+  `CUSTOMER_APP_URL=https://vaquero-hub.vercel.app/mi` en producción.
+- Cierre de seguridad de M1B: anonimización y límite de acceso por origen.
+- Especificaciones de M4 y M5 y documentos de continuidad.
+- Primera entrega de M2: esquema, alta atómica de producto con variantes,
+  búsqueda real y pantalla conectada a Supabase.
 
 ---
 
 ## 1. M2.2 — Alta de catálogo y generador de variantes
 
 **Especificación:** [`specs/M2_CATALOGO.md`](specs/M2_CATALOGO.md) §3
-**Depende de:** que el PR #10 esté fusionado.
+**Estado:** parcialmente terminado en la primera entrega de M2.
 
 Es la función que resuelve el dolor que originó el proyecto: dar de alta
 una bota con ocho tallas sin capturar ocho veces.
 
 Qué construir:
 
-- Funciones `SECURITY DEFINER` en `public` para dar de alta y editar
+- Ya existe `create_catalog_product(...)` para el alta atómica de un producto
+  con múltiples tallas. Falta completar edición y `add_variants_to_product`.
+- Funciones `SECURITY DEFINER` en `public` para editar
   marcas, categorías, productos y variantes. Todas validan permisos
   explícitamente (`products.create`, `products.update`,
   `products.price_update`), porque al ser definer se saltaron la RLS.
-- `create_product_with_variants(...)`: recibe los datos del padre más las
-  combinaciones de talla y color elegidas, y crea el producto y sus
-  variantes en **una sola transacción**.
+- El alta existente recibe los datos del padre más las tallas elegidas y crea
+  producto y variantes en **una sola transacción**. Falta la matriz talla ×
+  color de la especificación completa.
 - `add_variants_to_product(...)`: agregar tallas después **sin tocar ni
   recrear** las variantes existentes, que ya tienen historial.
-- Generación del SKU interno y del código de barras.
+- Falta automatizar la generación del SKU interno y del código de barras.
 - Interfaz: matriz talla × color **editable antes de guardar**, porque no
   todo color viene en todas las tallas.
 
@@ -65,6 +68,7 @@ con un script.
 
 **Especificación:** [`specs/M2_CATALOGO.md`](specs/M2_CATALOGO.md) §7
 
+- **Estado:** primera versión terminada y conectada a `search_catalog`.
 - Búsqueda por código escaneado (exacta contra `barcodes.code`), por
   texto tolerante a acentos, y por código parcial.
 - **Un solo campo**: quien busca teclea o escanea y el sistema decide qué
@@ -163,9 +167,8 @@ No se empieza hasta tener respuesta. Todas están en
 
 | Qué | Dónde |
 |---|---|
-| Función de anonimización de clientes: el esquema la soporta, nadie la ejecuta | Issue #8 |
-| Mudar la PWA de clientes a subdominio propio. El código ya lo soporta con `CUSTOMER_APP_HOST`; falta configurarlo | Issue #8 |
-| `metadataBase` con dominio escrito a mano en `app/layout.tsx` | Issue #8 |
+| Hacer recuperable el borrado de Auth si falla después de anonimizar la fila del cliente | Seguimiento de M1B |
+| Mudar la PWA de clientes a subdominio propio; actualizar `CUSTOMER_APP_URL` cuando exista | Issue #8 |
 | Las specs describen construir pantallas que ya existen en la interfaz 0.6.2 | Issue #4 |
 | El plan maestro no incluye el catálogo de los 19 requerimientos del cliente | Issue #3 |
 

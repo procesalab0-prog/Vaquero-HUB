@@ -42,10 +42,10 @@ describe("acceso y tarjeta del cliente", () => {
   it("nunca adivina el destino del enlace de acceso", () => {
     const original = process.env.CUSTOMER_APP_URL;
 
-    process.env.CUSTOMER_APP_URL = "https://mi.ejemplo.com";
+    process.env.CUSTOMER_APP_URL = "https://mi.ejemplo.com/acceso";
     expect(
       customerRedirectUrl("https://cualquier-cosa.com/api/mi/acceso"),
-    ).toBe("https://mi.ejemplo.com/");
+    ).toBe("https://mi.ejemplo.com/acceso");
 
     delete process.env.CUSTOMER_APP_URL;
     expect(customerRedirectUrl("http://localhost:3000/api/mi/acceso")).toBe(

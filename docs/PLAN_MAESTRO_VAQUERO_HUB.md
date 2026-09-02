@@ -1756,3 +1756,28 @@ Entrega visible 0.10.0 — M2, catálogo real y generador de variantes:
   matriz talla por color editable, carga masiva con corrida en seco, cambio de
   precios en lote, etiquetas persistentes y prueba de escaneo con hardware
   real.
+
+Corrección de seguridad 0.10.1 — Clientes, correo y continuidad:
+
+* Se integró la revisión de Claude Code sin duplicar el esquema de M2. Sus
+  documentos de M4, M5 y continuidad quedan como contexto permanente del
+  repositorio.
+* El destino del enlace mágico ya no se deduce del host de la petición. En
+  cualquier despliegue publicado exige `CUSTOMER_APP_URL`; producción usa la
+  ruta completa `https://vaquero-hub.vercel.app/mi`.
+* La ruta configurada se conserva completa. No debe reducirse al origen del
+  sitio, porque eso enviaría al cliente a la aplicación operativa en vez de a
+  Mi Tienda SM para clientes.
+* Las solicitudes de acceso mantienen el límite por cliente y agregan un
+  segundo límite por origen usando un HMAC irreversible; la dirección IP no
+  se almacena en PostgreSQL.
+* El rol ADMIN obtiene una operación explícita para anonimizar clientes. La
+  fila y el número de socio se conservan para el historial contable, pero se
+  eliminan nombre, teléfono, correo, fecha de nacimiento, consentimiento y
+  vínculo de Auth. La bitácora nunca copia los valores personales anteriores.
+* La migración se validó en staging mediante transacciones reversibles: se
+  comprobó la anonimización completa y que el limitador permite exactamente
+  diez solicitudes por ventana antes de rechazar las siguientes.
+* Deuda reconocida: si Supabase Auth falla después de anonimizar la fila, hace
+  falta una cola de reintento para borrar la identidad huérfana sin perder la
+  trazabilidad del trabajo pendiente.
