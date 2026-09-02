@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.16.0";
-export const APP_RELEASE = "Edición segura de catálogo";
+export const APP_VERSION = "0.17.0";
+export const APP_RELEASE = "Carga masiva segura de catálogo";

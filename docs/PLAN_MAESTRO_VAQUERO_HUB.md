@@ -1935,3 +1935,35 @@ Entrega visible 0.16.0 — edición segura de catálogo:
   almacén y sesión anónima no pueden usar las funciones de edición.
 - La interfaz conserva objetivos táctiles de 44–48 px, desplazamiento interno
   del modal y una sola columna para la identidad en teléfono.
+
+Entrega visible 0.17.0 — carga masiva segura de catálogo:
+
+- Productos permite descargar una plantilla propia de Mi Tienda SM en CSV o
+  XLSX. La hoja incluye los catálogos vigentes y conserva el código físico como
+  texto para no perder ceros iniciales.
+- El flujo separa revisión y confirmación: la corrida en seco no escribe nada,
+  enumera la fila y causa de cada problema, y sólo permite confirmar un archivo
+  completamente válido.
+- PostgreSQL vuelve a validar dentro de la transacción definitiva y serializa
+  la operación. Si una fila cambió, se duplicó o entró en conflicto, no se crea
+  ningún producto ni variante del archivo.
+- El núcleo detecta códigos vacíos, duplicados, existentes, numéricos con ceros
+  perdidos, espacios accidentales, prefijos internos reservados, catálogos
+  inexistentes, tallas ajenas a su escala e importes inválidos. Los SKU y EAN
+  internos siguen generándose exclusivamente en la base.
+- Esta carga sólo admite códigos de proveedor y nunca recibe campos de SICAR o
+  WooCommerce. La migración heredada continúa reservada para M9 y permanece
+  bloqueada hasta revisar la exportación real.
+- La descarga, revisión y confirmación exigen `products.create`; las funciones
+  revocan acceso anónimo, rechazan clientes y dejan una entrada de auditoría
+  resumida. Los archivos se limitan por tamaño y filas; XLSX además se revisa
+  contra expansión excesiva, rutas inválidas, fórmulas y celdas no admitidas.
+- Las tres migraciones de esta entrega se aplicaron y probaron primero en
+  staging. Las dos migraciones correctivas conservan el historial alojado en
+  lugar de reescribir una migración ya aplicada.
+- La interfaz mantiene un recorrido táctil de tres pasos y cancela claramente
+  ante errores. La siguiente entrega de M2 es M2.5: selección en lote y
+  plantillas de etiquetas desde la computadora de trastienda.
+- La base técnica se actualizó a Next.js 16.2.11 y el árbol de dependencias de
+  producción quedó sin vulnerabilidades conocidas en la auditoría del gestor
+  de paquetes al momento de la entrega.

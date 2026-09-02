@@ -341,6 +341,7 @@ columnas, así que toda consulta a `variants` debe nombrar sus columnas.
 ## 3. M2.4 — Carga masiva
 
 **Especificación:** [`specs/M2_CATALOGO.md`](specs/M2_CATALOGO.md) §4
+**Estado:** terminado en 0.17.0.
 
 Requisito duro: **valida todo antes de escribir nada.** Corre en seco,
 devuelve un reporte, y sólo si el usuario lo acepta escribe — dentro de
@@ -353,6 +354,11 @@ pertenecen a la escala de la categoría.
 
 Este validador **comparte núcleo con el sincronizador de SICAR (M9)**. Es
 el mismo problema en dos momentos distintos: conviene escribirlo una vez.
+
+La entrega implementada acepta únicamente la plantilla propia CSV/XLSX y
+códigos de proveedor. No acepta columnas SICAR ni WooCommerce. El usuario
+descarga catálogos vigentes, revisa el archivo sin escribir y confirma una
+segunda operación que vuelve a validar bajo candado y guarda todo o nada.
 
 ## 4. M2.5 — Etiquetas
 

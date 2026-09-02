@@ -64,9 +64,12 @@ Opciones:
 2. La edición segura de producto y variante quedó terminada en 0.16.0: separa
    datos generales, costo/estado y precio por permiso, y no acepta SKU,
    códigos ni campos de SICAR/WooCommerce.
-3. **Siguiente:** M2.4, carga masiva con corrida en seco y escritura atómica.
-4. M2.5: plantillas y etiquetas desde computadora de trastienda.
-5. M3: inventario, movimientos y traspasos.
+3. La carga masiva propia quedó terminada en 0.17.0: plantilla CSV/XLSX,
+   corrida en seco y confirmación atómica. No importa SICAR ni WooCommerce.
+4. **Siguiente:** M2.5, plantillas y etiquetas desde computadora de
+   trastienda.
+5. Después de cerrar M2 y la prueba física: M3, inventario, movimientos y
+   traspasos.
 
 La validación física necesita dispositivos y una impresión real; las pruebas
 automatizadas no la sustituyen.
@@ -89,7 +92,7 @@ combinaciones.
 
 ## Riesgo de calendario y conexión real
 
-La estimación al cerrar la edición segura queda alrededor del 33 % del alcance
+La estimación al cerrar la carga masiva queda alrededor del 35 % del alcance
 de octubre. M0, M1 y M1B están terminados; M2 continúa en curso; M3, M4 y M5
 tienen especificación pero no implementación operativa completa; M9 sigue
 bloqueado por la muestra de SICAR.

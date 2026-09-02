@@ -18,9 +18,9 @@
   Productos conectada a Supabase.
 - M2 ya permite agregar variantes a un producto existente y registrar códigos
   de proveedor o de reimpresión sin borrar los códigos físicos anteriores.
-- Continúan dentro de M2: carga masiva con corrida en seco, acciones de precio
-  en lote, plantillas de etiquetas y escaneo físico. La edición individual
-  segura quedó terminada en 0.16.0.
+- La carga masiva propia quedó terminada en 0.17.0 con corrida en seco y
+  confirmación atómica. Continúan dentro de M2: acciones de precio en lote,
+  plantillas de etiquetas y validación física del escaneo.
 
 ## 0. Cómo usar este documento
 
