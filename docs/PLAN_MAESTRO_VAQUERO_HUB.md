@@ -1800,3 +1800,11 @@ Entrega visible 0.11.0 — M2.2, matriz e identidad automática:
   SICAR para descartar colisiones con el prefijo interno.
 - M2.2 continúa con edición de producto y `add_variants_to_product(...)`; no
   se deben recrear variantes que ya puedan adquirir historial.
+
+Entrega visible 0.11.1 — desplazamiento en computadora e iPad:
+
+- El área principal del sistema tiene desplazamiento vertical propio cuando
+  usa la navegación lateral de computadora o iPad horizontal. Todo el contenido
+  inferior debe ser alcanzable aunque la pantalla tenga poca altura.
+- En móvil se conserva el desplazamiento natural del documento y el espacio de
+  seguridad para la barra inferior de la PWA.
