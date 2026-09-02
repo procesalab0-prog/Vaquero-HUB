@@ -6,7 +6,7 @@
 > Para entender el proyecto antes de tocarlo, empezar por
 > [`ESTADO_Y_CONTINUIDAD.md`](ESTADO_Y_CONTINUIDAD.md).
 >
-> Última actualización: 2026-09-01.
+> Última actualización: 2026-09-02.
 
 ## Cómo usar esta cola
 
@@ -17,6 +17,40 @@
 - Si falta una regla de negocio, **no se inventa**: se implementa lo que sí
   está definido y se deja el resto fuera del PR, marcado como bloqueado.
 - Al terminar una tarea, se marca aquí.
+
+## Regla nueva, salida de la revisión de M2
+
+**Los campos de aterrizaje de la migración sólo los escribe el importador
+de M9: `legacy_sicar_code`, `woocommerce_product_id`,
+`woocommerce_variation_id`, y un código de barras con `source = 'SICAR'`.
+Nunca el alta manual, nunca la interfaz.**
+
+El motivo no es de estilo. Esos cuatro son inmutables por diseño una vez
+escritos, así que un valor puesto por error queda permanente. La cadena
+completa quedó comprobada: cualquier usuario con `products.create` podía
+reservar un código de SICAR meses antes del corte, el disparador impedía
+corregirlo, y al correr la migración real esa fila la tumbaba con
+violación de unicidad sin forma de arreglarla. El evento más delicado del
+proyecto quedaba a merced de un dato que alguien tecleó sin saber.
+
+Ya está cerrado en la migración `20260902170000`. Si aparece una función
+nueva que escriba en catálogo, aplica la misma regla.
+
+**Antes de dar por buena esta parte, hay que revisar staging y producción:**
+si alguien ya creó variantes con `legacy_sicar_code` a través de la
+interfaz, esas filas están envenenadas y el código no se puede corregir.
+Conviene limpiarlas **ahora**, mientras M3 no existe y por lo tanto ninguna
+variante tiene movimientos de inventario todavía. Después ya no será
+posible borrarlas sin romper historial.
+
+```sql
+select id, sku, legacy_sicar_code from public.variants
+where legacy_sicar_code is not null;
+select code, source from public.barcodes where source = 'SICAR';
+```
+
+Ambas consultas deben devolver cero filas hasta que corra la migración
+real de SICAR.
 
 ## Integrado en esta entrega
 
@@ -50,7 +84,12 @@ Qué construir:
   color de la especificación completa.
 - `add_variants_to_product(...)`: agregar tallas después **sin tocar ni
   recrear** las variantes existentes, que ya tienen historial.
-- Falta automatizar la generación del SKU interno y del código de barras.
+- **Falta el generador de código y de SKU, y es lo siguiente en orden.**
+  Hoy `create_catalog_product` **exige** que quien llama mande el código de
+  barras, así que la interfaz tiene que inventarlo — que es justo de donde
+  salen los duplicados y los formatos inconsistentes. La especificación
+  dice que el sistema lo genera. Mientras eso no exista, el alta rápida de
+  una bota con ocho tallas no se puede cumplir de verdad.
 - Interfaz: matriz talla × color **editable antes de guardar**, porque no
   todo color viene en todas las tallas.
 
