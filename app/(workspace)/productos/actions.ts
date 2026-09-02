@@ -23,6 +23,8 @@ function catalogErrorStatus(error: unknown) {
   if (message.includes("BARCODE_ALREADY_ASSIGNED")) return "codigo-ya-asignado";
   if (message.includes("BARCODE_SOURCE_NOT_ALLOWED"))
     return "codigo-origen-invalido";
+  if (message.includes("RESERVED_INTERNAL_PREFIX"))
+    return "codigo-prefijo-reservado";
   if (
     message.includes("INVALID_EAN13") ||
     message.includes("INVALID_CODE128") ||

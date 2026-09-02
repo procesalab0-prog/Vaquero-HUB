@@ -149,6 +149,21 @@ versión anterior, y por eso es la forma segura de corregir hacia atrás.
 **Excepción única:** una migración que todavía no se ha fusionado sí se
 edita libremente. La regla arranca cuando entra a `main`.
 
+## Ojo: producción y staging ya tienen el esquema aplicado
+
+`ESTADO_Y_CONTINUIDAD.md` lo registra: las migraciones se aplicaron y
+verificaron el 2 de septiembre. Eso cambia el costo de equivocarse.
+
+Hasta ese día, corregir una migración fusionada era un error de forma. Desde
+ese día, **una migración que ya corrió allá no se vuelve a ejecutar nunca**,
+y la única forma de arreglar algo es una migración nueva. La regla de abajo
+dejó de ser higiene y pasó a ser la única vía.
+
+Y hay una consecuencia práctica que conviene no descubrir tarde: cuando una
+migración corrige a otra, **hay que aplicarla también a producción y a
+staging**, no basta con que CI pase. CI corre `supabase db reset` y siempre
+ve el árbol completo.
+
 ## Regla nueva: el prefijo 20-29 es sólo del generador
 
 **Ningún código de proveedor ni manual puede entrar en el rango `20`–`29`.**

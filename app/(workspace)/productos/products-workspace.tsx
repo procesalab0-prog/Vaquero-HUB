@@ -70,6 +70,8 @@ const previewValues: AttributeValue[] = [
 
 const statusMessages: Record<string, string> = {
   "producto-creado": "Producto y variantes guardados correctamente.",
+  "variantes-error":
+    "No fue posible agregar las variantes. Revisa los datos e inténtalo de nuevo.",
   "variantes-agregadas":
     "Las nuevas variantes se agregaron sin cambiar los SKU ni códigos existentes.",
   "codigo-registrado":
@@ -80,6 +82,9 @@ const statusMessages: Record<string, string> = {
     "El código no corresponde a la simbología elegida. Revisa los dígitos y vuelve a escanearlo.",
   "codigo-origen-invalido":
     "Los códigos de SICAR y los generados sólo pueden entrar por sus procesos protegidos.",
+  "codigo-prefijo-reservado":
+    "Ese código empieza con 20-29, que es el rango del generador interno. " +
+    "No es un código de fabricante: genera uno propio y reetiqueta.",
   "variante-no-encontrada":
     "La variante ya no está activa. Actualiza la pantalla antes de continuar.",
   "codigo-error":
