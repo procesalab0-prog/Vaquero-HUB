@@ -1883,3 +1883,19 @@ Entrega visible 0.14.0 — navegación ágil y adaptable:
   horizontal ni errores de consola en 390×844, 768×1024 y 1440×800.
 - Continúan simulados los módulos marcados como pendientes en cada milestone;
   esta entrega no cambia reglas de inventario, venta, caja ni códigos.
+
+Corrección visible 0.14.1 — controles de catálogo aplicados donde importan:
+
+- Dos correcciones nuevas, sin reescribir migraciones ya fusionadas, llevan el
+  candado de combinaciones concurrentes a las bases alojadas y reservan los
+  prefijos EAN-13 `20`–`29` exclusivamente para el generador interno.
+- Staging se actualizó primero y producción después. En ambos entornos se
+  comprobaron cero combinaciones duplicadas, cero campos SICAR prematuros y
+  cero códigos externos dentro del rango reservado.
+- La interfaz traduce el rechazo del prefijo a una explicación clara y ninguna
+  operación fallida cambia el código principal anterior.
+- Producción conserva 18 códigos generados durante el desarrollo; no se borran
+  ni se reinterpretan sin la exportación de SICAR. La compuerta para operación
+  real sigue abierta hasta demostrar que los códigos heredados no usan `20`–`29`.
+- La revisión de Claude queda consolidada en `docs/PENDIENTES.md`, incluyendo
+  responsables, decisiones bloqueadas y el orden de trabajo posterior.

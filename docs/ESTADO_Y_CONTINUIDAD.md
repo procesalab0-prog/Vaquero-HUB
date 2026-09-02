@@ -45,19 +45,21 @@ saltando lo bloqueado.
 | **M2 (tercera entrega)** | Agregar tallas o colores a un producto sin cambiar identidades existentes                                |
 | **M2 (cuarta entrega)**  | Códigos de proveedor y reimpresión seguros; los códigos anteriores siguen escaneando                     |
 | **Calidad 0.14.0**       | Navegación con sesión deduplicada, carga inmediata y scroll verificado en teléfono, iPad y computadora   |
+| **Corrección 0.14.1**    | Candado concurrente aplicado y prefijo interno 20–29 bloqueado para códigos externos                     |
 
-Veintitrés migraciones versionadas del repositorio. El proyecto de Supabase
+Veinticinco migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
 
 - **Producción:** Vercel Production usa la rama `main` de Supabase, proyecto
-  `drubkjlmfbdeglucakmg`. Las 23 migraciones del repositorio fueron aplicadas
-  y verificadas el 2 de septiembre de 2026.
+  `drubkjlmfbdeglucakmg`. Las correcciones de M2 fueron aplicadas y verificadas
+  el 2 de septiembre de 2026; las cuatro consultas de contaminación devolvieron
+  cero hallazgos.
 - **Pruebas:** la rama Supabase `staging`, referencia
   `zsezjtswqeijboezvado`, se reserva para Vercel Preview y validaciones previas
-  a producción. Sus tres variables fueron restauradas como valores exclusivos
-  de Preview el 2 de septiembre de 2026.
+  a producción. Quedó actualizada hasta las correcciones de M2 y sus cuatro
+  consultas de contaminación también devolvieron cero hallazgos.
 - Los dos entornos usan credenciales distintas. Las claves viven únicamente en
   variables protegidas de Vercel; nunca se copian al repositorio.
 - La clave secreta de staging se rotó después de separar los ambientes. Las
@@ -129,6 +131,8 @@ Están completas en `PLAN_CODEX.md` §2. Las que más se rompen por descuido:
    explícitamente**, porque por definición se saltó la RLS.
 7. **Los códigos heredados de SICAR nunca se modifican.**
 8. **Esquema sólo por migraciones versionadas**, nunca desde el panel.
+9. **Una migración ya fusionada no se edita:** toda corrección usa otra
+   migración y se prueba en staging antes de producción.
 
 ## 6. Cómo se trabaja
 

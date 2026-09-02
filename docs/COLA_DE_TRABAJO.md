@@ -6,7 +6,7 @@
 > Para entender el proyecto antes de tocarlo, empezar por
 > [`ESTADO_Y_CONTINUIDAD.md`](ESTADO_Y_CONTINUIDAD.md).
 >
-> Última actualización: 2026-09-02, tras revisar el generador de identidad.
+> Última actualización: 2026-09-02, tras aplicar las correcciones alojadas de M2.
 
 ## Cómo usar esta cola
 
@@ -17,6 +17,16 @@
 - Si falta una regla de negocio, **no se inventa**: se implementa lo que sí
   está definido y se deja el resto fuera del PR, marcado como bloqueado.
 - Al terminar una tarea, se marca aquí.
+
+## Regla permanente de migraciones
+
+Una migración que ya entró a `main` no se vuelve a editar. Toda corrección va
+en un archivo nuevo, se aplica primero en staging y después en producción.
+Reconstruir una base vacía en CI no demuestra que una corrección haya llegado
+a una base que ya ejecutó la versión anterior.
+
+El registro operativo de estas comprobaciones vive en
+[`PENDIENTES.md`](PENDIENTES.md).
 
 ## Regla nueva, salida de la revisión de M2
 
@@ -33,7 +43,7 @@ corregirlo, y al correr la migración real esa fila la tumbaba con
 violación de unicidad sin forma de arreglarla. El evento más delicado del
 proyecto quedaba a merced de un dato que alguien tecleó sin saber.
 
-Ya está cerrado en la migración `20260902170000`. Si aparece una función
+Ya está cerrado en la migración `20260902023516`. Si aparece una función
 nueva que escriba en catálogo, aplica la misma regla.
 
 **Antes de dar por buena esta parte, hay que revisar staging y producción:**
@@ -76,7 +86,8 @@ una o en otra según qué etiqueta se pegó en la caja. El inventario por talla
 —la razón de ser del proyecto— deja de cuadrar sin que nadie lo note, y se
 descubre meses después contando físicamente.
 
-Cerrado en `20260902041500` con restricciones diferidas. Tres consecuencias
+Cerrado inicialmente en `20260902041500` con restricciones diferidas y
+corregido para bases ya existentes por `20260902150000`. Tres consecuencias
 para quien siga:
 
 - **La deduplicación de la pantalla no cuenta como control.** La carga masiva

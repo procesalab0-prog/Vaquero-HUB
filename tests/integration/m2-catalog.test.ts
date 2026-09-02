@@ -316,6 +316,30 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
       "BARCODE_SOURCE_NOT_ALLOWED",
     );
 
+    for (const prefix of ["20", "29"]) {
+      const reserved = await state.admin!.client.rpc(
+        "register_variant_barcode",
+        {
+          p_variant_id: state.variantIds[1],
+          p_code: ean13(`${prefix}${runCode.padStart(10, "0")}`),
+          p_symbology: "EAN13",
+          p_source: "SUPPLIER",
+        },
+      );
+      expect(reserved.error?.message).toContain("RESERVED_INTERNAL_PREFIX");
+    }
+
+    const outsideRange = await state.admin!.client.rpc(
+      "register_variant_barcode",
+      {
+        p_variant_id: state.variantIds[2],
+        p_code: ean13(`19${runCode.padStart(10, "0")}`),
+        p_symbology: "EAN13",
+        p_source: "SUPPLIER",
+      },
+    );
+    expect(outsideRange.error).toBeNull();
+
     for (const client of [state.cashier!.client, state.warehouse!.client]) {
       const unauthorized = await client.rpc("register_variant_barcode", {
         p_variant_id: state.variantIds[1],

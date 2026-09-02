@@ -80,6 +80,9 @@ const statusMessages: Record<string, string> = {
     "El código no corresponde a la simbología elegida. Revisa los dígitos y vuelve a escanearlo.",
   "codigo-origen-invalido":
     "Los códigos de SICAR y los generados sólo pueden entrar por sus procesos protegidos.",
+  "codigo-prefijo-reservado":
+    "Ese código empieza con 20-29, que es el rango del generador interno. " +
+    "Genera un código propio y vuelve a etiquetar el producto.",
   "variante-no-encontrada":
     "La variante ya no está activa. Actualiza la pantalla antes de continuar.",
   "codigo-error":
