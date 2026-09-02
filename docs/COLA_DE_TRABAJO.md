@@ -189,6 +189,67 @@ edita libremente. La regla arranca en el momento en que entra a `main`.
 
 ---
 
+## 0. Tarea suelta: probar la cámara y, con ella, los códigos generados
+
+**Especificación:** [`specs/ESCANEO.md`](specs/ESCANEO.md) §4 y §8
+**No bloquea a nadie y nadie la bloquea.** Cabe en un hueco, y conviene
+tomarla pronto por lo que puede descubrir, no por lo que cuesta.
+
+Va fuera de la numeración a propósito: no es un milestone, es un componente
+transversal que se introduce en M2 y se usa fuerte en M3 y M6.
+
+**Contexto que cambia su prioridad: SICAR ya tiene el escaneo con cámara
+como opción y el personal lo usa.** No es una idea nuestra ni un extra
+recortable si aprieta octubre. Es algo que hoy tienen; si Mi Tienda SM no lo
+trae, se vive como retroceso —de los que hacen que la gente extrañe el
+sistema viejo aunque el nuevo sea mejor en todo lo demás.
+
+Dos cosas que responde, las dos baratas:
+
+**1. ¿La cámara funciona dentro de la PWA instalada?** En iOS hubo un
+periodo en que `getUserMedia` servía en Safari y fallaba dentro de una PWA
+agregada a la pantalla de inicio. Debería estar resuelto, pero es
+exactamente el problema que aparece tarde y de la peor forma: funciona en
+pruebas desde el navegador y falla en los dispositivos del personal, que la
+tienen instalada. Se comprueba en una tarde con un iPhone y un Android
+reales. Si falla, hay que saberlo **antes** de construir conteos y recepción
+encima.
+
+**2. ¿Los códigos que genera M2 se leen de verdad?** Hoy nada lo comprueba.
+Las pruebas de `specs/CODIGOS_Y_SKU.md` son aritméticas: recalculan el
+dígito de control dentro de la base. Nadie ha escaneado un código nuestro
+impreso en una etiqueta.
+
+Y ahí el margen de error es cero: un código generado es **inmutable** y
+termina pegado en cajas. Si se imprime demasiado angosto, con poco margen o
+con mal contraste, no hay corrección — hay que reetiquetar todo lo que ya
+salió.
+
+```
+código generado  →  jsbarcode lo dibuja  →  se imprime  →  se escanea
+                                                            ↓
+                                        ¿devuelve los mismos 13 dígitos?
+```
+
+Lo que hace esto viable hoy: `jsbarcode` ya está en las dependencias, y la
+cámara no necesita ni el lector Bluetooth ni el controlador de la impresora
+—la fase de hardware—. Se puede correr antes que M2.5.
+
+Escanear en los dos soportes, porque fallan distinto: **en pantalla** para
+ver que el dibujo está bien, e **impreso** para la prueba de verdad, que es
+donde aparecen el ancho de barra, el margen y el contraste.
+
+Criterios: pruebas 5, 9, 10 y 11 de la sección 9 de `specs/ESCANEO.md`.
+
+**Ojo con no confundir dos riesgos:** que un código nuestro sea legible no
+dice nada sobre si choca con uno heredado de SICAR. Eso es la compuerta de
+la sección 8 de `specs/CODIGOS_Y_SKU.md`, que compara contra la exportación
+de muestra y sigue bloqueada. Ninguno tapa al otro.
+
+Y de paso, si se consigue **una etiqueta real de SICAR** para escanearla,
+sale gratis la respuesta a la pregunta 2 de la sección 10 de
+`specs/ESCANEO.md`: qué tan legibles están las etiquetas actuales.
+
 ## 1. M2.2 — Alta de catálogo y generador de variantes
 
 **Especificación:** [`specs/M2_CATALOGO.md`](specs/M2_CATALOGO.md) §3

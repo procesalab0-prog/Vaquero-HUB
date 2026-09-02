@@ -275,6 +275,18 @@ exista aunque parezca redundante. Las pruebas 9 y 10 cubren el hueco que
 abrió el generador (sección 5) y son las que se rompen primero si alguien
 cambia el alta sin leer esa sección.
 
+**Las diez son aritméticas.** Comprueban que el código está bien formado y
+que su dígito de control cuadra, todo dentro de la base de datos. **Ninguna
+comprueba que un código impreso se lea con un aparato**, y ese margen de
+error es cero: el código es inmutable y termina pegado en cajas, así que un
+ancho de barra o un contraste mal elegidos ya no se corrigen, se
+reetiquetan.
+
+Esa comprobación física vive en la sección 8 de
+[`ESCANEO.md`](ESCANEO.md) —generar, imprimir, escanear y confirmar que
+devuelve los mismos trece dígitos— y no depende de nada bloqueado: se puede
+correr hoy.
+
 ## 11. Preguntas abiertas
 
 1. ¿Qué simbología imprime SICAR hoy? (pregunta 1.1)
