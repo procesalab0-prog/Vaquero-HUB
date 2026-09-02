@@ -98,3 +98,126 @@ test("registra un código físico desde una pantalla táctil", async ({
   await expect(page.getByText("7501234567893")).toBeVisible();
   await expect(page.locator("html")).toHaveJSProperty("scrollWidth", 390);
 });
+
+test("explica el permiso y encuentra un producto con la cámara", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 640;
+    canvas.height = 480;
+    const stream = canvas.captureStream(30);
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: { getUserMedia: async () => stream },
+    });
+    Object.defineProperty(window, "BarcodeDetector", {
+      configurable: true,
+      value: class {
+        async detect() {
+          return [{ rawValue: "750104020251" }];
+        }
+      },
+    });
+    Object.defineProperties(HTMLVideoElement.prototype, {
+      videoWidth: { configurable: true, get: () => 640 },
+      videoHeight: { configurable: true, get: () => 480 },
+      readyState: {
+        configurable: true,
+        get: () => HTMLMediaElement.HAVE_CURRENT_DATA,
+      },
+      play: { configurable: true, value: async () => undefined },
+    });
+    Object.defineProperty(CanvasRenderingContext2D.prototype, "drawImage", {
+      configurable: true,
+      value: () => undefined,
+    });
+  });
+
+  await page.goto("/productos");
+  await page.getByRole("button", { name: "Escanear con cámara" }).click();
+
+  const dialog = page.getByRole("dialog", {
+    name: "Buscar producto por código",
+  });
+  await expect(dialog).toContainText("La imagen no se guarda ni se envía");
+  await dialog.getByRole("button", { name: "Activar cámara" }).click();
+
+  await expect(
+    page.getByText("Bota Cuadra piel de venado · Café · talla 25"),
+  ).toBeVisible();
+  await expect(page.getByLabel("Buscar productos")).toHaveValue("750104020251");
+  await expect(
+    page.locator(".data-table .table-row:not(.table-header)"),
+  ).toHaveCount(1);
+  await expect(page.locator("html")).toHaveJSProperty("scrollWidth", 390);
+});
+
+test("orienta al empleado cuando la cámara está bloqueada", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: {
+        getUserMedia: async () => {
+          throw new DOMException("Permission denied", "NotAllowedError");
+        },
+      },
+    });
+  });
+
+  await page.goto("/productos");
+  await page.getByRole("button", { name: "Escanear con cámara" }).click();
+  await page.getByRole("button", { name: "Activar cámara" }).click();
+
+  const alert = page.locator(".scanner-error");
+  await expect(alert).toContainText("La cámara está bloqueada");
+  await expect(alert).toContainText("Privacidad y seguridad");
+  await expect(alert).toContainText("Permisos");
+});
+
+test("ofrece dar de alta un código que no existe", async ({ page }) => {
+  await page.addInitScript(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 640;
+    canvas.height = 480;
+    const stream = canvas.captureStream(30);
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: { getUserMedia: async () => stream },
+    });
+    Object.defineProperty(window, "BarcodeDetector", {
+      configurable: true,
+      value: class {
+        async detect() {
+          return [{ rawValue: "9999999999999" }];
+        }
+      },
+    });
+    Object.defineProperties(HTMLVideoElement.prototype, {
+      videoWidth: { configurable: true, get: () => 640 },
+      videoHeight: { configurable: true, get: () => 480 },
+      readyState: {
+        configurable: true,
+        get: () => HTMLMediaElement.HAVE_CURRENT_DATA,
+      },
+      play: { configurable: true, value: async () => undefined },
+    });
+    Object.defineProperty(CanvasRenderingContext2D.prototype, "drawImage", {
+      configurable: true,
+      value: () => undefined,
+    });
+  });
+
+  await page.goto("/productos");
+  await page.getByRole("button", { name: "Escanear con cámara" }).click();
+  await page.getByRole("button", { name: "Activar cámara" }).click();
+
+  const feedback = page.locator(".scan-feedback.missing");
+  await expect(feedback).toContainText("No encontramos el código");
+  await feedback.getByRole("button", { name: "Dar de alta" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Nuevo producto" }),
+  ).toBeVisible();
+});

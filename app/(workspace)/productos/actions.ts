@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requirePermission } from "@/lib/auth/authorization";
+import type { ProductVariant } from "@/lib/domain";
 
 const productsPath = "/productos";
 
@@ -178,4 +179,50 @@ export async function registerVariantBarcode(formData: FormData) {
 
   revalidatePath(productsPath);
   redirect(`${productsPath}?status=${status}`);
+}
+
+export async function lookupCatalogBarcode(
+  rawCode: string,
+): Promise<ProductVariant | null> {
+  const code = rawCode.trim();
+  if (!code || code.length > 80) return null;
+
+  const { supabase } = await requirePermission("products.read");
+  const { data, error } = await supabase.rpc("search_catalog", {
+    p_query: code,
+    p_limit: 5,
+  });
+  if (error) {
+    console.error("[productos/lookupCatalogBarcode] failed", {
+      message: error.message,
+    });
+    return null;
+  }
+
+  const row = (
+    data as Array<{
+      variant_id: string;
+      product_id: string;
+      product_name: string;
+      category_name: string;
+      brand_name: string;
+      legacy_sicar_code: string | null;
+      primary_barcode: string | null;
+      price_cents: number;
+      attributes: Record<string, string> | null;
+    }> | null
+  )?.[0];
+  if (!row) return null;
+
+  return {
+    id: row.variant_id,
+    productId: row.product_id,
+    productName: row.product_name,
+    brand: row.brand_name,
+    legacyCode: row.primary_barcode ?? row.legacy_sicar_code ?? code,
+    color: row.attributes?.COLOR ?? "Sin color",
+    size: row.attributes?.TALLA ?? "Única",
+    price: row.price_cents / 100,
+    stock: 0,
+  };
 }

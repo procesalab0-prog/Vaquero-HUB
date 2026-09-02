@@ -5,18 +5,22 @@
 >
 > Última actualización: 2026-09-02.
 
+**Estado de implementación:** el componente y su conexión con Productos están
+terminados en 0.15.0. Siguen pendientes las pruebas físicas 5, 9, 10 y 11 con
+la PWA instalada, iPhone, Android y etiquetas impresas reales.
+
 ## 1. Dónde se usa y dónde no
 
 La regla de la sección 16 del contexto maestro se sostiene: **lector
 físico para cobrar, cámara para moverse.**
 
-| Uso | Herramienta | Por qué |
-|---|---|---|
-| Cobrar en caja | Lector Bluetooth | Un lector lee en ~100 ms; una cámara tarda de 1 a 3 segundos y a veces falla. Con fila, eso no se aguanta |
-| **Conteos de inventario** | **Cámara del teléfono** | Andar el pasillo con el teléfono en la mano le gana a cargar iPad más lector |
-| **Recepción de mercancía** | **Cámara** | Mismo caso: se recibe de pie, junto a la caja de cartón |
-| **Consulta rápida de existencia y precio** | **Cámara** | Un vendedor en piso, con el teléfono que ya trae |
-| Tarjeta de lealtad del cliente | Cámara o lector 2D | Ver sección 6 |
+| Uso                                        | Herramienta             | Por qué                                                                                                   |
+| ------------------------------------------ | ----------------------- | --------------------------------------------------------------------------------------------------------- |
+| Cobrar en caja                             | Lector Bluetooth        | Un lector lee en ~100 ms; una cámara tarda de 1 a 3 segundos y a veces falla. Con fila, eso no se aguanta |
+| **Conteos de inventario**                  | **Cámara del teléfono** | Andar el pasillo con el teléfono en la mano le gana a cargar iPad más lector                              |
+| **Recepción de mercancía**                 | **Cámara**              | Mismo caso: se recibe de pie, junto a la caja de cartón                                                   |
+| **Consulta rápida de existencia y precio** | **Cámara**              | Un vendedor en piso, con el teléfono que ya trae                                                          |
+| Tarjeta de lealtad del cliente             | Cámara o lector 2D      | Ver sección 6                                                                                             |
 
 La cámara no reemplaza al lector: lo complementa donde el lector estorba.
 
@@ -54,7 +58,7 @@ viven en pasillos mal iluminados y en la bodega. Sin botón de linterna, el
 escaneo falla la mitad de las veces y nadie sabe por qué.
 
 **3. Confirmación por sonido y vibración.** Quien cuenta inventario no
-está viendo la pantalla: está viendo el anaquel. El *beep* es lo que le
+está viendo la pantalla: está viendo el anaquel. El _beep_ es lo que le
 dice que ya quedó. Sin eso, se cuenta dos veces o se salta mercancía.
 
 **4. Anti-repetición.** En escaneo continuo el mismo código se detecta
@@ -158,19 +162,19 @@ distintos y ninguno tapa al otro.
 
 ## 9. Pruebas
 
-| # | Escenario | Resultado esperado |
-|---|---|---|
-| 1 | Escanear un EAN-13 impreso, luz normal | Lo detecta en menos de 2 segundos |
-| 2 | Escanear el mismo código sin quitarlo del cuadro | Se registra una sola vez |
-| 3 | Escanear en penumbra con la linterna encendida | Lo detecta |
-| 4 | Código inexistente en el catálogo | Mensaje claro y opción de darlo de alta |
-| 5 | Cámara dentro de la PWA instalada, iPhone y Android | Funciona en ambos |
-| 6 | Permiso de cámara denegado | Explica cómo reactivarlo, no muestra pantalla negra |
-| 7 | Conteo con la red caída a media sesión | Sigue escaneando y encola; sincroniza al volver |
-| 8 | Escanear el QR de una tarjeta de lealtad en pantalla | Encuentra al cliente |
-| 9 | Escanear en pantalla un EAN-13 recién generado | Devuelve los mismos 13 dígitos |
-| 10 | Escanear el mismo código impreso en una etiqueta real | Lo detecta y coincide |
-| 11 | Escanear una etiqueta impresa de SICAR | Lo detecta; sirve de referencia de legibilidad |
+| #   | Escenario                                             | Resultado esperado                                  |
+| --- | ----------------------------------------------------- | --------------------------------------------------- |
+| 1   | Escanear un EAN-13 impreso, luz normal                | Lo detecta en menos de 2 segundos                   |
+| 2   | Escanear el mismo código sin quitarlo del cuadro      | Se registra una sola vez                            |
+| 3   | Escanear en penumbra con la linterna encendida        | Lo detecta                                          |
+| 4   | Código inexistente en el catálogo                     | Mensaje claro y opción de darlo de alta             |
+| 5   | Cámara dentro de la PWA instalada, iPhone y Android   | Funciona en ambos                                   |
+| 6   | Permiso de cámara denegado                            | Explica cómo reactivarlo, no muestra pantalla negra |
+| 7   | Conteo con la red caída a media sesión                | Sigue escaneando y encola; sincroniza al volver     |
+| 8   | Escanear el QR de una tarjeta de lealtad en pantalla  | Encuentra al cliente                                |
+| 9   | Escanear en pantalla un EAN-13 recién generado        | Devuelve los mismos 13 dígitos                      |
+| 10  | Escanear el mismo código impreso en una etiqueta real | Lo detecta y coincide                               |
+| 11  | Escanear una etiqueta impresa de SICAR                | Lo detecta; sirve de referencia de legibilidad      |
 
 Las pruebas 9 y 10 son la sección 8 y conviene correrlas antes que el resto:
 no dependen de M3 ni del hardware, y lo que descubren ya no se puede

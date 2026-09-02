@@ -156,6 +156,14 @@ causó. Aplica igual a cualquier guion de respaldo o reparación.
 **No bloquea a nadie y nadie la bloquea.** Cabe en un hueco, y conviene
 tomarla pronto por lo que puede descubrir, no por lo que cuesta.
 
+**Estado:** implementación de software terminada en 0.15.0. Productos permite
+buscar una variante o capturar un código externo con la cámara; usa detección
+nativa cuando existe y ZXing como respaldo para Safari/iPhone. Incluye
+explicación previa del permiso, región acotada, linterna compatible,
+confirmación, cierre después de una lectura y recuperación ante permiso
+denegado. Quedan pendientes las pruebas físicas 5, 9, 10 y 11: no se marcan
+como aprobadas hasta usar PWA instalada y etiquetas reales.
+
 Va fuera de la numeración a propósito: no es un milestone, es un componente
 transversal que se introduce en M2 y se usa fuerte en M3 y M6.
 

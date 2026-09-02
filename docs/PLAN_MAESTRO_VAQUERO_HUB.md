@@ -1899,3 +1899,23 @@ Corrección visible 0.14.1 — controles de catálogo aplicados donde importan:
   real sigue abierta hasta demostrar que los códigos heredados no usan `20`–`29`.
 - La revisión de Claude queda consolidada en `docs/PENDIENTES.md`, incluyendo
   responsables, decisiones bloqueadas y el orden de trabajo posterior.
+
+Entrega visible 0.15.0 — escaneo con cámara:
+
+- Productos incorpora un lector de cámara para consulta rápida por código y
+  para capturar códigos físicos antes de registrarlos. No se incorpora a Cobro:
+  el lector Bluetooth sigue siendo la herramienta definida para la fila del POS.
+- El componente usa `BarcodeDetector` cuando el navegador lo soporta y carga
+  ZXing bajo demanda como respaldo para Safari/iPhone. Reconoce EAN-13, CODE 128
+  y QR sin enviar ni almacenar imágenes.
+- La lectura analiza sólo la región guía, solicita permiso después de explicar
+  su uso, ofrece linterna cuando el dispositivo la expone, confirma con sonido y
+  vibración y detiene la cámara después de una lectura para no duplicarla.
+- Un código leído se resuelve contra el catálogo real mediante una Server Action
+  que vuelve a exigir `products.read`. Un código inexistente muestra una salida
+  clara para darlo de alta; el navegador no recibe costo ni privilegios nuevos.
+- Si el permiso fue denegado se explican los pasos de recuperación para iPhone y
+  Android; si no existe cámara se conserva la captura manual o lector Bluetooth.
+- Las pruebas automatizadas cubren permiso previo, lectura, filtrado, código
+  inexistente y permiso denegado. La aprobación física sigue pendiente: PWA
+  instalada en iPhone/Android y coincidencia de códigos en pantalla e impresos.
