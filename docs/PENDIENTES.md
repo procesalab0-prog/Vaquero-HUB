@@ -112,10 +112,10 @@ Opciones:
    códigos ni campos de SICAR/WooCommerce.
 3. La carga masiva propia quedó terminada en 0.17.0: plantilla CSV/XLSX,
    corrida en seco y confirmación atómica. No importa SICAR ni WooCommerce.
-4. **Siguiente:** M2.5, plantillas y etiquetas desde computadora de
-   trastienda.
-5. Después de cerrar M2 y la prueba física: M3, inventario, movimientos y
-   traspasos.
+4. M2.5 quedó implementado en 0.18.0: acciones en lote, precios auditados,
+   plantillas persistentes e impresión de etiquetas desde computadora.
+5. **Siguiente:** realizar la prueba física de cámara/lector/impresora cuando
+   esté disponible y comenzar M3, inventario, movimientos y traspasos.
 
 La validación física necesita dispositivos y una impresión real; las pruebas
 automatizadas no la sustituyen.

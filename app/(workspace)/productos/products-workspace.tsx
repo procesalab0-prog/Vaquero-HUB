@@ -19,7 +19,8 @@ import {
 
 import { BarcodeScanner } from "@/components/barcode-scanner";
 import type { CatalogImportState } from "@/lib/catalog-import-shared";
-import type { ProductVariant } from "@/lib/domain";
+import type { BatchActionResult, ProductVariant } from "@/lib/domain";
+import { CatalogBatchActions } from "./catalog-batch-actions";
 import { CatalogImportDialog } from "./catalog-import-dialog";
 
 type Category = {
@@ -48,6 +49,17 @@ type Props = {
   updateProductAction?: (formData: FormData) => Promise<void>;
   updateVariantAction?: (formData: FormData) => Promise<void>;
   updatePriceAction?: (formData: FormData) => Promise<void>;
+  bulkStatusAction?: (
+    variantIds: string[],
+    isActive: boolean,
+  ) => Promise<BatchActionResult>;
+  bulkPriceAction?: (
+    changes: Array<{
+      variantId: string;
+      expectedPriceCents: number;
+      newPriceCents: number;
+    }>,
+  ) => Promise<BatchActionResult>;
   previewImportAction?: (
     state: CatalogImportState,
     formData: FormData,
@@ -148,6 +160,8 @@ export function ProductsWorkspace({
   updateProductAction,
   updateVariantAction,
   updatePriceAction,
+  bulkStatusAction,
+  bulkPriceAction,
   previewImportAction,
   commitImportAction,
   initialImportState,
@@ -177,6 +191,7 @@ export function ProductsWorkspace({
   } | null>(null);
   const [saved, setSaved] = useState(false);
   const [query, setQuery] = useState("");
+  const [selectedVariantIds, setSelectedVariantIds] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
@@ -272,6 +287,31 @@ export function ProductsWorkspace({
           .includes(term),
     );
   }, [deferredQuery, variants]);
+  const selectedVariants = variants.filter((variant) =>
+    selectedVariantIds.includes(variant.id),
+  );
+  const allVisibleSelected =
+    filteredVariants.length > 0 &&
+    filteredVariants.every((variant) =>
+      selectedVariantIds.includes(variant.id),
+    );
+
+  function toggleVariantSelection(id: string) {
+    setSelectedVariantIds((current) =>
+      current.includes(id)
+        ? current.filter((variantId) => variantId !== id)
+        : [...current, id],
+    );
+  }
+
+  function toggleVisibleSelection() {
+    const visibleIds = filteredVariants.map((variant) => variant.id);
+    setSelectedVariantIds((current) =>
+      allVisibleSelected
+        ? current.filter((id) => !visibleIds.includes(id))
+        : [...new Set([...current, ...visibleIds])],
+    );
+  }
 
   function toggleSize(id: string) {
     setSelectedSizes((current) =>
@@ -641,8 +681,39 @@ export function ProductsWorkspace({
         </div>
       ) : null}
 
+      <CatalogBatchActions
+        selected={selectedVariants}
+        clearSelection={() => setSelectedVariantIds([])}
+        statusAction={preview ? undefined : bulkStatusAction}
+        priceAction={preview ? undefined : bulkPriceAction}
+        onStatusApplied={(ids, isActive) =>
+          setVariants((current) =>
+            current.map((variant) =>
+              ids.includes(variant.id) ? { ...variant, isActive } : variant,
+            ),
+          )
+        }
+        onPricesApplied={(ids, price) =>
+          setVariants((current) =>
+            current.map((variant) =>
+              ids.includes(variant.id) ? { ...variant, price } : variant,
+            ),
+          )
+        }
+      />
+
       <div className="data-table">
-        <div className={`table-row table-header${canEdit ? " editable" : ""}`}>
+        <div
+          className={`table-row table-header selectable${canEdit ? " editable" : ""}`}
+        >
+          <label className="table-checkbox">
+            <span className="sr-only">Seleccionar variantes visibles</span>
+            <input
+              type="checkbox"
+              checked={allVisibleSelected}
+              onChange={toggleVisibleSelection}
+            />
+          </label>
           <span>Producto</span>
           <span>Código</span>
           <span>Variante</span>
@@ -652,9 +723,19 @@ export function ProductsWorkspace({
         </div>
         {filteredVariants.map((item) => (
           <div
-            className={`table-row${canEdit ? " editable" : ""}`}
+            className={`table-row selectable${canEdit ? " editable" : ""}`}
             key={item.id}
           >
+            <label className="table-checkbox">
+              <span className="sr-only">
+                Seleccionar {item.productName}, {item.color}, talla {item.size}
+              </span>
+              <input
+                type="checkbox"
+                checked={selectedVariantIds.includes(item.id)}
+                onChange={() => toggleVariantSelection(item.id)}
+              />
+            </label>
             <div className="table-product">
               <span className="table-product-image">
                 {item.image ? (

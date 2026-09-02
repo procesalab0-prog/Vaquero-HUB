@@ -1106,6 +1106,111 @@ code {
   min-width: 900px;
   grid-template-columns: 1.6fr 1fr 0.8fr 0.7fr 0.5fr auto;
 }
+.table-row.selectable {
+  min-width: 810px;
+  grid-template-columns: 34px 1.6fr 1fr 0.8fr 0.7fr 0.5fr;
+}
+.table-row.selectable.editable {
+  min-width: 950px;
+  grid-template-columns: 34px 1.6fr 1fr 0.8fr 0.7fr 0.5fr auto;
+}
+.table-checkbox {
+  width: 34px;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+}
+.table-checkbox input {
+  width: 21px;
+  height: 21px;
+  accent-color: var(--accent);
+}
+.batch-toolbar {
+  position: sticky;
+  top: 10px;
+  z-index: 12;
+  margin: 14px 0;
+  padding: 10px 12px;
+  border: 1px solid #b99078;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #fff8f2;
+  box-shadow: 0 10px 24px rgba(59, 33, 23, 0.14);
+}
+.batch-toolbar > div,
+.batch-toolbar-actions,
+.batch-toolbar button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.batch-toolbar svg {
+  width: 18px;
+}
+.batch-toolbar-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.batch-toolbar button {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--brand);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.batch-toolbar button.danger {
+  border-color: #d9aaa4;
+  color: var(--danger);
+}
+.batch-price-modal {
+  width: min(660px, calc(100vw - 24px));
+}
+.batch-price-input {
+  margin: 14px 0;
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.batch-price-input input {
+  min-height: 52px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 18px;
+}
+.batch-price-preview {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.batch-price-preview > strong,
+.batch-price-preview > p,
+.batch-price-preview > small {
+  padding: 12px;
+  display: block;
+}
+.batch-price-preview > div {
+  padding: 9px 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 12px;
+}
+.batch-price-preview del {
+  color: var(--muted);
+}
 .table-edit-button {
   min-height: 44px;
   padding: 0 12px;
@@ -2891,6 +2996,46 @@ code {
 .labels-selector {
   padding: 14px;
 }
+.desktop-print-notice {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid #d7c6a3;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  background: #fff9e9;
+  color: #5c491d;
+  font-size: 13px;
+}
+.desktop-print-notice svg {
+  width: 22px;
+  flex: none;
+}
+.template-select {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.template-select select {
+  min-height: 46px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+.label-preview-stage {
+  min-height: 210px;
+  padding: 20px 6px;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  background: repeating-linear-gradient(45deg, #f3f0eb 0 8px, #faf8f5 8px 16px);
+}
 .label-product-list {
   max-height: 590px;
   margin-top: 12px;
@@ -2964,56 +3109,78 @@ code {
   color: var(--accent);
 }
 .product-label {
-  width: 280px;
-  min-height: 168px;
-  margin: 36px auto;
-  padding: 15px;
+  width: var(--label-width, 50mm);
+  height: var(--label-height, 30mm);
+  padding: 2mm;
   border: 1px solid var(--ink);
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  overflow: hidden;
   background: #fff;
   color: #111;
   text-align: center;
+  box-sizing: border-box;
 }
-.label-brand {
-  font-family: var(--font-cormorant);
-  font-size: 17px;
-  font-weight: 700;
+.label-logo {
+  width: auto;
+  height: 5mm;
+  object-fit: contain;
 }
-.product-label > strong {
+.label-product-name {
   max-width: 100%;
-  margin-top: 5px;
   overflow: hidden;
-  font-size: 12px;
+  font-size: 9pt;
+  line-height: 1.05;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.product-label > small {
-  margin-top: 3px;
-  font-size: 10px;
+.label-product-brand,
+.label-variant,
+.label-sku {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 6.5pt;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.barcode-bars {
-  width: 210px;
-  height: 42px;
-  margin: 9px 0 3px;
-  background: repeating-linear-gradient(
-    90deg,
-    #111 0 2px,
-    transparent 2px 4px,
-    #111 4px 5px,
-    transparent 5px 8px,
-    #111 8px 11px,
-    transparent 11px 13px
-  );
+.label-barcode-svg {
+  width: 90%;
+  height: 9mm;
+  margin: 0.6mm 0 0;
 }
 .product-label > code {
-  font-size: 11px;
-  letter-spacing: 0.12em;
+  font-size: 6pt;
+  letter-spacing: 0.08em;
 }
 .product-label > b {
-  margin-top: 4px;
-  font-size: 15px;
+  font-size: 9pt;
+  line-height: 1;
+}
+.label-no-barcode {
+  margin: 2mm 0;
+  color: #555;
+  font-size: 6pt;
+}
+.label-layout-product_focus .label-product-name {
+  font-size: 11pt;
+  white-space: normal;
+}
+.label-layout-product_focus .label-logo {
+  height: 4mm;
+}
+.label-layout-price_focus > b {
+  order: -1;
+  margin-bottom: 0.5mm;
+  font-size: 14pt;
+}
+.label-layout-price_focus .label-logo {
+  height: 3.5mm;
+}
+.label-layout-price_focus .label-barcode-svg {
+  height: 7mm;
 }
 .label-settings {
   margin: 0;
@@ -3032,6 +3199,87 @@ code {
 .label-settings dd {
   margin: 0;
   font-weight: 600;
+}
+.label-template-editor {
+  margin-top: 14px;
+  padding: 0;
+}
+.label-template-editor > summary {
+  min-height: 60px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  cursor: pointer;
+  list-style: none;
+}
+.label-template-editor > summary::-webkit-details-marker {
+  display: none;
+}
+.label-template-editor > summary svg {
+  width: 21px;
+  color: var(--accent);
+}
+.label-template-editor > summary span,
+.label-template-editor > summary small {
+  display: block;
+}
+.label-template-editor > summary small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.label-template-form {
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.label-template-form > label:not(.label-field-toggle) {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.label-template-form input:not([type="checkbox"]),
+.label-template-form select {
+  min-height: 46px;
+  padding: 0 11px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+  font: inherit;
+}
+.label-template-form fieldset {
+  grid-column: 1 / -1;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+.label-template-form legend {
+  padding: 0 5px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.label-field-toggle {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.label-field-toggle input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+.print-label-sheet {
+  display: none;
 }
 
 /* Settings */
@@ -5174,6 +5422,26 @@ a:active {
     flex: 1;
     padding-inline: 8px;
   }
+  .batch-toolbar {
+    position: static;
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .batch-toolbar-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .batch-toolbar-actions button {
+    justify-content: center;
+  }
+  .batch-price-preview > div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .label-template-form {
+    grid-template-columns: 1fr;
+  }
   .settings-nav {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -5420,6 +5688,28 @@ a:active {
     min-height: auto;
     padding: 5mm 4mm;
     box-shadow: none;
+  }
+  body:has(.print-label-sheet .print-product-label) {
+    width: auto;
+  }
+  .print-label-sheet,
+  .print-label-sheet * {
+    visibility: visible !important;
+  }
+  .print-label-sheet {
+    position: absolute;
+    inset: 0 auto auto 0;
+    display: block !important;
+  }
+  .print-product-label {
+    margin: 0;
+    border: 0;
+    break-after: page;
+    page-break-after: always;
+  }
+  .print-product-label:last-child {
+    break-after: auto;
+    page-break-after: auto;
   }
 }
 

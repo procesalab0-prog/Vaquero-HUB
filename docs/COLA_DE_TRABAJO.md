@@ -376,6 +376,8 @@ segunda operación que vuelve a validar bajo candado y guarda todo o nada.
 
 ## 4. M2.5 — Etiquetas
 
+**Implementado en 0.18.0; pendiente únicamente de validación física.**
+
 **Especificación:** [`specs/M2_CATALOGO.md`](specs/M2_CATALOGO.md) §6
 
 - Plantillas guardadas como registros editables, no fijas en el código.
@@ -383,6 +385,11 @@ segunda operación que vuelve a validar bajo candado y guarda todo o nada.
 - **Las etiquetas se imprimen desde una computadora de trastienda, no
   desde el iPad.** El iPad imprime tickets; el etiquetado ocurre al
   recibir mercancía, no en la caja.
+
+La entrega incluye selección múltiple, activación/desactivación, vista previa
+de precios, auditoría individual, plantillas persistentes, código de barras
+real y cola de impresión con medidas físicas. Antes de declarar M2 cerrado se
+debe imprimir y escanear una etiqueta real; ese control no se sustituye con CI.
 
 ## 5. M3 — Inventario, movimientos y traspasos
 

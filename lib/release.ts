@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.17.2";
-export const APP_RELEASE = "M3 listo para arrancar";
+export const APP_VERSION = "0.18.0";
+export const APP_RELEASE = "M2.5 · Acciones en lote y etiquetas";

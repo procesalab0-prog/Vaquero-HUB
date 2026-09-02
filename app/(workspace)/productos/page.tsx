@@ -5,6 +5,8 @@ import { initialCatalogImportState } from "@/lib/catalog-import-shared";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   addCatalogVariants,
+  bulkUpdateVariantPrices,
+  bulkUpdateVariantStatus,
   commitCatalogImport,
   createCatalogProduct,
   lookupCatalogBarcode,
@@ -179,6 +181,12 @@ export default async function ProductsPage({
       updatePriceAction={
         permissions.has("products.price_update")
           ? updateCatalogVariantPrice
+          : undefined
+      }
+      bulkStatusAction={canUpdate ? bulkUpdateVariantStatus : undefined}
+      bulkPriceAction={
+        permissions.has("products.price_update")
+          ? bulkUpdateVariantPrices
           : undefined
       }
       previewImportAction={canCreate ? previewCatalogImport : undefined}

@@ -9,8 +9,9 @@
 > las pruebas pasen.
 >
 > Estado al 2026-09-02: alta, búsqueda, agregado de variantes, códigos
-> externos, cámara y edición individual segura están implementados. Continúan
-> carga masiva, acciones de precio en lote, etiquetas y validación física.
+> externos, cámara, edición individual, carga masiva, acciones en lote y
+> etiquetas están implementados. Continúa la validación física con cámara,
+> lector e impresora reales.
 
 ## 1. Modelo de datos
 
@@ -244,6 +245,11 @@ El cambio de precio en lote es la acción peligrosa del milestone:
 Sin ese detalle, el reporte de la sección 51.4 del contexto maestro no
 puede responder «¿quién bajó el precio de esto y cuándo?».
 
+Implementado en 0.18.0: la selección admite hasta 500 variantes por operación,
+la vista previa exige el precio anterior observado y toda la operación se
+cancela si otra sesión cambió alguno antes de confirmar. Activar o desactivar
+conserva SKU y códigos; no borra identidad del catálogo.
+
 ## 6. Etiquetas
 
 - Plantillas guardadas como registros editables, no fijas en el código:
@@ -255,6 +261,11 @@ puede responder «¿quién bajó el precio de esto y cuándo?».
   desde el iPad.** El iPad imprime tickets; el etiquetado ocurre al
   recibir mercancía, no en la caja. Esto simplifica mucho el problema de
   impresión discutido para M4.
+
+Implementado en 0.18.0: las plantillas se guardan en Supabase con dimensiones,
+distribución y campos visibles controlados; no aceptan HTML ni CSS arbitrario.
+La impresión usa medidas físicas y un código de barras SVG real. Reimprimir una
+etiqueta reutiliza el código existente y nunca genera otra identidad.
 
 ## 7. Búsqueda
 
@@ -347,6 +358,11 @@ Dos consecuencias concretas:
 - [ ] El disparador de códigos heredados está activo y probado.
 - [ ] La validación de carga masiva no escribe nada en modo seco.
 - [ ] La búsqueda agrupa por producto padre.
+- [x] El cambio de precio en lote genera un renglón de auditoría por variante
+      y rechaza un lote cuya vista previa quedó desactualizada.
+- [x] Las plantillas de etiqueta persisten con permisos y RLS, y la cola de
+      impresión usa los códigos ya registrados.
+- [ ] Una etiqueta física se imprime y se lee con el hardware real de la tienda.
 
 ## 11. Preguntas abiertas de este milestone
 

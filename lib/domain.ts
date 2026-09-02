@@ -35,3 +35,31 @@ export type PaymentMethod = "cash" | "card" | "transfer";
 
 export type GiftReceiptStatus =
   "valid" | "partially_used" | "used" | "expired" | "cancelled";
+
+export type LabelLayout = "BALANCED" | "PRODUCT_FOCUS" | "PRICE_FOCUS";
+
+export type LabelTemplate = {
+  id: string;
+  name: string;
+  widthMm: number;
+  heightMm: number;
+  layout: LabelLayout;
+  showLogo: boolean;
+  showProductName: boolean;
+  showBrand: boolean;
+  showSize: boolean;
+  showColor: boolean;
+  showPrice: boolean;
+  showSku: boolean;
+  showBarcode: boolean;
+  showCode: boolean;
+  isDefault: boolean;
+  isActive: boolean;
+};
+
+export type BatchActionResult = {
+  ok: boolean;
+  message: string;
+  changedCount?: number;
+  stale?: boolean;
+};
