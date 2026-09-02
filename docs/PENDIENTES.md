@@ -58,8 +58,9 @@ Opciones:
 
 ## Orden inmediato de implementación
 
-1. Probar cámara dentro de la PWA instalada y validar un código generado tanto
-   en pantalla como impreso con iPhone y Android reales.
+1. El lector de cámara quedó construido en 0.15.0. Probarlo dentro de la PWA
+   instalada y validar un código generado tanto en pantalla como impreso con
+   iPhone y Android reales.
 2. Completar edición de producto y variante sin permitir cambios a SKU,
    códigos generados ni campos de SICAR/WooCommerce.
 3. M2.4: carga masiva con corrida en seco y escritura atómica.
@@ -78,6 +79,25 @@ la divergencia de una base que ya registró la migración anterior.
 
 No fusionar ramas de revisión antiguas completas sobre `main`: comparar sus
 archivos e integrar sólo el trabajo faltante evita perder cambios más nuevos.
+
+Las revisiones deben cerrarse mediante PR o dejar enlazado el commit exacto que
+integró su contenido. Copiar archivos a `main` y dejar el PR abierto vuelve
+indistinguible el trabajo aplicado del trabajo todavía pendiente. Este riesgo ya
+costó recuperar la prueba de cámara y reescribir la corrección del candado de
+combinaciones.
+
+## Riesgo de calendario y conexión real
+
+La estimación de Claude del 2 de septiembre permanece alrededor del 30 % del
+alcance de octubre; el lector es transversal y no cambia materialmente ese
+porcentaje. M0, M1 y M1B están terminados; M2 continúa en curso; M3, M4 y M5
+tienen especificación pero no implementación operativa completa; M9 sigue
+bloqueado por la muestra de SICAR.
+
+Existen once pantallas visuales, pero sólo Productos, Clientes y Administración
+están conectadas a la base. POS, Caja, Inventario, Tickets, Etiquetas y Ajustes
+todavía contienen partes simuladas. El calendario completo y la estrategia para
+la segunda sucursal viven en [`PLAN_OCTUBRE.md`](PLAN_OCTUBRE.md).
 
 ## Asuntos todavía bloqueados
 

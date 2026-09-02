@@ -1884,6 +1884,187 @@ code {
 .barcode-warning {
   margin-top: 18px;
 }
+.barcode-capture-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: end;
+}
+.barcode-capture-field label {
+  min-width: 0;
+}
+.barcode-capture-field > button,
+.scan-camera-button {
+  min-height: 50px;
+}
+.scan-camera-button {
+  flex: none;
+}
+.scan-feedback {
+  min-height: 48px;
+  margin: -4px 0 14px;
+  padding: 10px 13px;
+  border: 1px solid #b7d9c5;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--success-soft);
+  color: #155f3b;
+  font-size: 13px;
+  font-weight: 600;
+}
+.scan-feedback.working {
+  border-color: #b8cee4;
+  background: #edf4fb;
+  color: #286294;
+}
+.scan-feedback.missing {
+  border-color: #e2c78e;
+  background: var(--warning-soft);
+  color: #765017;
+}
+.scan-feedback .text-button {
+  flex: none;
+  color: inherit;
+}
+.scanner-backdrop {
+  z-index: 120;
+}
+.scanner-modal {
+  width: min(660px, 100%);
+  overflow: hidden;
+}
+.scanner-modal .modal-heading {
+  margin-bottom: 18px;
+}
+.scanner-modal .modal-heading > button {
+  width: 48px;
+  height: 48px;
+}
+.scanner-intro,
+.scanner-message {
+  min-height: 330px;
+  padding: 28px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: var(--surface-soft);
+  text-align: center;
+}
+.scanner-intro > span,
+.scanner-message > svg {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.scanner-intro > span svg {
+  width: 30px;
+}
+.scanner-message > svg {
+  padding: 19px;
+}
+.scanner-intro strong,
+.scanner-message strong {
+  font-size: 18px;
+}
+.scanner-intro p,
+.scanner-message span {
+  max-width: 440px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.scanner-intro button,
+.scanner-message button {
+  min-height: 52px;
+  margin-top: 6px;
+}
+.scanner-view {
+  position: relative;
+  display: none;
+  aspect-ratio: 4 / 3;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #181512;
+}
+.scanner-view.active {
+  display: block;
+}
+.scanner-view video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+.scanner-view canvas {
+  display: none;
+}
+.scanner-guide {
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  top: 31%;
+  height: 38%;
+  border: 3px solid #fff;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.34);
+  pointer-events: none;
+}
+.scanner-guide svg {
+  width: 44px;
+  height: 44px;
+  opacity: 0.82;
+}
+.scanner-controls {
+  position: absolute;
+  z-index: 2;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+.scanner-controls > span {
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.58);
+}
+.scanner-controls button {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(0, 0, 0, 0.66);
+  color: #fff;
+  cursor: pointer;
+}
+.scanner-controls button svg {
+  width: 18px;
+}
+.scanner-error {
+  background: var(--warning-soft);
+}
 .modal-heading {
   margin-bottom: 12px;
   display: flex;
@@ -4666,6 +4847,10 @@ a:active {
     align-items: stretch;
     flex-direction: column;
   }
+  .scan-camera-button {
+    width: 100%;
+    justify-content: center;
+  }
   .toolbar-search {
     min-width: 0;
   }
@@ -4809,6 +4994,27 @@ a:active {
     border-top: 1px solid var(--border);
     background: var(--surface);
   }
+  .scanner-modal {
+    padding: 16px 12px;
+  }
+  .scanner-view {
+    aspect-ratio: 3 / 4;
+  }
+  .scanner-intro,
+  .scanner-message {
+    min-height: 58dvh;
+    padding: 20px 16px;
+  }
+  .scanner-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .scanner-controls > span,
+  .scanner-controls button {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
   input,
   select,
   textarea {
@@ -4817,6 +5023,13 @@ a:active {
 }
 
 @media (max-width: 460px) {
+  .barcode-capture-field {
+    grid-template-columns: 1fr;
+  }
+  .barcode-capture-field > button {
+    width: 100%;
+    justify-content: center;
+  }
   .metric-grid,
   .module-grid,
   .quick-actions,

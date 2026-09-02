@@ -6,6 +6,7 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   Barcode,
+  Camera,
   Check,
   PackageOpen,
   Plus,
@@ -14,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 
+import { BarcodeScanner } from "@/components/barcode-scanner";
 import type { ProductVariant } from "@/lib/domain";
 
 type Category = {
@@ -38,9 +40,11 @@ type Props = {
   createAction?: (formData: FormData) => Promise<void>;
   addVariantsAction?: (formData: FormData) => Promise<void>;
   registerBarcodeAction?: (formData: FormData) => Promise<void>;
+  lookupBarcodeAction?: (code: string) => Promise<ProductVariant | null>;
 };
 
 type ModalMode = "create" | "add";
+type ScannerTarget = "search" | "barcode";
 
 const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
@@ -116,6 +120,7 @@ export function ProductsWorkspace({
   createAction,
   addVariantsAction,
   registerBarcodeAction,
+  lookupBarcodeAction,
 }: Props) {
   const availableCategories = categories.length
     ? categories
@@ -130,6 +135,14 @@ export function ProductsWorkspace({
     initialVariants[0]?.id ?? "",
   );
   const barcodeInputRef = useRef<HTMLInputElement>(null);
+  const [barcodeCode, setBarcodeCode] = useState("");
+  const [scannerTarget, setScannerTarget] = useState<ScannerTarget | null>(
+    null,
+  );
+  const [scanFeedback, setScanFeedback] = useState<{
+    kind: "working" | "found" | "missing";
+    message: string;
+  } | null>(null);
   const [saved, setSaved] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -265,6 +278,11 @@ export function ProductsWorkspace({
     setModalMode("create");
   }
 
+  function openBarcodeModal() {
+    setBarcodeCode("");
+    setBarcodeOpen(true);
+  }
+
   function openAddModal() {
     const product = products[0];
     if (!product) return;
@@ -349,6 +367,57 @@ export function ProductsWorkspace({
     setSaved(true);
   }
 
+  async function handleScannedCode(code: string, target: ScannerTarget) {
+    setScannerTarget(null);
+    if (target === "barcode") {
+      setBarcodeCode(code);
+      setScanFeedback({
+        kind: "found",
+        message: `Código ${code} listo para revisar y guardar.`,
+      });
+      return;
+    }
+
+    setQuery(code);
+    const localMatch = variants.find((item) => item.legacyCode === code);
+    if (localMatch) {
+      setScanFeedback({
+        kind: "found",
+        message: `${localMatch.productName} · ${localMatch.color} · talla ${localMatch.size}`,
+      });
+      return;
+    }
+
+    if (preview || !lookupBarcodeAction) {
+      setScanFeedback({
+        kind: "missing",
+        message: `No encontramos el código ${code} en el catálogo.`,
+      });
+      return;
+    }
+
+    setScanFeedback({ kind: "working", message: "Buscando en el catálogo…" });
+    const match = await lookupBarcodeAction(code);
+    if (!match) {
+      setScanFeedback({
+        kind: "missing",
+        message: `No encontramos el código ${code} en el catálogo.`,
+      });
+      return;
+    }
+
+    setVariants((current) =>
+      current.some((item) => item.id === match.id)
+        ? current
+        : [match, ...current],
+    );
+    setQuery(match.legacyCode);
+    setScanFeedback({
+      kind: "found",
+      message: `${match.productName} · ${match.color} · talla ${match.size}`,
+    });
+  }
+
   return (
     <section className="module-page">
       <div className="section-heading">
@@ -367,7 +436,7 @@ export function ProductsWorkspace({
           <button
             className="secondary-button"
             type="button"
-            onClick={() => setBarcodeOpen(true)}
+            onClick={openBarcodeModal}
             disabled={variants.length === 0}
           >
             <Barcode aria-hidden="true" />
@@ -423,12 +492,41 @@ export function ProductsWorkspace({
           <Search aria-hidden="true" />
           <input
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setScanFeedback(null);
+            }}
             placeholder="Buscar producto, marca o código"
             aria-label="Buscar productos"
           />
         </label>
+        <button
+          className="secondary-button scan-camera-button"
+          type="button"
+          onClick={() => setScannerTarget("search")}
+        >
+          <Camera aria-hidden="true" />
+          Escanear con cámara
+        </button>
       </div>
+
+      {scanFeedback ? (
+        <div
+          className={`scan-feedback ${scanFeedback.kind}`}
+          role={scanFeedback.kind === "missing" ? "alert" : "status"}
+        >
+          <span>{scanFeedback.message}</span>
+          {scanFeedback.kind === "missing" ? (
+            <button
+              className="text-button"
+              type="button"
+              onClick={openCreateModal}
+            >
+              Dar de alta
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="data-table">
         <div className="table-row table-header">
@@ -770,18 +868,30 @@ export function ProductsWorkspace({
                     <option value="CODE128">CODE 128</option>
                   </select>
                 </label>
-                <label className="wide-field">
-                  <span>Código leído</span>
-                  <input
-                    ref={barcodeInputRef}
-                    name="code"
-                    autoComplete="off"
-                    inputMode="text"
-                    maxLength={80}
-                    placeholder="Escanea o escribe el código"
-                    required
-                  />
-                </label>
+                <div className="wide-field barcode-capture-field">
+                  <label>
+                    <span>Código leído</span>
+                    <input
+                      ref={barcodeInputRef}
+                      name="code"
+                      autoComplete="off"
+                      inputMode="text"
+                      maxLength={80}
+                      placeholder="Escanea o escribe el código"
+                      value={barcodeCode}
+                      onChange={(event) => setBarcodeCode(event.target.value)}
+                      required
+                    />
+                  </label>
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => setScannerTarget("barcode")}
+                  >
+                    <Camera aria-hidden="true" />
+                    Usar cámara
+                  </button>
+                </div>
               </div>
               <div className="notice barcode-warning">
                 <strong>Antes de usar uno del proveedor</strong>
@@ -803,6 +913,18 @@ export function ProductsWorkspace({
             </form>
           </section>
         </div>
+      ) : null}
+
+      {scannerTarget ? (
+        <BarcodeScanner
+          title={
+            scannerTarget === "search"
+              ? "Buscar producto por código"
+              : "Capturar código físico"
+          }
+          onClose={() => setScannerTarget(null)}
+          onDetected={(code) => handleScannedCode(code, scannerTarget)}
+        />
       ) : null}
     </section>
   );

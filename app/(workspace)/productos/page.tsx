@@ -5,6 +5,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   addCatalogVariants,
   createCatalogProduct,
+  lookupCatalogBarcode,
   registerVariantBarcode,
 } from "./actions";
 import { ProductsWorkspace } from "./products-workspace";
@@ -112,6 +113,7 @@ export default async function ProductsPage({
       createAction={createCatalogProduct}
       addVariantsAction={addCatalogVariants}
       registerBarcodeAction={registerVariantBarcode}
+      lookupBarcodeAction={lookupCatalogBarcode}
     />
   );
 }
