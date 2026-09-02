@@ -48,8 +48,9 @@ saltando lo bloqueado.
 | **Corrección 0.14.1**    | Candado concurrente aplicado y prefijo interno 20–29 bloqueado para códigos externos                     |
 | **Componente 0.15.0**    | Cámara en Productos, detección nativa/ZXing, búsqueda real y recuperación de permisos                    |
 | **M2 (quinta entrega)**  | Edición segura de producto, costo/estado y precio con permisos separados e identidad inmutable           |
+| **M2 (sexta entrega)**   | Carga masiva CSV/XLSX con validación en seco, confirmación atómica y códigos propios protegidos          |
 
-Veintiséis migraciones versionadas del repositorio. El proyecto de Supabase
+Veintinueve migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -73,13 +74,13 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Falta para el alcance de octubre
 
-| Milestone                                        | Estado de la especificación                                                                                                                              |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **M2** — catálogo, variantes, códigos, etiquetas | En progreso: alta, búsqueda, matriz, identidad, variantes, códigos externos, cámara y edición listos; faltan carga masiva, etiquetas y validación física |
-| **M3** — inventario, movimientos, traspasos      | [Escrita](specs/M3_INVENTARIO.md)                                                                                                                        |
-| **M4** — POS, pagos mixtos, caja                 | [Escrita](specs/M4_POS_Y_CAJA.md)                                                                                                                        |
-| **M5** — devoluciones, cambios, cancelaciones    | [Escrita](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)                                                                                                            |
-| **M9** — importador y sincronizador de SICAR     | Falta                                                                                                                                                    |
+| Milestone                                        | Estado de la especificación                                                                                                                                                |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **M2** — catálogo, variantes, códigos, etiquetas | En progreso: alta, búsqueda, matriz, identidad, variantes, códigos externos, cámara, edición y carga masiva listos; faltan etiquetas, acciones en lote y validación física |
+| **M3** — inventario, movimientos, traspasos      | [Escrita](specs/M3_INVENTARIO.md)                                                                                                                                          |
+| **M4** — POS, pagos mixtos, caja                 | [Escrita](specs/M4_POS_Y_CAJA.md)                                                                                                                                          |
+| **M5** — devoluciones, cambios, cancelaciones    | [Escrita](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)                                                                                                                              |
+| **M9** — importador y sincronizador de SICAR     | Falta                                                                                                                                                                      |
 
 Recorridos a después de octubre: M6 compras, M7 apartados y lealtad, M8
 reportes y cotizaciones.

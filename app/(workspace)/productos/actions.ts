@@ -4,6 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requirePermission } from "@/lib/auth/authorization";
+import { parseCatalogImportFile } from "@/lib/catalog-import";
+import {
+  type CatalogImportIssue,
+  type CatalogImportRow,
+  type CatalogImportState,
+} from "@/lib/catalog-import-shared";
 import type { ProductVariant } from "@/lib/domain";
 
 const productsPath = "/productos";
@@ -51,6 +57,118 @@ function catalogErrorStatus(error: unknown) {
   if (message.includes("INVALID_PRODUCT")) return "producto-datos-invalidos";
   if (message.includes("INVALID_VARIANT")) return "producto-datos-invalidos";
   return "producto-error";
+}
+
+function importFileMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  if (message.includes("ARCHIVO_VACIO")) return "El archivo está vacío.";
+  if (message.includes("ARCHIVO_DEMASIADO_GRANDE"))
+    return "El archivo supera 1 MB. Divídelo en bloques de hasta 1,000 filas.";
+  if (message.includes("FORMATO_NO_ADMITIDO"))
+    return "Usa la plantilla CSV o XLSX de Mi Tienda SM.";
+  if (message.includes("ARCHIVO_SIN_DATOS"))
+    return "La plantilla no contiene productos para revisar.";
+  if (message.includes("DEMASIADAS_FILAS"))
+    return "Importa como máximo 1,000 variantes por archivo.";
+  if (message.includes("CSV_COMILLAS_SIN_CERRAR"))
+    return "El CSV tiene una celda entre comillas sin cerrar.";
+  if (message.includes("XLSX_SIN_HOJA"))
+    return "El XLSX no contiene una hoja legible.";
+  if (message.includes("XLSX_"))
+    return "El XLSX está dañado o se expande demasiado. Descarga una plantilla nueva.";
+  if (message.includes("NOT_AUTHORIZED"))
+    return "Tu rol no tiene permiso para importar productos.";
+  return "No fue posible leer la plantilla. Descárgala de nuevo y revisa su formato.";
+}
+
+export async function previewCatalogImport(
+  _previous: CatalogImportState,
+  formData: FormData,
+): Promise<CatalogImportState> {
+  try {
+    const { supabase } = await requirePermission("products.create");
+    const file = formData.get("file");
+    if (!(file instanceof File)) throw new Error("ARCHIVO_VACIO");
+    const parsed = await parseCatalogImportFile(file);
+    if (parsed.rows.length === 0) {
+      return {
+        phase: "preview",
+        message: "Corrige la estructura de la plantilla antes de continuar.",
+        totalRows: 0,
+        validRows: 0,
+        errorCount: parsed.issues.length,
+        errors: parsed.issues,
+      };
+    }
+    const { data, error } = await supabase.rpc("validate_catalog_import", {
+      p_rows: parsed.rows,
+    });
+    if (error) throw error;
+    const report = data as {
+      total_rows: number;
+      valid_rows: number;
+      error_count: number;
+      errors: CatalogImportIssue[];
+    };
+    const allErrors = [...parsed.issues, ...(report.errors ?? [])];
+    const errors = allErrors.slice(0, 200);
+    return {
+      phase: "preview",
+      message: allErrors.length
+        ? "No se guardó nada. Corrige las filas marcadas y vuelve a revisar."
+        : "La corrida en seco terminó sin errores. Revisa el resumen antes de importar.",
+      totalRows: report.total_rows,
+      validRows: allErrors.length ? 0 : report.valid_rows,
+      errorCount: allErrors.length,
+      errors,
+      payload: JSON.stringify(parsed.rows),
+    };
+  } catch (error) {
+    console.error("[productos/previewCatalogImport] failed", {
+      message: error instanceof Error ? error.message : "UNKNOWN_ERROR",
+    });
+    return { phase: "error", message: importFileMessage(error) };
+  }
+}
+
+export async function commitCatalogImport(
+  _previous: CatalogImportState,
+  formData: FormData,
+): Promise<CatalogImportState> {
+  try {
+    const { supabase } = await requirePermission("products.create");
+    const payload = textField(formData, "payload");
+    if (!payload || payload.length > 1_500_000)
+      throw new Error("INVALID_IMPORT_PAYLOAD");
+    const rows = JSON.parse(payload) as CatalogImportRow[];
+    if (!Array.isArray(rows) || rows.length < 1 || rows.length > 1000)
+      throw new Error("INVALID_IMPORT_PAYLOAD");
+    const { data, error } = await supabase.rpc("commit_catalog_import", {
+      p_rows: rows,
+    });
+    if (error) throw error;
+    const result = data as { product_count: number; variant_count: number };
+    revalidatePath(productsPath);
+    return {
+      phase: "committed",
+      message:
+        "Importación terminada. Todas las filas se guardaron correctamente.",
+      productCount: result.product_count,
+      variantCount: result.variant_count,
+    };
+  } catch (error) {
+    console.error("[productos/commitCatalogImport] failed", {
+      message: error instanceof Error ? error.message : "UNKNOWN_ERROR",
+    });
+    return {
+      phase: "error",
+      message:
+        error instanceof Error &&
+        error.message.includes("IMPORT_VALIDATION_FAILED")
+          ? "El catálogo cambió después de la revisión. Vuelve a cargar el archivo para validarlo de nuevo."
+          : "No se guardó ninguna fila. Revisa permisos y vuelve a ejecutar la corrida en seco.",
+    };
+  }
 }
 
 export async function updateCatalogProduct(formData: FormData) {

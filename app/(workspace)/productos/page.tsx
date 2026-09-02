@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { mockVariants } from "@/lib/mock-data";
 import { requirePermission } from "@/lib/auth/authorization";
+import { initialCatalogImportState } from "@/lib/catalog-import-shared";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   addCatalogVariants,
+  commitCatalogImport,
   createCatalogProduct,
   lookupCatalogBarcode,
+  previewCatalogImport,
   registerVariantBarcode,
   updateCatalogProduct,
   updateCatalogVariant,
@@ -90,6 +93,7 @@ export default async function ProductsPage({
       .select("permission_code")
       .eq("role_id", roleId)
       .in("permission_code", [
+        "products.create",
         "products.update",
         "products.price_update",
         "reports.inventory",
@@ -132,6 +136,7 @@ export default async function ProductsPage({
     ),
   );
   const canUpdate = permissions.has("products.update");
+  const canCreate = permissions.has("products.create");
   const canSeeCost =
     permissions.has("reports.inventory") || permissions.has("purchases.manage");
   const variants = ((catalogResult.data ?? []) as CatalogRow[]).map((row) => ({
@@ -163,9 +168,9 @@ export default async function ProductsPage({
       categories={(categoriesResult.data ?? []) as Category[]}
       attributeValues={(valuesResult.data ?? []) as AttributeValue[]}
       status={params.status}
-      createAction={createCatalogProduct}
-      addVariantsAction={addCatalogVariants}
-      registerBarcodeAction={registerVariantBarcode}
+      createAction={canCreate ? createCatalogProduct : undefined}
+      addVariantsAction={canCreate ? addCatalogVariants : undefined}
+      registerBarcodeAction={canUpdate ? registerVariantBarcode : undefined}
       lookupBarcodeAction={lookupCatalogBarcode}
       updateProductAction={canUpdate ? updateCatalogProduct : undefined}
       updateVariantAction={
@@ -176,6 +181,9 @@ export default async function ProductsPage({
           ? updateCatalogVariantPrice
           : undefined
       }
+      previewImportAction={canCreate ? previewCatalogImport : undefined}
+      commitImportAction={canCreate ? commitCatalogImport : undefined}
+      initialImportState={canCreate ? initialCatalogImportState : undefined}
     />
   );
 }

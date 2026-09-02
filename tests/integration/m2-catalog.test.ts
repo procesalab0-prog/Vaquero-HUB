@@ -21,6 +21,7 @@ const state = {
   skus: [] as string[],
   primaryBarcodes: [] as string[],
   extraSizeIds: [] as string[],
+  importBrand: "",
 };
 
 function publicClient() {
@@ -124,6 +125,12 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
     expect(extraSizesError).toBeNull();
     state.extraSizeIds = (extraSizes ?? []).map((size) => size.id);
     expect(state.extraSizeIds).toHaveLength(2);
+
+    state.importBrand = `Marca carga ${runCode}`;
+    const { error: brandError } = await server
+      .from("brands")
+      .insert({ name: state.importBrand });
+    expect(brandError).toBeNull();
   }, 30_000);
 
   it("ordena las tallas por display_order y no alfabéticamente", () => {
@@ -898,5 +905,186 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
       p_category_id: state.categoryId,
     });
     expect(anonymous.error).not.toBeNull();
+  });
+
+  it("corre en seco, explica datos sucios y no escribe nada", async () => {
+    const productName = `Carga inválida ${runCode}`;
+    const duplicatedCode = `DUP-CARGA-${runCode}`;
+    const rows = [
+      {
+        product_name: productName,
+        category: "Botas",
+        brand: "Marca que no existe",
+        description: "",
+        color: `Negro ${runCode}`,
+        size: "99",
+        cost: "mil",
+        price: "2199",
+        barcode: duplicatedCode,
+        barcode_was_numeric: false,
+      },
+      {
+        product_name: productName,
+        category: "Botas",
+        brand: "Marca que no existe",
+        description: "",
+        color: `Negro ${runCode}`,
+        size: "25",
+        cost: "1200",
+        price: "2199",
+        barcode: duplicatedCode,
+        barcode_was_numeric: false,
+      },
+      {
+        product_name: `${productName} dos`,
+        category: "Botas",
+        brand: state.importBrand,
+        description: "",
+        color: `Café ${runCode}`,
+        size: "25.5",
+        cost: "1200",
+        price: "2199",
+        barcode: "012345678901",
+        barcode_was_numeric: true,
+      },
+    ];
+    const { data, error } = await state.warehouse!.client.rpc(
+      "validate_catalog_import",
+      { p_rows: rows },
+    );
+    expect(error).toBeNull();
+    const codes = new Set(
+      data.errors.map((issue: { code: string }) => issue.code),
+    );
+    for (const code of [
+      "MARCA_INEXISTENTE",
+      "TALLA_FUERA_DE_ESCALA",
+      "COSTO_NO_NUMERICO",
+      "CODIGO_DUPLICADO_ARCHIVO",
+      "CODIGO_CONVERTIDO_A_NUMERO",
+    ]) {
+      expect(codes.has(code)).toBe(true);
+    }
+    expect(data.valid_rows).toBe(0);
+
+    const { data: products } = await state
+      .admin!.client.from("products")
+      .select("id")
+      .in("name", [productName, `${productName} dos`]);
+    expect(products).toEqual([]);
+  });
+
+  it("importa todos los productos o ninguno y conserva código interno", async () => {
+    const productName = `Carga correcta ${runCode}`;
+    const rows = state.sizeIds.slice(0, 2).map((size, index) => ({
+      product_name: productName,
+      category: "Botas",
+      brand: state.importBrand,
+      description: "Alta desde plantilla propia",
+      color: `Negro ${runCode}`,
+      size: size.value,
+      cost: "1200.50",
+      price: "2199",
+      barcode: `PROV-${runCode}-${index + 1}`,
+      barcode_was_numeric: false,
+    }));
+
+    const preview = await state.warehouse!.client.rpc(
+      "validate_catalog_import",
+      { p_rows: rows },
+    );
+    expect(preview.error).toBeNull();
+    expect(preview.data).toMatchObject({
+      total_rows: 2,
+      valid_rows: 2,
+      error_count: 0,
+    });
+    const before = await state
+      .admin!.client.from("products")
+      .select("id")
+      .eq("name", productName);
+    expect(before.data).toEqual([]);
+
+    const committed = await state.warehouse!.client.rpc(
+      "commit_catalog_import",
+      { p_rows: rows },
+    );
+    expect(committed.error).toBeNull();
+    expect(committed.data).toEqual({ product_count: 1, variant_count: 2 });
+
+    const catalog = await state.admin!.client.rpc("search_catalog", {
+      p_query: productName,
+      p_limit: 10,
+    });
+    expect(catalog.error).toBeNull();
+    expect(catalog.data).toHaveLength(2);
+    expect(
+      catalog.data.map(
+        (row: { primary_barcode: string }) => row.primary_barcode,
+      ),
+    ).toEqual(expect.arrayContaining(rows.map((row) => row.barcode)));
+
+    const server = createClient(url, secretKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const variantIds = catalog.data.map(
+      (row: { variant_id: string }) => row.variant_id,
+    );
+    const { data: barcodes } = await server
+      .from("barcodes")
+      .select("variant_id, source, is_primary")
+      .in("variant_id", variantIds);
+    expect(barcodes).toHaveLength(4);
+    expect(
+      barcodes?.filter((barcode) => barcode.source === "GENERATED"),
+    ).toHaveLength(2);
+    expect(
+      barcodes?.filter(
+        (barcode) => barcode.source === "SUPPLIER" && barcode.is_primary,
+      ),
+    ).toHaveLength(2);
+
+    const { data: audit } = await server
+      .from("audit_log")
+      .select("actor_user_id, metadata")
+      .eq("action", "catalog.import")
+      .eq("actor_user_id", state.warehouse!.id);
+    expect(audit?.some((entry) => entry.metadata.variant_count === 2)).toBe(
+      true,
+    );
+  });
+
+  it("vuelve a validar al confirmar y bloquea roles sin permiso", async () => {
+    const productName = `Carga atómica ${runCode}`;
+    const invalidRows = [
+      {
+        product_name: productName,
+        category: "Botas",
+        brand: state.importBrand,
+        description: "",
+        color: `Negro ${runCode}`,
+        size: state.sizeIds[0].value,
+        cost: "100",
+        price: "200",
+        barcode: `PROV-${runCode}-1`,
+        barcode_was_numeric: false,
+      },
+    ];
+    const commit = await state.warehouse!.client.rpc("commit_catalog_import", {
+      p_rows: invalidRows,
+    });
+    expect(commit.error?.message).toContain("IMPORT_VALIDATION_FAILED");
+    const { data: products } = await state
+      .admin!.client.from("products")
+      .select("id")
+      .eq("name", productName);
+    expect(products).toEqual([]);
+
+    for (const client of [state.cashier!.client, publicClient()]) {
+      const denied = await client.rpc("validate_catalog_import", {
+        p_rows: invalidRows,
+      });
+      expect(denied.error?.message).toContain("NOT_AUTHORIZED");
+    }
   });
 });

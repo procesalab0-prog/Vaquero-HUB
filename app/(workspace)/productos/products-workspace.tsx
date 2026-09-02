@@ -13,11 +13,14 @@ import {
   Plus,
   Search,
   Tags,
+  Upload,
   X,
 } from "lucide-react";
 
 import { BarcodeScanner } from "@/components/barcode-scanner";
+import type { CatalogImportState } from "@/lib/catalog-import-shared";
 import type { ProductVariant } from "@/lib/domain";
+import { CatalogImportDialog } from "./catalog-import-dialog";
 
 type Category = {
   id: string;
@@ -45,6 +48,15 @@ type Props = {
   updateProductAction?: (formData: FormData) => Promise<void>;
   updateVariantAction?: (formData: FormData) => Promise<void>;
   updatePriceAction?: (formData: FormData) => Promise<void>;
+  previewImportAction?: (
+    state: CatalogImportState,
+    formData: FormData,
+  ) => Promise<CatalogImportState>;
+  commitImportAction?: (
+    state: CatalogImportState,
+    formData: FormData,
+  ) => Promise<CatalogImportState>;
+  initialImportState?: CatalogImportState;
 };
 
 type ModalMode = "create" | "add";
@@ -136,6 +148,9 @@ export function ProductsWorkspace({
   updateProductAction,
   updateVariantAction,
   updatePriceAction,
+  previewImportAction,
+  commitImportAction,
+  initialImportState,
 }: Props) {
   const availableCategories = categories.length
     ? categories
@@ -145,6 +160,7 @@ export function ProductsWorkspace({
     : previewValues;
   const [variants, setVariants] = useState(initialVariants);
   const [modalMode, setModalMode] = useState<ModalMode | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
   const [barcodeOpen, setBarcodeOpen] = useState(false);
   const [selectedBarcodeVariant, setSelectedBarcodeVariant] = useState(
@@ -507,36 +523,52 @@ export function ProductsWorkspace({
           </p>
         </div>
         <div className="heading-actions">
+          {previewImportAction && commitImportAction && initialImportState ? (
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() => setImportOpen(true)}
+            >
+              <Upload aria-hidden="true" />
+              Carga masiva
+            </button>
+          ) : null}
           <Link className="secondary-button" href="/etiquetas">
             <Tags aria-hidden="true" />
             Etiquetas
           </Link>
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={openBarcodeModal}
-            disabled={variants.length === 0}
-          >
-            <Barcode aria-hidden="true" />
-            Registrar código
-          </button>
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={openAddModal}
-            disabled={products.length === 0}
-          >
-            <Plus aria-hidden="true" />
-            Agregar variantes
-          </button>
-          <button
-            className="primary-button"
-            type="button"
-            onClick={openCreateModal}
-          >
-            <Plus aria-hidden="true" />
-            Nuevo producto
-          </button>
+          {preview || registerBarcodeAction ? (
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={openBarcodeModal}
+              disabled={variants.length === 0}
+            >
+              <Barcode aria-hidden="true" />
+              Registrar código
+            </button>
+          ) : null}
+          {preview || addVariantsAction ? (
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={openAddModal}
+              disabled={products.length === 0}
+            >
+              <Plus aria-hidden="true" />
+              Agregar variantes
+            </button>
+          ) : null}
+          {preview || createAction ? (
+            <button
+              className="primary-button"
+              type="button"
+              onClick={openCreateModal}
+            >
+              <Plus aria-hidden="true" />
+              Nuevo producto
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -1211,6 +1243,18 @@ export function ProductsWorkspace({
           }
           onClose={() => setScannerTarget(null)}
           onDetected={(code) => handleScannedCode(code, scannerTarget)}
+        />
+      ) : null}
+
+      {importOpen &&
+      previewImportAction &&
+      commitImportAction &&
+      initialImportState ? (
+        <CatalogImportDialog
+          onClose={() => setImportOpen(false)}
+          previewAction={previewImportAction}
+          commitAction={commitImportAction}
+          initialState={initialImportState}
         />
       ) : null}
     </section>
