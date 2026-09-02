@@ -340,6 +340,20 @@ columnas, así que toda consulta a `variants` debe nombrar sus columnas.
 
 ## 3. M2.4 — Carga masiva
 
+**Terminada y revisada ejecutándola.** El requisito duro se cumple, y con un
+detalle que conviene no deshacer: `commit_catalog_import` **revalida por su
+cuenta** en vez de confiar en que se llamó a la vista previa, y toma el
+candado antes de revalidar. Un lote con un renglón malo entre dos buenos no
+escribe nada.
+
+**Límite que conviene conocer:** el importador **sólo crea productos nuevos**.
+Si el producto ya existe devuelve `PRODUCTO_YA_EXISTE` y manda al alta
+individual. Es la decisión segura —evita ambigüedad sobre qué se actualiza y
+qué no—, pero significa que cargar tallas nuevas de un producto ya cargado no
+se puede hacer por archivo. Si durante la carga progresiva del catálogo eso
+estorba, es una decisión a tomar, no un defecto a parchear sobre la marcha.
+
+
 **Especificación:** [`specs/M2_CATALOGO.md`](specs/M2_CATALOGO.md) §4
 **Estado:** terminado en 0.17.0.
 
@@ -371,6 +385,15 @@ segunda operación que vuelve a validar bajo candado y guarda todo o nada.
   recibir mercancía, no en la caja.
 
 ## 5. M3 — Inventario, movimientos y traspasos
+
+**Antes de escribir la primera línea, leer §3.1 de la especificación.** Ahí
+quedó lo que costó dos correcciones en M2: el `UPDATE` condicional se
+serializa solo y basta para el saldo de una variante —comprobado con dos
+ventas simultáneas sobre existencia 1: queda una venta y existencia cero—,
+pero **no protege nada que mire varias filas**. Traspasos, conteos y la
+invariante de la suma caen en ese segundo caso y necesitan candado
+consultivo.
+
 
 **Especificación:** [`specs/M3_INVENTARIO.md`](specs/M3_INVENTARIO.md)
 **Depende de:** M2.2, porque el inventario cuelga de `variants`.
