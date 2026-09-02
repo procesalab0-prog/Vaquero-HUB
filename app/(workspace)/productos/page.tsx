@@ -21,6 +21,7 @@ type CatalogRow = {
   primary_barcode: string | null;
   price_cents: number;
   attributes: Record<string, string> | null;
+  is_active: boolean;
 };
 
 type Category = {
@@ -101,6 +102,7 @@ export default async function ProductsPage({
     size: row.attributes?.TALLA ?? "Única",
     price: row.price_cents / 100,
     stock: 0,
+    isActive: row.is_active,
   }));
 
   return (

@@ -4903,3 +4903,22 @@ a:active {
     transition: none !important;
   }
 }
+
+/* Una variante dada de baja sigue en la búsqueda —su identidad es inmutable y
+   su historial no se borra—, así que tiene que distinguirse a simple vista.
+   Sin esto, lo que ya no se vende se ve igual que lo vendible. */
+.variant-inactive {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
