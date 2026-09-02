@@ -167,7 +167,7 @@ insert into public.attribute_types (code, name, display_order) values
   ('ANCHO', 'Ancho', 30);
 
 insert into public.attribute_values (type_code, scale_code, value, display_order)
-select 'TALLA', 'CALZADO_MX', trim(to_char(value, 'FM99.9')), value
+select 'TALLA', 'CALZADO_MX', regexp_replace(trim(to_char(value, 'FM99.9')), '\.$', ''), value
 from generate_series(22.0, 31.0, 0.5) value;
 
 insert into public.attribute_values (type_code, scale_code, value, display_order) values

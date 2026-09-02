@@ -74,7 +74,7 @@ describe.sequential("M1B: anonimización y límite por origen", () => {
       "create_customer",
       {
         p_full_name: "Cliente Que Pide Borrado",
-        p_phone: `353${runCode}`,
+        p_phone: `35${runCode}`,
         p_email: `cliente-${runCode}@correo.test`,
         p_birthdate: "1990-05-10",
         p_location_id: state.locationId,

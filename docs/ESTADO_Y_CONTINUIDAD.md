@@ -42,7 +42,7 @@ saltando lo bloqueado.
 | **M1B** | Clientes, número de socio con dígito verificador, tarjeta digital, acceso sin contraseña, PWA de cliente |
 | **M2 (primera entrega)** | Catálogo real, marcas, categorías, escalas, variantes, códigos, alta atómica, búsqueda y pantalla conectada |
 
-Catorce migraciones versionadas del repositorio. El proyecto de Supabase
+Quince migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Falta para el alcance de octubre

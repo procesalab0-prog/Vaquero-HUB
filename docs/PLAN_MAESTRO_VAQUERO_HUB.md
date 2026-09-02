@@ -1778,6 +1778,9 @@ Corrección de seguridad 0.10.1 — Clientes, correo y continuidad:
 * La migración se validó en staging mediante transacciones reversibles: se
   comprobó la anonimización completa y que el limitador permite exactamente
   diez solicitudes por ventana antes de rechazar las siguientes.
+* La validación desde una base vacía corrigió dos datos de prueba: las tallas
+  enteras ya se guardan como `25`, `26`, etc., sin punto final, y el teléfono
+  temporal de anonimización usa exactamente diez dígitos mexicanos.
 * Deuda reconocida: si Supabase Auth falla después de anonimizar la fila, hace
   falta una cola de reintento para borrar la identidad huérfana sin perder la
   trazabilidad del trabajo pendiente.
