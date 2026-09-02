@@ -3,12 +3,17 @@ export type ProductVariant = {
   /** Identificadores del catálogo real; se omiten en datos de demostración antiguos. */
   productId?: string;
   categoryId?: string;
+  description?: string;
+  productActive?: boolean;
   productName: string;
   brand: string;
   legacyCode: string;
+  sku?: string;
   color: string;
   size: string;
   price: number;
+  cost?: number;
+  isActive?: boolean;
   stock: number;
   /** Ruta de la fotografía aprobada por el dueño. Si falta, la UI muestra un fallback neutro. */
   image?: string;

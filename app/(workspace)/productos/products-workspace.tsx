@@ -9,6 +9,7 @@ import {
   Camera,
   Check,
   PackageOpen,
+  Pencil,
   Plus,
   Search,
   Tags,
@@ -41,6 +42,9 @@ type Props = {
   addVariantsAction?: (formData: FormData) => Promise<void>;
   registerBarcodeAction?: (formData: FormData) => Promise<void>;
   lookupBarcodeAction?: (code: string) => Promise<ProductVariant | null>;
+  updateProductAction?: (formData: FormData) => Promise<void>;
+  updateVariantAction?: (formData: FormData) => Promise<void>;
+  updatePriceAction?: (formData: FormData) => Promise<void>;
 };
 
 type ModalMode = "create" | "add";
@@ -78,6 +82,11 @@ const statusMessages: Record<string, string> = {
     "Las nuevas variantes se agregaron sin cambiar los SKU ni códigos existentes.",
   "codigo-registrado":
     "Código guardado como principal. Los códigos anteriores siguen funcionando.",
+  "producto-actualizado":
+    "Los datos generales del producto quedaron actualizados.",
+  "variante-actualizada":
+    "El costo y el estado de la variante quedaron actualizados.",
+  "precio-actualizado": "El nuevo precio quedó guardado en la bitácora.",
   "codigo-ya-asignado":
     "Ese código ya pertenece a otra variante. Verifica cada talla antes de guardarlo.",
   "codigo-invalido":
@@ -100,6 +109,9 @@ const statusMessages: Record<string, string> = {
     "Completa producto, categoría, color, costo, precio y al menos una talla. " +
     "El SKU y el código de barras los genera el sistema.",
   "producto-sin-permiso": "Tu rol no tiene permiso para modificar el catálogo.",
+  "producto-categoria-invalida":
+    "La categoría ya no está disponible. Elige una categoría activa.",
+  "producto-precio-invalido": "Escribe un precio válido mayor o igual a cero.",
   "producto-no-encontrado":
     "El producto ya no existe o fue desactivado. Actualiza la pantalla.",
   "producto-cliente-desactualizado":
@@ -121,6 +133,9 @@ export function ProductsWorkspace({
   addVariantsAction,
   registerBarcodeAction,
   lookupBarcodeAction,
+  updateProductAction,
+  updateVariantAction,
+  updatePriceAction,
 }: Props) {
   const availableCategories = categories.length
     ? categories
@@ -130,6 +145,7 @@ export function ProductsWorkspace({
     : previewValues;
   const [variants, setVariants] = useState(initialVariants);
   const [modalMode, setModalMode] = useState<ModalMode | null>(null);
+  const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
   const [barcodeOpen, setBarcodeOpen] = useState(false);
   const [selectedBarcodeVariant, setSelectedBarcodeVariant] = useState(
     initialVariants[0]?.id ?? "",
@@ -159,7 +175,14 @@ export function ProductsWorkspace({
   const products = useMemo(() => {
     const unique = new Map<
       string,
-      { id: string; name: string; brand: string; categoryId: string }
+      {
+        id: string;
+        name: string;
+        brand: string;
+        categoryId: string;
+        description: string;
+        isActive: boolean;
+      }
     >();
     for (const item of variants) {
       const id = item.productId ?? `preview:${item.productName}`;
@@ -169,6 +192,8 @@ export function ProductsWorkspace({
           name: item.productName,
           brand: item.brand,
           categoryId: item.categoryId ?? availableCategories[0]?.id ?? "",
+          description: item.description ?? "",
+          isActive: item.productActive ?? true,
         });
       }
     }
@@ -176,6 +201,8 @@ export function ProductsWorkspace({
       a.name.localeCompare(b.name, "es-MX"),
     );
   }, [availableCategories, variants]);
+  const editingVariant = variants.find((item) => item.id === editingVariantId);
+  const canEdit = preview || Boolean(updateProductAction || updatePriceAction);
 
   const category = availableCategories.find(
     (item) => item.id === selectedCategory,
@@ -367,6 +394,57 @@ export function ProductsWorkspace({
     setSaved(true);
   }
 
+  function updatePreviewProduct(formData: FormData) {
+    const productId = String(formData.get("product_id") ?? "");
+    const name = String(formData.get("product_name") ?? "").trim();
+    const brand =
+      String(formData.get("brand_name") ?? "").trim() || "Sin marca";
+    const categoryId = String(formData.get("category_id") ?? "");
+    const description = String(formData.get("description") ?? "").trim();
+    if (!productId || !name || !categoryId) return;
+    setVariants((current) =>
+      current.map((item) =>
+        (item.productId ?? `preview:${item.productName}`) === productId
+          ? {
+              ...item,
+              productName: name,
+              brand,
+              categoryId,
+              description,
+              productActive: formData.get("is_active") === "on",
+            }
+          : item,
+      ),
+    );
+    setSaved(true);
+  }
+
+  function updatePreviewVariant(formData: FormData) {
+    const variantId = String(formData.get("variant_id") ?? "");
+    const cost = Number(formData.get("cost"));
+    if (!variantId || !Number.isFinite(cost) || cost < 0) return;
+    setVariants((current) =>
+      current.map((item) =>
+        item.id === variantId
+          ? { ...item, cost, isActive: formData.get("is_active") === "on" }
+          : item,
+      ),
+    );
+    setSaved(true);
+  }
+
+  function updatePreviewPrice(formData: FormData) {
+    const variantId = String(formData.get("variant_id") ?? "");
+    const price = Number(formData.get("price"));
+    if (!variantId || !Number.isFinite(price) || price < 0) return;
+    setVariants((current) =>
+      current.map((item) =>
+        item.id === variantId ? { ...item, price } : item,
+      ),
+    );
+    setSaved(true);
+  }
+
   async function handleScannedCode(code: string, target: ScannerTarget) {
     setScannerTarget(null);
     if (target === "barcode") {
@@ -469,6 +547,9 @@ export function ProductsWorkspace({
               "producto-creado",
               "variantes-agregadas",
               "codigo-registrado",
+              "producto-actualizado",
+              "variante-actualizada",
+              "precio-actualizado",
             ].includes(status)
               ? "admin-status"
               : "admin-status error"
@@ -529,15 +610,19 @@ export function ProductsWorkspace({
       ) : null}
 
       <div className="data-table">
-        <div className="table-row table-header">
+        <div className={`table-row table-header${canEdit ? " editable" : ""}`}>
           <span>Producto</span>
           <span>Código</span>
           <span>Variante</span>
           <span>Precio</span>
           <span>Inventario</span>
+          {canEdit ? <span>Acciones</span> : null}
         </div>
         {filteredVariants.map((item) => (
-          <div className="table-row" key={item.id}>
+          <div
+            className={`table-row${canEdit ? " editable" : ""}`}
+            key={item.id}
+          >
             <div className="table-product">
               <span className="table-product-image">
                 {item.image ? (
@@ -557,6 +642,17 @@ export function ProductsWorkspace({
             </span>
             <span>{money.format(item.price)}</span>
             <span className="stock-number out">Se activa en M3</span>
+            {canEdit ? (
+              <button
+                className="table-edit-button"
+                type="button"
+                onClick={() => setEditingVariantId(item.id)}
+                aria-label={`Editar ${item.productName}, ${item.color}, talla ${item.size}`}
+              >
+                <Pencil aria-hidden="true" />
+                Editar
+              </button>
+            ) : null}
           </div>
         ))}
         {filteredVariants.length === 0 ? (
@@ -915,6 +1011,197 @@ export function ProductsWorkspace({
         </div>
       ) : null}
 
+      {editingVariant ? (
+        <div className="modal-backdrop">
+          <section
+            className="checkout-modal product-modal edit-product-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-product-title"
+          >
+            <header className="modal-heading">
+              <div>
+                <p className="eyebrow">Edición protegida</p>
+                <h2 id="edit-product-title">Editar producto y variante</h2>
+              </div>
+              <button
+                type="button"
+                aria-label="Cerrar"
+                onClick={() => setEditingVariantId(null)}
+              >
+                <X aria-hidden="true" />
+              </button>
+            </header>
+
+            {preview || updateProductAction ? (
+              <form
+                action={preview ? updatePreviewProduct : updateProductAction}
+              >
+                <fieldset className="edit-section">
+                  <legend>Datos generales del producto</legend>
+                  <p>Estos cambios se aplican a todas sus tallas y colores.</p>
+                  <input
+                    type="hidden"
+                    name="product_id"
+                    value={
+                      editingVariant.productId ??
+                      `preview:${editingVariant.productName}`
+                    }
+                  />
+                  <div className="settings-form">
+                    <label className="wide-field">
+                      <span>Nombre del producto</span>
+                      <input
+                        name="product_name"
+                        defaultValue={editingVariant.productName}
+                        maxLength={180}
+                        required
+                      />
+                    </label>
+                    <label>
+                      <span>Marca</span>
+                      <input
+                        name="brand_name"
+                        defaultValue={
+                          editingVariant.brand === "Sin marca"
+                            ? ""
+                            : editingVariant.brand
+                        }
+                        maxLength={120}
+                      />
+                    </label>
+                    <label>
+                      <span>Categoría</span>
+                      <select
+                        name="category_id"
+                        defaultValue={editingVariant.categoryId}
+                        required
+                      >
+                        {availableCategories.map((item) => (
+                          <option value={item.id} key={item.id}>
+                            {item.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="wide-field">
+                      <span>Descripción</span>
+                      <textarea
+                        name="description"
+                        defaultValue={editingVariant.description}
+                        maxLength={4000}
+                        rows={3}
+                      />
+                    </label>
+                    <label className="toggle-field wide-field">
+                      <input
+                        type="checkbox"
+                        name="is_active"
+                        defaultChecked={editingVariant.productActive ?? true}
+                      />
+                      <span>Producto activo para la operación</span>
+                    </label>
+                  </div>
+                  <EditSubmitButton label="Guardar datos generales" />
+                </fieldset>
+              </form>
+            ) : null}
+
+            <fieldset className="edit-section identity-section">
+              <legend>Identidad protegida</legend>
+              <p>Se muestra para verificarla, pero no puede editarse.</p>
+              <div className="identity-grid">
+                <label>
+                  <span>SKU</span>
+                  <input
+                    value={editingVariant.sku ?? "Generado por el sistema"}
+                    readOnly
+                  />
+                </label>
+                <label>
+                  <span>Código principal</span>
+                  <input value={editingVariant.legacyCode} readOnly />
+                </label>
+                <label>
+                  <span>Color</span>
+                  <input value={editingVariant.color} readOnly />
+                </label>
+                <label>
+                  <span>Talla</span>
+                  <input value={editingVariant.size} readOnly />
+                </label>
+              </div>
+            </fieldset>
+
+            {preview || updateVariantAction ? (
+              <form
+                action={preview ? updatePreviewVariant : updateVariantAction}
+              >
+                <fieldset className="edit-section">
+                  <legend>Costo y estado de esta variante</legend>
+                  <input
+                    type="hidden"
+                    name="variant_id"
+                    value={editingVariant.id}
+                  />
+                  <div className="settings-form">
+                    <label>
+                      <span>Costo</span>
+                      <input
+                        name="cost"
+                        inputMode="decimal"
+                        min="0"
+                        step="0.01"
+                        defaultValue={editingVariant.cost ?? 0}
+                        required
+                      />
+                    </label>
+                    <label className="toggle-field">
+                      <input
+                        type="checkbox"
+                        name="is_active"
+                        defaultChecked={editingVariant.isActive ?? true}
+                      />
+                      <span>Variante activa</span>
+                    </label>
+                  </div>
+                  <EditSubmitButton label="Guardar costo y estado" />
+                </fieldset>
+              </form>
+            ) : null}
+
+            {preview || updatePriceAction ? (
+              <form action={preview ? updatePreviewPrice : updatePriceAction}>
+                <fieldset className="edit-section price-edit-section">
+                  <legend>Precio de venta</legend>
+                  <p>
+                    El cambio requiere permiso especial y queda registrado en la
+                    bitácora.
+                  </p>
+                  <input
+                    type="hidden"
+                    name="variant_id"
+                    value={editingVariant.id}
+                  />
+                  <label>
+                    <span>Precio</span>
+                    <input
+                      name="price"
+                      inputMode="decimal"
+                      min="0"
+                      step="0.01"
+                      defaultValue={editingVariant.price}
+                      required
+                    />
+                  </label>
+                  <EditSubmitButton label="Cambiar precio" />
+                </fieldset>
+              </form>
+            ) : null}
+          </section>
+        </div>
+      ) : null}
+
       {scannerTarget ? (
         <BarcodeScanner
           title={
@@ -935,6 +1222,19 @@ function BarcodeSubmitButton() {
   return (
     <button className="primary-button" type="submit" disabled={pending}>
       {pending ? "Guardando…" : "Guardar como principal"}
+    </button>
+  );
+}
+
+function EditSubmitButton({ label }: { label: string }) {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      className="secondary-button edit-save-button"
+      type="submit"
+      disabled={pending}
+    >
+      {pending ? "Guardando…" : label}
     </button>
   );
 }

@@ -10,6 +10,7 @@ const runCode = Date.now().toString().slice(-8);
 type Fixture = { id: string; client: SupabaseClient };
 const state = {
   admin: null as Fixture | null,
+  manager: null as Fixture | null,
   cashier: null as Fixture | null,
   warehouse: null as Fixture | null,
   categoryId: "",
@@ -50,6 +51,7 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
 
     for (const definition of [
       { key: "admin", role: "ADMIN" },
+      { key: "manager", role: "MANAGER" },
       { key: "cashier", role: "CASHIER" },
       { key: "warehouse", role: "WAREHOUSE" },
     ] as const) {
@@ -794,5 +796,107 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
       },
     );
     expect(doubled.error?.message).toContain("DUPLICATE_VARIANT_ATTRIBUTES");
+  });
+
+  it("edita datos, costo, estado y precio sin tocar la identidad", async () => {
+    const server = createClient(url, secretKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { data: before } = await server
+      .from("variants")
+      .select(
+        "sku, legacy_sicar_code, woocommerce_product_id, woocommerce_variation_id",
+      )
+      .eq("id", state.variantIds[0])
+      .single();
+    const { data: primaryBefore } = await server
+      .from("barcodes")
+      .select("code")
+      .eq("variant_id", state.variantIds[0])
+      .eq("is_primary", true)
+      .single();
+
+    const product = await state.manager!.client.rpc("update_catalog_product", {
+      p_product_id: state.productId,
+      p_name: `Producto editado ${runCode}`,
+      p_category_id: state.categoryId,
+      p_brand_name: "Marca editada",
+      p_description: "Descripción aprobada en la edición segura",
+      p_is_active: true,
+    });
+    expect(product.error).toBeNull();
+
+    const variant = await state.manager!.client.rpc("update_catalog_variant", {
+      p_variant_id: state.variantIds[0],
+      p_cost_cents: 135000,
+      p_is_active: false,
+    });
+    expect(variant.error).toBeNull();
+
+    const price = await state.manager!.client.rpc(
+      "update_catalog_variant_price",
+      { p_variant_id: state.variantIds[0], p_price_cents: 239900 },
+    );
+    expect(price.error).toBeNull();
+
+    const { data: after } = await server
+      .from("variants")
+      .select(
+        "sku, legacy_sicar_code, woocommerce_product_id, woocommerce_variation_id, cost_cents, price_cents, is_active",
+      )
+      .eq("id", state.variantIds[0])
+      .single();
+    const { data: primaryAfter } = await server
+      .from("barcodes")
+      .select("code")
+      .eq("variant_id", state.variantIds[0])
+      .eq("is_primary", true)
+      .single();
+
+    expect(after).toMatchObject({
+      ...before,
+      cost_cents: 135000,
+      price_cents: 239900,
+      is_active: false,
+    });
+    expect(primaryAfter?.code).toBe(primaryBefore?.code);
+
+    const { data: audit } = await server
+      .from("audit_log")
+      .select("actor_user_id, before_data, after_data")
+      .eq("entity_type", "variants")
+      .eq("entity_id", state.variantIds[0])
+      .eq("actor_user_id", state.manager!.id);
+    expect(audit?.length).toBeGreaterThanOrEqual(2);
+    expect(
+      audit?.some(
+        (entry) =>
+          entry.before_data.price_cents !== entry.after_data.price_cents,
+      ),
+    ).toBe(true);
+  });
+
+  it("rechaza la edición a cajero, almacén y sesión anónima", async () => {
+    for (const fixture of [state.cashier!, state.warehouse!]) {
+      const product = await fixture.client.rpc("update_catalog_product", {
+        p_product_id: state.productId,
+        p_name: "Cambio no autorizado",
+        p_category_id: state.categoryId,
+      });
+      expect(product.error).not.toBeNull();
+
+      const price = await fixture.client.rpc("update_catalog_variant_price", {
+        p_variant_id: state.variantIds[0],
+        p_price_cents: 1,
+      });
+      expect(price.error).not.toBeNull();
+    }
+
+    const anonymous = await publicClient().rpc("update_catalog_product", {
+      p_product_id: state.productId,
+      p_name: "Anónimo",
+      p_category_id: state.categoryId,
+    });
+    expect(anonymous.error).not.toBeNull();
   });
 });

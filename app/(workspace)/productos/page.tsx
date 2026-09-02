@@ -7,6 +7,9 @@ import {
   createCatalogProduct,
   lookupCatalogBarcode,
   registerVariantBarcode,
+  updateCatalogProduct,
+  updateCatalogVariant,
+  updateCatalogVariantPrice,
 } from "./actions";
 import { ProductsWorkspace } from "./products-workspace";
 
@@ -20,8 +23,11 @@ type CatalogRow = {
   brand_name: string;
   legacy_sicar_code: string | null;
   primary_barcode: string | null;
+  sku: string;
   price_cents: number;
+  cost_cents: number | null;
   attributes: Record<string, string> | null;
+  is_active: boolean;
 };
 
 type Category = {
@@ -35,6 +41,12 @@ type AttributeValue = {
   scale_code: string | null;
   value: string;
   display_order: number;
+};
+type ProductRow = {
+  id: string;
+  category_id: string;
+  description: string | null;
+  is_active: boolean;
 };
 
 export default async function ProductsPage({
@@ -54,8 +66,14 @@ export default async function ProductsPage({
     );
   }
 
-  const { supabase } = await requirePermission("products.read");
-  const [catalogResult, categoriesResult, valuesResult] = await Promise.all([
+  const { supabase, roleId } = await requirePermission("products.read");
+  const [
+    catalogResult,
+    categoriesResult,
+    valuesResult,
+    productsResult,
+    permissionsResult,
+  ] = await Promise.all([
     supabase.rpc("search_catalog", { p_query: "", p_limit: 200 }),
     supabase
       .from("categories")
@@ -66,13 +84,30 @@ export default async function ProductsPage({
       .from("attribute_values")
       .select("id, type_code, scale_code, value, display_order")
       .order("display_order"),
+    supabase.from("products").select("id, category_id, description, is_active"),
+    supabase
+      .from("role_permissions")
+      .select("permission_code")
+      .eq("role_id", roleId)
+      .in("permission_code", [
+        "products.update",
+        "products.price_update",
+        "reports.inventory",
+        "purchases.manage",
+      ]),
   ]);
 
-  if (catalogResult.error || categoriesResult.error || valuesResult.error) {
+  if (
+    catalogResult.error ||
+    categoriesResult.error ||
+    valuesResult.error ||
+    productsResult.error
+  ) {
     console.error("[productos] catalog unavailable", {
       catalog: catalogResult.error?.message,
       categories: categoriesResult.error?.message,
       values: valuesResult.error?.message,
+      products: productsResult.error?.message,
     });
     return (
       <ProductsWorkspace
@@ -85,22 +120,40 @@ export default async function ProductsPage({
     );
   }
 
-  const categoryIds = new Map(
-    (categoriesResult.data ?? []).map((category) => [
-      category.name,
-      category.id,
+  const products = new Map(
+    ((productsResult.data ?? []) as ProductRow[]).map((product) => [
+      product.id,
+      product,
     ]),
   );
+  const permissions = new Set(
+    (permissionsResult.data ?? []).map((permission) =>
+      String(permission.permission_code),
+    ),
+  );
+  const canUpdate = permissions.has("products.update");
+  const canSeeCost =
+    permissions.has("reports.inventory") || permissions.has("purchases.manage");
   const variants = ((catalogResult.data ?? []) as CatalogRow[]).map((row) => ({
+    ...(() => {
+      const product = products.get(row.product_id);
+      return {
+        categoryId: product?.category_id,
+        description: product?.description ?? "",
+        productActive: product?.is_active ?? true,
+      };
+    })(),
     id: row.variant_id,
     productId: row.product_id,
-    categoryId: categoryIds.get(row.category_name),
     productName: row.product_name,
     brand: row.brand_name,
     legacyCode: row.primary_barcode ?? row.legacy_sicar_code ?? "Sin código",
+    sku: row.sku,
     color: row.attributes?.COLOR ?? "Sin color",
     size: row.attributes?.TALLA ?? "Única",
     price: row.price_cents / 100,
+    cost: row.cost_cents === null ? undefined : row.cost_cents / 100,
+    isActive: row.is_active,
     stock: 0,
   }));
 
@@ -114,6 +167,15 @@ export default async function ProductsPage({
       addVariantsAction={addCatalogVariants}
       registerBarcodeAction={registerVariantBarcode}
       lookupBarcodeAction={lookupCatalogBarcode}
+      updateProductAction={canUpdate ? updateCatalogProduct : undefined}
+      updateVariantAction={
+        canUpdate && canSeeCost ? updateCatalogVariant : undefined
+      }
+      updatePriceAction={
+        permissions.has("products.price_update")
+          ? updateCatalogVariantPrice
+          : undefined
+      }
     />
   );
 }

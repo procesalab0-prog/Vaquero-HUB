@@ -45,8 +45,99 @@ function catalogErrorStatus(error: unknown) {
   if (message.includes("IDENTITY_FIELDS_NOT_ALLOWED"))
     return "producto-cliente-desactualizado";
   if (message.includes("PRODUCT_NOT_FOUND")) return "producto-no-encontrado";
+  if (message.includes("INVALID_CATEGORY"))
+    return "producto-categoria-invalida";
+  if (message.includes("INVALID_PRICE")) return "producto-precio-invalido";
+  if (message.includes("INVALID_PRODUCT")) return "producto-datos-invalidos";
   if (message.includes("INVALID_VARIANT")) return "producto-datos-invalidos";
   return "producto-error";
+}
+
+export async function updateCatalogProduct(formData: FormData) {
+  let status = "producto-error";
+  try {
+    const { supabase } = await requirePermission("products.update");
+    const productId = textField(formData, "product_id");
+    const name = textField(formData, "product_name");
+    const categoryId = textField(formData, "category_id");
+    if (!productId || !name || !categoryId) {
+      status = "producto-datos-invalidos";
+    } else {
+      const { error } = await supabase.rpc("update_catalog_product", {
+        p_product_id: productId,
+        p_name: name,
+        p_category_id: categoryId,
+        p_brand_name: textField(formData, "brand_name") || null,
+        p_description: textField(formData, "description") || null,
+        p_is_active: formData.get("is_active") === "on",
+      });
+      if (error) throw error;
+      status = "producto-actualizado";
+    }
+  } catch (error) {
+    status = catalogErrorStatus(error);
+    console.error("[productos/updateCatalogProduct] failed", {
+      status,
+      message: error instanceof Error ? error.message : "UNKNOWN_ERROR",
+    });
+  }
+  revalidatePath(productsPath);
+  redirect(`${productsPath}?status=${status}`);
+}
+
+export async function updateCatalogVariant(formData: FormData) {
+  let status = "producto-error";
+  try {
+    const { supabase } = await requirePermission("products.update");
+    const variantId = textField(formData, "variant_id");
+    const costCents = cents(textField(formData, "cost"));
+    if (!variantId || costCents === null) {
+      status = "producto-datos-invalidos";
+    } else {
+      const { error } = await supabase.rpc("update_catalog_variant", {
+        p_variant_id: variantId,
+        p_cost_cents: costCents,
+        p_is_active: formData.get("is_active") === "on",
+      });
+      if (error) throw error;
+      status = "variante-actualizada";
+    }
+  } catch (error) {
+    status = catalogErrorStatus(error);
+    console.error("[productos/updateCatalogVariant] failed", {
+      status,
+      message: error instanceof Error ? error.message : "UNKNOWN_ERROR",
+    });
+  }
+  revalidatePath(productsPath);
+  redirect(`${productsPath}?status=${status}`);
+}
+
+export async function updateCatalogVariantPrice(formData: FormData) {
+  let status = "producto-error";
+  try {
+    const { supabase } = await requirePermission("products.price_update");
+    const variantId = textField(formData, "variant_id");
+    const priceCents = cents(textField(formData, "price"));
+    if (!variantId || priceCents === null) {
+      status = "producto-precio-invalido";
+    } else {
+      const { error } = await supabase.rpc("update_catalog_variant_price", {
+        p_variant_id: variantId,
+        p_price_cents: priceCents,
+      });
+      if (error) throw error;
+      status = "precio-actualizado";
+    }
+  } catch (error) {
+    status = catalogErrorStatus(error);
+    console.error("[productos/updateCatalogVariantPrice] failed", {
+      status,
+      message: error instanceof Error ? error.message : "UNKNOWN_ERROR",
+    });
+  }
+  revalidatePath(productsPath);
+  redirect(`${productsPath}?status=${status}`);
 }
 
 function variantsFromForm(formData: FormData) {
