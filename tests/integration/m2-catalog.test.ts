@@ -316,6 +316,37 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
       "BARCODE_SOURCE_NOT_ALLOWED",
     );
 
+    // Los prefijos 20-29 son de circulación restringida: los emite nuestro
+    // generador. Un código de proveedor en ese rango es el código interno de
+    // otra tienda o un error de captura, y adoptarlo ensucia la comprobación
+    // que decide si la generación puede encenderse en producción.
+    for (const prefix of ["20", "29"]) {
+      const reserved = await state.admin!.client.rpc(
+        "register_variant_barcode",
+        {
+          p_variant_id: state.variantIds[1],
+          p_code: ean13(`${prefix}${runCode.padStart(10, "0")}`),
+          p_symbology: "EAN13",
+          p_source: "SUPPLIER",
+        },
+      );
+      expect(reserved.error?.message).toContain("RESERVED_INTERNAL_PREFIX");
+    }
+
+    // El borde de al lado sí es un código de fabricante legítimo. Va sobre otra
+    // variante porque este registro sí cambia el primario, y el cierre de esta
+    // prueba comprueba que el de la variante 1 quedó intacto.
+    const outsideRange = await state.admin!.client.rpc(
+      "register_variant_barcode",
+      {
+        p_variant_id: state.variantIds[2],
+        p_code: ean13(`19${runCode.padStart(10, "0")}`),
+        p_symbology: "EAN13",
+        p_source: "SUPPLIER",
+      },
+    );
+    expect(outsideRange.error).toBeNull();
+
     for (const client of [state.cashier!.client, state.warehouse!.client]) {
       const unauthorized = await client.rpc("register_variant_barcode", {
         p_variant_id: state.variantIds[1],

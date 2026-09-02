@@ -122,6 +122,55 @@ problema. La colisión queda programada para el día que la secuencia llegue a
 ese número, meses después, sin relación aparente con la migración que la
 causó. Aplica igual a cualquier guion de respaldo o reparación.
 
+## Regla nueva, y de las importantes: una migración fusionada no se edita
+
+**Si una migración ya está en `main`, no se corrige tocando su archivo: se
+corrige con una migración nueva.**
+
+El corredor de migraciones lleva cuenta de lo que ejecutó **por versión, no
+por contenido**. Un archivo que cambia después de haber corrido no vuelve a
+correr. La corrección queda en toda base nueva y **no** en la que ya existe,
+que es justamente la que tiene los datos.
+
+Y lo peor: **CI no puede detectarlo.** Corre `supabase db reset`, reconstruye
+desde cero, siempre ve el archivo editado y siempre pasa en verde. La
+divergencia sólo aparece en el proyecto real.
+
+Comprobado en las dos direcciones con el candado de combinación:
+
+| Base | Editando el archivo | Con migración aparte |
+|---|---|---|
+| Nueva, desde cero | control presente | control presente |
+| Que ya aplicó la migración | **control ausente** | control presente |
+
+`create or replace` deja el mismo estado final se haya aplicado o no la
+versión anterior, y por eso es la forma segura de corregir hacia atrás.
+
+**Excepción única:** una migración que todavía no se ha fusionado sí se
+edita libremente. La regla arranca cuando entra a `main`.
+
+## Regla nueva: el prefijo 20-29 es sólo del generador
+
+**Ningún código de proveedor ni manual puede entrar en el rango `20`–`29`.**
+
+GS1 reserva esos prefijos para circulación restringida dentro de una
+empresa. Un código de proveedor ahí no es un código de fabricante: o es el
+código interno de otra tienda —que no significa nada fuera de sus paredes— o
+es un error de captura.
+
+Comprobado: `register_variant_barcode` aceptaba `2000099999993` como
+`SUPPLIER` y lo dejaba como primario. Cerrado en `20260902170000`.
+
+Trae dos consecuencias, y la segunda pesa más:
+
+1. El día que la secuencia alcance ese serial, el alta de un producto se cae
+   con violación de unicidad. Se recupera sola al siguiente intento.
+2. **Ensucia la única compuerta que protege la migración de SICAR.** Esa
+   comprobación pregunta si existe algún código de trece dígitos que empiece
+   con 20-29; si nosotros mismos metimos uno, deja de distinguir entre un
+   choque real y basura propia, justo cuando hay que decidir si se enciende
+   la generación en producción.
+
 ## Integrado en esta entrega
 
 - Acceso del cliente sin adivinar el destino. Ya se configuró
@@ -411,6 +460,9 @@ No se empieza hasta tener respuesta. Todas están en
 ## Antes de dar por terminada cualquier tarea
 
 - [ ] Migración versionada que aplica limpio sobre base vacía.
+- [ ] **Ninguna migración ya fusionada fue modificada.** `git diff` contra
+      `main` no debe tocar un archivo de `supabase/migrations/` que ya
+      existiera ahí. Si hay que corregir algo, va en un archivo nuevo.
 - [ ] RLS activo en toda tabla nueva, con prueba de que un rol sin permiso
       no puede leer ni escribir.
 - [ ] Pruebas de la lógica crítica: dinero, inventario, caja.

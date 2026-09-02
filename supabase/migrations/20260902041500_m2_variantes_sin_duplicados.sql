@@ -69,13 +69,6 @@ begin
     return null;
   end if;
 
-  -- Serializa la comprobacion por producto. Sin este candado, dos
-  -- transacciones concurrentes podrian no verse entre si y confirmar la
-  -- misma combinacion con identidades distintas.
-  perform pg_catalog.pg_advisory_xact_lock(
-    pg_catalog.hashtextextended('variant-combination:' || v_product_id::text, 0)
-  );
-
   if exists (
     select 1
     from (
