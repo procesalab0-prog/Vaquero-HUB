@@ -428,4 +428,59 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
     expect(error).toBeNull();
     expect(data ?? []).toHaveLength(0);
   });
+
+  it("rechaza dos variantes con la misma talla y el mismo color", async () => {
+    // Antes del generador esto chocaba solo, porque quien llamaba mandaba el
+    // código de barras y el segundo renglón violaba la unicidad. Al generar
+    // ahora una identidad nueva por renglón, los duplicados pasarían sin ruido
+    // y el mismo artículo físico quedaría con dos SKU y la existencia partida.
+    const repeatedName = `Bota combinacion repetida ${runCode}`;
+    const [colorId] = Object.values(state.colorIds);
+    const variant = {
+      cost_cents: 100,
+      price_cents: 200,
+      attributes: { COLOR: colorId, TALLA: state.sizeIds[0].id },
+    };
+    const { error } = await state.warehouse!.client.rpc(
+      "create_catalog_product",
+      {
+        p_name: repeatedName,
+        p_category_id: state.categoryId,
+        p_variants: [variant, variant],
+      },
+    );
+    expect(error?.message).toContain("DUPLICATE_VARIANT_ATTRIBUTES");
+
+    const { data: products } = await state
+      .admin!.client.from("products")
+      .select("id")
+      .eq("name", repeatedName);
+    expect(products).toEqual([]);
+  });
+
+  it("acepta un solo artículo sin atributos, pero no dos", async () => {
+    // Una hebilla o un accesorio sin variaciones es legítimo: la firma vacía
+    // vale una vez por producto, no dos.
+    const singleName = `Accesorio unico ${runCode}`;
+    const single = await state.warehouse!.client.rpc("create_catalog_product", {
+      p_name: singleName,
+      p_category_id: state.categoryId,
+      p_variants: [{ cost_cents: 100, price_cents: 200 }],
+    });
+    expect(single.error).toBeNull();
+
+    const doubleName = `Accesorio duplicado ${runCode}`;
+    const doubled = await state.warehouse!.client.rpc(
+      "create_catalog_product",
+      {
+        p_name: doubleName,
+        p_category_id: state.categoryId,
+        p_variants: [
+          { cost_cents: 100, price_cents: 200 },
+          { cost_cents: 100, price_cents: 200 },
+        ],
+      },
+    );
+    expect(doubled.error?.message).toContain("DUPLICATE_VARIANT_ATTRIBUTES");
+  });
 });

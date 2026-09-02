@@ -6,7 +6,7 @@
 > Para entender el proyecto antes de tocarlo, empezar por
 > [`ESTADO_Y_CONTINUIDAD.md`](ESTADO_Y_CONTINUIDAD.md).
 >
-> Última actualización: 2026-09-02.
+> Última actualización: 2026-09-02, tras revisar el generador de identidad.
 
 ## Cómo usar esta cola
 
@@ -52,6 +52,76 @@ select code, source from public.barcodes where source = 'SICAR';
 Ambas consultas deben devolver cero filas hasta que corra la migración
 real de SICAR.
 
+## Regla nueva, salida de la revisión del generador
+
+**Dentro de un producto no puede haber dos variantes con el mismo conjunto
+de atributos.** Ni activas ni dadas de baja: el artículo físico es el mismo.
+
+Conviene entender por qué apareció justo al mejorar las cosas, porque es el
+mismo patrón que ya salió tres veces en este proyecto —*algo que parecía
+proteger y no protegía*—, sólo que al revés: aquí algo protegía sin que
+nadie lo hubiera decidido, y la mejora se lo llevó.
+
+Antes, quien llamaba mandaba el código de barras. Dos renglones con la misma
+talla y el mismo color chocaban contra la unicidad de `barcodes.code` y el
+alta entera se caía. Nadie había escrito una regla sobre combinaciones
+repetidas; sólo sobre códigos repetidos. Al generar ahora una identidad nueva
+por renglón, los duplicados reciben SKU y código distintos **y el alta pasa
+sin ruido**.
+
+Queda comprobado: un alta con la misma talla dos veces creaba dos variantes,
+`1000008-1` y `1000009-9`, cada una con su código. El mismo par de botas con
+dos identidades, la existencia partida entre las dos, y un escaneo que cae en
+una o en otra según qué etiqueta se pegó en la caja. El inventario por talla
+—la razón de ser del proyecto— deja de cuadrar sin que nadie lo note, y se
+descubre meses después contando físicamente.
+
+Cerrado en `20260902041500` con restricciones diferidas. Tres consecuencias
+para quien siga:
+
+- **La deduplicación de la pantalla no cuenta como control.** La carga masiva
+  de M2.4 y el importador de M9 entran por la misma función sin pasar por la
+  interfaz.
+- **El error llega como `DUPLICATE_VARIANT_ATTRIBUTES`**, no traducido a
+  `CATALOG_DUPLICATE_VALUE`: la restricción es diferida y salta al cerrar la
+  transacción, ya fuera del `exception` de `create_catalog_product`. Toda
+  pantalla nueva tiene que atender ese nombre.
+- Un producto **sí** puede tener una variante sin atributos —una hebilla, un
+  accesorio sin variaciones—, pero **una sola**.
+
+**Y una advertencia sobre lo que la migración no hace:** las restricciones
+diferidas sólo revisan lo que se escribe de ahora en adelante. Si en staging
+o producción ya se crearon duplicados con la versión anterior, ahí siguen.
+Conviene buscarlos **ahora**, mientras M3 no existe y ninguna variante tiene
+movimientos de inventario:
+
+```sql
+select p.name, count(*) as variantes_repetidas
+from public.variants v
+join public.products p on p.id = v.product_id
+group by p.id, p.name, (
+  select coalesce(string_agg(va.type_code || '=' || va.value_id::text, '|'
+                             order by va.type_code), '')
+  from public.variant_attributes va where va.variant_id = v.id)
+having count(*) > 1;
+```
+
+Cero filas es lo esperado. Si sale alguna, se borra la variante duplicada
+más nueva antes de que tenga historial; después ya no se podrá.
+
+## Regla del importador de M9, salida de la misma revisión
+
+**El importador de SICAR no inventa SKU: los toma de
+`app.variant_serial_seq`, igual que el alta manual.** El código de SICAR
+viaja aparte, en `legacy_sicar_code`.
+
+`service_role` puede escribir en `variants` directamente y la restricción de
+formato sólo exige que el SKU sea un número con verificador válido — no que
+venga de la secuencia. Comprobado: un `insert` con SKU `2000000-6` pasa sin
+problema. La colisión queda programada para el día que la secuencia llegue a
+ese número, meses después, sin relación aparente con la migración que la
+causó. Aplica igual a cualquier guion de respaldo o reparación.
+
 ## Integrado en esta entrega
 
 - Acceso del cliente sin adivinar el destino. Ya se configuró
@@ -63,6 +133,9 @@ real de SICAR.
 - Segunda entrega de M2: campos de SICAR reservados a M9, SKU con dígito
   verificador, EAN-13 generado en base de datos y matriz color × talla
   editable antes de guardar.
+- Revisión del generador: una sola variante por combinación de atributos,
+  con las diez pruebas obligatorias de `specs/CODIGOS_Y_SKU.md` ejecutadas
+  contra un PostgreSQL real.
 
 ---
 
@@ -92,25 +165,73 @@ Qué construir:
 
   **Especificación completa:** [`specs/CODIGOS_Y_SKU.md`](specs/CODIGOS_Y_SKU.md).
   Lo esencial: una sola secuencia interna de la que salen el SKU y el
-  código de barras, para que no se desincronicen; dígito verificador en el
-  SKU porque alguien lo va a teclear y un error de dedo no debe caer en
-  otro artículo; y la simbología detrás de una constante mientras SICAR no
-  conteste. **No se enciende la generación en producción** hasta comprobar
+  código de barras, para que no se desincronicen; y dígito verificador en el
+  SKU porque alguien lo va a teclear y un error de dedo no debe caer en otro
+  artículo. **No se enciende la generación en producción** hasta comprobar
   contra la exportación de muestra que ningún código heredado empieza con
-  el prefijo elegido (sección 7 de esa especificación).
+  el prefijo elegido (sección 8 de esa especificación).
 
-- La siguiente parte de M2.2 es edición y `add_variants_to_product(...)` para
-  agregar tallas o colores después sin recrear las variantes existentes.
+  Verificado el 2026-09-02 contra un PostgreSQL real, las diez pruebas de la
+  sección 10 de esa especificación. Pasan las diez; la 9 y la 10 pasan desde
+  la corrección de `20260902041500`.
 
-**Ojo con esto:** la simbología del código de barras para productos
-nuevos depende de qué imprime SICAR hoy (pregunta 1.1 de
-`PREGUNTAS_CLIENTE.md`). Mientras no haya respuesta, generar Code128 y
-dejar la elección detrás de una constante de configuración fácil de
-cambiar. **No** rediseñar el esquema cuando llegue la respuesta.
+**Ojo con esto:** el generador emite EAN-13 con prefijo `20`, y ese formato
+quedó escrito en **tres lugares** —el generador, `app.is_valid_generated_barcode`
+y la restricción `barcodes_generated_identity_check`—, no detrás de una
+constante como decía la especificación. No es un defecto: EAN-13 es la opción
+recomendada. Pero sí cambia el cálculo. Si la respuesta a la pregunta 1.1 de
+`PREGUNTAS_CLIENTE.md` llega y dice Code128, son tres cambios coordinados **y
+los códigos ya generados se quedan en EAN-13 para siempre**, porque son
+inmutables.
+
+Por eso **la compuerta es ahora la única mitigación**: no se genera un solo
+código en producción antes de comprobar contra la exportación de muestra de
+SICAR que ningún código heredado de 13 dígitos empieza con `20`–`29`
+(sección 8 de `specs/CODIGOS_Y_SKU.md`).
 
 Criterios: pruebas 1, 3 y 6 de la especificación. La 3 —alta de una bota
 con ocho tallas en menos de un minuto— se cronometra con una persona, no
 con un script.
+
+### Lo siguiente de M2.2, en este orden
+
+1. **`add_variants_to_product(product_id, variants)`.** Agregar tallas o
+   colores después **sin tocar ni recrear** las variantes existentes, que ya
+   tienen historial. Toma serial de la misma secuencia y hereda las mismas
+   reglas del alta: no acepta identidades del cliente, y la combinación
+   repetida la rechaza la restricción diferida — que también sirve aquí sin
+   escribir nada nuevo, porque cuelga de las tablas, no de la función.
+
+   La prueba que importa: agregar la talla 29 a una bota que ya tiene ocho
+   tallas **no cambia el SKU ni el código de ninguna de las ocho**.
+
+2. **`register_variant_barcode(variant_id, code, symbology, source)`.** Hoy
+   no hay forma de dar de alta un código que no salga del generador, y la
+   especificación pide dos casos que quedaron sin ruta:
+
+   - **Código de proveedor** (sección 6): se adopta sólo si es **distinto
+     para cada talla**. La trampa del calzado es real y hay que verificarla
+     caja por caja: varios fabricantes imprimen el mismo código para todas
+     las tallas de un modelo, y adoptarlo tira el inventario por talla.
+   - **Reemitir** (sección 7): un código mal impreso **no se corrige**, se
+     agrega otro y se marca primario; el anterior sigue escaneando porque ya
+     está pegado en cajas. El esquema lo permite —`barcodes` admite varios
+     por variante con un único primario— y el disparador deja bajar el
+     primario anterior. Falta la función.
+
+   Va con permiso `products.update` y **rechaza `source = 'SICAR'`**: ese
+   valor es sólo del importador de M9, igual que `legacy_sicar_code`.
+
+3. **Edición de producto y variante.** Funciones `SECURITY DEFINER` en
+   `public` que validan permiso explícitamente, porque al ser definer se
+   saltaron la RLS. Recordar que el SKU y los códigos generados son
+   inmutables: la edición toca nombre, marca, categoría, precio y estado.
+
+**Un artículo sin color no se puede dar de alta desde la pantalla.** La
+matriz exige al menos un color y al menos una talla, y la base ya acepta una
+variante sin atributos. Para sombreros, cinturones y accesorios que no se
+venden por color eso es un hueco real; conviene resolverlo cuando lleguen las
+escalas de talla que faltan (preguntas 1.3 y 1.4).
 
 ## 2. M2.3 — Búsqueda y listado de catálogo
 

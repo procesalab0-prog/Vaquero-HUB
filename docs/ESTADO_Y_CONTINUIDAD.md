@@ -7,7 +7,7 @@
 > memoria del proyecto.** Todo lo que haga falta para continuar tiene que
 > estar aquí, no en un chat.
 >
-> Última actualización: 2026-09-01.
+> Última actualización: 2026-09-02.
 
 ## 1. Qué es esto
 
@@ -41,8 +41,9 @@ saltando lo bloqueado.
 | **M1**                   | Sucursales, empleados, roles, permisos granulares, RLS, bitácora, PIN de supervisor                      |
 | **M1B**                  | Clientes, número de socio con dígito verificador, tarjeta digital, acceso sin contraseña, PWA de cliente |
 | **M2 (segunda entrega)** | Catálogo real, alta atómica, búsqueda, matriz color × talla e identidad automática protegida             |
+| **M2 (revisión)**        | Una sola variante por combinación de atributos; las diez pruebas de `specs/CODIGOS_Y_SKU.md` en verde     |
 
-Veinte migraciones versionadas del repositorio. El proyecto de Supabase
+Veintiuna migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Falta para el alcance de octubre

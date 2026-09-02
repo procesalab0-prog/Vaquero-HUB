@@ -21,6 +21,11 @@ function cents(value: string) {
 function catalogErrorStatus(error: unknown) {
   const message = error instanceof Error ? error.message : "";
   if (message.includes("CATALOG_DUPLICATE_VALUE")) return "producto-duplicado";
+  // El control de combinación repetida es una restricción diferida: salta al
+  // cerrar la transacción, ya fuera del `exception` de `create_catalog_product`,
+  // así que llega con su nombre propio y no traducido a CATALOG_DUPLICATE_VALUE.
+  if (message.includes("DUPLICATE_VARIANT_ATTRIBUTES"))
+    return "producto-combinacion-repetida";
   if (message.includes("NOT_AUTHORIZED")) return "producto-sin-permiso";
   if (message.includes("IDENTITY_FIELDS_NOT_ALLOWED"))
     return "producto-cliente-desactualizado";
