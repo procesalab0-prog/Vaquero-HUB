@@ -1,18 +1,12 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { getWorkspaceSession } from "@/lib/auth/workspace-session";
 
 export async function requirePermission(permissionCode: string) {
-  const supabase = await createClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const userId = typeof claimsData?.claims?.sub === "string" ? claimsData.claims.sub : null;
-  if (!userId) throw new Error("NOT_AUTHENTICATED");
+  const session = await getWorkspaceSession();
+  if (!session?.userId) throw new Error("NOT_AUTHENTICATED");
 
-  const { data: profile } = await supabase
-    .from("app_users")
-    .select("role_id, is_active")
-    .eq("id", userId)
-    .single();
+  const { profile, supabase, userId } = session;
   if (!profile?.is_active) throw new Error("NOT_AUTHORIZED");
 
   const { data: permission } = await supabase

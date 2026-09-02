@@ -1858,3 +1858,28 @@ Entrega visible 0.13.0 — códigos externos y reimpresión segura:
 - Claude Code dejó como obligatoria la validación física con cámara y con códigos
   impresos. Esa prueba de hardware sigue pendiente y no se sustituye con pruebas
   aritméticas o de navegador.
+
+Entrega visible 0.14.0 — navegación ágil y adaptable:
+
+- El layout y cada página protegida comparten, dentro de la misma petición, una
+  sola validación de sesión y una sola lectura del perfil. La caché es por
+  petición y nunca mezcla identidades entre usuarios.
+- Cada cambio de sección muestra un estado de carga inmediato. Administración
+  consulta únicamente la pestaña visible en lugar de descargar empleados,
+  sucursales, permisos y bitácora en cada visita.
+- Teléfono, iPad vertical, iPad horizontal y computadora usan un área principal
+  de desplazamiento predecible. El contenido inferior conserva espacio para la
+  barra PWA y respeta las zonas seguras del dispositivo.
+- La barra móvil muestra los seis destinos operativos, incluido Inventario, con
+  áreas táctiles de al menos 48 px. Tablas anchas permiten desplazamiento
+  horizontal sin ensanchar toda la página.
+- Los modales se limitan a la altura visible, desplazan su contenido y mantienen
+  sus acciones accesibles. Los controles de formulario usan 16 px en teléfono
+  para evitar el zoom automático de iOS.
+- Nuevo producto ya no supone que la primera categoría es la correcta: exige
+  elegirla antes de presentar la escala de tallas.
+- Verificación automatizada: lint, tipos, unitarias, build de producción y 18
+  recorridos de navegador. La revisión visual no encontró desbordamiento
+  horizontal ni errores de consola en 390×844, 768×1024 y 1440×800.
+- Continúan simulados los módulos marcados como pendientes en cada milestone;
+  esta entrega no cambia reglas de inventario, venta, caja ni códigos.

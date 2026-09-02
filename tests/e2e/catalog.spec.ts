@@ -12,6 +12,7 @@ test("genera una matriz de colores y tallas desde una sola captura en móvil", a
   await expect(dialog).toBeVisible();
   await dialog.getByLabel("Nombre del producto").fill("Bota de prueba M2");
   await dialog.getByLabel("Marca").fill("Vaquero SM");
+  await dialog.getByLabel("Categoría").selectOption({ label: "Botas" });
   await dialog.getByLabel("Costo").fill("1200");
   await dialog.getByLabel("Precio").fill("2199");
   await dialog.locator("label.size-option", { hasText: "Negro" }).click();

@@ -44,6 +44,7 @@ saltando lo bloqueado.
 | **M2 (revisión)**        | Una sola variante por combinación de atributos, protegida también ante concurrencia                      |
 | **M2 (tercera entrega)** | Agregar tallas o colores a un producto sin cambiar identidades existentes                                |
 | **M2 (cuarta entrega)**  | Códigos de proveedor y reimpresión seguros; los códigos anteriores siguen escaneando                     |
+| **Calidad 0.14.0**       | Navegación con sesión deduplicada, carga inmediata y scroll verificado en teléfono, iPad y computadora   |
 
 Veintitrés migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
@@ -62,9 +63,9 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 - La clave secreta de staging se rotó después de separar los ambientes. Las
   claves anteriores quedaron revocadas y sólo permanece activa la credencial
   identificada para Vercel Preview.
-- Producción aún no recibió cuentas ni datos operativos. El esquema está listo,
-  pero el primer administrador debe darse de alta de forma segura antes de
-  probar los flujos autenticados.
+- Producción cuenta con la sucursal inicial `LAP` y accesos administrativos
+  provisionados de forma segura para validar los flujos autenticados. Las
+  credenciales nunca se documentan en el repositorio.
 
 ### Falta para el alcance de octubre
 

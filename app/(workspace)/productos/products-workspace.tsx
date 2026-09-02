@@ -129,9 +129,7 @@ export function ProductsWorkspace({
   const barcodeInputRef = useRef<HTMLInputElement>(null);
   const [saved, setSaved] = useState(false);
   const [query, setQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(
-    availableCategories[0]?.id ?? "",
-  );
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("");
@@ -163,9 +161,9 @@ export function ProductsWorkspace({
     );
   }, [availableCategories, variants]);
 
-  const category =
-    availableCategories.find((item) => item.id === selectedCategory) ??
-    availableCategories[0];
+  const category = availableCategories.find(
+    (item) => item.id === selectedCategory,
+  );
   const sizes = useMemo(
     () =>
       availableValues.filter(
@@ -260,6 +258,7 @@ export function ProductsWorkspace({
 
   function openCreateModal() {
     resetVariantSelection();
+    setSelectedCategory("");
     setModalMode("create");
   }
 
@@ -533,6 +532,9 @@ export function ProductsWorkspace({
                         onChange={(event) => changeCategory(event.target.value)}
                         required
                       >
+                        <option value="" disabled>
+                          Selecciona una categoría
+                        </option>
                         {availableCategories.map((item) => (
                           <option value={item.id} key={item.id}>
                             {item.name}
@@ -625,7 +627,12 @@ export function ProductsWorkspace({
                     </label>
                   ))}
                 </div>
-                {sizes.length === 0 ? (
+                {!selectedCategory ? (
+                  <p>
+                    Elige primero la categoría para mostrar las tallas que le
+                    corresponden.
+                  </p>
+                ) : sizes.length === 0 ? (
                   <p>
                     La escala de esta categoría está pendiente de confirmar con
                     la tienda.

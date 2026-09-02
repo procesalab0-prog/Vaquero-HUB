@@ -4,7 +4,6 @@ import { ClipboardList, MapPin, Plus, ShieldCheck, Store, UserRoundCog, Users } 
 
 import { requirePermission } from "@/lib/auth/authorization";
 import { isSupabaseAdminConfigured, isSupabaseConfigured } from "@/lib/supabase/config";
-import { createClient } from "@/lib/supabase/server";
 import { createEmployee, saveLocation, updateEmployee } from "./actions";
 
 export const metadata: Metadata = { title: "Administración" };
@@ -43,20 +42,32 @@ export default async function AdministrationPage({ searchParams }: { searchParam
   const tab: Tab = tabs.some((item) => item.id === params.tab) ? params.tab as Tab : "empleados";
   const statusIsError = Boolean(params.status && (params.status.includes("error") || params.status === "empleado-correo-existe"));
   if (!isSupabaseConfigured()) return <AdministrationPreview tab={tab} />;
-  await requirePermission(tab === "bitacora" ? "audit.read" : tab === "sucursales" ? "locations.manage" : tab === "roles" ? "roles.manage" : "users.manage");
-  const supabase = await createClient();
+  const { supabase } = await requirePermission(tab === "bitacora" ? "audit.read" : tab === "sucursales" ? "locations.manage" : tab === "roles" ? "roles.manage" : "users.manage");
 
-  const [employeesResult, rolesResult, locationsResult, auditResult] = await Promise.all([
-    supabase.from("app_users").select("id, employee_code, full_name, email, is_active, roles(id, code, name), user_locations(locations(id, name))").order("full_name"),
-    supabase.from("roles").select("id, code, name, role_permissions(permissions(code, category, description))").order("name"),
-    supabase.from("locations").select("id, code, name, type, address, phone, is_active").order("name"),
-    supabase.from("audit_log").select("id, occurred_at, action, entity_type, entity_id, app_users!audit_log_actor_user_id_fkey(full_name), locations(name)").order("occurred_at", { ascending: false }).limit(60),
-  ]);
+  let employees: Employee[] = [];
+  let roles: Role[] = [];
+  let locations: Location[] = [];
+  let audit: Audit[] = [];
 
-  const employees = (employeesResult.data ?? []) as unknown as Employee[];
-  const roles = (rolesResult.data ?? []) as unknown as Role[];
-  const locations = (locationsResult.data ?? []) as unknown as Location[];
-  const audit = (auditResult.data ?? []) as unknown as Audit[];
+  if (tab === "empleados") {
+    const [employeesResult, rolesResult, locationsResult] = await Promise.all([
+      supabase.from("app_users").select("id, employee_code, full_name, email, is_active, roles(id, code, name), user_locations(locations(id, name))").order("full_name"),
+      supabase.from("roles").select("id, code, name").order("name"),
+      supabase.from("locations").select("id, code, name, type, address, phone, is_active").order("name"),
+    ]);
+    employees = (employeesResult.data ?? []) as unknown as Employee[];
+    roles = (rolesResult.data ?? []) as unknown as Role[];
+    locations = (locationsResult.data ?? []) as unknown as Location[];
+  } else if (tab === "sucursales") {
+    const { data } = await supabase.from("locations").select("id, code, name, type, address, phone, is_active").order("name");
+    locations = (data ?? []) as unknown as Location[];
+  } else if (tab === "roles") {
+    const { data } = await supabase.from("roles").select("id, code, name, role_permissions(permissions(code, category, description))").order("name");
+    roles = (data ?? []) as unknown as Role[];
+  } else {
+    const { data } = await supabase.from("audit_log").select("id, occurred_at, action, entity_type, entity_id, app_users!audit_log_actor_user_id_fkey(full_name), locations(name)").order("occurred_at", { ascending: false }).limit(60);
+    audit = (data ?? []) as unknown as Audit[];
+  }
   const activeLocations = locations.filter((location) => location.is_active && location.type !== "TRANSIT");
 
   return (

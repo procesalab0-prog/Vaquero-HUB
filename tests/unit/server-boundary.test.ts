@@ -10,6 +10,7 @@ const sourceRoots = ["app", "components", "lib", "hooks"]
 const protectedFiles = new Set([
   join(root, "lib/supabase/admin.ts"),
   join(root, "lib/supabase/server.ts"),
+  join(root, "lib/auth/workspace-session.ts"),
   join(root, "lib/auth-throttle.ts"),
   join(root, "lib/customers-admin.ts"),
 ]);

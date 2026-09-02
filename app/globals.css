@@ -96,6 +96,39 @@ code {
   overflow-y: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+.workspace-loading {
+  min-height: 240px;
+  padding: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--ink-2);
+}
+.workspace-loading-mark {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--border-strong);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: workspace-loading-spin 700ms linear infinite;
+}
+.workspace-loading div,
+.workspace-loading strong,
+.workspace-loading small {
+  display: grid;
+  gap: 3px;
+}
+.workspace-loading small {
+  color: var(--muted);
+}
+@keyframes workspace-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .nav-rail {
@@ -921,10 +954,13 @@ code {
 }
 .checkout-modal {
   width: min(520px, 100%);
+  max-height: calc(100dvh - 40px);
   padding: 24px;
   border-radius: var(--radius-panel);
   background: var(--surface);
   box-shadow: var(--shadow-3);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .kicker {
   margin: 0;
@@ -1018,7 +1054,6 @@ code {
 .module-page {
   min-height: calc(100dvh - 64px);
   padding: 28px;
-  overflow: auto;
 }
 .section-heading {
   margin-bottom: 22px;
@@ -4304,22 +4339,28 @@ a:active {
 @media (max-width: 820px) {
   .workspace-shell {
     display: block;
-    padding-bottom: calc(
-      var(--mobile-nav-height) + env(safe-area-inset-bottom)
-    );
-    overflow: visible;
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
   }
   .workspace-content {
-    height: auto;
-    min-height: calc(
-      100dvh - var(--mobile-nav-height) - env(safe-area-inset-bottom)
-    );
-    grid-template-rows: 64px auto;
+    height: 100dvh;
+    min-height: 0;
+    grid-template-rows:
+      calc(64px + env(safe-area-inset-top))
+      minmax(0, 1fr);
   }
   .workspace-main {
     height: auto;
-    overflow: visible;
-    overscroll-behavior: auto;
+    padding-bottom: calc(
+      var(--mobile-nav-height) + env(safe-area-inset-bottom) + 18px
+    );
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scroll-padding-bottom: calc(
+      var(--mobile-nav-height) + env(safe-area-inset-bottom) + 18px
+    );
   }
   .nav-rail {
     position: fixed;
@@ -4342,29 +4383,32 @@ a:active {
     width: 100%;
     height: 100%;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 3px;
   }
   .rail-link {
     width: 100%;
+    min-width: 0;
     min-height: 72px;
     padding: 7px 2px;
     border-radius: 14px;
-  }
-  .rail-link:nth-child(4) {
-    display: none;
   }
   .rail-link svg {
     width: 24px;
     height: 24px;
   }
   .rail-link span {
-    font-size: 11px;
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 10px;
+    text-overflow: ellipsis;
   }
   .app-topbar {
     position: sticky;
     top: 0;
     z-index: 40;
+    height: calc(64px + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
   }
   .app-topbar h1 {
     font-size: 17px;
@@ -4399,11 +4443,20 @@ a:active {
   .module-page {
     min-height: calc(100dvh - 146px - env(safe-area-inset-bottom));
   }
+  .data-table,
+  .compact-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .heading-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
 }
 
 @media (max-width: 600px) {
   .app-topbar {
-    padding: 0 10px;
+    padding: env(safe-area-inset-top) 10px 0;
   }
   .mobile-menu {
     width: 42px;
@@ -4587,6 +4640,21 @@ a:active {
     padding: 18px 12px;
     overflow-x: hidden;
   }
+  .section-heading h1 {
+    font-size: clamp(25px, 8vw, 32px);
+  }
+  .heading-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .heading-actions > a,
+  .heading-actions > button {
+    width: 100%;
+    min-height: 48px;
+    padding-inline: 10px;
+    justify-content: center;
+  }
   .section-heading {
     align-items: flex-start;
     flex-direction: column;
@@ -4721,6 +4789,31 @@ a:active {
     flex-wrap: wrap;
     gap: 8px;
   }
+  .modal-backdrop {
+    padding: max(8px, env(safe-area-inset-top))
+      max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
+    place-items: end center;
+  }
+  .checkout-modal {
+    max-height: calc(100dvh - 16px);
+    padding: 18px 14px;
+    border-radius: 18px;
+  }
+  .product-modal .modal-actions {
+    position: sticky;
+    z-index: 2;
+    bottom: -18px;
+    margin: 18px -14px -18px;
+    padding: 12px 14px max(12px, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }
 
 @media (max-width: 460px) {
@@ -4769,7 +4862,9 @@ a:active {
   .modal-actions {
     flex-direction: column-reverse;
   }
-  .modal-actions > button {
+  .modal-actions > button,
+  .modal-actions > form,
+  .modal-actions > form button {
     width: 100%;
   }
 }
