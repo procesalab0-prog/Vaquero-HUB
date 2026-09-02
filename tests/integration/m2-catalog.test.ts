@@ -367,7 +367,7 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
       p_limit: 30,
     });
     expect(error).toBeNull();
-    expect(data).toHaveLength(16);
+    expect(data).toHaveLength(18);
     expect(
       data.every(
         (variant: { cost_cents: number | null }) => variant.cost_cents === null,
