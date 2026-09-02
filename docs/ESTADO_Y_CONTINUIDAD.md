@@ -58,11 +58,14 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 - **Producción:** Vercel Production usa la rama `main` de Supabase, proyecto
   `drubkjlmfbdeglucakmg`. Las correcciones de M2 fueron aplicadas y verificadas
   el 2 de septiembre de 2026; las cuatro consultas de contaminación devolvieron
-  cero hallazgos.
+  cero hallazgos. La carga masiva 0.17.0 también quedó aplicada, con ejecución
+  anónima revocada y publicación verificada en Vercel.
 - **Pruebas:** la rama Supabase `staging`, referencia
   `zsezjtswqeijboezvado`, se reserva para Vercel Preview y validaciones previas
-  a producción. Quedó actualizada hasta las correcciones de M2 y sus cuatro
-  consultas de contaminación también devolvieron cero hallazgos.
+  a producción. Quedó actualizada hasta la carga masiva 0.17.0; su corrida en
+  seco, escritura atómica, límites de entrada y permisos se probaron antes de
+  promoverla. Sus cuatro consultas de contaminación también devolvieron cero
+  hallazgos.
 - Los dos entornos usan credenciales distintas. Las claves viven únicamente en
   variables protegidas de Vercel; nunca se copian al repositorio.
 - La clave secreta de staging se rotó después de separar los ambientes. Las
