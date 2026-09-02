@@ -13,21 +13,21 @@ No se busca copiar absolutamente todas las funciones existentes de SICAR. Se bus
 
 El sistema deberá integrar en una sola plataforma:
 
-* Punto de venta.
-* Inventario.
-* Productos y variantes.
-* Códigos de barras.
-* Compras.
-* Proveedores.
-* Caja.
-* Devoluciones/cancelaciones.
-* Apartados.
-* Usuarios y permisos.
-* Sucursales.
-* WooCommerce.
-* Reportes.
-* Auditoría.
-* Futuras funciones de clientes/lealtad.
+- Punto de venta.
+- Inventario.
+- Productos y variantes.
+- Códigos de barras.
+- Compras.
+- Proveedores.
+- Caja.
+- Devoluciones/cancelaciones.
+- Apartados.
+- Usuarios y permisos.
+- Sucursales.
+- WooCommerce.
+- Reportes.
+- Auditoría.
+- Futuras funciones de clientes/lealtad.
 
 El sistema debe construirse pensando en crecimiento y operación real de retail.
 
@@ -37,23 +37,23 @@ El sistema debe construirse pensando en crecimiento y operación real de retail.
 
 Vaqueros SM vende:
 
-* Botas.
-* Botines.
-* Zapatos.
-* Tenis.
-* Pantalones.
-* Camisas.
-* Chamarras.
-* Trajes.
-* Bolsas.
-* Vestidos.
-* Texanas.
-* Sombreros.
-* Gorras.
-* Cinturones.
-* Artículos para caballo.
-* Carteras.
-* Otros productos relacionados.
+- Botas.
+- Botines.
+- Zapatos.
+- Tenis.
+- Pantalones.
+- Camisas.
+- Chamarras.
+- Trajes.
+- Bolsas.
+- Vestidos.
+- Texanas.
+- Sombreros.
+- Gorras.
+- Cinturones.
+- Artículos para caballo.
+- Carteras.
+- Otros productos relacionados.
 
 Actualmente utilizan:
 
@@ -81,14 +81,14 @@ Ejemplo:
 
 Una bota puede existir en:
 
-* talla 25
-* talla 25.5
-* talla 26
-* talla 26.5
-* talla 27
-* talla 27.5
-* talla 28
-* etc.
+- talla 25
+- talla 25.5
+- talla 26
+- talla 26.5
+- talla 27
+- talla 27.5
+- talla 28
+- etc.
 
 Actualmente la captura puede resultar lenta y repetitiva.
 
@@ -102,21 +102,21 @@ Bota Cuadra Modelo X
 
 y posteriormente sus VARIANTES:
 
-* Negro / 25
-* Negro / 25.5
-* Negro / 26
-* Negro / 26.5
-* etc.
+- Negro / 25
+- Negro / 25.5
+- Negro / 26
+- Negro / 26.5
+- etc.
 
 Cada variante puede tener:
 
-* código de barras
-* SKU/código
-* existencia
-* costo
-* precio
-* ubicación
-* información WooCommerce
+- código de barras
+- SKU/código
+- existencia
+- costo
+- precio
+- ubicación
+- información WooCommerce
 
 El objetivo es reducir drásticamente la captura repetitiva.
 
@@ -136,15 +136,15 @@ Muchas pueden representar variantes de un mismo producto.
 
 Antes de migrar deberá realizarse:
 
-* limpieza
-* normalización
-* detección de duplicados
-* agrupación de variantes
-* validación de códigos
-* detección de códigos vacíos
-* espacios accidentales
-* ceros iniciales
-* inconsistencias
+- limpieza
+- normalización
+- detección de duplicados
+- agrupación de variantes
+- validación de códigos
+- detección de códigos vacíos
+- espacios accidentales
+- ceros iniciales
+- inconsistencias
 
 ⸻
 
@@ -245,16 +245,16 @@ NO significa cobrar dos veces.
 
 Al final del turno se deberán comparar:
 
-* ventas
-* productos
-* cantidades
-* inventario
-* efectivo
-* tarjetas
-* transferencias
-* devoluciones
-* cancelaciones
-* cortes
+- ventas
+- productos
+- cantidades
+- inventario
+- efectivo
+- tarjetas
+- transferencias
+- devoluciones
+- cancelaciones
+- cortes
 
 El objetivo es demostrar que ambos sistemas producen resultados equivalentes.
 
@@ -311,11 +311,11 @@ en lugar de publicar automáticamente.
 
 De esta manera puede revisarse:
 
-* fotografías
-* descripción
-* SEO
-* presentación
-* contenido comercial
+- fotografías
+- descripción
+- SEO
+- presentación
+- contenido comercial
 
 antes de publicar.
 
@@ -415,8 +415,8 @@ Actualmente existe una sucursal.
 
 Sin embargo:
 
-* segunda sucursal esperada en próximos meses
-* tercera sucursal aproximadamente dentro de un año
+- segunda sucursal esperada en próximos meses
+- tercera sucursal aproximadamente dentro de un año
 
 Por lo tanto NO utilizar simplemente:
 
@@ -461,35 +461,35 @@ Mi Tienda SM deberá incluir POS.
 
 Funciones esperadas:
 
-* escaneo de código
-* búsqueda manual
-* carrito
-* cantidades
-* descuentos autorizados
-* promociones futuras
-* efectivo
-* tarjeta
-* transferencia
-* pagos externos
-* impresión de ticket
-* devolución
-* cancelación
-* apartados
-* apertura de caja
-* cierre de caja
-* cortes
-* movimientos de caja
+- escaneo de código
+- búsqueda manual
+- carrito
+- cantidades
+- descuentos autorizados
+- promociones futuras
+- efectivo
+- tarjeta
+- transferencia
+- pagos externos
+- impresión de ticket
+- devolución
+- cancelación
+- apartados
+- apertura de caja
+- cierre de caja
+- cortes
+- movimientos de caja
 
 Entrega digital de tickets:
 
-* Al terminar una venta, el empleado podrá imprimir el ticket, abrir su vista real, usar el menú nativo **Compartir** o enviarlo por WhatsApp.
-* WhatsApp abrirá una conversación con texto preparado y un enlace seguro al ticket; esta opción no dependerá de contratar un proveedor de SMS.
-* El envío automático por SMS o correo será opcional y quedará desacoplado mediante un proveedor externo por definir.
-* El ticket digital usará un identificador opaco y no enumerable. Nunca expondrá listados, datos de otros clientes, credenciales ni permitirá modificar la venta.
-* El ticket de regalo tendrá su propia vista compartible y seguirá ocultando los precios definidos por la política del negocio.
-* Una falla de WhatsApp, del menú Compartir, de SMS o de correo nunca deberá cancelar, duplicar ni revertir una venta ya cobrada.
-* El envío transaccional del comprobante y el consentimiento para promociones se tratarán como decisiones distintas. Compartir un ticket no habilita marketing.
-* Los intentos de entrega deberán dejar auditoría mínima de canal, estado, actor y fecha, sin copiar teléfonos, correos ni el contenido completo del ticket a los logs.
+- Al terminar una venta, el empleado podrá imprimir el ticket, abrir su vista real, usar el menú nativo **Compartir** o enviarlo por WhatsApp.
+- WhatsApp abrirá una conversación con texto preparado y un enlace seguro al ticket; esta opción no dependerá de contratar un proveedor de SMS.
+- El envío automático por SMS o correo será opcional y quedará desacoplado mediante un proveedor externo por definir.
+- El ticket digital usará un identificador opaco y no enumerable. Nunca expondrá listados, datos de otros clientes, credenciales ni permitirá modificar la venta.
+- El ticket de regalo tendrá su propia vista compartible y seguirá ocultando los precios definidos por la política del negocio.
+- Una falla de WhatsApp, del menú Compartir, de SMS o de correo nunca deberá cancelar, duplicar ni revertir una venta ya cobrada.
+- El envío transaccional del comprobante y el consentimiento para promociones se tratarán como decisiones distintas. Compartir un ticket no habilita marketing.
+- Los intentos de entrega deberán dejar auditoría mínima de canal, estado, actor y fecha, sin copiar teléfonos, correos ni el contenido completo del ticket a los logs.
 
 ⸻
 
@@ -527,14 +527,14 @@ Diseñar específicamente para interacción táctil.
 
 Considerar:
 
-* botones grandes
-* carrito visible
-* búsqueda rápida
-* teclado numérico
-* pocos pasos para cobrar
-* buena operación horizontal y vertical
-* estados claros
-* prevención de doble toque/doble cobro
+- botones grandes
+- carrito visible
+- búsqueda rápida
+- teclado numérico
+- pocos pasos para cobrar
+- buena operación horizontal y vertical
+- estados claros
+- prevención de doble toque/doble cobro
 
 ⸻
 
@@ -542,24 +542,24 @@ Considerar:
 
 Hardware potencial:
 
-* iPad
-* soporte para iPad
-* lector de códigos Bluetooth
-* impresora térmica compatible
-* cajón de dinero
-* impresora de etiquetas
-* conexión estable
-* respaldo 4G/5G
-* UPS/no-break cuando aplique
+- iPad
+- soporte para iPad
+- lector de códigos Bluetooth
+- impresora térmica compatible
+- cajón de dinero
+- impresora de etiquetas
+- conexión estable
+- respaldo 4G/5G
+- UPS/no-break cuando aplique
 
 Para checkout se prefiere lector físico sobre cámara.
 
 La cámara del iPad puede utilizarse para:
 
-* inventario
-* consulta
-* recepción
-* conteos
+- inventario
+- consulta
+- recepción
+- conteos
 
 El lector Bluetooth deberá poder enviar códigos al sistema como entrada tipo teclado cuando el hardware lo permita.
 
@@ -587,13 +587,13 @@ NO imprimir doble código para mantener ambos sistemas.
 
 Para productos nuevos Mi Tienda SM podrá:
 
-* generar código
-* generar SKU
-* crear variantes
-* generar etiquetas
-* imprimir etiquetas
-* registrar inventario
-* opcionalmente crear producto WooCommerce
+- generar código
+- generar SKU
+- crear variantes
+- generar etiquetas
+- imprimir etiquetas
+- registrar inventario
+- opcionalmente crear producto WooCommerce
 
 Diseñar una experiencia especialmente rápida para mercancía con tallas.
 
@@ -689,13 +689,13 @@ No asumir reglas de negocio. Documentarlas con el cliente.
 
 Toda devolución/cancelación deberá:
 
-* conservar venta original
-* generar referencia
-* generar movimiento inverso cuando corresponda
-* conservar usuario
-* conservar fecha
-* conservar motivo
-* mantener auditoría
+- conservar venta original
+- generar referencia
+- generar movimiento inverso cuando corresponda
+- conservar usuario
+- conservar fecha
+- conservar motivo
+- mantener auditoría
 
 Nunca eliminar una venta histórica para simular una cancelación.
 
@@ -737,15 +737,15 @@ WAREHOUSE
 
 Permisos específicos deberán poder controlar:
 
-* descuentos
-* cancelaciones
-* devoluciones
-* ajustes de inventario
-* cambios de precio
-* reportes
-* compras
-* transferencias
-* usuarios
+- descuentos
+- cancelaciones
+- devoluciones
+- ajustes de inventario
+- cambios de precio
+- reportes
+- compras
+- transferencias
+- usuarios
 
 Implementar correctamente RLS en Supabase.
 
@@ -759,15 +759,15 @@ Acciones sensibles deberán registrarse.
 
 Ejemplos:
 
-* cambio de precio
-* ajuste de inventario
-* devolución
-* cancelación
-* descuento
-* cambio de permisos
-* cierre de caja
-* transferencia
-* recepción
+- cambio de precio
+- ajuste de inventario
+- devolución
+- cancelación
+- descuento
+- cambio de permisos
+- cierre de caja
+- transferencia
+- recepción
 
 Guardar:
 
@@ -821,11 +821,11 @@ Para producción utilizar como mínimo Supabase Pro.
 
 Actualmente el proyecto es pequeño en relación con la capacidad esperada:
 
-* aproximadamente 15k registros/filas de inventario provenientes de SICAR
-* una sucursal inicialmente
-* pocos empleados
-* WooCommerce
-* crecimiento futuro
+- aproximadamente 15k registros/filas de inventario provenientes de SICAR
+- una sucursal inicialmente
+- pocos empleados
+- WooCommerce
+- crecimiento futuro
 
 No existe un límite conceptual de “número de sucursales”.
 
@@ -863,17 +863,17 @@ La seguridad deberá formar parte de la arquitectura desde el inicio; no se agre
 
 Principios obligatorios:
 
-* Aplicar correctamente RLS y permisos en Supabase. Nunca desactivar RLS para “hacer que funcione”.
-* Separar roles y privilegios, como mínimo administrador, gerente, cajero y almacén, aplicando siempre el principio de mínimo privilegio.
-* Nunca exponer `service_role`, claves privadas, credenciales de WooCommerce ni otros secretos en el frontend, el repositorio o el código cliente.
-* Mantener secretos únicamente en variables de entorno y servicios seguros apropiados para cada entorno.
-* Validar del lado servidor la identidad, el rol, los permisos, el alcance de sucursal y las reglas de negocio de toda operación crítica.
-* No confiar en botones ocultos, rutas no enlazadas ni otras restricciones de interfaz para proteger acciones sensibles.
-* Ventas, devoluciones, cancelaciones, descuentos, cambios de precio, movimientos de inventario y operaciones de caja deberán producir registros de auditoría trazables.
-* Proteger autenticación, sesiones y endpoints contra accesos no autorizados, abuso, repetición de solicitudes y escalamiento de privilegios.
-* Mantener dependencias actualizadas y revisar vulnerabilidades periódicamente.
-* Mantener backups, logs y monitoreo suficientes para detectar, investigar y recuperar incidentes.
-* Antes del piloto y de releases importantes, realizar una revisión específica de seguridad que intente encontrar vulnerabilidades antes de producción.
+- Aplicar correctamente RLS y permisos en Supabase. Nunca desactivar RLS para “hacer que funcione”.
+- Separar roles y privilegios, como mínimo administrador, gerente, cajero y almacén, aplicando siempre el principio de mínimo privilegio.
+- Nunca exponer `service_role`, claves privadas, credenciales de WooCommerce ni otros secretos en el frontend, el repositorio o el código cliente.
+- Mantener secretos únicamente en variables de entorno y servicios seguros apropiados para cada entorno.
+- Validar del lado servidor la identidad, el rol, los permisos, el alcance de sucursal y las reglas de negocio de toda operación crítica.
+- No confiar en botones ocultos, rutas no enlazadas ni otras restricciones de interfaz para proteger acciones sensibles.
+- Ventas, devoluciones, cancelaciones, descuentos, cambios de precio, movimientos de inventario y operaciones de caja deberán producir registros de auditoría trazables.
+- Proteger autenticación, sesiones y endpoints contra accesos no autorizados, abuso, repetición de solicitudes y escalamiento de privilegios.
+- Mantener dependencias actualizadas y revisar vulnerabilidades periódicamente.
+- Mantener backups, logs y monitoreo suficientes para detectar, investigar y recuperar incidentes.
+- Antes del piloto y de releases importantes, realizar una revisión específica de seguridad que intente encontrar vulnerabilidades antes de producción.
 
 Principio de seguridad:
 
@@ -889,14 +889,14 @@ Claude Code y Codex deberán cuestionar activamente cómo una funcionalidad sens
 
 Especial cuidado en:
 
-* última pieza disponible
-* dos cajas vendiendo mismo producto
-* WooCommerce + POS vendiendo simultáneamente
-* devoluciones
-* transferencias
-* recepción
-* ajustes
-* apartados
+- última pieza disponible
+- dos cajas vendiendo mismo producto
+- WooCommerce + POS vendiendo simultáneamente
+- devoluciones
+- transferencias
+- recepción
+- ajustes
+- apartados
 
 Operaciones críticas deberán ser transaccionales/atómicas.
 
@@ -953,12 +953,12 @@ sincronización
 
 Especial cuidado con:
 
-* IDs
-* ventas duplicadas
-* inventario
-* pagos
-* timestamps
-* conflictos
+- IDs
+- ventas duplicadas
+- inventario
+- pagos
+- timestamps
+- conflictos
 
 No implementar offline improvisado.
 
@@ -980,16 +980,16 @@ Ejemplo:
 
 Mi Tienda SM:
 
-* stock
-* códigos
-* variantes
-* precio operativo cuando se acuerde
+- stock
+- códigos
+- variantes
+- precio operativo cuando se acuerde
 
 WooCommerce:
 
-* contenido comercial
-* SEO
-* fotografías/descripciones si así lo decide el negocio
+- contenido comercial
+- SEO
+- fotografías/descripciones si así lo decide el negocio
 
 Esto deberá documentarse.
 
@@ -1019,10 +1019,10 @@ Utilizar proveedor/terminal externo.
 
 Mi Tienda SM deberá registrar:
 
-* método
-* referencia
-* monto
-* estado
+- método
+- referencia
+- monto
+- estado
 
 y posteriormente permitir conciliación si existe integración.
 
@@ -1040,15 +1040,15 @@ loyalty_transactions
 
 Funciones futuras:
 
-* QR
-* puntos
-* historial
-* recompensas
-* promociones
-* niveles
-* expiración
-* Wallet
-* WooCommerce
+- QR
+- puntos
+- historial
+- recompensas
+- promociones
+- niveles
+- expiración
+- Wallet
+- WooCommerce
 
 NO forma necesariamente parte del núcleo V1.
 
@@ -1162,12 +1162,12 @@ Trabajar mediante cambios pequeños y revisables.
 
 Cada cambio importante deberá incluir:
 
-* qué se modificó
-* por qué
-* riesgos
-* tests
-* migraciones
-* impacto
+- qué se modificó
+- por qué
+- riesgos
+- tests
+- migraciones
+- impacto
 
 ⸻
 
@@ -1179,21 +1179,21 @@ No asumir que la implementación de Claude es correcta.
 
 Buscar específicamente:
 
-* race conditions
-* inconsistencias de inventario
-* duplicados
-* errores monetarios
-* problemas de RLS
-* problemas WooCommerce
-* pérdida de historial
-* problemas de migración
-* problemas de concurrencia
-* problemas offline
-* errores de caja
-* permisos incorrectos
-* escalamiento de privilegios y controles aplicados sólo en la interfaz
-* exposición de secretos, sesiones inseguras y endpoints sin autorización suficiente
-* abuso, repetición o manipulación de operaciones sensibles
+- race conditions
+- inconsistencias de inventario
+- duplicados
+- errores monetarios
+- problemas de RLS
+- problemas WooCommerce
+- pérdida de historial
+- problemas de migración
+- problemas de concurrencia
+- problemas offline
+- errores de caja
+- permisos incorrectos
+- escalamiento de privilegios y controles aplicados sólo en la interfaz
+- exposición de secretos, sesiones inseguras y endpoints sin autorización suficiente
+- abuso, repetición o manipulación de operaciones sensibles
 
 Para cada módulo crítico preguntar:
 
@@ -1208,24 +1208,24 @@ Y para cada operación sensible preguntar:
 41. Reglas obligatorias para ambos agentes
 
 1. Nunca modificar/regenerar códigos heredados de SICAR.
-2. Nunca modificar inventario sin movimiento auditable.
-3. Operaciones financieras e inventario deben ser atómicas.
-4. Eventos WooCommerce deben ser idempotentes.
-5. Nunca modificar producción directamente.
-6. Schema mediante migrations.
-7. Nunca borrar historial para corregir contabilidad/inventario.
-8. Código crítico requiere tests.
-9. Nunca debilitar RLS para resolver un bug.
-10. Nunca exponer service_role al cliente.
-11. Separar dev/staging/prod.
-12. Explicar cambios arquitectónicos.
-13. No agregar dependencias innecesarias.
-14. No sincronizar productos por nombre.
-15. No asumir reglas de negocio no confirmadas.
-16. Nunca depender únicamente de la interfaz para autorizar una operación sensible.
-17. Diseñar con mínimo privilegio, validación del servidor y auditoría desde el inicio.
-18. Entender el proceso humano real antes de automatizarlo o rediseñarlo.
-19. Reducir trabajo repetitivo y prevenir errores sin debilitar reglas de negocio ni seguridad.
+1. Nunca modificar inventario sin movimiento auditable.
+1. Operaciones financieras e inventario deben ser atómicas.
+1. Eventos WooCommerce deben ser idempotentes.
+1. Nunca modificar producción directamente.
+1. Schema mediante migrations.
+1. Nunca borrar historial para corregir contabilidad/inventario.
+1. Código crítico requiere tests.
+1. Nunca debilitar RLS para resolver un bug.
+1. Nunca exponer service_role al cliente.
+1. Separar dev/staging/prod.
+1. Explicar cambios arquitectónicos.
+1. No agregar dependencias innecesarias.
+1. No sincronizar productos por nombre.
+1. No asumir reglas de negocio no confirmadas.
+1. Nunca depender únicamente de la interfaz para autorizar una operación sensible.
+1. Diseñar con mínimo privilegio, validación del servidor y auditoría desde el inicio.
+1. Entender el proceso humano real antes de automatizarlo o rediseñarlo.
+1. Reducir trabajo repetitivo y prevenir errores sin debilitar reglas de negocio ni seguridad.
 
 ⸻
 
@@ -1233,54 +1233,54 @@ Y para cada operación sensible preguntar:
 
 Inventario
 
-* stock normal
-* stock = 1
-* stock = 0
-* venta concurrente
-* devolución
-* cancelación
-* ajuste
-* compra
-* transferencia
-* producto sin código
-* código duplicado
+- stock normal
+- stock = 1
+- stock = 0
+- venta concurrente
+- devolución
+- cancelación
+- ajuste
+- compra
+- transferencia
+- producto sin código
+- código duplicado
 
 POS
 
-* efectivo
-* tarjeta
-* transferencia
-* pago mixto si se habilita
-* descuento autorizado
-* devolución
-* cancelación
-* ticket
-* doble toque en botón cobrar
+- efectivo
+- tarjeta
+- transferencia
+- pago mixto si se habilita
+- descuento autorizado
+- devolución
+- cancelación
+- ticket
+- doble toque en botón cobrar
 
 WooCommerce
 
-* venta online
-* webhook duplicado
-* webhook atrasado
-* webhook inválido
-* producto inexistente
-* variación inexistente
-* stock simultáneo POS/Web
-* error API
-* timeout
-* reintento
+- venta online
+- webhook duplicado
+- webhook atrasado
+- webhook inválido
+- producto inexistente
+- variación inexistente
+- stock simultáneo POS/Web
+- error API
+- timeout
+- reintento
 
 Migración
 
-* código duplicado
-* código vacío
-* ceros iniciales
-* producto sólo SICAR
-* producto sólo WooCommerce
-* producto en ambos
-* diferente stock
-* diferente precio
-* diferentes nombres pero mismo código
+- código duplicado
+- código vacío
+- ceros iniciales
+- producto sólo SICAR
+- producto sólo WooCommerce
+- producto en ambos
+- diferente stock
+- diferente precio
+- diferentes nombres pero mismo código
 
 ⸻
 
@@ -1288,12 +1288,12 @@ Migración
 
 Producción deberá tener:
 
-* logs
-* errores
-* auditoría
-* backups
-* monitoreo básico
-* capacidad de rastrear una operación
+- logs
+- errores
+- auditoría
+- backups
+- monitoreo básico
+- capacidad de rastrear una operación
 
 Ante una diferencia de inventario deberá poder responderse:
 
@@ -1321,28 +1321,28 @@ Antes de desarrollar un proceso importante, se deberá entender cómo trabaja re
 
 Principios obligatorios:
 
-* Reducir pasos innecesarios y evitar capturas repetitivas.
-* Utilizar lenguaje que los empleados entiendan y no exponer complejidad técnica innecesaria.
-* Priorizar las acciones más frecuentes.
-* Diseñar especialmente para operación rápida y táctil en iPad/POS.
-* Prevenir errores humanos cuando sea posible, en lugar de limitarse a mostrar errores después.
-* Automatizar tareas repetitivas cuando sea seguro y auditable.
-* Pedir confirmaciones principalmente cuando exista una consecuencia importante.
-* Observar el comportamiento real durante el piloto y modificar los flujos que provoquen confusión, lentitud o trabajo innecesario.
-* No replicar una mala experiencia de SICAR únicamente porque así funciona actualmente.
-* Mantener las reglas de negocio necesarias, pero buscar la interacción más sencilla para cumplirlas.
+- Reducir pasos innecesarios y evitar capturas repetitivas.
+- Utilizar lenguaje que los empleados entiendan y no exponer complejidad técnica innecesaria.
+- Priorizar las acciones más frecuentes.
+- Diseñar especialmente para operación rápida y táctil en iPad/POS.
+- Prevenir errores humanos cuando sea posible, en lugar de limitarse a mostrar errores después.
+- Automatizar tareas repetitivas cuando sea seguro y auditable.
+- Pedir confirmaciones principalmente cuando exista una consecuencia importante.
+- Observar el comportamiento real durante el piloto y modificar los flujos que provoquen confusión, lentitud o trabajo innecesario.
+- No replicar una mala experiencia de SICAR únicamente porque así funciona actualmente.
+- Mantener las reglas de negocio necesarias, pero buscar la interacción más sencilla para cumplirlas.
 
 Mi Tienda SM debe ser más fácil de usar que SICAR para los procesos cotidianos.
 
 Especial prioridad:
 
-* alta de mercancía
-* variantes
-* códigos
-* venta
-* consulta de stock
-* recepción
-* etiquetas
+- alta de mercancía
+- variantes
+- códigos
+- venta
+- consulta de stock
+- recepción
+- etiquetas
 
 No sacrificar simplicidad por agregar funciones.
 
@@ -1409,13 +1409,13 @@ La mensualidad comienza cuando el sistema entra formalmente en operación.
 
 Puede incluir:
 
-* licencia
-* mantenimiento
-* corrección de errores
-* monitoreo básico
-* soporte
-* actualizaciones necesarias
-* ajustes menores
+- licencia
+- mantenimiento
+- corrección de errores
+- monitoreo básico
+- soporte
+- actualizaciones necesarias
+- ajustes menores
 
 NO incluye desarrollo ilimitado de módulos nuevos.
 
@@ -1427,13 +1427,13 @@ Servicios externos deberán mantenerse separados del precio de desarrollo/manten
 
 Ejemplos:
 
-* Supabase
-* Vercel
-* PAC/CFDI
-* APIs externas
-* mensajería
-* correo
-* dominio/subdominio
+- Supabase
+- Vercel
+- PAC/CFDI
+- APIs externas
+- mensajería
+- correo
+- dominio/subdominio
 
 Idealmente las cuentas productivas deberán ser propiedad del cliente y ProcesaLab tendrá acceso administrativo/técnico.
 
@@ -1465,10 +1465,8 @@ Debe conservar las funciones que Vaqueros SM necesita actualmente, pero resolver
 
 La visión es:
 
-SICAR actual
-+
-WooCommerce
-+
+SICAR actual +
+WooCommerce +
 procesos manuales
 
 ↓
@@ -1523,83 +1521,83 @@ Este documento vive dentro del repositorio y deberá actualizarse cuando una ent
 
 Reglas de mantenimiento:
 
-* Claude Code y Codex deben leer este documento antes de proponer o implementar cambios relevantes.
-* Cada entrega visible deberá incrementar `APP_VERSION` y actualizar `APP_RELEASE` en `lib/release.ts`.
-* El campo `version` de `package.json` deberá mantenerse sincronizado.
-* El resumen de entrega deberá incluir versión, cambios, pruebas, riesgos y elementos todavía simulados.
-* No convertir comportamientos simulados de interfaz en reglas definitivas de negocio sin validación del cliente.
-* Las decisiones críticas de inventario, caja, pagos, migración, seguridad y WooCommerce siguen sujetas a las reglas obligatorias de este Plan Maestro.
+- Claude Code y Codex deben leer este documento antes de proponer o implementar cambios relevantes.
+- Cada entrega visible deberá incrementar `APP_VERSION` y actualizar `APP_RELEASE` en `lib/release.ts`.
+- El campo `version` de `package.json` deberá mantenerse sincronizado.
+- El resumen de entrega deberá incluir versión, cambios, pruebas, riesgos y elementos todavía simulados.
+- No convertir comportamientos simulados de interfaz en reglas definitivas de negocio sin validación del cliente.
+- Las decisiones críticas de inventario, caja, pagos, migración, seguridad y WooCommerce siguen sujetas a las reglas obligatorias de este Plan Maestro.
 
 Estado actual antes de la entrega 0.6.0:
 
-* Aplicación Next.js 16 con App Router desplegada en Vercel.
-* Rutas actuales: Inicio, POS, Productos, Inventario, Caja, Tickets, Etiquetas, Ajustes y Más módulos.
-* Datos todavía simulados y guardado local para algunas preferencias de diseño.
-* Sin Supabase, autenticación real, WooCommerce, procesamiento de pagos ni hardware conectado.
-* PWA con nombre Mi Tienda SM, iconos ladrillo, imagen social y navegación táctil móvil.
-* Usuario visible de demostración: Salomon.
-* El avatar S abre la versión instalada y el crédito de ProcesaLab.
-* Los códigos heredados mostrados en la interfaz no se regeneran.
+- Aplicación Next.js 16 con App Router desplegada en Vercel.
+- Rutas actuales: Inicio, POS, Productos, Inventario, Caja, Tickets, Etiquetas, Ajustes y Más módulos.
+- Datos todavía simulados y guardado local para algunas preferencias de diseño.
+- Sin Supabase, autenticación real, WooCommerce, procesamiento de pagos ni hardware conectado.
+- PWA con nombre Mi Tienda SM, iconos ladrillo, imagen social y navegación táctil móvil.
+- Usuario visible de demostración: Salomon.
+- El avatar S abre la versión instalada y el crédito de ProcesaLab.
+- Los códigos heredados mostrados en la interfaz no se regeneran.
 
 Decisión de diseño 0.6.0 — Ergonomía touch-first:
 
-* Mantener la base hueso, blanco, café oscuro y ladrillo del brief.
-* Usar color por significado y nunca como decoración arbitraria.
-* Ladrillo: acción principal.
-* Verde: confirmación, efectivo y entradas.
-* Morado: regalos.
-* Ámbar: advertencias y últimas piezas.
-* Rojo: retiros, cancelaciones y acciones destructivas.
-* Azul: información, movimientos y sincronización.
-* Mantener una sola acción dominante por pantalla.
-* Áreas táctiles mínimas de 48 px; acciones críticas de 56–64 px.
-* El carrito del POS deberá convertirse en bandeja móvil accesible sobre la barra PWA.
-* Cobro, descuentos y corte de caja deberán usar flujos guiados y prevenir doble toque.
-* El alta de productos con tallas deberá favorecer selección múltiple y generación de variantes.
-* Ningún estado dependerá únicamente del color; deberá incluir texto o icono.
+- Mantener la base hueso, blanco, café oscuro y ladrillo del brief.
+- Usar color por significado y nunca como decoración arbitraria.
+- Ladrillo: acción principal.
+- Verde: confirmación, efectivo y entradas.
+- Morado: regalos.
+- Ámbar: advertencias y últimas piezas.
+- Rojo: retiros, cancelaciones y acciones destructivas.
+- Azul: información, movimientos y sincronización.
+- Mantener una sola acción dominante por pantalla.
+- Áreas táctiles mínimas de 48 px; acciones críticas de 56–64 px.
+- El carrito del POS deberá convertirse en bandeja móvil accesible sobre la barra PWA.
+- Cobro, descuentos y corte de caja deberán usar flujos guiados y prevenir doble toque.
+- El alta de productos con tallas deberá favorecer selección múltiple y generación de variantes.
+- Ningún estado dependerá únicamente del color; deberá incluir texto o icono.
 
 Historial de entregas visibles:
 
-* 0.5.0 — PWA táctil, barra inferior ampliada y versión visible en avatar.
-* 0.5.1 — Crédito “Creado por ProcesaLab” dentro del panel de versión.
-* 0.6.0 — Revisión ergonómica completa de POS, Inicio, Caja, Productos, Inventario y PWA.
+- 0.5.0 — PWA táctil, barra inferior ampliada y versión visible en avatar.
+- 0.5.1 — Crédito “Creado por ProcesaLab” dentro del panel de versión.
+- 0.6.0 — Revisión ergonómica completa de POS, Inicio, Caja, Productos, Inventario y PWA.
 
 Detalle de entrega 0.6.0:
 
-* POS: categorías funcionales, catálogo con imágenes aprobadas, feedback táctil, carrito móvil en bandeja, total y cobro reforzados, teclado de efectivo, cálculo de cambio y bloqueo de doble cobro.
-* POS: descuento, regalo y apartado conservan flujos independientes y visibles por color semántico.
-* Inicio: métricas con jerarquía visual y accesos diarios más notorios.
-* Caja: métodos de pago diferenciados y corte guiado con efectivo esperado, monto contado, diferencia y confirmación destructiva explícita.
-* Productos: búsqueda, filtros de existencia, miniaturas y matriz táctil para crear varias tallas.
-* Inventario: búsqueda, filtros por estado, miniaturas, conteos y estados visibles con texto y color.
-* PWA móvil: barra inferior aumentada de 82 a 92 px y carrito flotante colocado arriba de la zona segura.
-* Recursos visuales: las imágenes de sombrero, cinturón, bota y modelo con camisa fueron recortadas de `IMG_3636.png` y `IMG_3635.png`, archivos entregados y aprobados por el usuario. No se usaron imágenes generadas.
-* Continúa simulado: ventas, caja, productos nuevos, inventario, tickets, usuarios y preferencias. No existe persistencia operativa ni conexión con servicios externos.
-* Pruebas completadas para 0.6.0: ESLint sin observaciones; build de producción y TypeScript correctos; 13 rutas prerenderizadas.
-* Verificación en navegador: Inicio en escritorio y POS, Productos, Inventario y Caja en móvil a 390 × 844, sin errores de consola, sin overlays y sin desbordamiento horizontal.
-* Flujos comprobados: carrito móvil, apertura de cobro, efectivo exacto y cambio; matriz de 14 tallas; filtro de última pieza; corte de caja cuadrado; barra PWA móvil de 92 px.
-* Hallazgo corregido durante pruebas: el carrito móvil interceptaba inicialmente el modal de cobro. La bandeja ahora se cierra al cobrar y los modales usan una capa superior.
+- POS: categorías funcionales, catálogo con imágenes aprobadas, feedback táctil, carrito móvil en bandeja, total y cobro reforzados, teclado de efectivo, cálculo de cambio y bloqueo de doble cobro.
+- POS: descuento, regalo y apartado conservan flujos independientes y visibles por color semántico.
+- Inicio: métricas con jerarquía visual y accesos diarios más notorios.
+- Caja: métodos de pago diferenciados y corte guiado con efectivo esperado, monto contado, diferencia y confirmación destructiva explícita.
+- Productos: búsqueda, filtros de existencia, miniaturas y matriz táctil para crear varias tallas.
+- Inventario: búsqueda, filtros por estado, miniaturas, conteos y estados visibles con texto y color.
+- PWA móvil: barra inferior aumentada de 82 a 92 px y carrito flotante colocado arriba de la zona segura.
+- Recursos visuales: las imágenes de sombrero, cinturón, bota y modelo con camisa fueron recortadas de `IMG_3636.png` y `IMG_3635.png`, archivos entregados y aprobados por el usuario. No se usaron imágenes generadas.
+- Continúa simulado: ventas, caja, productos nuevos, inventario, tickets, usuarios y preferencias. No existe persistencia operativa ni conexión con servicios externos.
+- Pruebas completadas para 0.6.0: ESLint sin observaciones; build de producción y TypeScript correctos; 13 rutas prerenderizadas.
+- Verificación en navegador: Inicio en escritorio y POS, Productos, Inventario y Caja en móvil a 390 × 844, sin errores de consola, sin overlays y sin desbordamiento horizontal.
+- Flujos comprobados: carrito móvil, apertura de cobro, efectivo exacto y cambio; matriz de 14 tallas; filtro de última pieza; corte de caja cuadrado; barra PWA móvil de 92 px.
+- Hallazgo corregido durante pruebas: el carrito móvil interceptaba inicialmente el modal de cobro. La bandeja ahora se cierra al cobrar y los modales usan una capa superior.
 
 Detalle de entrega 0.6.1 — Tickets térmicos editables:
 
-* Se implementaron las plantillas del brief para impresora térmica monocromática de 80 mm.
-* El ticket de venta incluye marca, sucursal, domicilio, teléfono, folio, fecha, cajero Salomon, Caja 01, artículos, variantes, códigos heredados, cantidades, subtotal, descuento, total, forma de pago, efectivo/cambio, código visual y política de cambios.
-* El ticket de regalo usa un folio `R-…`, no muestra precios ni forma de pago e incluye la política de cambio de talla o modelo.
-* Después de completar una venta, “Ver e imprimir ticket” y “Ver ticket de regalo” abren una vista previa real antes de ejecutar la impresión del navegador.
-* En Tickets y comprobantes se puede alternar entre venta y regalo, revisar la plantilla completa y después imprimir la vista seleccionada.
-* Las reimpresiones muestran fecha y hora de reimpresión debajo del folio.
-* Regla de impresión: sólo el comprobante de 80 mm se hace visible en papel; navegación, botones y resto de la aplicación quedan excluidos.
-* Continúa pendiente de confirmación del cliente: vigencia definitiva, uso parcial, cambios entre sucursales y conexión física con la impresora.
-* Pruebas completadas para 0.6.1: ESLint, TypeScript y build correctos; venta en efectivo hasta confirmación; vista previa normal y de regalo; reimpresión histórica; estilos de impresión de 80 mm; sin errores de consola ni desbordamientos móvil/escritorio.
-* Los patrones gráficos de código de barras y QR son todavía representaciones visuales del brief; deberán sustituirse por códigos escaneables ligados a identificadores persistentes cuando se conecte el backend.
+- Se implementaron las plantillas del brief para impresora térmica monocromática de 80 mm.
+- El ticket de venta incluye marca, sucursal, domicilio, teléfono, folio, fecha, cajero Salomon, Caja 01, artículos, variantes, códigos heredados, cantidades, subtotal, descuento, total, forma de pago, efectivo/cambio, código visual y política de cambios.
+- El ticket de regalo usa un folio `R-…`, no muestra precios ni forma de pago e incluye la política de cambio de talla o modelo.
+- Después de completar una venta, “Ver e imprimir ticket” y “Ver ticket de regalo” abren una vista previa real antes de ejecutar la impresión del navegador.
+- En Tickets y comprobantes se puede alternar entre venta y regalo, revisar la plantilla completa y después imprimir la vista seleccionada.
+- Las reimpresiones muestran fecha y hora de reimpresión debajo del folio.
+- Regla de impresión: sólo el comprobante de 80 mm se hace visible en papel; navegación, botones y resto de la aplicación quedan excluidos.
+- Continúa pendiente de confirmación del cliente: vigencia definitiva, uso parcial, cambios entre sucursales y conexión física con la impresora.
+- Pruebas completadas para 0.6.1: ESLint, TypeScript y build correctos; venta en efectivo hasta confirmación; vista previa normal y de regalo; reimpresión histórica; estilos de impresión de 80 mm; sin errores de consola ni desbordamientos móvil/escritorio.
+- Los patrones gráficos de código de barras y QR son todavía representaciones visuales del brief; deberán sustituirse por códigos escaneables ligados a identificadores persistentes cuando se conecte el backend.
 
 Detalle de entrega 0.6.2 — Zona segura del carrito móvil:
 
-* La bandeja “Venta en curso” queda separada 10 px de la barra inferior y respeta `safe-area-inset-bottom` en iPhone/PWA.
-* La altura máxima del carrito se calcula descontando navegación, zona segura, separación y margen superior; su contenido hace scroll sin mover la página.
-* La barra principal usa una capa superior a la bandeja para que nunca pueda quedar tapada y se mantiene disponible para navegación.
-* El fondo atenuado termina exactamente arriba de la barra inferior, por lo que no bloquea sus cinco accesos.
-* Pruebas completadas para 0.6.2: 375 × 667, 390 × 844 y 430 × 932; separación medida de 10 px, navegación de 92 px por encima de la bandeja, sin errores de consola ni desbordamiento horizontal.
+- La bandeja “Venta en curso” queda separada 10 px de la barra inferior y respeta `safe-area-inset-bottom` en iPhone/PWA.
+- La altura máxima del carrito se calcula descontando navegación, zona segura, separación y margen superior; su contenido hace scroll sin mover la página.
+- La barra principal usa una capa superior a la bandeja para que nunca pueda quedar tapada y se mantiene disponible para navegación.
+- El fondo atenuado termina exactamente arriba de la barra inferior, por lo que no bloquea sus cinco accesos.
+- Pruebas completadas para 0.6.2: 375 × 667, 390 × 844 y 430 × 932; separación medida de 10 px, navegación de 92 px por encima de la bandeja, sin errores de consola ni desbordamiento horizontal.
 
 ⸻
 
@@ -1613,174 +1611,192 @@ M0 → M1 → M1B → M2 → M3 → M4 → M5 → M6 → M7 → M8 → M9.
 
 Infraestructura contratada:
 
-* Organización Supabase Pro de ProcesaLab.
-* Proyecto `Mi Tienda SM` en `us-east-1`.
-* PostgreSQL 17; proyecto activo y saludable al momento del alta.
-* Proyecto inicialmente vacío: sin tablas, migraciones ni ramas remotas.
-* Desarrollo mediante Supabase local y migraciones versionadas.
-* Staging deberá crearse como ambiente aislado antes de aplicar M1 remotamente.
-* Ningún agente aplicará cambios directamente en la base de producción.
+- Organización Supabase Pro de ProcesaLab.
+- Proyecto `Mi Tienda SM` en `us-east-1`.
+- PostgreSQL 17; proyecto activo y saludable al momento del alta.
+- Proyecto inicialmente vacío: sin tablas, migraciones ni ramas remotas.
+- Desarrollo mediante Supabase local y migraciones versionadas.
+- Staging deberá crearse como ambiente aislado antes de aplicar M1 remotamente.
+- Ningún agente aplicará cambios directamente en la base de producción.
 
 Estado de M0:
 
-* M0 fue fusionado a `main` mediante el PR #1 el 31 de agosto de 2026; commit squash `e24caac`.
-* CI, migración limpia, pruebas de integración, build de producción y E2E móvil/escritorio quedaron en verde antes del merge.
-* Se conserva la interfaz existente; M0 agrega infraestructura sin reemplazar el diseño funcional.
-* Clientes de Supabase separados para navegador, sesión de servidor y administración privilegiada.
-* Código nuevo usa llaves `publishable` y `secret`; las llaves heredadas `anon` y `service_role` no forman parte de la interfaz de configuración.
-* La clave secreta queda protegida con `server-only` y una prueba impide importarla desde componentes cliente.
-* Supabase CLI, migración inicial, seed, Vitest, Playwright y CI quedan incorporados en M0.
+- M0 fue fusionado a `main` mediante el PR #1 el 31 de agosto de 2026; commit squash `e24caac`.
+- CI, migración limpia, pruebas de integración, build de producción y E2E móvil/escritorio quedaron en verde antes del merge.
+- Se conserva la interfaz existente; M0 agrega infraestructura sin reemplazar el diseño funcional.
+- Clientes de Supabase separados para navegador, sesión de servidor y administración privilegiada.
+- Código nuevo usa llaves `publishable` y `secret`; las llaves heredadas `anon` y `service_role` no forman parte de la interfaz de configuración.
+- La clave secreta queda protegida con `server-only` y una prueba impide importarla desde componentes cliente.
+- Supabase CLI, migración inicial, seed, Vitest, Playwright y CI quedan incorporados en M0.
 
 Estado de M1:
 
-* La base de identidad y RLS fue fusionada a `main` mediante el PR #2 el 31 de agosto de 2026; commit squash `6e0600d`.
-* La rama de staging de Supabase está activa y aislada de producción; M0 fue aplicado y validado ahí.
-* La base de producción continúa sin migraciones de negocio. M1 se ensaya primero en staging.
-* M1 comienza por la capa de seguridad: sucursales, empleados, roles, permisos, asignaciones, auditoría, funciones privadas y RLS deny-by-default.
-* El autorregistro de empleados queda deshabilitado; el primer administrador se crea con un script de servidor que nunca expone la clave secreta.
-* La verificación de PIN devuelve estados controlados en vez de lanzar una excepción para credenciales inválidas. Esto permite que PostgreSQL confirme el contador de intentos, el bloqueo y la auditoría; lanzar una excepción revertiría esas escrituras.
-* La web 0.6.2 es la base obligatoria de M1. Autenticación y administración se integrarán a su navegación, sistema visual, ergonomía touch-first y PWA sin reemplazar ni romper Inicio, POS, Caja, Productos, Inventario, Tickets, Etiquetas o Ajustes.
+- La base de identidad y RLS fue fusionada a `main` mediante el PR #2 el 31 de agosto de 2026; commit squash `6e0600d`.
+- La rama de staging de Supabase está activa y aislada de producción; M0 fue aplicado y validado ahí.
+- La base de producción continúa sin migraciones de negocio. M1 se ensaya primero en staging.
+- M1 comienza por la capa de seguridad: sucursales, empleados, roles, permisos, asignaciones, auditoría, funciones privadas y RLS deny-by-default.
+- El autorregistro de empleados queda deshabilitado; el primer administrador se crea con un script de servidor que nunca expone la clave secreta.
+- La verificación de PIN devuelve estados controlados en vez de lanzar una excepción para credenciales inválidas. Esto permite que PostgreSQL confirme el contador de intentos, el bloqueo y la auditoría; lanzar una excepción revertiría esas escrituras.
+- La web 0.6.2 es la base obligatoria de M1. Autenticación y administración se integrarán a su navegación, sistema visual, ergonomía touch-first y PWA sin reemplazar ni romper Inicio, POS, Caja, Productos, Inventario, Tickets, Etiquetas o Ajustes.
 
 Entrega visible 0.7.0 — Acceso y administración segura:
 
-* El inicio de sesión usa Supabase Auth con correo y contraseña; no existe autorregistro público.
-* Las rutas operativas refrescan y validan la sesión mediante `getClaims()` en el proxy. Un usuario autenticado sin perfil activo de empleado no obtiene acceso.
-* La barra y el avatar existentes muestran la identidad, rol y sucursal reales; si un empleado tiene varias sucursales puede seleccionar la ubicación activa desde la cabecera.
-* El módulo Administración se integra a Más módulos y Ajustes con cuatro vistas: empleados, sucursales, matriz de roles/permisos y bitácora.
-* Crear y editar empleados y sucursales exige validación explícita de permiso en una Server Action y vuelve a pasar por las políticas RLS. La creación de una identidad de Auth utiliza la clave secreta sólo en servidor.
-* La bitácora se presenta como sólo lectura; la interfaz no ofrece editar o borrar eventos.
-* La edición masiva de permisos permanece deliberadamente de sólo lectura hasta implementar una operación transaccional que no pueda dejar un rol parcialmente actualizado.
-* Sin variables de Supabase, la web pública conserva el modo demostración 0.6.2. Al configurar variables, activa el acceso real; las primeras pruebas remotas apuntarán únicamente a staging.
-* Supabase producción continúa sin migraciones de negocio y no se usará para estas pruebas.
-* Vercel Production y Preview quedaron conectados el 31 de agosto de 2026 exclusivamente al proyecto Supabase de staging `zsezjtswqeijboezvado`; las credenciales se guardan como variables secretas de Vercel y no forman parte del repositorio.
-* El ambiente de staging cuenta con la sucursal inicial `LAP` (La Piedad) y el primer administrador `SALOMON` (Salomon), asignado a esa sucursal. Su contraseña temporal se entrega fuera del repositorio y deberá rotarse.
-* El autorregistro quedó deshabilitado también en la configuración alojada de Supabase Auth, no sólo en la configuración local.
-* La integración real fue validada de extremo a extremo en la web publicada: inicio de sesión, sesión protegida, identidad y sucursal, Administración, rol ADMIN con 29 permisos y bitácora de auditoría. No se observaron errores de consola durante la verificación.
+- El inicio de sesión usa Supabase Auth con correo y contraseña; no existe autorregistro público.
+- Las rutas operativas refrescan y validan la sesión mediante `getClaims()` en el proxy. Un usuario autenticado sin perfil activo de empleado no obtiene acceso.
+- La barra y el avatar existentes muestran la identidad, rol y sucursal reales; si un empleado tiene varias sucursales puede seleccionar la ubicación activa desde la cabecera.
+- El módulo Administración se integra a Más módulos y Ajustes con cuatro vistas: empleados, sucursales, matriz de roles/permisos y bitácora.
+- Crear y editar empleados y sucursales exige validación explícita de permiso en una Server Action y vuelve a pasar por las políticas RLS. La creación de una identidad de Auth utiliza la clave secreta sólo en servidor.
+- La bitácora se presenta como sólo lectura; la interfaz no ofrece editar o borrar eventos.
+- La edición masiva de permisos permanece deliberadamente de sólo lectura hasta implementar una operación transaccional que no pueda dejar un rol parcialmente actualizado.
+- Sin variables de Supabase, la web pública conserva el modo demostración 0.6.2. Al configurar variables, activa el acceso real; las primeras pruebas remotas apuntarán únicamente a staging.
+- Supabase producción continúa sin migraciones de negocio y no se usará para estas pruebas.
+- Vercel Production y Preview quedaron conectados el 31 de agosto de 2026 exclusivamente al proyecto Supabase de staging `zsezjtswqeijboezvado`; las credenciales se guardan como variables secretas de Vercel y no forman parte del repositorio.
+- El ambiente de staging cuenta con la sucursal inicial `LAP` (La Piedad) y el primer administrador `SALOMON` (Salomon), asignado a esa sucursal. Su contraseña temporal se entrega fuera del repositorio y deberá rotarse.
+- El autorregistro quedó deshabilitado también en la configuración alojada de Supabase Auth, no sólo en la configuración local.
+- La integración real fue validada de extremo a extremo en la web publicada: inicio de sesión, sesión protegida, identidad y sucursal, Administración, rol ADMIN con 29 permisos y bitácora de auditoría. No se observaron errores de consola durante la verificación.
 
 Entrega visible 0.7.1 — Identidad y datos de tienda:
 
-* Inicio, Caja, tickets de venta y tickets de regalo toman el nombre del empleado autenticado y la sucursal activa; se eliminan las referencias operativas fijas a Salomon.
-* La dirección y el teléfono de cada ticket provienen de la ubicación activa en Supabase. La Piedad queda registrada como `Av. Mariano Jiménez 706, Col. Jardines del Carmen, C.P. 59389, La Piedad de Cabadas, Michoacán`, teléfono `352 145 6880`.
-* Ajustes reutiliza la misma ficha de negocio y sucursal para evitar diferencias entre configuración, tickets y documentos.
-* El alta de empleados distingue correo existente, datos inválidos, configuración, perfil y asignación de sucursal; los errores del servidor dejan registro técnico sin exponer contraseñas ni secretos.
+- Inicio, Caja, tickets de venta y tickets de regalo toman el nombre del empleado autenticado y la sucursal activa; se eliminan las referencias operativas fijas a Salomon.
+- La dirección y el teléfono de cada ticket provienen de la ubicación activa en Supabase. La Piedad queda registrada como `Av. Mariano Jiménez 706, Col. Jardines del Carmen, C.P. 59389, La Piedad de Cabadas, Michoacán`, teléfono `352 145 6880`.
+- Ajustes reutiliza la misma ficha de negocio y sucursal para evitar diferencias entre configuración, tickets y documentos.
+- El alta de empleados distingue correo existente, datos inválidos, configuración, perfil y asignación de sucursal; los errores del servidor dejan registro técnico sin exponer contraseñas ni secretos.
 
 Entrega visible 0.8.0 — Clientes e identidad segura (M1B, primera entrega):
 
-* Se incorpora el módulo real de Clientes con alta, edición y una búsqueda única por teléfono, últimos cuatro dígitos, número de socio, nombre o correo.
-* El teléfono se normaliza en PostgreSQL a E.164 mexicano; formatos como `3531234567`, `+52 353 123 4567`, `0052…` y `01…` chocan contra la misma restricción única y no pueden dividir a una persona en cuentas duplicadas.
-* Cada cliente recibe un número de socio de ocho dígitos con verificador Luhn. PostgreSQL valida el dígito y rechaza números alterados.
-* `customers` usa RLS deny-by-default. `customers.manage` permite atención individual a ADMIN, MANAGER y CASHIER; `customers.export` queda separado y se concede inicialmente sólo a ADMIN. No existe permiso de borrado físico.
-* Alta y edición se ejecutan por RPC del servidor con autorización real. La auditoría registra actor, entidad y campos modificados sin copiar teléfono, correo, nombre ni fecha de nacimiento a la bitácora.
-* El POS permite asociar un cliente desde el carrito mediante el mismo campo de búsqueda. Las ventas continúan simuladas hasta M4, por lo que esta selección todavía no genera historial ni puntos.
-* Consentimiento del programa y marketing se guardan por separado. El alta exige registrar la versión exacta del aviso entregado; el aviso legal definitivo sigue pendiente del cliente y no debe sustituirse por texto inventado.
-* Continúa pendiente dentro de M1B: PWA de cliente en subdominio separado, OTP por SMS/correo, QR y código 1D reales, tarjeta disponible sin sesión y pruebas físicas con lector 2D en iPhone/Android. No se activan puntos, redención, niveles, cumpleaños, crédito ni apartados porque sus reglas siguen sin confirmar.
+- Se incorpora el módulo real de Clientes con alta, edición y una búsqueda única por teléfono, últimos cuatro dígitos, número de socio, nombre o correo.
+- El teléfono se normaliza en PostgreSQL a E.164 mexicano; formatos como `3531234567`, `+52 353 123 4567`, `0052…` y `01…` chocan contra la misma restricción única y no pueden dividir a una persona en cuentas duplicadas.
+- Cada cliente recibe un número de socio de ocho dígitos con verificador Luhn. PostgreSQL valida el dígito y rechaza números alterados.
+- `customers` usa RLS deny-by-default. `customers.manage` permite atención individual a ADMIN, MANAGER y CASHIER; `customers.export` queda separado y se concede inicialmente sólo a ADMIN. No existe permiso de borrado físico.
+- Alta y edición se ejecutan por RPC del servidor con autorización real. La auditoría registra actor, entidad y campos modificados sin copiar teléfono, correo, nombre ni fecha de nacimiento a la bitácora.
+- El POS permite asociar un cliente desde el carrito mediante el mismo campo de búsqueda. Las ventas continúan simuladas hasta M4, por lo que esta selección todavía no genera historial ni puntos.
+- Consentimiento del programa y marketing se guardan por separado. El alta exige registrar la versión exacta del aviso entregado; el aviso legal definitivo sigue pendiente del cliente y no debe sustituirse por texto inventado.
+- Continúa pendiente dentro de M1B: PWA de cliente en subdominio separado, OTP por SMS/correo, QR y código 1D reales, tarjeta disponible sin sesión y pruebas físicas con lector 2D en iPhone/Android. No se activan puntos, redención, niveles, cumpleaños, crédito ni apartados porque sus reglas siguen sin confirmar.
 
 Entrega visible 0.9.0 — Mi Vaquero y tarjeta digital (M1B, segunda entrega):
 
-* Se incorpora la PWA independiente **Mi Vaquero**, preparada para un subdominio dedicado y disponible provisionalmente en `/mi` mientras se configura el dominio del cliente.
-* El acceso sin contraseña por correo funciona exclusivamente para clientes ya registrados. La identidad Auth se crea y vincula del lado servidor; la respuesta pública es genérica y existe un límite de frecuencia por cliente. El acceso por teléfono queda desactivado hasta configurar y validar un proveedor de SMS.
-* La tarjeta genera un QR y un código CODE128 reales con el mismo número de socio de ocho dígitos. El personal puede abrir Mi Vaquero desde Clientes para explicar o probar el flujo.
-* La PWA conserva sin conexión únicamente la versión del formato y el número de socio; nombre, teléfono, correo, sesión y datos operativos no forman parte de la tarjeta offline.
-* El cliente autenticado sólo puede leer su propia tarjeta mediante una RPC dedicada. No puede consultar directamente `customers`, perfiles de empleados ni la búsqueda interna.
-* El service worker sólo guarda el shell y recursos estáticos de Mi Vaquero; nunca cachea API, Supabase ni respuestas con datos personales.
-* Continúan pendientes antes del piloto: dominio/DNS de cliente, proveedor y plantilla SMS, aviso de privacidad definitivo y prueba física del QR/CODE128 con los lectores reales en iPhone y Android. No se implementan puntos, recompensas, niveles ni historial hasta aprobar sus reglas.
-* Se integró la revisión adversarial de Claude Code en `docs/AUDITORIA_SPECS.md`: sus nueve hallazgos quedaron resueltos o especificados antes de M2/M3. Las preguntas que requieren respuesta de Vaqueros SM viven consolidadas en `docs/PREGUNTAS_CLIENTE.md`, sin duplicar las reglas canónicas.
+- Se incorpora la PWA independiente **Mi Vaquero**, preparada para un subdominio dedicado y disponible provisionalmente en `/mi` mientras se configura el dominio del cliente.
+- El acceso sin contraseña por correo funciona exclusivamente para clientes ya registrados. La identidad Auth se crea y vincula del lado servidor; la respuesta pública es genérica y existe un límite de frecuencia por cliente. El acceso por teléfono queda desactivado hasta configurar y validar un proveedor de SMS.
+- La tarjeta genera un QR y un código CODE128 reales con el mismo número de socio de ocho dígitos. El personal puede abrir Mi Vaquero desde Clientes para explicar o probar el flujo.
+- La PWA conserva sin conexión únicamente la versión del formato y el número de socio; nombre, teléfono, correo, sesión y datos operativos no forman parte de la tarjeta offline.
+- El cliente autenticado sólo puede leer su propia tarjeta mediante una RPC dedicada. No puede consultar directamente `customers`, perfiles de empleados ni la búsqueda interna.
+- El service worker sólo guarda el shell y recursos estáticos de Mi Vaquero; nunca cachea API, Supabase ni respuestas con datos personales.
+- Continúan pendientes antes del piloto: dominio/DNS de cliente, proveedor y plantilla SMS, aviso de privacidad definitivo y prueba física del QR/CODE128 con los lectores reales en iPhone y Android. No se implementan puntos, recompensas, niveles ni historial hasta aprobar sus reglas.
+- Se integró la revisión adversarial de Claude Code en `docs/AUDITORIA_SPECS.md`: sus nueve hallazgos quedaron resueltos o especificados antes de M2/M3. Las preguntas que requieren respuesta de Vaqueros SM viven consolidadas en `docs/PREGUNTAS_CLIENTE.md`, sin duplicar las reglas canónicas.
 
 Corrección operativa 0.9.1 — Enlace de acceso a Mi Vaquero:
 
-* Se corrigió el permiso de uso del esquema privado `app` para `service_role`. Sin ese permiso, el trigger de actualización de `customers` rechazaba con 403 el enlace entre el cliente y su identidad Auth, por lo que la operación se revertía antes de solicitar el correo mágico.
-* El permiso se limita a `USAGE` del esquema: no concede acceso nuevo a tablas, funciones ni datos. Las operaciones continúan sujetas a sus permisos explícitos y el secreto permanece exclusivamente en servidor.
+- Se corrigió el permiso de uso del esquema privado `app` para `service_role`. Sin ese permiso, el trigger de actualización de `customers` rechazaba con 403 el enlace entre el cliente y su identidad Auth, por lo que la operación se revertía antes de solicitar el correo mágico.
+- El permiso se limita a `USAGE` del esquema: no concede acceso nuevo a tablas, funciones ni datos. Las operaciones continúan sujetas a sus permisos explícitos y el secreto permanece exclusivamente en servidor.
 
 Corrección operativa 0.9.2 — Correo passwordless y CI:
 
-* Las identidades de clientes destinadas exclusivamente a acceso por enlace mágico se crean como correo o teléfono confirmado, según la recomendación de Supabase para usuarios passwordless importados. Esto permite mantener deshabilitado el autorregistro público sin que Auth confunda el primer acceso con un alta.
-* Las identidades ya vinculadas se sincronizan y confirman del lado servidor antes de solicitar el OTP. Recibir el enlace o código continúa siendo la prueba de posesión del canal; ninguna credencial privilegiada se expone al cliente.
-* El CI aplica el formato pendiente que detenía el job antes de lint y pruebas. La actualización de Checkout, Setup Node y PNPM Setup para eliminar la advertencia de Node 20 queda pendiente de una credencial GitHub con alcance `workflow`.
+- Las identidades de clientes destinadas exclusivamente a acceso por enlace mágico se crean como correo o teléfono confirmado, según la recomendación de Supabase para usuarios passwordless importados. Esto permite mantener deshabilitado el autorregistro público sin que Auth confunda el primer acceso con un alta.
+- Las identidades ya vinculadas se sincronizan y confirman del lado servidor antes de solicitar el OTP. Recibir el enlace o código continúa siendo la prueba de posesión del canal; ninguna credencial privilegiada se expone al cliente.
+- El CI aplica el formato pendiente que detenía el job antes de lint y pruebas. La actualización de Checkout, Setup Node y PNPM Setup para eliminar la advertencia de Node 20 queda pendiente de una credencial GitHub con alcance `workflow`.
 
 Corrección operativa 0.9.3 — Migración reproducible en CI:
 
-* La migración del índice `customers_updated_by_idx` ahora usa `if not exists`, porque el índice ya forma parte de la migración base de clientes.
-* Esto permite levantar una base local limpia en GitHub Actions sin fallar por intentar crear dos veces el mismo índice.
-* El ajuste es idempotente y no altera datos ni permisos en producción.
+- La migración del índice `customers_updated_by_idx` ahora usa `if not exists`, porque el índice ya forma parte de la migración base de clientes.
+- Esto permite levantar una base local limpia en GitHub Actions sin fallar por intentar crear dos veces el mismo índice.
+- El ajuste es idempotente y no altera datos ni permisos en producción.
 
 Corrección operativa 0.9.4 — Auditoría de clientes en integración:
 
-* La prueba de privacidad valida todos los eventos de auditoría de un cliente, no sólo un supuesto registro único.
-* Se reconoce como comportamiento correcto que existan eventos separados al crear el cliente y al vincular su identidad de acceso.
-* Cada evento debe conservar `before_data` y `after_data` vacíos y no incluir el teléfono del cliente en sus metadatos.
+- La prueba de privacidad valida todos los eventos de auditoría de un cliente, no sólo un supuesto registro único.
+- Se reconoce como comportamiento correcto que existan eventos separados al crear el cliente y al vincular su identidad de acceso.
+- Cada evento debe conservar `before_data` y `after_data` vacíos y no incluir el teléfono del cliente en sus metadatos.
 
 Configuración operativa de Auth — Redirección de Mi Vaquero:
 
-* El proyecto Supabase de staging usa `https://vaquero-hub.vercel.app/mi` como `Site URL`.
-* La misma dirección está registrada explícitamente en `Redirect URLs`.
-* No debe restaurarse `http://localhost:3000` como destino del entorno publicado: cuando una URL solicitada no está autorizada, Supabase usa el `Site URL` y el enlace de un solo uso puede consumirse antes de llegar a la PWA.
+- El proyecto Supabase de staging usa `https://vaquero-hub.vercel.app/mi` como `Site URL`.
+- La misma dirección está registrada explícitamente en `Redirect URLs`.
+- No debe restaurarse `http://localhost:3000` como destino del entorno publicado: cuando una URL solicitada no está autorizada, Supabase usa el `Site URL` y el enlace de un solo uso puede consumirse antes de llegar a la PWA.
 
 Corrección operativa 0.9.5 — Sesión persistente y acceso multidispositivo:
 
-* Cada dispositivo conserva su propia sesión de Mi Vaquero mediante el almacenamiento persistente de Supabase; cerrar y volver a abrir la PWA no exige autenticarse de nuevo mientras la sesión siga vigente.
-* Supabase mantiene habilitadas sesiones simultáneas: `Enforce single session per user` está apagado y los límites de duración e inactividad están en `0` (`never`). Nunca deben copiarse access tokens o refresh tokens entre dispositivos.
-* Para acceder desde otro equipo, el cliente solicita un código nuevo en ese dispositivo. La plantilla de correo de Mi Vaquero incluye el OTP de seis dígitos y mantiene como alternativa el enlace de un solo uso.
-* La plantilla canónica vive en `supabase/templates/magic-link.html` y la configuración local la declara en `supabase/config.toml`; el proyecto hospedado debe mantener el mismo asunto y HTML en Auth > Email Templates.
+- Cada dispositivo conserva su propia sesión de Mi Vaquero mediante el almacenamiento persistente de Supabase; cerrar y volver a abrir la PWA no exige autenticarse de nuevo mientras la sesión siga vigente.
+- Supabase mantiene habilitadas sesiones simultáneas: `Enforce single session per user` está apagado y los límites de duración e inactividad están en `0` (`never`). Nunca deben copiarse access tokens o refresh tokens entre dispositivos.
+- Para acceder desde otro equipo, el cliente solicita un código nuevo en ese dispositivo. La plantilla de correo de Mi Vaquero incluye el OTP de seis dígitos y mantiene como alternativa el enlace de un solo uso.
+- La plantilla canónica vive en `supabase/templates/magic-link.html` y la configuración local la declara en `supabase/config.toml`; el proyecto hospedado debe mantener el mismo asunto y HTML en Auth > Email Templates.
 
 Cambio de identidad 0.9.6 — Mi Tienda SM:
 
-* El nombre público y operativo del sistema cambia de su denominación anterior a **Mi Tienda SM**.
-* El nuevo nombre debe utilizarse en interfaz, acceso de empleados, PWA, metadatos, vista previa al compartir, tickets, correos y documentación.
-* **Vaquero SM** continúa siendo la identidad del negocio; Mi Tienda SM es el nombre del sistema de operación.
-* Los identificadores técnicos ya desplegados —URL de Vercel, `project_id`, claves de almacenamiento, nombre del paquete y nombre de este archivo maestro— se conservan por compatibilidad y no deben renombrarse sin una migración específica.
+- El nombre público y operativo del sistema cambia de su denominación anterior a **Mi Tienda SM**.
+- El nuevo nombre debe utilizarse en interfaz, acceso de empleados, PWA, metadatos, vista previa al compartir, tickets, correos y documentación.
+- **Vaquero SM** continúa siendo la identidad del negocio; Mi Tienda SM es el nombre del sistema de operación.
+- Los identificadores técnicos ya desplegados —URL de Vercel, `project_id`, claves de almacenamiento, nombre del paquete y nombre de este archivo maestro— se conservan por compatibilidad y no deben renombrarse sin una migración específica.
 
 Entrega visible 0.10.0 — M2, catálogo real y generador de variantes:
 
-* Se incorpora el modelo versionado de marcas, categorías, escalas de talla,
+- Se incorpora el modelo versionado de marcas, categorías, escalas de talla,
   atributos, productos padre, variantes y múltiples códigos de barras.
-* Los importes se guardan como centavos enteros. El producto padre no tiene
+- Los importes se guardan como centavos enteros. El producto padre no tiene
   precio ni existencia; esos datos pertenecen a cada variante.
-* Los códigos internos heredados y los códigos de barras provenientes de
+- Los códigos internos heredados y los códigos de barras provenientes de
   SICAR quedan protegidos por disparadores de PostgreSQL y no dependen de que
   la interfaz oculte un botón.
-* La pantalla Productos deja de simular altas cuando Supabase está conectado.
+- La pantalla Productos deja de simular altas cuando Supabase está conectado.
   Una sola captura crea varias tallas en una transacción: si una variante
   falla por duplicidad o datos inválidos, no se guarda ninguna.
-* Categoría, color, costo, precio, marca y código base forman parte del alta;
+- Categoría, color, costo, precio, marca y código base forman parte del alta;
   el inventario se muestra como pendiente de M3 para no inventar existencias.
-* La búsqueda real acepta nombre, marca, SKU, código SICAR o cualquier código
+- La búsqueda real acepta nombre, marca, SKU, código SICAR o cualquier código
   físico asociado. El cajero recibe precio y atributos, pero nunca costo.
-* La migración base y su corrección de búsqueda fueron aplicadas primero al
+- La migración base y su corrección de búsqueda fueron aplicadas primero al
   staging `zsezjtswqeijboezvado` y registradas en su historial. La prueba
   remota generó y encontró ocho variantes dentro de una transacción que fue
   revertida; no dejó datos de prueba.
-* La verificación móvil automatizada confirma una superficie táctil mínima de
+- La verificación móvil automatizada confirma una superficie táctil mínima de
   48 px para las tallas, ocho selecciones desde una sola captura y ausencia de
   desbordamiento horizontal.
-* Continúan pendientes dentro de M2: agregar tallas a productos existentes,
+- Continúan pendientes dentro de M2: agregar tallas a productos existentes,
   matriz talla por color editable, carga masiva con corrida en seco, cambio de
   precios en lote, etiquetas persistentes y prueba de escaneo con hardware
   real.
 
 Corrección de seguridad 0.10.1 — Clientes, correo y continuidad:
 
-* Se integró la revisión de Claude Code sin duplicar el esquema de M2. Sus
+- Se integró la revisión de Claude Code sin duplicar el esquema de M2. Sus
   documentos de M4, M5 y continuidad quedan como contexto permanente del
   repositorio.
-* El destino del enlace mágico ya no se deduce del host de la petición. En
+- El destino del enlace mágico ya no se deduce del host de la petición. En
   cualquier despliegue publicado exige `CUSTOMER_APP_URL`; producción usa la
   ruta completa `https://vaquero-hub.vercel.app/mi`.
-* La ruta configurada se conserva completa. No debe reducirse al origen del
+- La ruta configurada se conserva completa. No debe reducirse al origen del
   sitio, porque eso enviaría al cliente a la aplicación operativa en vez de a
   Mi Tienda SM para clientes.
-* Las solicitudes de acceso mantienen el límite por cliente y agregan un
+- Las solicitudes de acceso mantienen el límite por cliente y agregan un
   segundo límite por origen usando un HMAC irreversible; la dirección IP no
   se almacena en PostgreSQL.
-* El rol ADMIN obtiene una operación explícita para anonimizar clientes. La
+- El rol ADMIN obtiene una operación explícita para anonimizar clientes. La
   fila y el número de socio se conservan para el historial contable, pero se
   eliminan nombre, teléfono, correo, fecha de nacimiento, consentimiento y
   vínculo de Auth. La bitácora nunca copia los valores personales anteriores.
-* La migración se validó en staging mediante transacciones reversibles: se
+- La migración se validó en staging mediante transacciones reversibles: se
   comprobó la anonimización completa y que el limitador permite exactamente
   diez solicitudes por ventana antes de rechazar las siguientes.
-* La validación desde una base vacía corrigió dos datos de prueba: las tallas
+- La validación desde una base vacía corrigió dos datos de prueba: las tallas
   enteras ya se guardan como `25`, `26`, etc., sin punto final, y el teléfono
   temporal de anonimización usa exactamente diez dígitos mexicanos.
-* Deuda reconocida: si Supabase Auth falla después de anonimizar la fila, hace
+- Deuda reconocida: si Supabase Auth falla después de anonimizar la fila, hace
   falta una cola de reintento para borrar la identidad huérfana sin perder la
   trazabilidad del trabajo pendiente.
+
+Entrega visible 0.11.0 — M2.2, matriz e identidad automática:
+
+- Se integró la revisión de Claude Code que reserva `legacy_sicar_code`, los
+  identificadores de WooCommerce y los códigos con origen `SICAR` únicamente
+  para el importador M9. El alta manual ya no puede poblar esos campos.
+- Cada variante recibe dentro de PostgreSQL un serial privado, un SKU con
+  dígito verificador y un EAN-13 generado. El navegador no puede elegir ni
+  reservar estas identidades.
+- Los SKU y códigos generados quedan inmutables. Si en el futuro se reemite
+  una etiqueta, se agrega otro código a la variante sin romper el anterior.
+- El alta permite seleccionar varios colores y varias tallas, muestra la
+  matriz completa y deja excluir combinaciones antes de guardar.
+- La generación se valida primero en staging. La activación en la base
+  operativa definitiva continúa condicionada a comprobar la exportación de
+  SICAR para descartar colisiones con el prefijo interno.
+- M2.2 continúa con edición de producto y `add_variants_to_product(...)`; no
+  se deben recrear variantes que ya puedan adquirir historial.

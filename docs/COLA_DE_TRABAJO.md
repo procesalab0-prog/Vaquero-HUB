@@ -60,6 +60,9 @@ real de SICAR.
 - Especificaciones de M4 y M5 y documentos de continuidad.
 - Primera entrega de M2: esquema, alta atómica de producto con variantes,
   búsqueda real y pantalla conectada a Supabase.
+- Segunda entrega de M2: campos de SICAR reservados a M9, SKU con dígito
+  verificador, EAN-13 generado en base de datos y matriz color × talla
+  editable antes de guardar.
 
 ---
 
@@ -79,15 +82,13 @@ Qué construir:
   marcas, categorías, productos y variantes. Todas validan permisos
   explícitamente (`products.create`, `products.update`,
   `products.price_update`), porque al ser definer se saltaron la RLS.
-- El alta existente recibe los datos del padre más las tallas elegidas y crea
-  producto y variantes en **una sola transacción**. Falta la matriz talla ×
-  color de la especificación completa.
+- El alta recibe los datos del padre y una matriz talla × color editable, y
+  crea producto, variantes, SKU y códigos en **una sola transacción**.
 - `add_variants_to_product(...)`: agregar tallas después **sin tocar ni
   recrear** las variantes existentes, que ya tienen historial.
-- **Falta el generador de código y de SKU, y es lo siguiente en orden.**
-  Hoy `create_catalog_product` **exige** que quien llama mande el código de
-  barras, así que la interfaz tiene que inventarlo — que es justo de donde
-  salen los duplicados y los formatos inconsistentes.
+- **Generador de código y SKU terminado en 0.11.0.** La interfaz ya no puede
+  mandar identidades, códigos SICAR ni IDs de WooCommerce. Una secuencia
+  privada produce el SKU con verificador y el EAN-13 dentro de la transacción.
 
   **Especificación completa:** [`specs/CODIGOS_Y_SKU.md`](specs/CODIGOS_Y_SKU.md).
   Lo esencial: una sola secuencia interna de la que salen el SKU y el
@@ -97,8 +98,9 @@ Qué construir:
   conteste. **No se enciende la generación en producción** hasta comprobar
   contra la exportación de muestra que ningún código heredado empieza con
   el prefijo elegido (sección 7 de esa especificación).
-- Interfaz: matriz talla × color **editable antes de guardar**, porque no
-  todo color viene en todas las tallas.
+
+- La siguiente parte de M2.2 es edición y `add_variants_to_product(...)` para
+  agregar tallas o colores después sin recrear las variantes existentes.
 
 **Ojo con esto:** la simbología del código de barras para productos
 nuevos depende de qué imprime SICAR hoy (pregunta 1.1 de
@@ -199,24 +201,24 @@ trabaja durante semanas. Conviene adelantarlo apenas se pueda.
 No se empieza hasta tener respuesta. Todas están en
 [`PREGUNTAS_CLIENTE.md`](PREGUNTAS_CLIENTE.md).
 
-| Qué | Qué falta saber |
-|---|---|
+| Qué                                                 | Qué falta saber                                  |
+| --------------------------------------------------- | ------------------------------------------------ |
 | Escalas de talla de sombreros, texanas y cinturones | Preguntas 1.3 y 1.4. Por eso se sembraron vacías |
-| Simbología del código de barras | Pregunta 1.1 |
-| Motor de puntos, redención, cumpleaños, niveles | Sección 6 completa |
-| Crédito a clientes | Pregunta 5.2 |
-| Apartados: plazo, enganche, vencimiento | Pregunta 5.1 |
-| Envío de tickets por SMS o correo | Pregunta 3.5 |
-| Costo de compra: promedio ponderado o último | Pregunta 4.1 |
+| Simbología del código de barras                     | Pregunta 1.1                                     |
+| Motor de puntos, redención, cumpleaños, niveles     | Sección 6 completa                               |
+| Crédito a clientes                                  | Pregunta 5.2                                     |
+| Apartados: plazo, enganche, vencimiento             | Pregunta 5.1                                     |
+| Envío de tickets por SMS o correo                   | Pregunta 3.5                                     |
+| Costo de compra: promedio ponderado o último        | Pregunta 4.1                                     |
 
 ## Deuda pendiente
 
-| Qué | Dónde |
-|---|---|
-| Hacer recuperable el borrado de Auth si falla después de anonimizar la fila del cliente | Seguimiento de M1B |
-| Mudar la PWA de clientes a subdominio propio; actualizar `CUSTOMER_APP_URL` cuando exista | Issue #8 |
-| Las specs describen construir pantallas que ya existen en la interfaz 0.6.2 | Issue #4 |
-| El plan maestro no incluye el catálogo de los 19 requerimientos del cliente | Issue #3 |
+| Qué                                                                                       | Dónde              |
+| ----------------------------------------------------------------------------------------- | ------------------ |
+| Hacer recuperable el borrado de Auth si falla después de anonimizar la fila del cliente   | Seguimiento de M1B |
+| Mudar la PWA de clientes a subdominio propio; actualizar `CUSTOMER_APP_URL` cuando exista | Issue #8           |
+| Las specs describen construir pantallas que ya existen en la interfaz 0.6.2               | Issue #4           |
+| El plan maestro no incluye el catálogo de los 19 requerimientos del cliente               | Issue #3           |
 
 ## Antes de dar por terminada cualquier tarea
 

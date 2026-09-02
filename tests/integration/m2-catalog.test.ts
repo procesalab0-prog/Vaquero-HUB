@@ -17,6 +17,8 @@ const state = {
   sizeIds: [] as Array<{ id: string; value: string; display_order: number }>,
   productId: "",
   variantIds: [] as string[],
+  skus: [] as string[],
+  primaryBarcodes: [] as string[],
 };
 
 function publicClient() {
@@ -113,17 +115,12 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
     ]);
   });
 
-  it("genera atómicamente 2 colores por 8 tallas con un código por variante", async () => {
+  it("genera atómicamente 2 colores por 8 tallas con identidad automática", async () => {
     const variants = Object.entries(state.colorIds).flatMap(
-      ([color, colorId], colorIndex) =>
-        state.sizeIds.map((size, sizeIndex) => ({
-          sku: `M2-${runCode}-${colorIndex}-${sizeIndex}`,
+      ([color, colorId]) =>
+        state.sizeIds.map((size) => ({
           cost_cents: 120000,
           price_cents: 219900,
-          legacy_sicar_code: `SICAR-${runCode}-${colorIndex}-${sizeIndex}`,
-          barcode: `${runCode}${colorIndex}${String(sizeIndex).padStart(2, "0")}`,
-          barcode_symbology: "CODE128",
-          barcode_source: "SICAR",
           attributes: { COLOR: colorId, TALLA: size.id },
           color,
         })),
@@ -148,16 +145,30 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
     expect(result.data).toHaveLength(16);
     expect(
       result.data.every((variant: { primary_barcode: string }) =>
-        Boolean(variant.primary_barcode),
+        /^20\d{11}$/.test(variant.primary_barcode),
       ),
     ).toBe(true);
+    expect(
+      new Set(result.data.map((variant: { sku: string }) => variant.sku)).size,
+    ).toBe(16);
+    expect(
+      new Set(
+        result.data.map(
+          (variant: { primary_barcode: string }) => variant.primary_barcode,
+        ),
+      ).size,
+    ).toBe(16);
     state.variantIds = result.data.map(
       (variant: { variant_id: string }) => variant.variant_id,
+    );
+    state.skus = result.data.map((variant: { sku: string }) => variant.sku);
+    state.primaryBarcodes = result.data.map(
+      (variant: { primary_barcode: string }) => variant.primary_barcode,
     );
   });
 
   it("encuentra la misma variante por código físico", async () => {
-    const code = `${runCode}000`;
+    const code = state.primaryBarcodes[0];
     const { data, error } = await state.cashier!.client.rpc("search_catalog", {
       p_query: code,
       p_limit: 10,
@@ -165,6 +176,54 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
     expect(error).toBeNull();
     expect(data).toHaveLength(1);
     expect(data[0].primary_barcode).toBe(code);
+  });
+
+  it("un SKU mal tecleado no encuentra otra variante", async () => {
+    const sku = state.skus[0];
+    expect(sku).toMatch(/^\d+-\d$/);
+    const lastDigit = Number(sku.at(-1));
+    const mistyped = `${sku.slice(0, -1)}${(lastDigit + 1) % 10}`;
+    const { data, error } = await state.cashier!.client.rpc("search_catalog", {
+      p_query: mistyped,
+      p_limit: 10,
+    });
+    expect(error).toBeNull();
+    expect(data).toHaveLength(0);
+  });
+
+  it("dos altas simultáneas reciben identidades distintas", async () => {
+    const names = [`Concurrente A ${runCode}`, `Concurrente B ${runCode}`];
+    const results = await Promise.all(
+      names.map((name) =>
+        state.warehouse!.client.rpc("create_catalog_product", {
+          p_name: name,
+          p_category_id: state.categoryId,
+          p_variants: [
+            {
+              cost_cents: 100,
+              price_cents: 200,
+              attributes: { TALLA: state.sizeIds[0].id },
+            },
+          ],
+        }),
+      ),
+    );
+    expect(results.every((result) => result.error === null)).toBe(true);
+
+    const searches = await Promise.all(
+      names.map((name) =>
+        state.admin!.client.rpc("search_catalog", {
+          p_query: name,
+          p_limit: 10,
+        }),
+      ),
+    );
+    const codes = searches.flatMap((result) =>
+      (result.data ?? []).map(
+        (variant: { primary_barcode: string }) => variant.primary_barcode,
+      ),
+    );
+    expect(new Set(codes).size).toBe(2);
   });
 
   it("oculta costos al cajero pero permite leer precio y atributos", async () => {
@@ -188,8 +247,8 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
     expect(direct.error).not.toBeNull();
   });
 
-  it("rechaza un código duplicado y revierte el producto completo", async () => {
-    const duplicateName = `Producto duplicado ${runCode}`;
+  it("rechaza identidades elegidas por el cliente y revierte el producto completo", async () => {
+    const duplicateName = `Producto con identidad manual ${runCode}`;
     const { error } = await state.warehouse!.client.rpc(
       "create_catalog_product",
       {
@@ -200,13 +259,12 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
             sku: `M2-DUP-${runCode}`,
             cost_cents: 100,
             price_cents: 200,
-            barcode: `${runCode}000`,
             attributes: { TALLA: state.sizeIds[0].id },
           },
         ],
       },
     );
-    expect(error?.message).toContain("CATALOG_DUPLICATE_VALUE");
+    expect(error?.message).toContain("IDENTITY_FIELDS_NOT_ALLOWED");
 
     const { data: products } = await state
       .admin!.client.from("products")
@@ -219,6 +277,21 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
     const server = createClient(url, secretKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+    const legacyCode = `SICAR-${runCode}`;
+    const prepareLegacy = await server
+      .from("variants")
+      .update({ legacy_sicar_code: legacyCode })
+      .eq("id", state.variantIds[0]);
+    expect(prepareLegacy.error).toBeNull();
+    const prepareBarcode = await server.from("barcodes").insert({
+      variant_id: state.variantIds[0],
+      code: legacyCode,
+      symbology: "LEGACY",
+      source: "SICAR",
+      is_primary: false,
+    });
+    expect(prepareBarcode.error).toBeNull();
+
     const legacy = await server
       .from("variants")
       .update({ legacy_sicar_code: `CAMBIADO-${runCode}` })
@@ -228,8 +301,25 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
     const barcode = await server
       .from("barcodes")
       .update({ code: `CAMBIADO-${runCode}` })
-      .eq("variant_id", state.variantIds[0]);
+      .eq("code", legacyCode);
     expect(barcode.error?.message).toContain("SICAR_BARCODE_IMMUTABLE");
+  });
+
+  it("impide cambiar el SKU y el código generado", async () => {
+    const server = createClient(url, secretKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const sku = await server
+      .from("variants")
+      .update({ sku: `CAMBIADO-${runCode}` })
+      .eq("id", state.variantIds[1]);
+    expect(sku.error?.message).toContain("VARIANT_SKU_IMMUTABLE");
+
+    const barcode = await server
+      .from("barcodes")
+      .update({ code: `CAMBIADO-GEN-${runCode}` })
+      .eq("code", state.primaryBarcodes[1]);
+    expect(barcode.error?.message).toContain("GENERATED_BARCODE_IMMUTABLE");
   });
 
   it("el cajero no puede crear productos ni cambiar precios", async () => {
@@ -238,10 +328,8 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
       p_category_id: state.categoryId,
       p_variants: [
         {
-          sku: `NO-${runCode}`,
           cost_cents: 0,
           price_cents: 1,
-          barcode: `NO-${runCode}`,
         },
       ],
     });
@@ -266,8 +354,6 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
         p_category_id: state.categoryId,
         p_variants: [
           {
-            sku: `LEG-${runCode}`,
-            barcode: `LEG-${runCode}`,
             cost_cents: 100,
             price_cents: 200,
             legacy_sicar_code: `SIC-${runCode}`,
@@ -275,7 +361,7 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
         ],
       },
     );
-    expect(error?.message).toContain("LEGACY_FIELDS_NOT_ALLOWED");
+    expect(error?.message).toContain("IDENTITY_FIELDS_NOT_ALLOWED");
   });
 
   it("no deja fijar identificadores de WooCommerce desde el alta manual", async () => {
@@ -286,8 +372,6 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
         p_category_id: state.categoryId,
         p_variants: [
           {
-            sku: `WOO-${runCode}`,
-            barcode: `WOO-${runCode}`,
             cost_cents: 100,
             price_cents: 200,
             woocommerce_product_id: 99,
@@ -295,7 +379,7 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
         ],
       },
     );
-    expect(error?.message).toContain("LEGACY_FIELDS_NOT_ALLOWED");
+    expect(error?.message).toContain("IDENTITY_FIELDS_NOT_ALLOWED");
   });
 
   it("no deja marcar un código de barras como de SICAR", async () => {
@@ -306,8 +390,6 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
         p_category_id: state.categoryId,
         p_variants: [
           {
-            sku: `SRC-${runCode}`,
-            barcode: `SRC-${runCode}`,
             cost_cents: 100,
             price_cents: 200,
             barcode_source: "SICAR",
@@ -315,7 +397,7 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
         ],
       },
     );
-    expect(error?.message).toContain("INVALID_BARCODE_SOURCE");
+    expect(error?.message).toContain("IDENTITY_FIELDS_NOT_ALLOWED");
   });
 
   it("encuentra un producto acentuado se escriba con acento o sin él", async () => {

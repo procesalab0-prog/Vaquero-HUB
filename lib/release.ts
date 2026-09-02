@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.10.1";
-export const APP_RELEASE = "M2: catálogo real y generador de variantes";
+export const APP_VERSION = "0.11.0";
+export const APP_RELEASE = "M2.2: matriz e identidad automática";

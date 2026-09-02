@@ -35,25 +35,25 @@ saltando lo bloqueado.
 
 ### Terminado y en `main`
 
-| Milestone | Qué quedó |
-|---|---|
-| **M0** | Next.js, Supabase local, migraciones versionadas, Vitest, Playwright, CI |
-| **M1** | Sucursales, empleados, roles, permisos granulares, RLS, bitácora, PIN de supervisor |
-| **M1B** | Clientes, número de socio con dígito verificador, tarjeta digital, acceso sin contraseña, PWA de cliente |
-| **M2 (primera entrega)** | Catálogo real, marcas, categorías, escalas, variantes, códigos, alta atómica, búsqueda y pantalla conectada |
+| Milestone                | Qué quedó                                                                                                |
+| ------------------------ | -------------------------------------------------------------------------------------------------------- |
+| **M0**                   | Next.js, Supabase local, migraciones versionadas, Vitest, Playwright, CI                                 |
+| **M1**                   | Sucursales, empleados, roles, permisos granulares, RLS, bitácora, PIN de supervisor                      |
+| **M1B**                  | Clientes, número de socio con dígito verificador, tarjeta digital, acceso sin contraseña, PWA de cliente |
+| **M2 (segunda entrega)** | Catálogo real, alta atómica, búsqueda, matriz color × talla e identidad automática protegida             |
 
-Quince migraciones versionadas del repositorio. El proyecto de Supabase
+Diecinueve migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Falta para el alcance de octubre
 
-| Milestone | Estado de la especificación |
-|---|---|
-| **M2** — catálogo, variantes, códigos, etiquetas | En progreso: alta y búsqueda listas; faltan edición, matriz color, carga masiva y etiquetas |
-| **M3** — inventario, movimientos, traspasos | [Escrita](specs/M3_INVENTARIO.md) |
-| **M4** — POS, pagos mixtos, caja | [Escrita](specs/M4_POS_Y_CAJA.md) |
-| **M5** — devoluciones, cambios, cancelaciones | [Escrita](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md) |
-| **M9** — importador y sincronizador de SICAR | Falta |
+| Milestone                                        | Estado de la especificación                                                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| **M2** — catálogo, variantes, códigos, etiquetas | En progreso: alta, búsqueda, matriz e identidad listas; faltan edición, agregar variantes, carga masiva y etiquetas |
+| **M3** — inventario, movimientos, traspasos      | [Escrita](specs/M3_INVENTARIO.md)                                                                                   |
+| **M4** — POS, pagos mixtos, caja                 | [Escrita](specs/M4_POS_Y_CAJA.md)                                                                                   |
+| **M5** — devoluciones, cambios, cancelaciones    | [Escrita](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)                                                                       |
+| **M9** — importador y sincronizador de SICAR     | Falta                                                                                                               |
 
 Recorridos a después de octubre: M6 compras, M7 apartados y lealtad, M8
 reportes y cotizaciones.
@@ -125,12 +125,12 @@ Cuando el trabajo se divida en dos cuentas, el reparto ya está escrito en
 
 ## 7. Deudas conocidas
 
-| Qué | Dónde |
-|---|---|
-| Si falla el borrado de Auth después de anonimizar, falta una cola de reintento | Seguimiento de M1B |
-| Mudanza de la PWA de clientes a subdominio propio | Issue #8 |
-| Las specs se escribieron sin contemplar la interfaz que ya existía | Issue #4 |
-| El plan maestro no incluye el catálogo de los 19 requerimientos que pidió el cliente | Issue #3 |
+| Qué                                                                                  | Dónde              |
+| ------------------------------------------------------------------------------------ | ------------------ |
+| Si falla el borrado de Auth después de anonimizar, falta una cola de reintento       | Seguimiento de M1B |
+| Mudanza de la PWA de clientes a subdominio propio                                    | Issue #8           |
+| Las specs se escribieron sin contemplar la interfaz que ya existía                   | Issue #4           |
+| El plan maestro no incluye el catálogo de los 19 requerimientos que pidió el cliente | Issue #3           |
 
 Los nueve hallazgos de [`AUDITORIA_SPECS.md`](AUDITORIA_SPECS.md) ya están
 resueltos; el documento se conserva porque explica **por qué** las
@@ -143,5 +143,5 @@ no protegían.** Un `revoke` que rompía consultas en vez de negarlas, un
 contador de intentos que se revertía con la excepción que lo seguía, una
 función que confiaba en el id de usuario que le pasaban por parámetro.
 
-Conviene revisar con esa pregunta encima: *¿este control de verdad hace lo
-que dice?* Que exista el código no significa que funcione.
+Conviene revisar con esa pregunta encima: _¿este control de verdad hace lo
+que dice?_ Que exista el código no significa que funcione.

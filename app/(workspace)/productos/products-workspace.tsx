@@ -91,6 +91,10 @@ export function ProductsWorkspace({
     availableCategories[0]?.id ?? "",
   );
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [excludedCombinations, setExcludedCombinations] = useState<string[]>(
+    [],
+  );
   const deferredQuery = useDeferredValue(query);
 
   const category =
@@ -102,6 +106,12 @@ export function ProductsWorkspace({
       item.scale_code === category?.default_size_scale_code,
   );
   const colors = availableValues.filter((item) => item.type_code === "COLOR");
+  const combinations = selectedColors.flatMap((colorId) =>
+    selectedSizes.map((sizeId) => `${colorId}:${sizeId}`),
+  );
+  const activeCombinations = combinations.filter(
+    (combination) => !excludedCombinations.includes(combination),
+  );
   const filteredVariants = useMemo(() => {
     const term = deferredQuery.trim().toLocaleLowerCase("es-MX");
     return variants.filter(
@@ -120,41 +130,62 @@ export function ProductsWorkspace({
         ? current.filter((item) => item !== id)
         : [...current, id],
     );
+    setExcludedCombinations((current) =>
+      current.filter((combination) => !combination.endsWith(`:${id}`)),
+    );
+  }
+
+  function toggleColor(id: string) {
+    setSelectedColors((current) =>
+      current.includes(id)
+        ? current.filter((item) => item !== id)
+        : [...current, id],
+    );
+    setExcludedCombinations((current) =>
+      current.filter((combination) => !combination.startsWith(`${id}:`)),
+    );
+  }
+
+  function toggleCombination(combination: string) {
+    setExcludedCombinations((current) =>
+      current.includes(combination)
+        ? current.filter((item) => item !== combination)
+        : [...current, combination],
+    );
   }
 
   function changeCategory(id: string) {
     setSelectedCategory(id);
     setSelectedSizes([]);
+    setExcludedCombinations([]);
   }
 
   function createPreviewProduct(formData: FormData) {
     const name = String(formData.get("product_name") ?? "").trim();
     const brand =
       String(formData.get("brand_name") ?? "").trim() || "Sin marca";
-    const code = String(formData.get("code_base") ?? "").trim();
     const price = Number(formData.get("price"));
-    const colorId = String(formData.get("color_id") ?? "");
-    const color =
-      colors.find((item) => item.id === colorId)?.value ?? "Sin color";
-    if (!name || !code || !Number.isFinite(price) || selectedSizes.length === 0)
+    if (!name || !Number.isFinite(price) || activeCombinations.length === 0)
       return;
-    const created = selectedSizes.map((sizeId, index) => ({
-      id: `preview-${Date.now()}-${index}`,
-      productName: name,
-      brand,
-      legacyCode:
-        selectedSizes.length === 1
-          ? code
-          : `${code}-${String(index + 1).padStart(2, "0")}`,
-      color,
-      size: sizes.find((item) => item.id === sizeId)?.value ?? "Única",
-      price,
-      stock: 0,
-    }));
+    const created = activeCombinations.map((combination, index) => {
+      const [colorId, sizeId] = combination.split(":");
+      return {
+        id: `preview-${Date.now()}-${index}`,
+        productName: name,
+        brand,
+        legacyCode: `Se genera al guardar · ${index + 1}`,
+        color: colors.find((item) => item.id === colorId)?.value ?? "Sin color",
+        size: sizes.find((item) => item.id === sizeId)?.value ?? "Única",
+        price,
+        stock: 0,
+      };
+    });
     setVariants((current) => [...current, ...created]);
     setOpen(false);
     setSaved(true);
     setSelectedSizes([]);
+    setSelectedColors([]);
+    setExcludedCombinations([]);
   }
 
   return (
@@ -198,7 +229,7 @@ export function ProductsWorkspace({
         <span>
           {preview
             ? "Modo de demostración: las altas se conservan sólo en esta pantalla."
-            : "Los productos ya se guardan en Supabase. Los códigos SICAR no se pueden alterar ni borrar después del alta."}
+            : "El sistema genera SKU y código de barras dentro de Supabase. Los campos de SICAR sólo los puede escribir el importador."}
         </span>
       </div>
 
@@ -311,25 +342,6 @@ export function ProductsWorkspace({
                   </select>
                 </label>
                 <label>
-                  <span>Color</span>
-                  <select name="color_id" required>
-                    {colors.map((item) => (
-                      <option value={item.id} key={item.id}>
-                        {item.value}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  <span>Código base</span>
-                  <input
-                    name="code_base"
-                    autoCapitalize="characters"
-                    placeholder="Ej. BOT-100"
-                    required
-                  />
-                </label>
-                <label>
                   <span>Costo</span>
                   <input
                     name="cost"
@@ -349,22 +361,32 @@ export function ProductsWorkspace({
                     required
                   />
                 </label>
-                <label className="wide-field consent-check">
-                  <input
-                    aria-label="Es un código heredado de SICAR"
-                    name="is_sicar"
-                    type="checkbox"
-                  />
-                  <span>
-                    <strong>Es un código heredado de SICAR</strong>
-                    <small>
-                      Al marcarlo quedará protegido permanentemente.
-                    </small>
-                  </span>
-                </label>
+              </div>
+              <div className="size-picker color-picker">
+                <span>1. Selecciona uno o varios colores</span>
+                <div>
+                  {colors.map((color) => (
+                    <label
+                      className={
+                        selectedColors.includes(color.id)
+                          ? "size-option selected"
+                          : "size-option"
+                      }
+                      key={color.id}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedColors.includes(color.id)}
+                        onChange={() => toggleColor(color.id)}
+                        aria-label={`Color ${color.value}`}
+                      />
+                      <span>{color.value}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
               <div className="size-picker">
-                <span>Selecciona una o varias tallas</span>
+                <span>2. Selecciona una o varias tallas</span>
                 <small>{category?.name ?? "Tallas"}</small>
                 <div>
                   {sizes.map((size) => (
@@ -378,10 +400,9 @@ export function ProductsWorkspace({
                     >
                       <input
                         type="checkbox"
-                        name="size_id"
-                        value={size.id}
                         checked={selectedSizes.includes(size.id)}
                         onChange={() => toggleSize(size.id)}
+                        aria-label={`Talla ${size.value}`}
                       />
                       <span>{size.value}</span>
                     </label>
@@ -394,13 +415,48 @@ export function ProductsWorkspace({
                   </p>
                 ) : null}
               </div>
+              {combinations.length ? (
+                <div className="variant-matrix">
+                  <span>3. Revisa la matriz antes de guardar</span>
+                  <small>Desmarca las combinaciones que no llegaron.</small>
+                  <div className="variant-matrix-grid">
+                    {selectedColors.map((colorId) => {
+                      const color = colors.find((item) => item.id === colorId);
+                      return selectedSizes.map((sizeId) => {
+                        const size = sizes.find((item) => item.id === sizeId);
+                        const combination = `${colorId}:${sizeId}`;
+                        const enabled =
+                          !excludedCombinations.includes(combination);
+                        return (
+                          <label
+                            className={enabled ? "selected" : ""}
+                            key={combination}
+                          >
+                            <input
+                              type="checkbox"
+                              name="variant_combo"
+                              value={combination}
+                              checked={enabled}
+                              onChange={() => toggleCombination(combination)}
+                              aria-label={`${color?.value ?? "Color"}, talla ${size?.value ?? "única"}`}
+                            />
+                            <strong>{color?.value}</strong>
+                            <span>{size?.value}</span>
+                          </label>
+                        );
+                      });
+                    })}
+                  </div>
+                </div>
+              ) : null}
               <div className="variant-summary">
                 <strong>
-                  {selectedSizes.length}{" "}
-                  {selectedSizes.length === 1 ? "variante" : "variantes"}
+                  {activeCombinations.length}{" "}
+                  {activeCombinations.length === 1 ? "variante" : "variantes"}
                 </strong>
                 <span>
-                  Se crearán juntas; si un código falla, no se guardará ninguna.
+                  SKU y código se generan solos; si algo falla, no se guarda
+                  ninguna.
                 </span>
               </div>
               <div className="modal-actions">
@@ -411,7 +467,7 @@ export function ProductsWorkspace({
                 >
                   Cancelar
                 </button>
-                <SubmitButton count={selectedSizes.length} />
+                <SubmitButton count={activeCombinations.length} />
               </div>
             </form>
           </section>
