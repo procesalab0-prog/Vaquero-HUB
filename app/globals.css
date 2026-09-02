@@ -1841,6 +1841,14 @@ code {
 .product-modal .modal-actions {
   margin-top: 20px;
 }
+.barcode-modal-copy {
+  margin: 0 0 18px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.barcode-warning {
+  margin-top: 18px;
+}
 .modal-heading {
   margin-bottom: 12px;
   display: flex;

@@ -20,6 +20,18 @@ function cents(value: string) {
 
 function catalogErrorStatus(error: unknown) {
   const message = error instanceof Error ? error.message : "";
+  if (message.includes("BARCODE_ALREADY_ASSIGNED")) return "codigo-ya-asignado";
+  if (message.includes("BARCODE_SOURCE_NOT_ALLOWED"))
+    return "codigo-origen-invalido";
+  if (
+    message.includes("INVALID_EAN13") ||
+    message.includes("INVALID_CODE128") ||
+    message.includes("INVALID_BARCODE") ||
+    message.includes("BARCODE_SYMBOLOGY_NOT_ALLOWED") ||
+    message.includes("BARCODE_METADATA_MISMATCH")
+  )
+    return "codigo-invalido";
+  if (message.includes("VARIANT_NOT_FOUND")) return "variante-no-encontrada";
   if (message.includes("CATALOG_DUPLICATE_VALUE")) return "producto-duplicado";
   // El control de combinación repetida es una restricción diferida: salta al
   // cerrar la transacción, ya fuera del `exception` de `create_catalog_product`,
@@ -118,6 +130,45 @@ export async function addCatalogVariants(formData: FormData) {
   } catch (error) {
     status = catalogErrorStatus(error);
     console.error("[productos/addCatalogVariants] failed", {
+      status,
+      message: error instanceof Error ? error.message : "UNKNOWN_ERROR",
+    });
+  }
+
+  revalidatePath(productsPath);
+  redirect(`${productsPath}?status=${status}`);
+}
+
+export async function registerVariantBarcode(formData: FormData) {
+  let status = "codigo-error";
+
+  try {
+    const { supabase } = await requirePermission("products.update");
+    const variantId = textField(formData, "variant_id");
+    const code = textField(formData, "code");
+    const symbology = textField(formData, "symbology").toUpperCase();
+    const source = textField(formData, "source").toUpperCase();
+
+    if (
+      !variantId ||
+      !code ||
+      !["EAN13", "CODE128"].includes(symbology) ||
+      !["MANUAL", "SUPPLIER"].includes(source)
+    ) {
+      status = "codigo-invalido";
+    } else {
+      const { error } = await supabase.rpc("register_variant_barcode", {
+        p_variant_id: variantId,
+        p_code: code,
+        p_symbology: symbology,
+        p_source: source,
+      });
+      if (error) throw error;
+      status = "codigo-registrado";
+    }
+  } catch (error) {
+    status = catalogErrorStatus(error);
+    console.error("[productos/registerVariantBarcode] failed", {
       status,
       message: error instanceof Error ? error.message : "UNKNOWN_ERROR",
     });

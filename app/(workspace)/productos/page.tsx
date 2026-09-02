@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import { mockVariants } from "@/lib/mock-data";
 import { requirePermission } from "@/lib/auth/authorization";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { addCatalogVariants, createCatalogProduct } from "./actions";
+import {
+  addCatalogVariants,
+  createCatalogProduct,
+  registerVariantBarcode,
+} from "./actions";
 import { ProductsWorkspace } from "./products-workspace";
 
 export const metadata: Metadata = { title: "Productos" };
@@ -92,7 +96,7 @@ export default async function ProductsPage({
     categoryId: categoryIds.get(row.category_name),
     productName: row.product_name,
     brand: row.brand_name,
-    legacyCode: row.legacy_sicar_code ?? row.primary_barcode ?? "Sin código",
+    legacyCode: row.primary_barcode ?? row.legacy_sicar_code ?? "Sin código",
     color: row.attributes?.COLOR ?? "Sin color",
     size: row.attributes?.TALLA ?? "Única",
     price: row.price_cents / 100,
@@ -107,6 +111,7 @@ export default async function ProductsPage({
       status={params.status}
       createAction={createCatalogProduct}
       addVariantsAction={addCatalogVariants}
+      registerBarcodeAction={registerVariantBarcode}
     />
   );
 }

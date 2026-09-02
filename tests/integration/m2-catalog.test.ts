@@ -28,6 +28,16 @@ function publicClient() {
   });
 }
 
+function ean13(payload: string) {
+  expect(payload).toMatch(/^\d{12}$/);
+  const sum = [...payload].reduce(
+    (total, digit, index) =>
+      total + Number(digit) * ((index + 1) % 2 === 0 ? 3 : 1),
+    0,
+  );
+  return `${payload}${(10 - (sum % 10)) % 10}`;
+}
+
 describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
   beforeAll(async () => {
     const server = createClient(url, secretKey, {
@@ -188,6 +198,139 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
     expect(error).toBeNull();
     expect(data).toHaveLength(1);
     expect(data[0].primary_barcode).toBe(code);
+  });
+
+  it("adopta un código de proveedor y conserva el generado para escaneo", async () => {
+    const supplierCode = ean13(`75${runCode.padStart(10, "0")}`);
+    const originalCode = state.primaryBarcodes[0];
+    const registered = await state.admin!.client.rpc(
+      "register_variant_barcode",
+      {
+        p_variant_id: state.variantIds[0],
+        p_code: supplierCode,
+        p_symbology: "EAN13",
+        p_source: "SUPPLIER",
+      },
+    );
+    expect(registered.error).toBeNull();
+    expect(registered.data).toMatchObject({
+      code: supplierCode,
+      reused: false,
+      variant_id: state.variantIds[0],
+    });
+
+    const byNewCode = await state.cashier!.client.rpc("search_catalog", {
+      p_query: supplierCode,
+      p_limit: 10,
+    });
+    const byOldCode = await state.cashier!.client.rpc("search_catalog", {
+      p_query: originalCode,
+      p_limit: 10,
+    });
+    expect(byNewCode.error).toBeNull();
+    expect(byOldCode.error).toBeNull();
+    expect(byNewCode.data[0].variant_id).toBe(state.variantIds[0]);
+    expect(byNewCode.data[0].primary_barcode).toBe(supplierCode);
+    expect(byOldCode.data[0].variant_id).toBe(state.variantIds[0]);
+    expect(byOldCode.data[0].primary_barcode).toBe(supplierCode);
+
+    const repeated = await state.admin!.client.rpc("register_variant_barcode", {
+      p_variant_id: state.variantIds[0],
+      p_code: supplierCode,
+      p_symbology: "EAN13",
+      p_source: "SUPPLIER",
+    });
+    expect(repeated.error).toBeNull();
+    expect(repeated.data.reused).toBe(true);
+  });
+
+  it("rechaza el mismo código de proveedor en otra talla", async () => {
+    const supplierCode = ean13(`75${runCode.padStart(10, "0")}`);
+    const { error } = await state.admin!.client.rpc(
+      "register_variant_barcode",
+      {
+        p_variant_id: state.variantIds[1],
+        p_code: supplierCode,
+        p_symbology: "EAN13",
+        p_source: "SUPPLIER",
+      },
+    );
+    expect(error?.message).toContain("BARCODE_ALREADY_ASSIGNED");
+
+    const unchanged = await state.cashier!.client.rpc("search_catalog", {
+      p_query: state.primaryBarcodes[1],
+      p_limit: 10,
+    });
+    expect(unchanged.data[0].primary_barcode).toBe(state.primaryBarcodes[1]);
+  });
+
+  it("reemite sin borrar los códigos físicos anteriores", async () => {
+    const replacement = `RE-${runCode}-A`;
+    const { error } = await state.admin!.client.rpc(
+      "register_variant_barcode",
+      {
+        p_variant_id: state.variantIds[0],
+        p_code: replacement,
+        p_symbology: "CODE128",
+        p_source: "MANUAL",
+      },
+    );
+    expect(error).toBeNull();
+
+    for (const code of [
+      replacement,
+      ean13(`75${runCode.padStart(10, "0")}`),
+      state.primaryBarcodes[0],
+    ]) {
+      const result = await state.cashier!.client.rpc("search_catalog", {
+        p_query: code,
+        p_limit: 10,
+      });
+      expect(result.error).toBeNull();
+      expect(result.data[0].variant_id).toBe(state.variantIds[0]);
+      expect(result.data[0].primary_barcode).toBe(replacement);
+    }
+  });
+
+  it("valida formato, origen y permisos antes de cambiar el primario", async () => {
+    const validEan = ean13(`76${runCode.padStart(10, "0")}`);
+    const invalidEan = `${validEan.slice(0, -1)}${(Number(validEan.at(-1)) + 1) % 10}`;
+    const invalid = await state.admin!.client.rpc("register_variant_barcode", {
+      p_variant_id: state.variantIds[1],
+      p_code: invalidEan,
+      p_symbology: "EAN13",
+      p_source: "SUPPLIER",
+    });
+    expect(invalid.error?.message).toContain("INVALID_EAN13");
+
+    const protectedSource = await state.admin!.client.rpc(
+      "register_variant_barcode",
+      {
+        p_variant_id: state.variantIds[1],
+        p_code: `SICAR-${runCode}`,
+        p_symbology: "CODE128",
+        p_source: "SICAR",
+      },
+    );
+    expect(protectedSource.error?.message).toContain(
+      "BARCODE_SOURCE_NOT_ALLOWED",
+    );
+
+    for (const client of [state.cashier!.client, state.warehouse!.client]) {
+      const unauthorized = await client.rpc("register_variant_barcode", {
+        p_variant_id: state.variantIds[1],
+        p_code: `NO-${runCode}-${client === state.cashier!.client ? "C" : "W"}`,
+        p_symbology: "CODE128",
+        p_source: "MANUAL",
+      });
+      expect(unauthorized.error?.message).toContain("NOT_AUTHORIZED");
+    }
+
+    const unchanged = await state.cashier!.client.rpc("search_catalog", {
+      p_query: state.primaryBarcodes[1],
+      p_limit: 10,
+    });
+    expect(unchanged.data[0].primary_barcode).toBe(state.primaryBarcodes[1]);
   });
 
   it("agrega una talla sin cambiar las identidades existentes", async () => {

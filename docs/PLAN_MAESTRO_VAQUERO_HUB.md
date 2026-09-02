@@ -1821,3 +1821,21 @@ Entrega visible 0.12.0 — ampliar variantes sin perder identidad:
   usuarios concurrentes creen el mismo artículo físico con identidades distintas.
 - Las migraciones deben aplicarse al staging conectado a Vercel antes de probar
   esta función en la web; no deben aplicarse al proyecto `drub…` por error.
+
+Entrega visible 0.13.0 — códigos externos y reimpresión segura:
+
+- Productos permite registrar por variante un código del proveedor o uno de
+  reimpresión, con una captura táctil que también acepta la entrada de un lector.
+- PostgreSQL valida permiso `products.update`, variante activa, origen permitido,
+  formato EAN-13 o CODE 128 y unicidad global. La interfaz no puede crear códigos
+  con origen SICAR ni hacerse pasar por el generador interno.
+- El código nuevo se vuelve principal dentro de una transacción. Todos los
+  anteriores permanecen asociados y siguen encontrando la misma variante.
+- El mismo código de proveedor no puede asignarse a dos tallas; el fallo conserva
+  intacto el código principal de la segunda variante.
+- La operación es idempotente y deja bitácora mediante los disparadores de
+  `barcodes`. Se cubren permisos, checksum, duplicidad, reintento y búsqueda por
+  códigos anteriores en pruebas de integración.
+- Claude Code dejó como obligatoria la validación física con cámara y con códigos
+  impresos. Esa prueba de hardware sigue pendiente y no se sustituye con pruebas
+  aritméticas o de navegador.

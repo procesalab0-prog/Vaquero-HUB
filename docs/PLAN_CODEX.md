@@ -6,7 +6,7 @@
 > contexto maestro dice **qué** se construye y por qué; este documento
 > dice **cómo, en qué orden y con qué criterios de aceptación**.
 >
-> Última actualización: 2026-08-31.
+> Última actualización: 2026-09-02.
 
 ## Estado de ejecución al 1 de septiembre de 2026
 
@@ -16,9 +16,10 @@
 - La primera entrega de M2 incluye alta transaccional de una matriz de tallas,
   búsqueda protegida por RPC, costos ocultos al cajero y la pantalla real de
   Productos conectada a Supabase.
-- Continúan dentro de M2: agregar variantes a un producto existente, matriz
-  talla × color editable, carga masiva con corrida en seco, acciones de precio
-  en lote, plantillas de etiquetas y escaneo físico.
+- M2 ya permite agregar variantes a un producto existente y registrar códigos
+  de proveedor o de reimpresión sin borrar los códigos físicos anteriores.
+- Continúan dentro de M2: edición de producto/variante, carga masiva con corrida
+  en seco, acciones de precio en lote, plantillas de etiquetas y escaneo físico.
 
 ## 0. Cómo usar este documento
 
@@ -92,18 +93,18 @@ requiere acuerdo explícito.
 
 ### 3.1 Stack
 
-| Área | Decisión |
-|---|---|
-| Frontend | Next.js (App Router) + TypeScript + React |
-| Estilos | Tailwind CSS |
-| Backend/DB | Supabase (PostgreSQL + Auth + RLS + Storage) |
-| Migrations | Supabase CLI, archivos en `supabase/migrations/*.sql` |
-| Lógica crítica | Funciones PL/pgSQL invocadas por RPC desde el servidor |
-| Hosting | Vercel |
-| Tests unitarios | Vitest |
-| Tests de integración/RLS | Vitest contra Supabase local (`supabase start`) |
-| Tests e2e | Playwright |
-| CI | GitHub Actions (lint + typecheck + tests + migraciones) |
+| Área                     | Decisión                                                |
+| ------------------------ | ------------------------------------------------------- |
+| Frontend                 | Next.js (App Router) + TypeScript + React               |
+| Estilos                  | Tailwind CSS                                            |
+| Backend/DB               | Supabase (PostgreSQL + Auth + RLS + Storage)            |
+| Migrations               | Supabase CLI, archivos en `supabase/migrations/*.sql`   |
+| Lógica crítica           | Funciones PL/pgSQL invocadas por RPC desde el servidor  |
+| Hosting                  | Vercel                                                  |
+| Tests unitarios          | Vitest                                                  |
+| Tests de integración/RLS | Vitest contra Supabase local (`supabase start`)         |
+| Tests e2e                | Playwright                                              |
+| CI                       | GitHub Actions (lint + typecheck + tests + migraciones) |
 
 ### 3.2 Convenciones de datos
 
@@ -221,7 +222,7 @@ Cada milestone es entregable y demostrable por separado. La estimación en
 semanas es orientativa y encaja con el objetivo de 8–12 semanas a piloto
 de la sección 37 del contexto maestro.
 
-### M0 — Fundaciones del repositorio *(no requiere la base de datos)*
+### M0 — Fundaciones del repositorio _(no requiere la base de datos)_
 
 Codex puede empezar esto **hoy mismo**, antes de tener acceso a Supabase.
 
@@ -237,7 +238,7 @@ Codex puede empezar esto **hoy mismo**, antes de tener acceso a Supabase.
 **Aceptación:** un desarrollador clona, ejecuta un comando y tiene la app
 y la base local corriendo; CI en verde.
 
-### M1 — Identidad, roles, permisos y sucursales *(semana 1)*
+### M1 — Identidad, roles, permisos y sucursales _(semana 1)_
 
 - Tablas: `locations`, `app_users`, `roles`, `permissions`,
   `role_permissions`, `user_locations`, `audit_log`.
@@ -256,7 +257,7 @@ y la base local corriendo; CI en verde.
 otra sucursal, no puede cambiar precios y no puede modificar permisos —
 demostrado con tests, no con revisión visual.
 
-### M1B — Clientes y PWA de cliente *(semana 2)*
+### M1B — Clientes y PWA de cliente _(semana 2)_
 
 Se adelanta respecto del plan original por dos razones: la tabla de
 clientes la necesitan las ventas de M4 y los apartados de M7, y construir
@@ -287,6 +288,7 @@ apartados y crédito. La tarjeta identifica al cliente; los puntos llegan
 cuando el negocio defina cómo se ganan y cómo se gastan.
 
 **Aceptación:**
+
 - Dos clientes capturados con el mismo teléfono en formatos distintos
   (`3531234567` y `+52 353 123 4567`) son detectados como duplicado.
 - Un número de socio con un dígito mal tecleado es rechazado por el
@@ -325,7 +327,7 @@ las reglas del negocio.
 > semana. El total sigue dentro del objetivo de 8–12 semanas de la
 > sección 37 del contexto maestro.
 
-### M2 — Catálogo: productos, variantes y códigos *(semana 2)*
+### M2 — Catálogo: productos, variantes y códigos _(semana 2)_
 
 - Tablas: `brands`, `categories`, `products` (padre), `variants`,
   `variant_attributes` (talla, color), `barcodes` (1..N por variante).
@@ -345,7 +347,7 @@ las reglas del negocio.
 imposible guardar dos variantes con el mismo código; la carga masiva
 rechaza un archivo con duplicados explicando cuáles.
 
-### M3 — Inventario, movimientos y traspasos *(semana 3)*
+### M3 — Inventario, movimientos y traspasos _(semana 3)_
 
 - Tablas: `inventory_by_location`, `inventory_movements`,
   `inventory_counts`, `transfers`, `transfer_items`.
@@ -359,13 +361,14 @@ rechaza un archivo con duplicados explicando cuáles.
 - Revocar `UPDATE`/`DELETE` sobre `inventory_movements`.
 
 **Aceptación (los tres tests bandera del proyecto):**
+
 1. Dos ventas concurrentes sobre stock = 1: exactamente una tiene éxito.
 2. `SUM(inventory_movements)` por variante/ubicación == saldo en
    `inventory_by_location`, siempre.
 3. Un traspaso en tránsito no aparece disponible ni en origen ni en
    destino, y el total global no cambia.
 
-### M4 — POS, ventas, pagos mixtos y caja *(semanas 4–5)*
+### M4 — POS, ventas, pagos mixtos y caja _(semanas 4–5)_
 
 - Tablas: `cash_registers`, `cash_sessions`, `cash_movements`, `sales`,
   `sale_items`, `sale_payments`, `payment_methods`, `applied_discounts`,
@@ -386,7 +389,7 @@ rechaza un archivo con duplicados explicando cuáles.
 centavo; presionar "Cobrar" dos veces genera **una** venta; el corte de
 caja cuadra contra los pagos en efectivo del turno.
 
-### M5 — Devoluciones, cambios y cancelaciones *(semana 6)*
+### M5 — Devoluciones, cambios y cancelaciones _(semana 6)_
 
 - Tablas: `returns`, `return_items`, `exchanges`.
 - La venta original **nunca** se modifica ni se borra.
@@ -399,7 +402,7 @@ caja cuadra contra los pagos en efectivo del turno.
 y el inventario regresa exactamente a su valor previo; un cambio con
 diferencia de precio queda trazado como una sola operación.
 
-### M6 — Compras, proveedores y recepción *(semana 7)*
+### M6 — Compras, proveedores y recepción _(semana 7)_
 
 - Tablas: `suppliers`, `purchase_orders`, `purchase_items`, `receipts`,
   `receipt_items`.
@@ -411,7 +414,7 @@ diferencia de precio queda trazado como una sola operación.
 **Aceptación:** una orden de compra no mueve inventario; una recepción
 parcial mueve exactamente lo recibido y deja el resto pendiente.
 
-### M7 — Clientes, apartados, crédito y lealtad *(semana 8)*
+### M7 — Clientes, apartados, crédito y lealtad _(semana 8)_
 
 La identidad del cliente y su tarjeta ya se construyeron en M1B. Aquí se
 agrega lo que depende de que existan ventas y de que el negocio defina sus
@@ -430,7 +433,7 @@ reglas.
 **Aceptación:** apartar mercancía reserva stock y no lo deja disponible
 para venta; abonar reduce el saldo; cancelar libera el stock.
 
-### M8 — Reportes, cotizaciones y tickets digitales *(semana 9)*
+### M8 — Reportes, cotizaciones y tickets digitales _(semana 9)_
 
 - Reportes de ventas, inventario y descuentos (secciones 51.2–51.4), como
   vistas SQL + interfaz, filtrables por fecha, sucursal, cajero, producto.
@@ -451,7 +454,7 @@ para venta; abonar reduce el saldo; cancelar libera el stock.
 de `sale_payments` del periodo; convertir una cotización en venta genera
 la venta por el flujo normal de `create_sale`.
 
-### M9 — Importador de SICAR y reporte de reconciliación *(semana 10)*
+### M9 — Importador de SICAR y reporte de reconciliación _(semana 10)_
 
 Construir la **herramienta** de migración no es hacer la migración. Esta
 herramienta se construye y se ensaya contra staging muchas veces antes de
@@ -463,11 +466,11 @@ que exista una noche de corte.
   salida es la lista de limpieza que el cliente trabaja durante semanas.
 - **Sincronizador re-ejecutable con dos modos** (ver `RUNBOOK_CORTE.md`
   sección 2.5), no un script de una sola vez:
-  - *Modo catálogo:* agrega lo nuevo, actualiza lo que cambió, no duplica
+  - _Modo catálogo:_ agrega lo nuevo, actualiza lo que cambió, no duplica
     y **no toca existencias**. Se corre cada semana o quincena durante
     meses. Respeta y nunca borra los productos creados directamente en
     Mi Tienda SM.
-  - *Modo existencias y compromisos:* ajusta existencias al valor real de
+  - _Modo existencias y compromisos:_ ajusta existencias al valor real de
     SICAR y carga apartados, créditos y compras pendientes. Se corre una
     sola vez, la noche del cambio, y después se apaga para siempre.
 - Escribe **sólo en staging** durante todo el desarrollo, y siempre dentro
@@ -495,14 +498,14 @@ datos reales, más tiempo tiene el cliente para limpiar SICAR.
 
 ## 6. Lo que Codex NO hace todavía
 
-| Bloqueado | Por qué | Cuándo |
-|---|---|---|
-| Importar el Excel real de SICAR | El corte requiere tienda cerrada y datos finales | Fase 7, al final |
-| Escribir en WooCommerce (stock, productos) | Mi Tienda SM no puede ser fuente de verdad sin catálogo real | Después del corte SICAR |
-| Webhooks de WooCommerce en producción | Mismo motivo | Después del corte SICAR |
-| Cola offline / PWA offline completa | Se diseña antes de implementarse (sección 31) | Post-piloto |
-| CFDI / facturación | Se integra un PAC, no se construye | Cuando el cliente lo pida |
-| Procesamiento de tarjetas | Terminal externa | No aplica a V1 |
+| Bloqueado                                  | Por qué                                                      | Cuándo                    |
+| ------------------------------------------ | ------------------------------------------------------------ | ------------------------- |
+| Importar el Excel real de SICAR            | El corte requiere tienda cerrada y datos finales             | Fase 7, al final          |
+| Escribir en WooCommerce (stock, productos) | Mi Tienda SM no puede ser fuente de verdad sin catálogo real | Después del corte SICAR   |
+| Webhooks de WooCommerce en producción      | Mismo motivo                                                 | Después del corte SICAR   |
+| Cola offline / PWA offline completa        | Se diseña antes de implementarse (sección 31)                | Post-piloto               |
+| CFDI / facturación                         | Se integra un PAC, no se construye                           | Cuando el cliente lo pida |
+| Procesamiento de tarjetas                  | Terminal externa                                             | No aplica a V1            |
 
 ## 7. Secuencia de conexión con SICAR y WooCommerce
 
@@ -599,30 +602,30 @@ No es la migración: es leer un archivo para diseñar bien.
 Codex **no implementa** estas funciones hasta tener respuesta. Cada una
 indica qué milestone bloquea.
 
-| # | Pregunta | Bloquea |
-|---|---|---|
-| 1 | Crédito a clientes: ¿ya existe en SICAR? ¿quién autoriza el límite? ¿hay recargos? | M7 |
-| 2 | Descuento de cumpleaños: ¿automático o autorizado? ¿monto o porcentaje? ¿vigencia el día o el mes? | M7 |
-| 3 | Tarjeta de lealtad: ¿ya existe una tarjeta física con código impreso? | M7 |
-| 4 | Apartados: ¿plazo máximo? ¿enganche mínimo? ¿qué pasa al vencer? | M7 |
-| 5 | Envío automático de tickets: ¿proveedor de SMS/correo y envío obligatorio o a petición? Compartir nativo y WhatsApp con enlace ya están aprobados sin proveedor. | M8 |
-| 6 | Ticket de regalo: ¿oculta sólo precios unitarios o también totales? | M8 |
-| 7 | Cotizaciones: ¿vigencia? ¿conversión parcial a venta? | M8 |
-| 8 | Cambios: ¿se permite cambio por producto de distinto precio? ¿cómo se maneja la diferencia? | M5 |
-| 9 | Costo de compra: ¿costo promedio ponderado o último costo? | M6 |
-| 10 | Pagos: ¿cuántos métodos simultáneos permite hoy SICAR en una venta? | M4 |
+| #   | Pregunta                                                                                                                                                         | Bloquea |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| 1   | Crédito a clientes: ¿ya existe en SICAR? ¿quién autoriza el límite? ¿hay recargos?                                                                               | M7      |
+| 2   | Descuento de cumpleaños: ¿automático o autorizado? ¿monto o porcentaje? ¿vigencia el día o el mes?                                                               | M7      |
+| 3   | Tarjeta de lealtad: ¿ya existe una tarjeta física con código impreso?                                                                                            | M7      |
+| 4   | Apartados: ¿plazo máximo? ¿enganche mínimo? ¿qué pasa al vencer?                                                                                                 | M7      |
+| 5   | Envío automático de tickets: ¿proveedor de SMS/correo y envío obligatorio o a petición? Compartir nativo y WhatsApp con enlace ya están aprobados sin proveedor. | M8      |
+| 6   | Ticket de regalo: ¿oculta sólo precios unitarios o también totales?                                                                                              | M8      |
+| 7   | Cotizaciones: ¿vigencia? ¿conversión parcial a venta?                                                                                                            | M8      |
+| 8   | Cambios: ¿se permite cambio por producto de distinto precio? ¿cómo se maneja la diferencia?                                                                      | M5      |
+| 9   | Costo de compra: ¿costo promedio ponderado o último costo?                                                                                                       | M6      |
+| 10  | Pagos: ¿cuántos métodos simultáneos permite hoy SICAR en una venta?                                                                                              | M4      |
 
 ## 9. Dependencias externas y accesos
 
-| Necesario | Para | Cuándo |
-|---|---|---|
-| Proyecto Supabase (mín. Pro) + accesos | M1 en adelante | Hoy |
-| Definir entornos: proyectos separados o branching | M0/M1 | Hoy, antes de cargar datos |
-| Acceso al repositorio para Codex | M0 | Hoy |
-| Exportación de muestra de SICAR | Diseño de M2 | Cuanto antes |
-| Modelo exacto de impresora térmica y lector | M4 (ver 9.1) | Antes de la semana 4 |
-| Credenciales de WooCommerce | Post-corte | Más adelante |
-| Lista de sucursales, cajas y empleados con su rol | M1 | Semana 1 |
+| Necesario                                         | Para           | Cuándo                     |
+| ------------------------------------------------- | -------------- | -------------------------- |
+| Proyecto Supabase (mín. Pro) + accesos            | M1 en adelante | Hoy                        |
+| Definir entornos: proyectos separados o branching | M0/M1          | Hoy, antes de cargar datos |
+| Acceso al repositorio para Codex                  | M0             | Hoy                        |
+| Exportación de muestra de SICAR                   | Diseño de M2   | Cuanto antes               |
+| Modelo exacto de impresora térmica y lector       | M4 (ver 9.1)   | Antes de la semana 4       |
+| Credenciales de WooCommerce                       | Post-corte     | Más adelante               |
+| Lista de sucursales, cajas y empleados con su rol | M1             | Semana 1                   |
 
 ### 9.1 Riesgo de hardware que conviene despejar temprano
 
@@ -649,12 +652,12 @@ corrida real se parezca al ensayo. Todo lo que pase esa noche tiene que
 haber pasado idéntico tres veces antes. Por eso el importador es código
 versionado, probado y re-ejecutable (M9), no una sesión de chat.
 
-| Quién | Qué hace |
-|---|---|
-| **Codex** | Construye el importador, el reporte de reconciliación y las validaciones automáticas. Corrige lo que los ensayos revelen. |
-| **Claude** | Revisa esa herramienta de forma adversarial, analiza los reportes de cada ensayo, diagnostica diferencias y ayuda a decidir. |
-| **ProcesaLab** | Ejecuta la herramienta contra producción, dirige la noche del corte y da el go / no-go. |
-| **Personal de la tienda** | Verifica los números: conteo físico y muestreo de códigos contra SICAR. |
+| Quién                     | Qué hace                                                                                                                     |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **Codex**                 | Construye el importador, el reporte de reconciliación y las validaciones automáticas. Corrige lo que los ensayos revelen.    |
+| **Claude**                | Revisa esa herramienta de forma adversarial, analiza los reportes de cada ensayo, diagnostica diferencias y ayuda a decidir. |
+| **ProcesaLab**            | Ejecuta la herramienta contra producción, dirige la noche del corte y da el go / no-go.                                      |
+| **Personal de la tienda** | Verifica los números: conteo físico y muestreo de códigos contra SICAR.                                                      |
 
 Dos límites que conviene tener claros desde ahora:
 

@@ -78,10 +78,10 @@ de qué imprime SICAR hoy. Pero la estructura de este documento funciona
 con cualquiera de las dos, así que **no bloquea el trabajo**: se
 implementa detrás de una constante de configuración.
 
-| Opción | A favor | En contra |
-|---|---|---|
-| **EAN-13 con prefijo interno** | Lo lee cualquier lector, incluso un láser barato. Dígito verificador incluido en el estándar. Cabe en plantillas de etiqueta estándar | Sólo numérico, largo fijo |
-| **Code128** | Alfanumérico, largo libre | Etiqueta más ancha; sin verificador propio |
+| Opción                         | A favor                                                                                                                               | En contra                                  |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| **EAN-13 con prefijo interno** | Lo lee cualquier lector, incluso un láser barato. Dígito verificador incluido en el estándar. Cabe en plantillas de etiqueta estándar | Sólo numérico, largo fijo                  |
+| **Code128**                    | Alfanumérico, largo libre                                                                                                             | Etiqueta más ancha; sin verificador propio |
 
 **Recomendación por defecto: EAN-13 con prefijo interno.** GS1 reserva los
 prefijos `20`–`29` para circulación restringida dentro de una empresa, así
@@ -89,7 +89,8 @@ que un código nuestro **nunca puede chocar con el de un fabricante**. Esa
 garantía es la razón de elegirlo, no la estética.
 
 Estructura propuesta: `20` + serial de 10 dígitos con ceros a la izquierda
-+ dígito verificador EAN-13 = 13 dígitos.
+
+- dígito verificador EAN-13 = 13 dígitos.
 
 Si resulta que SICAR imprime Code128, conviene igualarlo para que las
 etiquetas nuevas y las viejas convivan sin que el personal note diferencia.
@@ -241,39 +242,51 @@ variantes desde el servidor.
 
 ## 9. Qué queda bloqueado y qué no
 
-| Parte | Estado |
-|---|---|
-| La secuencia, el SKU y su verificador | **Construido** en `20260902023531` |
-| Generación dentro del alta de producto | **Construido**; el alta rechaza identidades del cliente |
-| Unicidad de la combinación de atributos | **Construido** en `20260902041500` (sección 5) |
-| Elección de simbología | EAN-13 con prefijo `20`, fija en tres lugares (sección 4.3) |
-| Encender la generación en producción | **Espera la comprobación de la sección 8** |
-| Registrar un código de proveedor | Sin función que lo permita todavía (sección 6) |
-| Reemitir un código | El esquema lo permite; falta la función (sección 7) |
+| Parte                                   | Estado                                                                   |
+| --------------------------------------- | ------------------------------------------------------------------------ |
+| La secuencia, el SKU y su verificador   | **Construido** en `20260902023531`                                       |
+| Generación dentro del alta de producto  | **Construido**; el alta rechaza identidades del cliente                  |
+| Unicidad de la combinación de atributos | **Construido** en `20260902041500` (sección 5)                           |
+| Elección de simbología                  | EAN-13 con prefijo `20`, fija en tres lugares (sección 4.3)              |
+| Encender la generación en producción    | **Espera la comprobación de la sección 8**                               |
+| Registrar un código de proveedor        | **Construido** con `register_variant_barcode(...)` (sección 6)           |
+| Reemitir un código                      | **Construido**; agrega un primario y conserva los anteriores (sección 7) |
 
-En corto: **el generador ya está**. Lo que falta es la luz verde de que no
-choca con SICAR, y las dos funciones que dan de alta códigos que no salen
-del generador.
+En corto: **el generador y el registro de códigos externos ya están**. Lo que
+falta es la luz verde de que no chocan con SICAR y la prueba física de cámara,
+pantalla e impresión.
 
 ## 10. Pruebas obligatorias
 
-| # | Escenario | Resultado esperado |
-|---|---|---|
-| 1 | Alta de una bota con 8 tallas sin mandar códigos | 8 SKU y 8 códigos, todos distintos |
-| 2 | Dos altas simultáneas | Sin seriales repetidos |
-| 3 | Un SKU con un dígito mal tecleado | Rechazado por el verificador; **no encuentra otro artículo** |
-| 4 | Código generado | Cumple la simbología elegida y su dígito de control |
-| 5 | Alta que falla a media transacción | No queda ningún código asignado |
-| 6 | Reemitir un código | Se agrega uno nuevo; el anterior sigue escaneando |
-| 7 | Intentar cambiar el SKU de una variante | Rechazado |
-| 8 | Código de proveedor repetido entre dos tallas | Rechazado al registrarlo |
-| 9 | Dos renglones con la misma talla y el mismo color | Rechazado; el producto entero se revierte |
-| 10 | Un producto con una sola variante sin atributos | Aceptado; con dos, rechazado |
+| #   | Escenario                                         | Resultado esperado                                           |
+| --- | ------------------------------------------------- | ------------------------------------------------------------ |
+| 1   | Alta de una bota con 8 tallas sin mandar códigos  | 8 SKU y 8 códigos, todos distintos                           |
+| 2   | Dos altas simultáneas                             | Sin seriales repetidos                                       |
+| 3   | Un SKU con un dígito mal tecleado                 | Rechazado por el verificador; **no encuentra otro artículo** |
+| 4   | Código generado                                   | Cumple la simbología elegida y su dígito de control          |
+| 5   | Alta que falla a media transacción                | No queda ningún código asignado                              |
+| 6   | Reemitir un código                                | Se agrega uno nuevo; el anterior sigue escaneando            |
+| 7   | Intentar cambiar el SKU de una variante           | Rechazado                                                    |
+| 8   | Código de proveedor repetido entre dos tallas     | Rechazado al registrarlo                                     |
+| 9   | Dos renglones con la misma talla y el mismo color | Rechazado; el producto entero se revierte                    |
+| 10  | Un producto con una sola variante sin atributos   | Aceptado; con dos, rechazado                                 |
 
 La prueba 3 es la que justifica el dígito verificador y conviene que
 exista aunque parezca redundante. Las pruebas 9 y 10 cubren el hueco que
 abrió el generador (sección 5) y son las que se rompen primero si alguien
 cambia el alta sin leer esa sección.
+
+**Las diez son aritméticas.** Comprueban que el código está bien formado y
+que su dígito de control cuadra, todo dentro de la base de datos. **Ninguna
+comprueba que un código impreso se lea con un aparato**, y ese margen de
+error es cero: el código es inmutable y termina pegado en cajas, así que un
+ancho de barra o un contraste mal elegidos ya no se corrigen, se
+reetiquetan.
+
+Esa comprobación física vive en la sección 8 de
+[`ESCANEO.md`](ESCANEO.md) —generar, imprimir, escanear y confirmar que
+devuelve los mismos trece dígitos— y no depende de nada bloqueado: se puede
+correr hoy.
 
 ## 11. Preguntas abiertas
 

@@ -43,19 +43,20 @@ saltando lo bloqueado.
 | **M2 (segunda entrega)** | Catálogo real, alta atómica, búsqueda, matriz color × talla e identidad automática protegida             |
 | **M2 (revisión)**        | Una sola variante por combinación de atributos, protegida también ante concurrencia                      |
 | **M2 (tercera entrega)** | Agregar tallas o colores a un producto sin cambiar identidades existentes                                |
+| **M2 (cuarta entrega)**  | Códigos de proveedor y reimpresión seguros; los códigos anteriores siguen escaneando                     |
 
-Veintidós migraciones versionadas del repositorio. El proyecto de Supabase
+Veintitrés migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Falta para el alcance de octubre
 
-| Milestone                                        | Estado de la especificación                                                                                             |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| **M2** — catálogo, variantes, códigos, etiquetas | En progreso: alta, búsqueda, matriz, identidad y agregado de variantes listos; faltan edición, carga masiva y etiquetas |
-| **M3** — inventario, movimientos, traspasos      | [Escrita](specs/M3_INVENTARIO.md)                                                                                       |
-| **M4** — POS, pagos mixtos, caja                 | [Escrita](specs/M4_POS_Y_CAJA.md)                                                                                       |
-| **M5** — devoluciones, cambios, cancelaciones    | [Escrita](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)                                                                           |
-| **M9** — importador y sincronizador de SICAR     | Falta                                                                                                                   |
+| Milestone                                        | Estado de la especificación                                                                                                   |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| **M2** — catálogo, variantes, códigos, etiquetas | En progreso: alta, búsqueda, matriz, identidad, variantes y códigos externos listos; faltan edición, carga masiva y etiquetas |
+| **M3** — inventario, movimientos, traspasos      | [Escrita](specs/M3_INVENTARIO.md)                                                                                             |
+| **M4** — POS, pagos mixtos, caja                 | [Escrita](specs/M4_POS_Y_CAJA.md)                                                                                             |
+| **M5** — devoluciones, cambios, cancelaciones    | [Escrita](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)                                                                                 |
+| **M9** — importador y sincronizador de SICAR     | Falta                                                                                                                         |
 
 Recorridos a después de octubre: M6 compras, M7 apartados y lealtad, M8
 reportes y cotizaciones.

@@ -76,3 +76,24 @@ test("agrega variantes y bloquea combinaciones que ya existen", async ({
   await expect(page.getByText("Café · 25.5")).toBeVisible();
   await expect(page.locator("html")).toHaveJSProperty("scrollWidth", 390);
 });
+
+test("registra un código físico desde una pantalla táctil", async ({
+  page,
+}) => {
+  await page.goto("/productos");
+  await page.getByRole("button", { name: "Registrar código" }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Registrar código" });
+  await expect(dialog).toBeVisible();
+  await dialog
+    .getByLabel("Producto y variante")
+    .selectOption({ label: "Bota Cuadra piel de venado · Café · talla 25" });
+  await dialog.getByLabel("Motivo").selectOption("SUPPLIER");
+  await dialog.getByLabel("Simbología").selectOption("EAN13");
+  await dialog.getByLabel("Código leído").fill("7501234567893");
+  await dialog.getByRole("button", { name: "Guardar como principal" }).click();
+
+  await expect(page.getByText("Vista previa agregada")).toBeVisible();
+  await expect(page.getByText("7501234567893")).toBeVisible();
+  await expect(page.locator("html")).toHaveJSProperty("scrollWidth", 390);
+});

@@ -2,9 +2,17 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { Check, PackageOpen, Plus, Search, Tags, X } from "lucide-react";
+import {
+  Barcode,
+  Check,
+  PackageOpen,
+  Plus,
+  Search,
+  Tags,
+  X,
+} from "lucide-react";
 
 import type { ProductVariant } from "@/lib/domain";
 
@@ -29,6 +37,7 @@ type Props = {
   status?: string;
   createAction?: (formData: FormData) => Promise<void>;
   addVariantsAction?: (formData: FormData) => Promise<void>;
+  registerBarcodeAction?: (formData: FormData) => Promise<void>;
 };
 
 type ModalMode = "create" | "add";
@@ -63,6 +72,18 @@ const statusMessages: Record<string, string> = {
   "producto-creado": "Producto y variantes guardados correctamente.",
   "variantes-agregadas":
     "Las nuevas variantes se agregaron sin cambiar los SKU ni códigos existentes.",
+  "codigo-registrado":
+    "Código guardado como principal. Los códigos anteriores siguen funcionando.",
+  "codigo-ya-asignado":
+    "Ese código ya pertenece a otra variante. Verifica cada talla antes de guardarlo.",
+  "codigo-invalido":
+    "El código no corresponde a la simbología elegida. Revisa los dígitos y vuelve a escanearlo.",
+  "codigo-origen-invalido":
+    "Los códigos de SICAR y los generados sólo pueden entrar por sus procesos protegidos.",
+  "variante-no-encontrada":
+    "La variante ya no está activa. Actualiza la pantalla antes de continuar.",
+  "codigo-error":
+    "No fue posible guardar el código. No se cambió el código principal anterior.",
   "producto-duplicado":
     "Ese SKU o código de barras ya existe. No se guardó ningún renglón.",
   "producto-combinacion-repetida":
@@ -71,7 +92,7 @@ const statusMessages: Record<string, string> = {
   "producto-datos-invalidos":
     "Completa producto, categoría, color, costo, precio y al menos una talla. " +
     "El SKU y el código de barras los genera el sistema.",
-  "producto-sin-permiso": "Tu rol no tiene permiso para crear productos.",
+  "producto-sin-permiso": "Tu rol no tiene permiso para modificar el catálogo.",
   "producto-no-encontrado":
     "El producto ya no existe o fue desactivado. Actualiza la pantalla.",
   "producto-cliente-desactualizado":
@@ -91,6 +112,7 @@ export function ProductsWorkspace({
   status,
   createAction,
   addVariantsAction,
+  registerBarcodeAction,
 }: Props) {
   const availableCategories = categories.length
     ? categories
@@ -100,6 +122,11 @@ export function ProductsWorkspace({
     : previewValues;
   const [variants, setVariants] = useState(initialVariants);
   const [modalMode, setModalMode] = useState<ModalMode | null>(null);
+  const [barcodeOpen, setBarcodeOpen] = useState(false);
+  const [selectedBarcodeVariant, setSelectedBarcodeVariant] = useState(
+    initialVariants[0]?.id ?? "",
+  );
+  const barcodeInputRef = useRef<HTMLInputElement>(null);
   const [saved, setSaved] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(
@@ -112,6 +139,9 @@ export function ProductsWorkspace({
     [],
   );
   const deferredQuery = useDeferredValue(query);
+  useEffect(() => {
+    if (barcodeOpen) barcodeInputRef.current?.focus();
+  }, [barcodeOpen]);
   const products = useMemo(() => {
     const unique = new Map<
       string,
@@ -304,6 +334,19 @@ export function ProductsWorkspace({
     resetVariantSelection();
   }
 
+  function registerPreviewBarcode(formData: FormData) {
+    const variantId = String(formData.get("variant_id") ?? "");
+    const code = String(formData.get("code") ?? "").trim();
+    if (!variantId || !code) return;
+    setVariants((current) =>
+      current.map((item) =>
+        item.id === variantId ? { ...item, legacyCode: code } : item,
+      ),
+    );
+    setBarcodeOpen(false);
+    setSaved(true);
+  }
+
   return (
     <section className="module-page">
       <div className="section-heading">
@@ -319,6 +362,15 @@ export function ProductsWorkspace({
             <Tags aria-hidden="true" />
             Etiquetas
           </Link>
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={() => setBarcodeOpen(true)}
+            disabled={variants.length === 0}
+          >
+            <Barcode aria-hidden="true" />
+            Registrar código
+          </button>
           <button
             className="secondary-button"
             type="button"
@@ -342,7 +394,11 @@ export function ProductsWorkspace({
       {status && statusMessages[status] ? (
         <div
           className={
-            status.includes("creado") || status.includes("agregadas")
+            [
+              "producto-creado",
+              "variantes-agregadas",
+              "codigo-registrado",
+            ].includes(status)
               ? "admin-status"
               : "admin-status error"
           }
@@ -642,7 +698,112 @@ export function ProductsWorkspace({
           </section>
         </div>
       ) : null}
+
+      {barcodeOpen ? (
+        <div className="modal-backdrop">
+          <section
+            className="checkout-modal product-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="barcode-modal-title"
+          >
+            <header className="modal-heading">
+              <div>
+                <p className="eyebrow">Identificación física</p>
+                <h2 id="barcode-modal-title">Registrar código</h2>
+              </div>
+              <button
+                type="button"
+                aria-label="Cerrar"
+                onClick={() => setBarcodeOpen(false)}
+              >
+                <X aria-hidden="true" />
+              </button>
+            </header>
+            <p className="barcode-modal-copy">
+              El nuevo código quedará como principal. Los anteriores no se
+              borran y seguirán encontrando esta misma variante.
+            </p>
+            <form
+              action={preview ? registerPreviewBarcode : registerBarcodeAction}
+            >
+              <div className="settings-form">
+                <label className="wide-field">
+                  <span>Producto y variante</span>
+                  <select
+                    name="variant_id"
+                    value={selectedBarcodeVariant}
+                    onChange={(event) =>
+                      setSelectedBarcodeVariant(event.target.value)
+                    }
+                    required
+                  >
+                    {variants.map((variant) => (
+                      <option value={variant.id} key={variant.id}>
+                        {variant.productName} · {variant.color} · talla{" "}
+                        {variant.size}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Motivo</span>
+                  <select name="source" defaultValue="SUPPLIER" required>
+                    <option value="SUPPLIER">Código del proveedor</option>
+                    <option value="MANUAL">Reimpresión / reemplazo</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Simbología</span>
+                  <select name="symbology" defaultValue="EAN13" required>
+                    <option value="EAN13">EAN-13</option>
+                    <option value="CODE128">CODE 128</option>
+                  </select>
+                </label>
+                <label className="wide-field">
+                  <span>Código leído</span>
+                  <input
+                    ref={barcodeInputRef}
+                    name="code"
+                    autoComplete="off"
+                    inputMode="text"
+                    maxLength={80}
+                    placeholder="Escanea o escribe el código"
+                    required
+                  />
+                </label>
+              </div>
+              <div className="notice barcode-warning">
+                <strong>Antes de usar uno del proveedor</strong>
+                <span>
+                  Escanea dos tallas distintas. Si muestran el mismo número, no
+                  lo registres: no permitiría distinguir el inventario.
+                </span>
+              </div>
+              <div className="modal-actions">
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => setBarcodeOpen(false)}
+                >
+                  Cancelar
+                </button>
+                <BarcodeSubmitButton />
+              </div>
+            </form>
+          </section>
+        </div>
+      ) : null}
     </section>
+  );
+}
+
+function BarcodeSubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button className="primary-button" type="submit" disabled={pending}>
+      {pending ? "Guardando…" : "Guardar como principal"}
+    </button>
   );
 }
 
