@@ -253,4 +253,97 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
       .eq("id", state.variantIds[0]);
     expect(update.error).not.toBeNull();
   });
+
+  // Los campos de aterrizaje de la migración sólo los escribe el importador
+  // de M9. Escritos desde el alta manual quedaban permanentes —son
+  // inmutables por diseño— y podían tumbar la migración real con una
+  // violación de unicidad imposible de corregir.
+  it("no deja reservar un código heredado de SICAR desde el alta manual", async () => {
+    const { error } = await state.warehouse!.client.rpc(
+      "create_catalog_product",
+      {
+        p_name: `Intento legacy ${runCode}`,
+        p_category_id: state.categoryId,
+        p_variants: [
+          {
+            sku: `LEG-${runCode}`,
+            barcode: `LEG-${runCode}`,
+            cost_cents: 100,
+            price_cents: 200,
+            legacy_sicar_code: `SIC-${runCode}`,
+          },
+        ],
+      },
+    );
+    expect(error?.message).toContain("LEGACY_FIELDS_NOT_ALLOWED");
+  });
+
+  it("no deja fijar identificadores de WooCommerce desde el alta manual", async () => {
+    const { error } = await state.warehouse!.client.rpc(
+      "create_catalog_product",
+      {
+        p_name: `Intento woo ${runCode}`,
+        p_category_id: state.categoryId,
+        p_variants: [
+          {
+            sku: `WOO-${runCode}`,
+            barcode: `WOO-${runCode}`,
+            cost_cents: 100,
+            price_cents: 200,
+            woocommerce_product_id: 99,
+          },
+        ],
+      },
+    );
+    expect(error?.message).toContain("LEGACY_FIELDS_NOT_ALLOWED");
+  });
+
+  it("no deja marcar un código de barras como de SICAR", async () => {
+    const { error } = await state.warehouse!.client.rpc(
+      "create_catalog_product",
+      {
+        p_name: `Intento origen ${runCode}`,
+        p_category_id: state.categoryId,
+        p_variants: [
+          {
+            sku: `SRC-${runCode}`,
+            barcode: `SRC-${runCode}`,
+            cost_cents: 100,
+            price_cents: 200,
+            barcode_source: "SICAR",
+          },
+        ],
+      },
+    );
+    expect(error?.message).toContain("INVALID_BARCODE_SOURCE");
+  });
+
+  it("encuentra un producto acentuado se escriba con acento o sin él", async () => {
+    const server = createClient(url, secretKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    await server
+      .from("products")
+      .update({ name: `Botín Acentuado ${runCode}` })
+      .eq("id", state.productId);
+
+    const conAcento = await state.admin!.client.rpc("search_catalog", {
+      p_query: "botín acentuado",
+    });
+    const sinAcento = await state.admin!.client.rpc("search_catalog", {
+      p_query: "botin acentuado",
+    });
+
+    expect(conAcento.error).toBeNull();
+    expect((conAcento.data ?? []).length).toBeGreaterThan(0);
+    expect((sinAcento.data ?? []).length).toBe((conAcento.data ?? []).length);
+  });
+
+  it("no trata los comodines del buscador como comodines", async () => {
+    const { data, error } = await state.admin!.client.rpc("search_catalog", {
+      p_query: "%",
+    });
+    expect(error).toBeNull();
+    expect(data ?? []).toHaveLength(0);
+  });
 });
