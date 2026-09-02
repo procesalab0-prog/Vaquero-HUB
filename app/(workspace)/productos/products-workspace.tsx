@@ -1,65 +1,437 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import { useDeferredValue, useMemo, useState } from "react";
-import { Check, PackageOpen, Plus, Search, Tags } from "lucide-react";
+import { useFormStatus } from "react-dom";
+import { Check, PackageOpen, Plus, Search, Tags, X } from "lucide-react";
+
 import type { ProductVariant } from "@/lib/domain";
 
-const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
-const footwearSizes = ["25", "25.5", "26", "26.5", "27", "27.5", "28", "28.5", "29", "30"];
-const clothingSizes = ["CH", "M", "G", "XG"];
+type Category = {
+  id: string;
+  name: string;
+  default_size_scale_code: string | null;
+};
+type AttributeValue = {
+  id: string;
+  type_code: string;
+  scale_code: string | null;
+  value: string;
+  display_order: number;
+};
 
-export function ProductsWorkspace({ initialVariants }: { initialVariants: ProductVariant[] }) {
+type Props = {
+  initialVariants: ProductVariant[];
+  categories: Category[];
+  attributeValues: AttributeValue[];
+  preview?: boolean;
+  status?: string;
+  createAction?: (formData: FormData) => Promise<void>;
+};
+
+const money = new Intl.NumberFormat("es-MX", {
+  style: "currency",
+  currency: "MXN",
+});
+const previewCategories: Category[] = [
+  { id: "preview-botas", name: "Botas", default_size_scale_code: "CALZADO_MX" },
+];
+const previewValues: AttributeValue[] = [
+  ...["25", "25.5", "26", "26.5", "27", "27.5", "28", "28.5", "29", "30"].map(
+    (value, index) => ({
+      id: `preview-size-${value}`,
+      type_code: "TALLA",
+      scale_code: "CALZADO_MX",
+      value,
+      display_order: index,
+    }),
+  ),
+  ...["Negro", "Café", "Miel"].map((value, index) => ({
+    id: `preview-color-${value}`,
+    type_code: "COLOR",
+    scale_code: null,
+    value,
+    display_order: index,
+  })),
+];
+
+const statusMessages: Record<string, string> = {
+  "producto-creado": "Producto y variantes guardados correctamente.",
+  "producto-duplicado":
+    "Ese SKU o código de barras ya existe. No se guardó ningún renglón.",
+  "producto-datos-invalidos":
+    "Completa producto, categoría, color, códigos, costo, precio y al menos una talla.",
+  "producto-sin-permiso": "Tu rol no tiene permiso para crear productos.",
+  "producto-error":
+    "No fue posible crear el producto. Revisa los datos e inténtalo de nuevo.",
+  "catalogo-pendiente":
+    "La interfaz está lista; falta aplicar la migración M2 en el staging conectado a esta web.",
+};
+
+export function ProductsWorkspace({
+  initialVariants,
+  categories,
+  attributeValues,
+  preview = false,
+  status,
+  createAction,
+}: Props) {
+  const availableCategories = categories.length
+    ? categories
+    : previewCategories;
+  const availableValues = attributeValues.length
+    ? attributeValues
+    : previewValues;
   const [variants, setVariants] = useState(initialVariants);
   const [open, setOpen] = useState(false);
   const [saved, setSaved] = useState(false);
   const [query, setQuery] = useState("");
-  const [stockFilter, setStockFilter] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState(
+    availableCategories[0]?.id ?? "",
+  );
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-  const [form, setForm] = useState({ productName: "", brand: "", legacyCode: "", color: "", size: "", price: "", stock: "" });
   const deferredQuery = useDeferredValue(query);
 
+  const category =
+    availableCategories.find((item) => item.id === selectedCategory) ??
+    availableCategories[0];
+  const sizes = availableValues.filter(
+    (item) =>
+      item.type_code === "TALLA" &&
+      item.scale_code === category?.default_size_scale_code,
+  );
+  const colors = availableValues.filter((item) => item.type_code === "COLOR");
   const filteredVariants = useMemo(() => {
     const term = deferredQuery.trim().toLocaleLowerCase("es-MX");
-    return variants.filter((item) => {
-      const matchesText = !term || [item.productName, item.brand, item.legacyCode, item.color, item.size].join(" ").toLocaleLowerCase("es-MX").includes(term);
-      const matchesStock = stockFilter === "all" || (stockFilter === "available" && item.stock > 1) || (stockFilter === "critical" && item.stock <= 1);
-      return matchesText && matchesStock;
-    });
-  }, [deferredQuery, stockFilter, variants]);
+    return variants.filter(
+      (item) =>
+        !term ||
+        [item.productName, item.brand, item.legacyCode, item.color, item.size]
+          .join(" ")
+          .toLocaleLowerCase("es-MX")
+          .includes(term),
+    );
+  }, [deferredQuery, variants]);
 
-  function createProduct() {
-    const price = Number(form.price);
-    const stock = Number(form.stock);
-    if (!form.productName.trim() || !form.legacyCode.trim() || !Number.isFinite(price) || !Number.isFinite(stock)) return;
-    const sizes = selectedSizes.length ? selectedSizes : [form.size.trim() || "Única"];
-    const created = sizes.map((size, index) => ({ id: `local-${Date.now()}-${index}`, productName: form.productName.trim(), brand: form.brand.trim() || "Sin marca", legacyCode: index === 0 ? form.legacyCode.trim() : `${form.legacyCode.trim()}-${index + 1}`, color: form.color.trim() || "Sin color", size, price, stock }));
-    setVariants((current) => [...current, ...created]);
-    setOpen(false);
-    setSaved(true);
-    setForm({ productName: "", brand: "", legacyCode: "", color: "", size: "", price: "", stock: "" });
+  function toggleSize(id: string) {
+    setSelectedSizes((current) =>
+      current.includes(id)
+        ? current.filter((item) => item !== id)
+        : [...current, id],
+    );
+  }
+
+  function changeCategory(id: string) {
+    setSelectedCategory(id);
     setSelectedSizes([]);
   }
 
-  function toggleSize(size: string) {
-    setSelectedSizes((current) => current.includes(size) ? current.filter((item) => item !== size) : [...current, size]);
+  function createPreviewProduct(formData: FormData) {
+    const name = String(formData.get("product_name") ?? "").trim();
+    const brand =
+      String(formData.get("brand_name") ?? "").trim() || "Sin marca";
+    const code = String(formData.get("code_base") ?? "").trim();
+    const price = Number(formData.get("price"));
+    const colorId = String(formData.get("color_id") ?? "");
+    const color =
+      colors.find((item) => item.id === colorId)?.value ?? "Sin color";
+    if (!name || !code || !Number.isFinite(price) || selectedSizes.length === 0)
+      return;
+    const created = selectedSizes.map((sizeId, index) => ({
+      id: `preview-${Date.now()}-${index}`,
+      productName: name,
+      brand,
+      legacyCode:
+        selectedSizes.length === 1
+          ? code
+          : `${code}-${String(index + 1).padStart(2, "0")}`,
+      color,
+      size: sizes.find((item) => item.id === sizeId)?.value ?? "Única",
+      price,
+      stock: 0,
+    }));
+    setVariants((current) => [...current, ...created]);
+    setOpen(false);
+    setSaved(true);
+    setSelectedSizes([]);
   }
 
   return (
     <section className="module-page">
-      <div className="section-heading"><div><p className="eyebrow">Catálogo</p><h1>Productos y variantes</h1><p className="heading-copy">Crea productos sin alterar los códigos heredados.</p></div><div className="heading-actions"><Link className="secondary-button" href="/etiquetas"><Tags aria-hidden="true" />Etiquetas</Link><button className="primary-button" type="button" onClick={() => setOpen(true)}><Plus aria-hidden="true" />Nuevo producto</button></div></div>
-      <div className="notice"><strong>Códigos protegidos</strong><span>Los códigos SICAR existentes nunca se regeneran. Las altas de esta vista son locales hasta conectar el catálogo auditable.</span></div>
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">M2 · Catálogo</p>
+          <h1>Productos y variantes</h1>
+          <p className="heading-copy">
+            Captura una sola vez y genera todas las combinaciones de talla.
+          </p>
+        </div>
+        <div className="heading-actions">
+          <Link className="secondary-button" href="/etiquetas">
+            <Tags aria-hidden="true" />
+            Etiquetas
+          </Link>
+          <button
+            className="primary-button"
+            type="button"
+            onClick={() => setOpen(true)}
+          >
+            <Plus aria-hidden="true" />
+            Nuevo producto
+          </button>
+        </div>
+      </div>
+
+      {status && statusMessages[status] ? (
+        <div
+          className={
+            status.includes("creado") ? "admin-status" : "admin-status error"
+          }
+          role="status"
+        >
+          {statusMessages[status]}
+        </div>
+      ) : null}
+      <div className="notice">
+        <strong>Códigos protegidos</strong>
+        <span>
+          {preview
+            ? "Modo de demostración: las altas se conservan sólo en esta pantalla."
+            : "Los productos ya se guardan en Supabase. Los códigos SICAR no se pueden alterar ni borrar después del alta."}
+        </span>
+      </div>
+
       <div className="catalog-toolbar">
-        <label className="toolbar-search"><Search aria-hidden="true" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar producto, marca o código" aria-label="Buscar productos" /></label>
-        <div className="filter-pills" aria-label="Filtrar por existencia"><button className={stockFilter === "all" ? "selected" : ""} type="button" onClick={() => setStockFilter("all")}>Todos</button><button className={stockFilter === "available" ? "selected" : ""} type="button" onClick={() => setStockFilter("available")}>Disponibles</button><button className={stockFilter === "critical" ? "selected" : ""} type="button" onClick={() => setStockFilter("critical")}>Críticos</button></div>
+        <label className="toolbar-search">
+          <Search aria-hidden="true" />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Buscar producto, marca o código"
+            aria-label="Buscar productos"
+          />
+        </label>
       </div>
+
       <div className="data-table">
-        <div className="table-row table-header"><span>Producto</span><span>Código SICAR</span><span>Variante</span><span>Precio</span><span>Existencia</span></div>
-        {filteredVariants.map((item) => <div className="table-row" key={item.id}><div className="table-product"><span className="table-product-image">{item.image ? <Image src={item.image} alt="" fill sizes="44px" /> : <PackageOpen aria-hidden="true" />}</span><strong>{item.productName}<small>{item.brand}</small></strong></div><code>{item.legacyCode}</code><span>{item.color} · {item.size}</span><span>{money.format(item.price)}</span><span className={item.stock === 0 ? "stock-number out" : item.stock === 1 ? "stock-number low" : "stock-number good"}>{item.stock}</span></div>)}
+        <div className="table-row table-header">
+          <span>Producto</span>
+          <span>Código</span>
+          <span>Variante</span>
+          <span>Precio</span>
+          <span>Inventario</span>
+        </div>
+        {filteredVariants.map((item) => (
+          <div className="table-row" key={item.id}>
+            <div className="table-product">
+              <span className="table-product-image">
+                {item.image ? (
+                  <Image src={item.image} alt="" fill sizes="44px" />
+                ) : (
+                  <PackageOpen aria-hidden="true" />
+                )}
+              </span>
+              <strong>
+                {item.productName}
+                <small>{item.brand}</small>
+              </strong>
+            </div>
+            <code>{item.legacyCode}</code>
+            <span>
+              {item.color} · {item.size}
+            </span>
+            <span>{money.format(item.price)}</span>
+            <span className="stock-number out">Se activa en M3</span>
+          </div>
+        ))}
+        {filteredVariants.length === 0 ? (
+          <div className="admin-empty">
+            <PackageOpen aria-hidden="true" />
+            <strong>No hay variantes</strong>
+            <span>Crea el primer producto o cambia la búsqueda.</span>
+          </div>
+        ) : null}
       </div>
-      {saved ? <div className="inline-success" role="status"><Check aria-hidden="true" />Producto agregado a esta vista<button type="button" onClick={() => setSaved(false)}>Cerrar</button></div> : null}
-      {open ? <div className="modal-backdrop"><section className="checkout-modal product-modal" role="dialog" aria-modal="true" aria-labelledby="new-product-title"><p className="eyebrow">Catálogo</p><h2 id="new-product-title">Nuevo producto y variantes</h2><div className="settings-form"><label className="wide-field"><span>Nombre del producto</span><input value={form.productName} onChange={(event) => setForm({ ...form, productName: event.target.value })} /></label><label><span>Marca</span><input value={form.brand} onChange={(event) => setForm({ ...form, brand: event.target.value })} /></label><label><span>Código base nuevo o código existente</span><input value={form.legacyCode} onChange={(event) => setForm({ ...form, legacyCode: event.target.value })} /></label><label><span>Color</span><input value={form.color} onChange={(event) => setForm({ ...form, color: event.target.value })} /></label><label><span>Talla personalizada</span><input value={form.size} onChange={(event) => setForm({ ...form, size: event.target.value })} placeholder="Úsala si no aparece abajo" /></label><label><span>Precio</span><input inputMode="decimal" value={form.price} onChange={(event) => setForm({ ...form, price: event.target.value })} /></label><label><span>Existencia por talla</span><input inputMode="numeric" value={form.stock} onChange={(event) => setForm({ ...form, stock: event.target.value })} /></label></div><div className="size-picker"><span>Selecciona una o varias tallas</span><small>Calzado</small><div>{footwearSizes.map((size) => <button className={selectedSizes.includes(size) ? "selected" : ""} type="button" key={size} onClick={() => toggleSize(size)}>{size}</button>)}</div><small>Ropa</small><div>{clothingSizes.map((size) => <button className={selectedSizes.includes(size) ? "selected" : ""} type="button" key={size} onClick={() => toggleSize(size)}>{size}</button>)}</div></div><div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setOpen(false)}>Cancelar</button><button className="primary-button" type="button" onClick={createProduct}>Crear {selectedSizes.length > 1 ? `${selectedSizes.length} variantes` : "variante"}</button></div></section></div> : null}
+
+      {saved ? (
+        <div className="inline-success" role="status">
+          <Check aria-hidden="true" />
+          Vista previa agregada
+          <button type="button" onClick={() => setSaved(false)}>
+            Cerrar
+          </button>
+        </div>
+      ) : null}
+
+      {open ? (
+        <div className="modal-backdrop">
+          <section
+            className="checkout-modal product-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="new-product-title"
+          >
+            <header className="modal-heading">
+              <div>
+                <p className="eyebrow">Generador de variantes</p>
+                <h2 id="new-product-title">Nuevo producto</h2>
+              </div>
+              <button
+                type="button"
+                aria-label="Cerrar"
+                onClick={() => setOpen(false)}
+              >
+                <X aria-hidden="true" />
+              </button>
+            </header>
+            <form action={preview ? createPreviewProduct : createAction}>
+              <div className="settings-form">
+                <label className="wide-field">
+                  <span>Nombre del producto</span>
+                  <input name="product_name" required />
+                </label>
+                <label>
+                  <span>Marca</span>
+                  <input name="brand_name" placeholder="Opcional" />
+                </label>
+                <label>
+                  <span>Categoría</span>
+                  <select
+                    name="category_id"
+                    value={selectedCategory}
+                    onChange={(event) => changeCategory(event.target.value)}
+                    required
+                  >
+                    {availableCategories.map((item) => (
+                      <option value={item.id} key={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Color</span>
+                  <select name="color_id" required>
+                    {colors.map((item) => (
+                      <option value={item.id} key={item.id}>
+                        {item.value}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Código base</span>
+                  <input
+                    name="code_base"
+                    autoCapitalize="characters"
+                    placeholder="Ej. BOT-100"
+                    required
+                  />
+                </label>
+                <label>
+                  <span>Costo</span>
+                  <input
+                    name="cost"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                </label>
+                <label>
+                  <span>Precio</span>
+                  <input
+                    name="price"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                </label>
+                <label className="wide-field consent-check">
+                  <input
+                    aria-label="Es un código heredado de SICAR"
+                    name="is_sicar"
+                    type="checkbox"
+                  />
+                  <span>
+                    <strong>Es un código heredado de SICAR</strong>
+                    <small>
+                      Al marcarlo quedará protegido permanentemente.
+                    </small>
+                  </span>
+                </label>
+              </div>
+              <div className="size-picker">
+                <span>Selecciona una o varias tallas</span>
+                <small>{category?.name ?? "Tallas"}</small>
+                <div>
+                  {sizes.map((size) => (
+                    <label
+                      className={
+                        selectedSizes.includes(size.id)
+                          ? "size-option selected"
+                          : "size-option"
+                      }
+                      key={size.id}
+                    >
+                      <input
+                        type="checkbox"
+                        name="size_id"
+                        value={size.id}
+                        checked={selectedSizes.includes(size.id)}
+                        onChange={() => toggleSize(size.id)}
+                      />
+                      <span>{size.value}</span>
+                    </label>
+                  ))}
+                </div>
+                {sizes.length === 0 ? (
+                  <p>
+                    La escala de esta categoría está pendiente de confirmar con
+                    la tienda.
+                  </p>
+                ) : null}
+              </div>
+              <div className="variant-summary">
+                <strong>
+                  {selectedSizes.length}{" "}
+                  {selectedSizes.length === 1 ? "variante" : "variantes"}
+                </strong>
+                <span>
+                  Se crearán juntas; si un código falla, no se guardará ninguna.
+                </span>
+              </div>
+              <div className="modal-actions">
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => setOpen(false)}
+                >
+                  Cancelar
+                </button>
+                <SubmitButton count={selectedSizes.length} />
+              </div>
+            </form>
+          </section>
+        </div>
+      ) : null}
     </section>
+  );
+}
+
+function SubmitButton({ count }: { count: number }) {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      className="primary-button"
+      type="submit"
+      disabled={pending || count === 0}
+    >
+      {pending
+        ? "Guardando…"
+        : `Crear ${count || ""} ${count === 1 ? "variante" : "variantes"}`}
+    </button>
   );
 }

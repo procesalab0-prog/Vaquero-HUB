@@ -8,6 +8,18 @@
 >
 > Última actualización: 2026-08-31.
 
+## Estado de ejecución al 1 de septiembre de 2026
+
+- M0, M1 y M1B están integrados en `main`.
+- M2 comenzó con el esquema versionado de productos, variantes, atributos,
+  escalas, categorías y códigos de barras.
+- La primera entrega de M2 incluye alta transaccional de una matriz de tallas,
+  búsqueda protegida por RPC, costos ocultos al cajero y la pantalla real de
+  Productos conectada a Supabase.
+- Continúan dentro de M2: agregar variantes a un producto existente, matriz
+  talla × color editable, carga masiva con corrida en seco, acciones de precio
+  en lote, plantillas de etiquetas y escaneo físico.
+
 ## 0. Cómo usar este documento
 
 - Codex trabaja **un milestone a la vez**, en el orden

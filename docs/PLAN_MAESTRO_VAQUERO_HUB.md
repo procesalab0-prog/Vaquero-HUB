@@ -1728,3 +1728,31 @@ Cambio de identidad 0.9.6 — Mi Tienda SM:
 * El nuevo nombre debe utilizarse en interfaz, acceso de empleados, PWA, metadatos, vista previa al compartir, tickets, correos y documentación.
 * **Vaquero SM** continúa siendo la identidad del negocio; Mi Tienda SM es el nombre del sistema de operación.
 * Los identificadores técnicos ya desplegados —URL de Vercel, `project_id`, claves de almacenamiento, nombre del paquete y nombre de este archivo maestro— se conservan por compatibilidad y no deben renombrarse sin una migración específica.
+
+Entrega visible 0.10.0 — M2, catálogo real y generador de variantes:
+
+* Se incorpora el modelo versionado de marcas, categorías, escalas de talla,
+  atributos, productos padre, variantes y múltiples códigos de barras.
+* Los importes se guardan como centavos enteros. El producto padre no tiene
+  precio ni existencia; esos datos pertenecen a cada variante.
+* Los códigos internos heredados y los códigos de barras provenientes de
+  SICAR quedan protegidos por disparadores de PostgreSQL y no dependen de que
+  la interfaz oculte un botón.
+* La pantalla Productos deja de simular altas cuando Supabase está conectado.
+  Una sola captura crea varias tallas en una transacción: si una variante
+  falla por duplicidad o datos inválidos, no se guarda ninguna.
+* Categoría, color, costo, precio, marca y código base forman parte del alta;
+  el inventario se muestra como pendiente de M3 para no inventar existencias.
+* La búsqueda real acepta nombre, marca, SKU, código SICAR o cualquier código
+  físico asociado. El cajero recibe precio y atributos, pero nunca costo.
+* La migración base y su corrección de búsqueda fueron aplicadas primero al
+  staging `zsezjtswqeijboezvado` y registradas en su historial. La prueba
+  remota generó y encontró ocho variantes dentro de una transacción que fue
+  revertida; no dejó datos de prueba.
+* La verificación móvil automatizada confirma una superficie táctil mínima de
+  48 px para las tallas, ocho selecciones desde una sola captura y ausencia de
+  desbordamiento horizontal.
+* Continúan pendientes dentro de M2: agregar tallas a productos existentes,
+  matriz talla por color editable, carga masiva con corrida en seco, cambio de
+  precios en lote, etiquetas persistentes y prueba de escaneo con hardware
+  real.
