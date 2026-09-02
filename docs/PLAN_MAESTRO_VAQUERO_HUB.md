@@ -1808,3 +1808,16 @@ Entrega visible 0.11.1 — desplazamiento en computadora e iPad:
   inferior debe ser alcanzable aunque la pantalla tenga poca altura.
 - En móvil se conserva el desplazamiento natural del documento y el espacio de
   seguridad para la barra inferior de la PWA.
+
+Entrega visible 0.12.0 — ampliar variantes sin perder identidad:
+
+- Productos permite elegir un artículo existente y agregarle nuevas tallas o
+  colores con la misma matriz táctil del alta inicial.
+- Las combinaciones ya existentes aparecen bloqueadas para prevenir capturas
+  duplicadas; PostgreSQL vuelve a validarlas como control definitivo.
+- `add_variants_to_product(...)` genera SKU y EAN-13 dentro de una sola
+  transacción y nunca modifica las variantes anteriores.
+- La comprobación de combinación se serializa por producto para impedir que dos
+  usuarios concurrentes creen el mismo artículo físico con identidades distintas.
+- Las migraciones deben aplicarse al staging conectado a Vercel antes de probar
+  esta función en la web; no deben aplicarse al proyecto `drub…` por error.

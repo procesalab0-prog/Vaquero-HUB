@@ -58,8 +58,8 @@ real de SICAR.
 de atributos.** Ni activas ni dadas de baja: el artículo físico es el mismo.
 
 Conviene entender por qué apareció justo al mejorar las cosas, porque es el
-mismo patrón que ya salió tres veces en este proyecto —*algo que parecía
-proteger y no protegía*—, sólo que al revés: aquí algo protegía sin que
+mismo patrón que ya salió tres veces en este proyecto —_algo que parecía
+proteger y no protegía_—, sólo que al revés: aquí algo protegía sin que
 nadie lo hubiera decidido, y la mejora se lo llevó.
 
 Antes, quien llamaba mandaba el código de barras. Dos renglones con la misma
@@ -142,15 +142,16 @@ causó. Aplica igual a cualquier guion de respaldo o reparación.
 ## 1. M2.2 — Alta de catálogo y generador de variantes
 
 **Especificación:** [`specs/M2_CATALOGO.md`](specs/M2_CATALOGO.md) §3
-**Estado:** parcialmente terminado en la primera entrega de M2.
+**Estado:** alta y agregado de variantes terminados; falta edición.
 
 Es la función que resuelve el dolor que originó el proyecto: dar de alta
 una bota con ocho tallas sin capturar ocho veces.
 
 Qué construir:
 
-- Ya existe `create_catalog_product(...)` para el alta atómica de un producto
-  con múltiples tallas. Falta completar edición y `add_variants_to_product`.
+- Ya existen `create_catalog_product(...)` para el alta atómica y
+  `add_variants_to_product(...)` para ampliar un producto sin recrearlo.
+  Falta completar edición.
 - Funciones `SECURITY DEFINER` en `public` para editar
   marcas, categorías, productos y variantes. Todas validan permisos
   explícitamente (`products.create`, `products.update`,
@@ -195,17 +196,20 @@ con un script.
 
 ### Lo siguiente de M2.2, en este orden
 
-1. **`add_variants_to_product(product_id, variants)`.** Agregar tallas o
+1. **Terminado en 0.12.0: `add_variants_to_product(product_id, variants)`.** Agrega tallas o
    colores después **sin tocar ni recrear** las variantes existentes, que ya
    tienen historial. Toma serial de la misma secuencia y hereda las mismas
    reglas del alta: no acepta identidades del cliente, y la combinación
    repetida la rechaza la restricción diferida — que también sirve aquí sin
    escribir nada nuevo, porque cuelga de las tablas, no de la función.
 
-   La prueba que importa: agregar la talla 29 a una bota que ya tiene ocho
-   tallas **no cambia el SKU ni el código de ninguna de las ocho**.
+   La prueba que importa quedó automatizada: agregar la talla 29 a una bota
+   que ya tiene ocho tallas **no cambia el SKU ni el código de ninguna de las
+   ocho**. La función y la restricción usan el mismo candado transaccional por
+   producto, por lo que dos altas simultáneas tampoco pueden confirmar la
+   misma combinación.
 
-2. **`register_variant_barcode(variant_id, code, symbology, source)`.** Hoy
+2. **Siguiente: `register_variant_barcode(variant_id, code, symbology, source)`.** Hoy
    no hay forma de dar de alta un código que no salga del generador, y la
    especificación pide dos casos que quedaron sin ruta:
 

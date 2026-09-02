@@ -29,7 +29,38 @@ function catalogErrorStatus(error: unknown) {
   if (message.includes("NOT_AUTHORIZED")) return "producto-sin-permiso";
   if (message.includes("IDENTITY_FIELDS_NOT_ALLOWED"))
     return "producto-cliente-desactualizado";
+  if (message.includes("PRODUCT_NOT_FOUND")) return "producto-no-encontrado";
+  if (message.includes("INVALID_VARIANT")) return "producto-datos-invalidos";
   return "producto-error";
+}
+
+function variantsFromForm(formData: FormData) {
+  const priceCents = cents(textField(formData, "price"));
+  const costCents = cents(textField(formData, "cost"));
+  const combinations = Array.from(
+    new Set(formData.getAll("variant_combo").map(String).filter(Boolean)),
+  );
+
+  if (
+    priceCents === null ||
+    costCents === null ||
+    combinations.length === 0 ||
+    combinations.length > 200
+  ) {
+    throw new Error("INVALID_VARIANT_FORM");
+  }
+
+  return combinations.map((combination) => {
+    const [colorId, sizeId, ...unexpected] = combination.split(":");
+    if (!colorId || !sizeId || unexpected.length) {
+      throw new Error("INVALID_VARIANT_COMBINATION");
+    }
+    return {
+      cost_cents: costCents,
+      price_cents: priceCents,
+      attributes: { COLOR: colorId, TALLA: sizeId },
+    };
+  });
 }
 
 export async function createCatalogProduct(formData: FormData) {
@@ -40,34 +71,11 @@ export async function createCatalogProduct(formData: FormData) {
     const productName = textField(formData, "product_name");
     const categoryId = textField(formData, "category_id");
     const brandName = textField(formData, "brand_name");
-    const priceCents = cents(textField(formData, "price"));
-    const costCents = cents(textField(formData, "cost"));
-    const combinations = Array.from(
-      new Set(formData.getAll("variant_combo").map(String).filter(Boolean)),
-    );
+    const variants = variantsFromForm(formData);
 
-    if (
-      !productName ||
-      !categoryId ||
-      priceCents === null ||
-      costCents === null ||
-      combinations.length === 0 ||
-      combinations.length > 200
-    ) {
+    if (!productName || !categoryId) {
       status = "producto-datos-invalidos";
     } else {
-      const variants = combinations.map((combination) => {
-        const [colorId, sizeId, ...unexpected] = combination.split(":");
-        if (!colorId || !sizeId || unexpected.length) {
-          throw new Error("INVALID_VARIANT_COMBINATION");
-        }
-        return {
-          cost_cents: costCents,
-          price_cents: priceCents,
-          attributes: { COLOR: colorId, TALLA: sizeId },
-        };
-      });
-
       const { error } = await supabase.rpc("create_catalog_product", {
         p_name: productName,
         p_category_id: categoryId,
@@ -80,6 +88,36 @@ export async function createCatalogProduct(formData: FormData) {
   } catch (error) {
     status = catalogErrorStatus(error);
     console.error("[productos/createCatalogProduct] failed", {
+      status,
+      message: error instanceof Error ? error.message : "UNKNOWN_ERROR",
+    });
+  }
+
+  revalidatePath(productsPath);
+  redirect(`${productsPath}?status=${status}`);
+}
+
+export async function addCatalogVariants(formData: FormData) {
+  let status = "variantes-error";
+
+  try {
+    const { supabase } = await requirePermission("products.create");
+    const productId = textField(formData, "product_id");
+    const variants = variantsFromForm(formData);
+
+    if (!productId) {
+      status = "producto-datos-invalidos";
+    } else {
+      const { error } = await supabase.rpc("add_variants_to_product", {
+        p_product_id: productId,
+        p_variants: variants,
+      });
+      if (error) throw error;
+      status = "variantes-agregadas";
+    }
+  } catch (error) {
+    status = catalogErrorStatus(error);
+    console.error("[productos/addCatalogVariants] failed", {
       status,
       message: error instanceof Error ? error.message : "UNKNOWN_ERROR",
     });

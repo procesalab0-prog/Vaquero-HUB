@@ -1,5 +1,8 @@
 export type ProductVariant = {
   id: string;
+  /** Identificadores del catálogo real; se omiten en datos de demostración antiguos. */
+  productId?: string;
+  categoryId?: string;
   productName: string;
   brand: string;
   legacyCode: string;
@@ -20,8 +23,4 @@ export type CartLine = {
 export type PaymentMethod = "cash" | "card" | "transfer";
 
 export type GiftReceiptStatus =
-  | "valid"
-  | "partially_used"
-  | "used"
-  | "expired"
-  | "cancelled";
+  "valid" | "partially_used" | "used" | "expired" | "cancelled";

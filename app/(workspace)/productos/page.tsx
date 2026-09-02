@@ -2,14 +2,16 @@ import type { Metadata } from "next";
 import { mockVariants } from "@/lib/mock-data";
 import { requirePermission } from "@/lib/auth/authorization";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { createCatalogProduct } from "./actions";
+import { addCatalogVariants, createCatalogProduct } from "./actions";
 import { ProductsWorkspace } from "./products-workspace";
 
 export const metadata: Metadata = { title: "Productos" };
 
 type CatalogRow = {
   variant_id: string;
+  product_id: string;
   product_name: string;
+  category_name: string;
   brand_name: string;
   legacy_sicar_code: string | null;
   primary_barcode: string | null;
@@ -78,8 +80,16 @@ export default async function ProductsPage({
     );
   }
 
+  const categoryIds = new Map(
+    (categoriesResult.data ?? []).map((category) => [
+      category.name,
+      category.id,
+    ]),
+  );
   const variants = ((catalogResult.data ?? []) as CatalogRow[]).map((row) => ({
     id: row.variant_id,
+    productId: row.product_id,
+    categoryId: categoryIds.get(row.category_name),
     productName: row.product_name,
     brand: row.brand_name,
     legacyCode: row.legacy_sicar_code ?? row.primary_barcode ?? "Sin código",
@@ -96,6 +106,7 @@ export default async function ProductsPage({
       attributeValues={(valuesResult.data ?? []) as AttributeValue[]}
       status={params.status}
       createAction={createCatalogProduct}
+      addVariantsAction={addCatalogVariants}
     />
   );
 }

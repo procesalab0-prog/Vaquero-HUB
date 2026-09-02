@@ -19,6 +19,7 @@ const state = {
   variantIds: [] as string[],
   skus: [] as string[],
   primaryBarcodes: [] as string[],
+  extraSizeIds: [] as string[],
 };
 
 function publicClient() {
@@ -100,6 +101,17 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
     expect(sizeError).toBeNull();
     state.sizeIds = (sizes ?? []) as typeof state.sizeIds;
     expect(state.sizeIds).toHaveLength(8);
+
+    const { data: extraSizes, error: extraSizesError } = await server
+      .from("attribute_values")
+      .select("id")
+      .eq("type_code", "TALLA")
+      .eq("scale_code", "CALZADO_MX")
+      .in("value", ["29", "29.5"])
+      .order("display_order");
+    expect(extraSizesError).toBeNull();
+    state.extraSizeIds = (extraSizes ?? []).map((size) => size.id);
+    expect(state.extraSizeIds).toHaveLength(2);
   }, 30_000);
 
   it("ordena las tallas por display_order y no alfabéticamente", () => {
@@ -176,6 +188,129 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
     expect(error).toBeNull();
     expect(data).toHaveLength(1);
     expect(data[0].primary_barcode).toBe(code);
+  });
+
+  it("agrega una talla sin cambiar las identidades existentes", async () => {
+    const originalIdentities = new Map(
+      state.variantIds.map((id, index) => [
+        id,
+        {
+          sku: state.skus[index],
+          barcode: state.primaryBarcodes[index],
+        },
+      ]),
+    );
+    const [colorId] = Object.values(state.colorIds);
+    const { data, error } = await state.warehouse!.client.rpc(
+      "add_variants_to_product",
+      {
+        p_product_id: state.productId,
+        p_variants: [
+          {
+            cost_cents: 120000,
+            price_cents: 219900,
+            attributes: {
+              COLOR: colorId,
+              TALLA: state.extraSizeIds[0],
+            },
+          },
+        ],
+      },
+    );
+    expect(error).toBeNull();
+    expect(data.variant_count).toBe(1);
+
+    const catalog = await state.admin!.client.rpc("search_catalog", {
+      p_query: `Bota matriz ${runCode}`,
+      p_limit: 30,
+    });
+    expect(catalog.error).toBeNull();
+    expect(catalog.data).toHaveLength(17);
+    for (const row of catalog.data) {
+      const original = originalIdentities.get(row.variant_id);
+      if (original) {
+        expect(row.sku).toBe(original.sku);
+        expect(row.primary_barcode).toBe(original.barcode);
+      }
+    }
+  });
+
+  it("rechaza agregar una combinación existente sin guardar parcialmente", async () => {
+    const [colorId] = Object.values(state.colorIds);
+    const { error } = await state.warehouse!.client.rpc(
+      "add_variants_to_product",
+      {
+        p_product_id: state.productId,
+        p_variants: [
+          {
+            cost_cents: 120000,
+            price_cents: 219900,
+            attributes: {
+              COLOR: colorId,
+              TALLA: state.sizeIds[0].id,
+            },
+          },
+        ],
+      },
+    );
+    expect(error?.message).toContain("DUPLICATE_VARIANT_ATTRIBUTES");
+
+    const catalog = await state.admin!.client.rpc("search_catalog", {
+      p_query: `Bota matriz ${runCode}`,
+      p_limit: 30,
+    });
+    expect(catalog.data).toHaveLength(17);
+  });
+
+  it("serializa dos altas simultáneas de la misma combinación", async () => {
+    const colorId = Object.values(state.colorIds)[1];
+    const payload = {
+      p_product_id: state.productId,
+      p_variants: [
+        {
+          cost_cents: 120000,
+          price_cents: 219900,
+          attributes: {
+            COLOR: colorId,
+            TALLA: state.extraSizeIds[1],
+          },
+        },
+      ],
+    };
+    const results = await Promise.all([
+      state.warehouse!.client.rpc("add_variants_to_product", payload),
+      state.admin!.client.rpc("add_variants_to_product", payload),
+    ]);
+    expect(results.filter((result) => result.error === null)).toHaveLength(1);
+    expect(
+      results.filter((result) =>
+        result.error?.message.includes("DUPLICATE_VARIANT_ATTRIBUTES"),
+      ),
+    ).toHaveLength(1);
+  });
+
+  it("no permite al cajero agregar variantes ni aceptar identidades manuales", async () => {
+    const variant = {
+      cost_cents: 100,
+      price_cents: 200,
+      attributes: { TALLA: state.extraSizeIds[1] },
+    };
+    const unauthorized = await state.cashier!.client.rpc(
+      "add_variants_to_product",
+      { p_product_id: state.productId, p_variants: [variant] },
+    );
+    expect(unauthorized.error?.message).toContain("NOT_AUTHORIZED");
+
+    const manualIdentity = await state.warehouse!.client.rpc(
+      "add_variants_to_product",
+      {
+        p_product_id: state.productId,
+        p_variants: [{ ...variant, sku: `MANUAL-${runCode}` }],
+      },
+    );
+    expect(manualIdentity.error?.message).toContain(
+      "IDENTITY_FIELDS_NOT_ALLOWED",
+    );
   });
 
   it("un SKU mal tecleado no encuentra otra variante", async () => {
