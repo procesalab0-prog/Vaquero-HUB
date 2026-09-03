@@ -5,7 +5,9 @@ test("muestra inventario usable sin desbordar la pantalla", async ({
 }) => {
   await page.goto("/inventario");
 
-  await expect(page.getByRole("heading", { name: "Inventario" })).toBeVisible();
+  await expect(
+    page.getByRole("main").getByRole("heading", { name: "Inventario" }),
+  ).toBeVisible();
   await expect(page.getByText("Disponibles para vender")).toBeVisible();
   await expect(
     page.locator(".inventory-row:not(.table-header)").first(),
