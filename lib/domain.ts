@@ -63,3 +63,34 @@ export type BatchActionResult = {
   changedCount?: number;
   stale?: boolean;
 };
+
+export type InventoryItem = {
+  variantId: string;
+  productId: string;
+  productName: string;
+  brand: string;
+  sku: string;
+  code: string;
+  attributes: Record<string, string>;
+  quantity: number;
+  reservedQuantity: number;
+  availableQuantity: number;
+  isActive: boolean;
+  updatedAt: string;
+};
+
+export type InventoryMovement = {
+  id: number;
+  occurredAt: string;
+  variantId: string;
+  productName: string;
+  sku: string;
+  type: string;
+  quantity: number;
+  previousQuantity: number;
+  newQuantity: number;
+  referenceType: string;
+  referenceId: string;
+  userName: string;
+  metadata: Record<string, unknown>;
+};

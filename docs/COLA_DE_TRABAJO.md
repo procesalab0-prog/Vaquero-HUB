@@ -147,6 +147,10 @@ causó. Aplica igual a cualquier guion de respaldo o reparación.
 - Revisión del generador: una sola variante por combinación de atributos,
   con las diez pruebas obligatorias de `specs/CODIGOS_Y_SKU.md` ejecutadas
   contra un PostgreSQL real.
+- M3.1: saldo por variante y sucursal, libro de movimientos inmutable,
+  consulta de la invariante, ajustes por conteo con motivo controlado y la
+  pantalla de Inventario conectada. El esquema se prueba primero en staging;
+  conteos formales y traspasos continúan dentro de M3.
 
 ---
 

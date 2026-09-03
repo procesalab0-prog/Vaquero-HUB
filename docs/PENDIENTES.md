@@ -138,15 +138,40 @@ combinaciones.
 
 ## Riesgo de calendario y conexión real
 
-La estimación al cerrar la carga masiva queda alrededor del 35 % del alcance
-de octubre. M0, M1 y M1B están terminados; M2 continúa en curso; M3, M4 y M5
-tienen especificación pero no implementación operativa completa; M9 sigue
-bloqueado por la muestra de SICAR.
+**Recalculado al cerrar M2 con las etiquetas.** El panorama mejoró de verdad,
+y conviene decirlo con números porque cambia una decisión.
 
-Existen once pantallas visuales, pero sólo Productos, Clientes y Administración
-están conectadas a la base. POS, Caja, Inventario, Tickets, Etiquetas y Ajustes
-todavía contienen partes simuladas. El calendario completo y la estrategia para
-la segunda sucursal viven en [`PLAN_OCTUBRE.md`](PLAN_OCTUBRE.md).
+| Milestone | Semanas del plan | Estado |
+|---|---|---|
+| M0, M1, M1B | — | Terminados |
+| **M2** | 1 | **Terminado**, a falta de la validación física |
+| M3 inventario | 1 | En progreso: núcleo, consulta y ajustes terminados; faltan conteos y traspasos |
+| M4 POS y caja | 2 | Especificado, sin implementar |
+| M5 devoluciones | 1 | Especificado, sin implementar |
+| M9 importador | 1 | Bloqueado por la muestra de SICAR |
+
+Quedan **cinco semanas de trabajo** contra unas seis de calendario hasta
+mediados de octubre.
+
+Eso cambia lo que veníamos diciendo: hace unos días faltaban seis o siete
+semanas contra seis, y no cuadraba a una sola vía. **Ahora cuadra**, aunque sin
+holgura. El reparto entre dos cuentas
+([`REPARTO_TRABAJO.md`](REPARTO_TRABAJO.md), en espera) deja de ser la
+condición para llegar y pasa a ser el margen de seguridad.
+
+Dos advertencias para no leer ese número con optimismo:
+
+- **M4 son dos de esas cinco semanas y es donde el dinero se puede perder.**
+  No es un milestone que se pueda apretar.
+- **M9 sigue bloqueado por algo que no depende de programar.** Si la
+  exportación de muestra llega tarde, su semana se corre entera, y con ella la
+  compuerta que autoriza generar códigos en producción.
+
+Cinco de once pantallas están conectadas a la base: Productos, Clientes,
+Administración, Etiquetas e Inventario. POS, Caja, Tickets, Ajustes, Inicio y
+Más siguen siendo cascarones — que es coherente, porque dependen de M3 y M4.
+El calendario completo y la estrategia para la segunda sucursal viven en
+[`PLAN_OCTUBRE.md`](PLAN_OCTUBRE.md).
 
 ## Asuntos todavía bloqueados
 

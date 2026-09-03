@@ -5740,3 +5740,303 @@ a:active {
   text-transform: uppercase;
   vertical-align: middle;
 }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.inventory-heading-actions,
+.inventory-location-picker,
+.inventory-location-picker select,
+.inventory-feedback,
+.inventory-notice,
+.inventory-notice > div {
+  display: flex;
+  align-items: center;
+}
+.inventory-heading-actions {
+  gap: 10px;
+}
+.inventory-location-picker {
+  min-height: 46px;
+  padding: 0 12px;
+  gap: 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.inventory-location-picker svg {
+  width: 18px;
+  color: var(--accent);
+}
+.inventory-location-picker select {
+  min-height: 44px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 650;
+}
+.inventory-feedback {
+  margin: 0 0 16px;
+  padding: 13px 15px;
+  border: 1px solid #b9d9c3;
+  border-radius: 12px;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 3px;
+  background: var(--success-soft);
+  color: var(--success);
+}
+.inventory-feedback.error {
+  border-color: #e2b7b1;
+  background: var(--error-soft);
+  color: var(--error);
+}
+.inventory-feedback span {
+  font-size: 13px;
+}
+.inventory-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.inventory-notice {
+  align-items: flex-start;
+}
+.inventory-notice > svg {
+  width: 22px;
+  flex: none;
+}
+.inventory-notice > div {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 2px;
+}
+.inventory-row {
+  min-width: 920px;
+  grid-template-columns: minmax(220px, 1.6fr) minmax(110px, 0.8fr) minmax(
+      150px,
+      1fr
+    ) 90px 90px 112px;
+}
+.inventory-row > span,
+.inventory-row > code {
+  min-width: 0;
+}
+.inventory-reserved,
+.inventory-read-only {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+}
+.inventory-adjust-button {
+  width: 100%;
+}
+.inventory-empty {
+  min-height: 220px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 7px;
+  color: var(--muted);
+  text-align: center;
+}
+.inventory-empty svg {
+  width: 32px;
+}
+.inventory-empty strong {
+  color: var(--ink);
+}
+.inventory-empty.compact {
+  min-height: 180px;
+}
+.inventory-preview-note {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+.inventory-adjust-modal,
+.inventory-movement-modal {
+  width: min(620px, calc(100vw - 24px));
+}
+.inventory-adjust-form {
+  display: grid;
+  gap: 14px;
+}
+.inventory-adjust-form > label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.inventory-adjust-form input,
+.inventory-adjust-form select,
+.inventory-adjust-form textarea {
+  width: 100%;
+  min-height: 50px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+.inventory-adjust-form input[type="number"] {
+  font-size: 24px;
+  font-weight: 750;
+}
+.inventory-adjust-form textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+.inventory-current-balance {
+  padding: 14px;
+  border-radius: 12px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 3px 12px;
+  background: var(--surface-soft);
+}
+.inventory-current-balance strong {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+  font-size: 28px;
+}
+.inventory-current-balance small {
+  color: var(--muted);
+}
+.inventory-adjust-warning {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--warning-soft);
+  color: #765017;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.inventory-movement-modal .movement-list {
+  max-height: min(520px, 55dvh);
+}
+
+@media (max-width: 600px) {
+  .inventory-page .section-heading {
+    gap: 12px;
+  }
+  .inventory-heading-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .inventory-heading-actions > :only-child {
+    grid-column: 1 / -1;
+  }
+  .inventory-location-picker,
+  .inventory-heading-actions .secondary-button {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+  }
+  .inventory-location-picker select {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .inventory-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .inventory-summary article {
+    min-width: 0;
+    padding: 13px 9px;
+  }
+  .inventory-summary span {
+    min-height: 32px;
+    font-size: 11px;
+  }
+  .inventory-summary strong {
+    font-size: clamp(22px, 8vw, 30px);
+  }
+  .inventory-table {
+    border: 0;
+    overflow: visible;
+    background: transparent;
+  }
+  .inventory-table .table-header {
+    display: none;
+  }
+  .inventory-table .inventory-row {
+    min-width: 0;
+    margin-bottom: 10px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    background: var(--surface);
+  }
+  .inventory-table .table-product {
+    grid-column: 1 / -1;
+  }
+  .inventory-table .inventory-row > span,
+  .inventory-table .inventory-row > code {
+    min-height: 42px;
+    padding-top: 18px;
+    position: relative;
+    display: block;
+  }
+  .inventory-table .inventory-row > span::before,
+  .inventory-table .inventory-row > code::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: var(--muted);
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: 650;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .inventory-table .stock-number {
+    width: 100%;
+    height: 42px;
+    padding-top: 0;
+    display: grid;
+    place-items: center;
+  }
+  .inventory-table .stock-number::before {
+    top: -18px;
+  }
+  .inventory-table .inventory-adjust-button {
+    min-height: 46px;
+  }
+  .inventory-adjust-modal,
+  .inventory-movement-modal {
+    max-height: calc(100dvh - 16px);
+  }
+  .inventory-adjust-form .modal-actions {
+    position: sticky;
+    bottom: -18px;
+    margin: 4px -14px -18px;
+    padding: 12px 14px max(12px, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .inventory-movement-modal .movement-list article {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+  }
+  .inventory-movement-modal .movement-list small {
+    overflow-wrap: anywhere;
+  }
+}
