@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { APP_RELEASE, APP_VERSION } from "@/lib/release";
 import {
@@ -57,6 +57,7 @@ function moduleTitle(pathname: string) {
 
 export function WorkspaceShell({ children, identity }: { children: React.ReactNode; identity: WorkspaceIdentity | null }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
@@ -66,6 +67,13 @@ export function WorkspaceShell({ children, identity }: { children: React.ReactNo
   const activeLocation = activeIdentity.locations.find((location) => location.id === activeLocationId);
   const workspaceContext = useMemo(() => ({ identity: activeIdentity, activeLocation: activeLocation ?? null }), [activeIdentity, activeLocation]);
   const initial = activeIdentity.name.trim().charAt(0).toUpperCase() || "V";
+
+  function changeLocation(locationId: string) {
+    setActiveLocationId(locationId);
+    const next = new URLSearchParams(window.location.search);
+    next.set("ubicacion", locationId);
+    router.replace(`${pathname}?${next.toString()}`);
+  }
 
   if (!identity && !loggedIn) {
     return (
@@ -113,7 +121,7 @@ export function WorkspaceShell({ children, identity }: { children: React.ReactNo
           <div className="location-pill">
             <MapPin aria-hidden="true" strokeWidth={1.8} />
             {activeIdentity.locations.length > 1 ? (
-              <select aria-label="Sucursal activa" value={activeLocationId} onChange={(event) => setActiveLocationId(event.target.value)}>
+              <select aria-label="Sucursal activa" value={activeLocationId} onChange={(event) => changeLocation(event.target.value)}>
                 {activeIdentity.locations.map((location) => <option value={location.id} key={location.id}>{location.name}</option>)}
               </select>
             ) : <span>{activeLocation?.name ?? "Sin sucursal"}</span>}

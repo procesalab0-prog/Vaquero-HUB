@@ -472,6 +472,30 @@ desbloquea el trabajo en paralelo cuando el equipo se divida
 
 La regla que gobierna: el cliente nunca dice cuánto cuesta algo.
 
+### Implementación 0.21.0
+
+- Varias cajas por sucursal, con una sola sesión abierta por caja y por
+  cajero. Un administrador puede agregar cajas desde el propio módulo.
+- Apertura, entradas, retiros y cierre auditable. El corte es realmente
+  ciego: el esperado se revela sólo después de capturar el conteo físico y
+  toda diferencia exige explicación.
+- `create_sale()` calcula precios, descuentos y totales exclusivamente en la
+  base; mueve inventario, pagos, efectivo y folio en una sola transacción.
+- Idempotencia de doble toque, orden estable de candados y prueba concurrente
+  para dos cajas intentando vender la última pieza.
+- Efectivo, tarjeta, transferencia y pago combinado exacto al centavo.
+- Descuentos con capacidad de supervisor ligada al cajero, con vigencia de
+  cinco minutos y consumo único. No basta enviar el UUID de un supervisor.
+- Ticket de venta y regalo generado desde la venta persistida; la solicitud
+  de impresión se registra aparte para que un fallo de impresora nunca revierta
+  una venta.
+- La interfaz queda bloqueada si no existe una caja abierta o si la sucursal
+  seleccionada no coincide con la sesión.
+
+Antes de declarar el milestone cerrado: CI completo, prueba táctil en iPad y
+prueba física con la impresora elegida. Cancelaciones y devoluciones siguen en
+M5; no se inventó la regla pendiente sobre ventas de días o turnos anteriores.
+
 ## 7. M5 — Devoluciones y cambios
 
 **Especificación:** [`specs/M5_DEVOLUCIONES_Y_CAMBIOS.md`](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)

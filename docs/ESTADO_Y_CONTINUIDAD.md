@@ -52,8 +52,9 @@ saltando lo bloqueado.
 | **M2.5 (0.18.0)**        | Selección y precios en lote auditados; plantillas persistentes e impresión real de etiquetas             |
 | **M3.1 (0.19.0)**        | Saldos por sucursal, libro inmutable, ajustes auditados y pantalla de inventario con datos reales        |
 | **M3 (0.20.0)**          | Conteos formales y traspasos con aprobación, tránsito explícito, recepción parcial y auditoría           |
+| **M4 (0.21.0, candidato)** | Ventas atómicas, pagos mixtos, cajas múltiples, corte ciego, descuentos autorizados y ticket persistido |
 
-Treinta y cinco migraciones versionadas del repositorio. El proyecto de Supabase
+Cuarenta migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -67,7 +68,7 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
   publicación del merge en `main`.
 - **Pruebas:** la rama Supabase `staging`, referencia
   `zsezjtswqeijboezvado`, se reserva para Vercel Preview y validaciones previas
-  a producción. Quedó actualizada hasta M3 0.20.0; las migraciones de inventario
+  a producción. Quedó actualizada con la candidata M4 0.21.0; las migraciones de inventario
   se validaron primero en este ambiente antes de promoverse.
   M2.5 conserva sus pruebas de escritura atómica, límites, permisos, cambio
   concurrente de precio y auditoría de 300 variantes. Sus cuatro consultas de
@@ -87,15 +88,15 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
 | **M2** — catálogo, variantes, códigos, etiquetas | **Terminado en software.** Sólo falta la validación física: imprimir una etiqueta real y escanearla, con cámara y lector |
 | **M3** — inventario, movimientos, traspasos      | **Terminado en software:** saldos, libro inmutable, ajustes, conteos, traspasos y mercancía en tránsito                  |
-| **M4** — POS, pagos mixtos, caja                 | [Escrita](specs/M4_POS_Y_CAJA.md)                                                                                        |
+| **M4** — POS, pagos mixtos, caja                 | **Candidata 0.21.0 en staging:** falta CI y prueba física/táctil antes de producción                                    |
 | **M5** — devoluciones, cambios, cancelaciones    | [Escrita](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)                                                                            |
 | **M9** — importador y sincronizador de SICAR     | Falta                                                                                                                    |
 
 Recorridos a después de octubre: M6 compras, M7 apartados y lealtad, M8
 reportes y cotizaciones.
 
-**Con M3 cerrado quedan cuatro semanas de trabajo contra unas seis de
-calendario.** El detalle, y las dos advertencias que impiden leer ese número
+**Con M3 cerrado y M4 en validación quedan aproximadamente dos semanas de
+construcción del alcance de octubre, además del piloto físico.** El detalle, y las advertencias que impiden leer ese número
 con optimismo, están en [`PENDIENTES.md`](PENDIENTES.md).
 
 ## 3. Por qué la fecha es octubre
