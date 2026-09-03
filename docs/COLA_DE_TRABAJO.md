@@ -357,7 +357,6 @@ qué no—, pero significa que cargar tallas nuevas de un producto ya cargado no
 se puede hacer por archivo. Si durante la carga progresiva del catálogo eso
 estorba, es una decisión a tomar, no un defecto a parchear sobre la marcha.
 
-
 **Especificación:** [`specs/M2_CATALOGO.md`](specs/M2_CATALOGO.md) §4
 **Estado:** terminado en 0.17.0.
 
@@ -405,7 +404,6 @@ pero **no protege nada que mire varias filas**. Traspasos, conteos y la
 invariante de la suma caen en ese segundo caso y necesitan candado
 consultivo.
 
-
 **Especificación:** [`specs/M3_INVENTARIO.md`](specs/M3_INVENTARIO.md)
 **Depende de:** M2.2, porque el inventario cuelga de `variants`.
 
@@ -416,6 +414,52 @@ Las tres pruebas bandera: dos ventas concurrentes sobre existencia 1 (con
 conexiones paralelas de verdad, no llamadas en serie); la invariante de
 que la suma de movimientos iguala el saldo; y que la mercancía en tránsito
 no aparezca disponible en ninguno de los dos extremos.
+
+### Lo que ya está, verificado ejecutando
+
+`20260903043840_m3_inventory_core.sql` trae el núcleo, y las dos pruebas
+bandera que se pueden correr hoy **pasan**:
+
+| Prueba                                                           | Resultado                                                         |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Dos ventas concurrentes sobre existencia 1, conexiones paralelas | Una `INSUFFICIENT_STOCK`; existencia 0 y **una** venta registrada |
+| 20 ventas concurrentes tras cargar 50                            | Existencia 30 = suma de movimientos 30                            |
+| `check_inventory_invariant()`                                    | Cero discrepancias                                                |
+
+Y tres controles que resultaron ser estructurales, no de buena intención:
+
+- La bitácora de movimientos **no se edita ni se borra ni siendo
+  superusuario** (`INVENTORY_LEDGER_IMMUTABLE`).
+- `inventory_by_location` tampoco se toca directo: la existencia sólo se
+  mueve con su movimiento, que es la regla 3 del proyecto.
+- La tabla exige `new_qty = previous_qty + quantity` y ambas `>= 0`, así que
+  un renglón de bitácora no puede mentir sobre el saldo.
+- La ubicación `TRANSITO` rechaza escrituras directas.
+
+### Conteos y traspasos implementados en 0.20.0
+
+`inventory_counts`, `inventory_count_items`, `transfers` y `transfer_items`
+ya existen. Los documentos sólo cambian mediante RPC autorizadas; cada cambio
+de estado conserva actor, fecha y auditoría.
+
+El `UPDATE` condicional se serializa contra el candado de _una fila_. Un
+traspaso toca dos ubicaciones y su invariante es que el total global no
+cambie; un conteo compara contra un saldo que otra caja está moviendo. En los
+dos casos, dos transacciones comprueban con su propia instantánea y las dos
+pasan. Es literalmente lo que pasó dos veces en M2.
+
+La implementación conserva estos controles:
+
+1. **Candado consultivo antes de comprobar**, por la entidad que agrupa: el
+   par de ubicaciones en un traspaso, la sesión de conteo en un conteo.
+2. **La tercera prueba bandera ya es ejecutable:** al enviar, la mercancía
+   sale del origen y entra a `TRANSITO`; no aparece disponible en el destino
+   hasta que otra persona la recibe.
+3. Las diferencias al recibir **se quedan en `TRANSITO`** (§6.2). No se
+   absorben solas: esconderlas esconde robos.
+
+M3 queda cerrado cuando CI confirme las carreras con conexiones paralelas y
+la invariante global después de los traspasos.
 
 ## 6. M4 — POS, pagos mixtos y caja
 

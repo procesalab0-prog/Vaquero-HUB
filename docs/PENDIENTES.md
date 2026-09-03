@@ -56,16 +56,16 @@ Producción contiene 18 códigos `GENERATED` creados durante el desarrollo.
 **No se pueden eliminar, ni con el máximo privilegio.** Comprobado ejecutando
 la cadena completa:
 
-| Intento | Resultado |
-|---|---|
-| Borrar el código `GENERATED` | `GENERATED_BARCODE_IMMUTABLE` |
-| Borrar la variante | La bloquea la llave foránea del código |
-| Borrar el producto | La bloquea la llave foránea de la variante |
+| Intento                      | Resultado                                  |
+| ---------------------------- | ------------------------------------------ |
+| Borrar el código `GENERATED` | `GENERATED_BARCODE_IMMUTABLE`              |
+| Borrar la variante           | La bloquea la llave foránea del código     |
+| Borrar el producto           | La bloquea la llave foránea de la variante |
 
 No es un defecto: es la inmutabilidad que protege los códigos reales,
 funcionando. Pero deja una consecuencia operativa.
 
-**Lo único que se puede hacer es darlos de baja**, y eso basta *si* todo lo
+**Lo único que se puede hacer es darlos de baja**, y eso basta _si_ todo lo
 que los consume respeta la baja. `search_catalog` **sí devuelve las variantes
 dadas de baja** —a propósito, porque hacen falta para reactivarlas—, así que
 el filtro tiene que estar del lado de quien consume.
@@ -141,16 +141,16 @@ combinaciones.
 **Recalculado al cerrar M2 con las etiquetas.** El panorama mejoró de verdad,
 y conviene decirlo con números porque cambia una decisión.
 
-| Milestone | Semanas del plan | Estado |
-|---|---|---|
-| M0, M1, M1B | — | Terminados |
-| **M2** | 1 | **Terminado**, a falta de la validación física |
-| M3 inventario | 1 | En progreso: núcleo, consulta y ajustes terminados; faltan conteos y traspasos |
-| M4 POS y caja | 2 | Especificado, sin implementar |
-| M5 devoluciones | 1 | Especificado, sin implementar |
-| M9 importador | 1 | Bloqueado por la muestra de SICAR |
+| Milestone       | Semanas del plan | Estado                                                                                      |
+| --------------- | ---------------- | ------------------------------------------------------------------------------------------- |
+| M0, M1, M1B     | —                | Terminados                                                                                  |
+| **M2**          | 1                | **Terminado**, a falta de la validación física                                              |
+| M3 inventario   | 1                | **Terminado en software**; queda la validación física conjunta de etiqueta, cámara y lector |
+| M4 POS y caja   | 2                | Especificado, sin implementar                                                               |
+| M5 devoluciones | 1                | Especificado, sin implementar                                                               |
+| M9 importador   | 1                | Bloqueado por la muestra de SICAR                                                           |
 
-Quedan **cinco semanas de trabajo** contra unas seis de calendario hasta
+Quedan **cuatro semanas de trabajo** contra unas seis de calendario hasta
 mediados de octubre.
 
 Eso cambia lo que veníamos diciendo: hace unos días faltaban seis o siete
@@ -161,15 +161,16 @@ condición para llegar y pasa a ser el margen de seguridad.
 
 Dos advertencias para no leer ese número con optimismo:
 
-- **M4 son dos de esas cinco semanas y es donde el dinero se puede perder.**
+- **M4 son dos de esas cuatro semanas y es donde el dinero se puede perder.**
   No es un milestone que se pueda apretar.
 - **M9 sigue bloqueado por algo que no depende de programar.** Si la
   exportación de muestra llega tarde, su semana se corre entera, y con ella la
   compuerta que autoriza generar códigos en producción.
 
 Cinco de once pantallas están conectadas a la base: Productos, Clientes,
-Administración, Etiquetas e Inventario. POS, Caja, Tickets, Ajustes, Inicio y
-Más siguen siendo cascarones — que es coherente, porque dependen de M3 y M4.
+Administración, Etiquetas e Inventario; Inventario ya incluye conteos y
+traspasos. POS, Caja, Tickets, Ajustes, Inicio y Más siguen siendo cascarones,
+porque dependen de M4.
 El calendario completo y la estrategia para la segunda sucursal viven en
 [`PLAN_OCTUBRE.md`](PLAN_OCTUBRE.md).
 

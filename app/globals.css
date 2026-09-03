@@ -5822,10 +5822,9 @@ a:active {
 }
 .inventory-row {
   min-width: 920px;
-  grid-template-columns: minmax(220px, 1.6fr) minmax(110px, 0.8fr) minmax(
-      150px,
-      1fr
-    ) 90px 90px 112px;
+  grid-template-columns:
+    minmax(220px, 1.6fr) minmax(110px, 0.8fr) minmax(150px, 1fr)
+    90px 90px 112px;
 }
 .inventory-row > span,
 .inventory-row > code {
@@ -5866,8 +5865,137 @@ a:active {
   text-align: center;
 }
 .inventory-adjust-modal,
-.inventory-movement-modal {
+.inventory-movement-modal,
+.inventory-document-modal {
   width: min(620px, calc(100vw - 24px));
+}
+.inventory-document-modal {
+  width: min(760px, calc(100vw - 24px));
+}
+.inventory-document-modal h2 {
+  font-size: clamp(30px, 5vw, 42px);
+}
+.inventory-document-list {
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
+}
+.inventory-document-card {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  display: grid;
+  gap: 12px;
+  background: var(--surface-soft);
+}
+.inventory-document-card > header,
+.inventory-document-card > header > div,
+.inventory-document-actions,
+.inventory-document-items span,
+.inventory-document-items b,
+.inventory-transfer-picker label,
+.inventory-transfer-picker label > span {
+  display: flex;
+}
+.inventory-document-card > header {
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.inventory-document-card > header > div,
+.inventory-document-items b,
+.inventory-transfer-picker label > span {
+  align-items: flex-start;
+  flex-direction: column;
+}
+.inventory-document-card small,
+.inventory-document-items em,
+.inventory-document-note {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+}
+.inventory-document-items {
+  display: grid;
+  gap: 7px;
+}
+.inventory-document-items span {
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.inventory-document-items.editable label,
+.inventory-transfer-picker label {
+  min-height: 54px;
+  padding: 8px 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 100px;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.inventory-document-items input,
+.inventory-count-capture input,
+.inventory-count-capture select,
+.inventory-transfer-picker input {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+.inventory-document-action,
+.inventory-count-capture,
+.inventory-new-document[open],
+.inventory-new-transfer {
+  display: grid;
+  gap: 12px;
+}
+.inventory-new-document {
+  margin-top: 14px;
+  padding: 13px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+}
+.inventory-new-document summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 750;
+}
+.inventory-transfer-picker {
+  max-height: 260px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow-y: auto;
+}
+.inventory-count-capture {
+  grid-template-columns: minmax(0, 1fr) 130px auto;
+  align-items: end;
+}
+.inventory-count-capture label {
+  display: grid;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.inventory-count-results {
+  display: grid;
+  gap: 4px;
+}
+.inventory-count-results span {
+  display: grid;
+}
+.inventory-document-actions {
+  justify-content: flex-end;
+  gap: 8px;
+}
+.status-chip.in_transit {
+  background: var(--warning-soft);
+  color: #765017;
 }
 .inventory-adjust-form {
   display: grid;
@@ -6022,8 +6150,29 @@ a:active {
     min-height: 46px;
   }
   .inventory-adjust-modal,
-  .inventory-movement-modal {
+  .inventory-movement-modal,
+  .inventory-document-modal {
     max-height: calc(100dvh - 16px);
+  }
+  .inventory-heading-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .inventory-heading-actions > button {
+    min-height: 50px;
+  }
+  .inventory-count-capture {
+    grid-template-columns: 1fr 110px;
+  }
+  .inventory-count-capture button {
+    grid-column: 1 / -1;
+  }
+  .inventory-document-card {
+    padding: 12px;
+  }
+  .inventory-document-items span {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
   }
   .inventory-adjust-form .modal-actions {
     position: sticky;
