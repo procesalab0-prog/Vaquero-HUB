@@ -396,6 +396,38 @@ debe imprimir y escanear una etiqueta real; ese control no se sustituye con CI.
 
 ## 5. M3 — Inventario, movimientos y traspasos
 
+**TERMINADO y verificado ejecutando.** Las tres pruebas bandera pasan, con
+conexiones paralelas de verdad y no llamadas en serie:
+
+| Prueba bandera | Resultado medido |
+|---|---|
+| Dos ventas concurrentes sobre existencia 1 | Una `INSUFFICIENT_STOCK`; existencia 0 y **una** venta |
+| Suma de movimientos = saldo | `check_inventory_invariant()` → **cero discrepancias**, también después de traspasos |
+| Mercancía en tránsito no disponible en ningún extremo | SUC1 ve 6, SUC2 ve 0, las 4 viven en `TRANSIT`; `list_transfer_locations()` excluye tránsito |
+
+Y las que faltaban por comprobar del ciclo de traspaso:
+
+| Escenario | Resultado |
+|---|---|
+| Dos despachos simultáneos del mismo traspaso | Uno `IN_TRANSIT`, otro `INVALID_TRANSFER_STATE`; existencias movidas **una sola vez** |
+| Enviar 4 y recibir 3 (§6.2) | Destino recibe 3; **la pieza faltante se queda en tránsito**, no se absorbe |
+| Total global tras dos traspasos | Sin cambio: 10 antes, 10 después |
+
+Tres cosas del diseño que conviene no "simplificar" después:
+
+- **La llave del candado de traspaso usa `least`/`greatest` de las dos
+  ubicaciones**, así que A→B y B→A toman el mismo candado y se serializan.
+- **El despacho recorre los renglones ordenados por `variant_id`**, que es lo
+  que evita interbloqueos entre dos traspasos que comparten variantes.
+- **`SEPARATION_OF_DUTIES`: quien despacha no puede recibir.** No estaba en la
+  especificación; lo agregó la implementación y es un control antifraude
+  real. Que no se caiga en un refactor.
+
+La bitácora de movimientos no se edita ni se borra **ni siendo superusuario**,
+y la existencia no se mueve sin su movimiento.
+
+---
+
 **Antes de escribir la primera línea, leer §3.1 de la especificación.** Ahí
 quedó lo que costó dos correcciones en M2: el `UPDATE` condicional se
 serializa solo y basta para el saldo de una variante —comprobado con dos
