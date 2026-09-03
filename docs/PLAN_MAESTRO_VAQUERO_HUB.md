@@ -1999,3 +1999,44 @@ Entrega visible 0.18.0 — M2.5, acciones en lote y etiquetas:
   una etiqueta con el equipo real, además de probar la cámara instalada como
   PWA en los teléfonos definidos. M3 puede comenzar en paralelo sin inventar el
   resultado de esas pruebas físicas.
+
+Entrega visible 0.19.0–0.19.1 — núcleo de inventario verificado:
+
+- El saldo existe por variante y sucursal, y sólo puede cambiar junto con un
+  renglón del libro inmutable de movimientos dentro de la misma transacción.
+- La existencia disponible descuenta reservas. Ventas y salidas usan un
+  `UPDATE` condicional que impide vender por debajo de lo comprometido.
+- Dos ventas paralelas sobre una sola pieza producen una venta, un rechazo y
+  saldo cero. Veinte ventas concurrentes también conservaron la igualdad entre
+  libro y saldo.
+- Ajustes físicos exigen motivo, saldo observado vigente, permiso y sucursal;
+  conservan responsable, cantidad anterior y cantidad nueva.
+- La pantalla Inventario ya consulta Supabase y permite cambiar entre las
+  sucursales asignadas sin mostrar datos simulados cuando la base falla.
+
+Entrega visible 0.20.0 — cierre de M3 con conteos y traspasos:
+
+- Los conteos son sesiones auditadas. Cada captura conserva quién contó y
+  cuándo; al cerrar, el sistema bloquea la sesión y el saldo, calcula la
+  diferencia contra la existencia vigente y crea movimientos compensatorios.
+- Los traspasos recorren `SOLICITADO → APROBADO → PREPARADO → EN TRÁNSITO →
+RECIBIDO`. No se puede cancelar mercancía que ya salió y quien aprobó no puede
+  recibir el mismo documento.
+- El envío descuenta el origen y coloca la mercancía en la ubicación técnica
+  `TRANSITO`. El destino no puede venderla antes de recibirla. Una diferencia
+  de recepción permanece visible en tránsito y nunca se absorbe sola.
+- Los documentos sólo cambian mediante funciones autorizadas del servidor.
+  Cada transición conserva actor, fecha y auditoría; RLS limita la consulta a
+  las ubicaciones permitidas y las tablas rechazan mutaciones directas.
+- Los recorridos de varias filas toman candados consultivos y procesan
+  variantes en orden estable. Las pruebas concurrentes confirman que dos
+  traspasos simultáneos conservan el total global y que libro y saldo siguen
+  coincidiendo.
+- La interfaz de conteos y traspasos se adapta a computadora, iPad y teléfono.
+  TypeScript, lint, build, migraciones desde cero, integración y 30 pruebas de
+  navegador quedaron verdes antes de promover staging a producción.
+- Las migraciones se aplicaron primero en staging y después en producción. La
+  verificación posterior encontró cero descuadres, cero conteos abiertos y cero
+  traspasos activos previos; Vercel publicó correctamente el merge de `main`.
+- M3 queda terminado en software. Sigue pendiente la validación física de M2:
+  imprimir y escanear una etiqueta y probar la cámara dentro de la PWA instalada.
