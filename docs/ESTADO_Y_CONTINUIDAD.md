@@ -50,8 +50,9 @@ saltando lo bloqueado.
 | **M2 (quinta entrega)**  | Edición segura de producto, costo/estado y precio con permisos separados e identidad inmutable           |
 | **M2 (sexta entrega)**   | Carga masiva CSV/XLSX con validación en seco, confirmación atómica y códigos propios protegidos          |
 | **M2.5 (0.18.0)**        | Selección y precios en lote auditados; plantillas persistentes e impresión real de etiquetas             |
+| **M3.1 (0.19.0)**        | Saldos por sucursal, libro inmutable, ajustes auditados y pantalla de inventario con datos reales         |
 
-Treinta y una migraciones versionadas del repositorio. El proyecto de Supabase
+Treinta y dos migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -63,10 +64,11 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
   revocada y publicación verificada en Vercel.
 - **Pruebas:** la rama Supabase `staging`, referencia
   `zsezjtswqeijboezvado`, se reserva para Vercel Preview y validaciones previas
-  a producción. Quedó actualizada hasta M2.5 0.18.0; su corrida en seco,
-  escritura atómica, límites, permisos, cambio concurrente de precio y
-  auditoría de 300 variantes se probaron antes de promoverla. Sus cuatro
-  consultas de contaminación también devolvieron cero hallazgos.
+  a producción. Quedó actualizada hasta M3.1 0.19.0; la migración de inventario
+  se validó primero dentro de una transacción reversible y después se aplicó.
+  M2.5 conserva sus pruebas de escritura atómica, límites, permisos, cambio
+  concurrente de precio y auditoría de 300 variantes. Sus cuatro consultas de
+  contaminación también devolvieron cero hallazgos.
 - Los dos entornos usan credenciales distintas. Las claves viven únicamente en
   variables protegidas de Vercel; nunca se copian al repositorio.
 - La clave secreta de staging se rotó después de separar los ambientes. Las
@@ -80,14 +82,18 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 | Milestone                                        | Estado de la especificación                                                                                                                                                |
 | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **M2** — catálogo, variantes, códigos, etiquetas | En progreso: desarrollo funcional listo; falta validación física con cámara, lector e impresora reales                                                                 |
-| **M3** — inventario, movimientos, traspasos      | [Escrita](specs/M3_INVENTARIO.md)                                                                                                                                          |
+| **M2** — catálogo, variantes, códigos, etiquetas | **Terminado en software.** Sólo falta la validación física: imprimir una etiqueta real y escanearla, con cámara y lector                                              |
+| **M3** — inventario, movimientos, traspasos      | En progreso: M3.1 conecta existencias y ajustes a un libro inmutable; faltan conteos y traspasos                                                                            |
 | **M4** — POS, pagos mixtos, caja                 | [Escrita](specs/M4_POS_Y_CAJA.md)                                                                                                                                          |
 | **M5** — devoluciones, cambios, cancelaciones    | [Escrita](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)                                                                                                                              |
 | **M9** — importador y sincronizador de SICAR     | Falta                                                                                                                                                                      |
 
 Recorridos a después de octubre: M6 compras, M7 apartados y lealtad, M8
 reportes y cotizaciones.
+
+**Con M2 cerrado quedan cinco semanas de trabajo contra unas seis de
+calendario.** El detalle, y las dos advertencias que impiden leer ese número
+con optimismo, están en [`PENDIENTES.md`](PENDIENTES.md).
 
 ## 3. Por qué la fecha es octubre
 
