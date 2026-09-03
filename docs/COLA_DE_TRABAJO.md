@@ -472,7 +472,7 @@ desbloquea el trabajo en paralelo cuando el equipo se divida
 
 La regla que gobierna: el cliente nunca dice cuánto cuesta algo.
 
-### Implementación 0.21.0
+### Implementación 0.21.1
 
 - Varias cajas por sucursal, con una sola sesión abierta por caja y por
   cajero. Un administrador puede agregar cajas desde el propio módulo.
@@ -492,7 +492,7 @@ La regla que gobierna: el cliente nunca dice cuánto cuesta algo.
 - La interfaz queda bloqueada si no existe una caja abierta o si la sucursal
   seleccionada no coincide con la sesión.
 
-**M4 quedó cerrado en software en 0.21.0:** CI reconstruyó la base desde cero y
+**M4 quedó cerrado en software en 0.21.1:** CI reconstruyó la base desde cero y
 confirmó 84 pruebas de integración, incluidas las carreras entre cajas. Quedan
 como validación operativa la prueba táctil en iPad y la prueba física con la
 impresora elegida. Cancelaciones y devoluciones siguen en M5; no se inventó la
