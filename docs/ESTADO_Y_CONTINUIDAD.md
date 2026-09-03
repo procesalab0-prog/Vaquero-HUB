@@ -52,7 +52,7 @@ saltando lo bloqueado.
 | **M2.5 (0.18.0)**        | Selección y precios en lote auditados; plantillas persistentes e impresión real de etiquetas             |
 | **M3.1 (0.19.0)**        | Saldos por sucursal, libro inmutable, ajustes auditados y pantalla de inventario con datos reales         |
 
-Treinta y dos migraciones versionadas del repositorio. El proyecto de Supabase
+Treinta y tres migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
