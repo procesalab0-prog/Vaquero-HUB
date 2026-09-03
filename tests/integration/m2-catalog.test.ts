@@ -40,6 +40,18 @@ function ean13(payload: string) {
   return `${payload}${(10 - (sum % 10)) % 10}`;
 }
 
+function sku(payload: string) {
+  let sum = 0;
+  for (let position = payload.length - 1; position >= 0; position -= 1) {
+    let digit =
+      Number(payload[position]) *
+      ((payload.length - 1 - position) % 2 === 0 ? 2 : 1);
+    if (digit > 9) digit -= 9;
+    sum += digit;
+  }
+  return `${payload}-${(10 - (sum % 10)) % 10}`;
+}
+
 describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
   beforeAll(async () => {
     const server = createClient(url, secretKey, {
@@ -1088,5 +1100,190 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
         /NOT_AUTHORIZED|permission denied for function/,
       );
     }
+  });
+
+  it("cambia 300 precios atómicamente y genera 300 eventos de auditoría", async () => {
+    const server = createClient(url, secretKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { data: products, error: productsError } = await server
+      .from("products")
+      .insert(
+        Array.from({ length: 300 }, (_, index) => ({
+          name: `Lote precio ${runCode}-${index + 1}`,
+          category_id: state.categoryId,
+        })),
+      )
+      .select("id");
+    expect(productsError).toBeNull();
+    expect(products).toHaveLength(300);
+
+    const { data: variants, error: variantsError } = await server
+      .from("variants")
+      .insert(
+        products!.map((product, index) => ({
+          product_id: product.id,
+          sku: sku(`9${runCode}${String(index + 1).padStart(3, "0")}`),
+          cost_cents: 5000,
+          price_cents: 10000,
+        })),
+      )
+      .select("id");
+    expect(variantsError).toBeNull();
+    expect(variants).toHaveLength(300);
+
+    const changedAt = new Date().toISOString();
+    const changes = variants!.map((variant) => ({
+      variant_id: variant.id,
+      expected_price_cents: 10000,
+      new_price_cents: 12500,
+    }));
+    const changed = await state.admin!.client.rpc(
+      "bulk_update_variant_prices",
+      { p_changes: changes },
+    );
+    expect(changed.error).toBeNull();
+    expect(changed.data.changed_count).toBe(300);
+
+    const { data: audit, error: auditError } = await server
+      .from("audit_log")
+      .select("entity_id, before_data, after_data")
+      .eq("action", "variants.update")
+      .eq("actor_user_id", state.admin!.id)
+      .gte("occurred_at", changedAt)
+      .limit(400);
+    expect(auditError).toBeNull();
+    const ids = new Set(variants!.map((variant) => variant.id));
+    const batchAudit = (audit ?? []).filter((entry) =>
+      ids.has(entry.entity_id),
+    );
+    expect(batchAudit).toHaveLength(300);
+    expect(
+      batchAudit.every(
+        (entry) =>
+          entry.before_data.price_cents === 10000 &&
+          entry.after_data.price_cents === 12500,
+      ),
+    ).toBe(true);
+
+    const denied = await state.cashier!.client.rpc(
+      "bulk_update_variant_prices",
+      { p_changes: [changes[0]] },
+    );
+    expect(denied.error?.message).toContain("NOT_AUTHORIZED");
+  }, 30_000);
+
+  it("rechaza una vista previa de precio vencida sin modificar el lote", async () => {
+    const variantIds = state.variantIds.slice(0, 2);
+    const stale = await state.admin!.client.rpc("bulk_update_variant_prices", {
+      p_changes: variantIds.map((variantId) => ({
+        variant_id: variantId,
+        expected_price_cents: 1,
+        new_price_cents: 250000,
+      })),
+    });
+    expect(stale.error?.message).toContain("STALE_PRICE_BATCH");
+    const catalog = await state.admin!.client.rpc("search_catalog", {
+      p_query: `Bota matriz ${runCode}`,
+      p_limit: 30,
+    });
+    expect(
+      catalog.data
+        .filter((variant: { variant_id: string }) =>
+          variantIds.includes(variant.variant_id),
+        )
+        .every(
+          (variant: { price_cents: number }) => variant.price_cents === 219900,
+        ),
+    ).toBe(true);
+  });
+
+  it("da de baja un lote sin borrar identidad y rechaza al cajero", async () => {
+    const variantIds = state.variantIds.slice(0, 2);
+    const restored = await state.manager!.client.rpc(
+      "bulk_update_variant_status",
+      { p_variant_ids: variantIds, p_is_active: true },
+    );
+    expect(restored.error).toBeNull();
+
+    const changed = await state.manager!.client.rpc(
+      "bulk_update_variant_status",
+      { p_variant_ids: variantIds, p_is_active: false },
+    );
+    expect(changed.error).toBeNull();
+    expect(changed.data.changed_count).toBe(2);
+
+    const catalog = await state.admin!.client.rpc("search_catalog", {
+      p_query: `Bota matriz ${runCode}`,
+      p_limit: 30,
+    });
+    const inactive = catalog.data.filter((variant: { variant_id: string }) =>
+      variantIds.includes(variant.variant_id),
+    );
+    expect(
+      inactive.every((variant: { is_active: boolean }) => !variant.is_active),
+    ).toBe(true);
+    expect(
+      inactive.every((variant: { primary_barcode: string }) =>
+        Boolean(variant.primary_barcode),
+      ),
+    ).toBe(true);
+
+    const denied = await state.cashier!.client.rpc(
+      "bulk_update_variant_status",
+      { p_variant_ids: variantIds, p_is_active: true },
+    );
+    expect(denied.error?.message).toContain("NOT_AUTHORIZED");
+  });
+
+  it("guarda plantillas con permiso y conserva lectura de mínimo privilegio", async () => {
+    const name = `Etiqueta prueba ${runCode}`;
+    const saved = await state.manager!.client.rpc("save_label_template", {
+      p_id: null,
+      p_name: name,
+      p_width_mm: 60,
+      p_height_mm: 35,
+      p_layout: "PRODUCT_FOCUS",
+      p_show_logo: true,
+      p_show_product_name: true,
+      p_show_brand: true,
+      p_show_size: true,
+      p_show_color: true,
+      p_show_price: false,
+      p_show_sku: true,
+      p_show_barcode: true,
+      p_show_code: true,
+      p_is_default: false,
+      p_is_active: true,
+    });
+    expect(saved.error).toBeNull();
+    expect(saved.data).toMatchObject({ name, layout: "PRODUCT_FOCUS" });
+
+    const readable = await state
+      .cashier!.client.from("label_templates")
+      .select("name")
+      .eq("name", name);
+    expect(readable.error).toBeNull();
+    expect(readable.data).toHaveLength(1);
+
+    const denied = await state.cashier!.client.rpc("save_label_template", {
+      p_id: null,
+      p_name: `${name} no`,
+      p_width_mm: 50,
+      p_height_mm: 30,
+      p_layout: "BALANCED",
+      p_show_logo: true,
+      p_show_product_name: true,
+      p_show_brand: false,
+      p_show_size: true,
+      p_show_color: true,
+      p_show_price: true,
+      p_show_sku: false,
+      p_show_barcode: true,
+      p_show_code: true,
+      p_is_default: false,
+      p_is_active: true,
+    });
+    expect(denied.error?.message).toContain("NOT_AUTHORIZED");
   });
 });

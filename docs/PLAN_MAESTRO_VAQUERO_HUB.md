@@ -1971,3 +1971,31 @@ Entrega visible 0.17.0 — carga masiva segura de catálogo:
 - La base técnica se actualizó a Next.js 16.2.11 y el árbol de dependencias de
   producción quedó sin vulnerabilidades conocidas en la auditoría del gestor
   de paquetes al momento de la entrega.
+
+Entrega visible 0.18.0 — M2.5, acciones en lote y etiquetas:
+
+- Productos permite seleccionar variantes y activarlas, desactivarlas, cambiar
+  su precio o enviarlas a la cola de etiquetas. Ninguna acción borra SKU,
+  códigos ni identidad histórica.
+- El cambio de precio muestra una vista previa exacta y exige que los precios
+  observados sigan vigentes al confirmar. Si otra sesión cambió uno, el lote
+  completo se cancela. Cada variante modificada deja su propio renglón en la
+  bitácora; la prueba remota de 300 variantes produjo 300 registros.
+- Las plantillas de etiqueta son registros persistentes con dimensiones,
+  distribución y campos visibles controlados. RLS permite consultarlas a quien
+  ve productos y sólo `products.update` permite administrarlas; no se almacena
+  HTML ni CSS arbitrario.
+- Las etiquetas usan el logotipo de Vaqueros SM, medidas físicas y un código de
+  barras SVG real. Reimprimir conserva el código existente y la cola limita la
+  cantidad para evitar bloquear el navegador o mandar miles por error.
+- Las funciones críticas viven en PostgreSQL, vuelven a validar permisos,
+  bloquean las filas en orden estable y revocan ejecución anónima. La interfaz
+  no es la barrera de seguridad.
+- Las migraciones se probaron primero en staging con RLS, permisos, cambio de
+  precio desactualizado, estado, persistencia de plantilla y transacción
+  reversible de 300 variantes. Los índices correctivos se agregaron en una
+  migración nueva para conservar el historial aplicado.
+- M2 queda funcionalmente construido. Para cerrarlo falta imprimir y escanear
+  una etiqueta con el equipo real, además de probar la cámara instalada como
+  PWA en los teléfonos definidos. M3 puede comenzar en paralelo sin inventar el
+  resultado de esas pruebas físicas.

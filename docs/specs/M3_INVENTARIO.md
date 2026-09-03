@@ -206,6 +206,54 @@ función.** Una función `SECURITY DEFINER` nunca recibe `user_id` como dato
 confiable ni delega la autorización a la interfaz, porque se salta la RLS
 de las tablas que escribe.
 
+### 3.1 Hasta dónde llega el candado de fila, y dónde deja de servir
+
+Esto no estaba escrito y costó dos correcciones en M2, así que conviene
+dejarlo antes de que M3 lo repita.
+
+**Comprobado, no supuesto.** Con existencia 1 y dos ventas simultáneas en
+conexiones paralelas, el `UPDATE` condicional deja existencia 0 y **una sola**
+venta registrada. La segunda se serializa contra el candado de la fila,
+reevalúa su `WHERE` y no encuentra nada que actualizar. El patrón de arriba
+funciona.
+
+**Pero sólo protege invariantes de una fila.** PostgreSQL toma ese candado
+porque las dos transacciones tocan *el mismo renglón*. En cuanto la regla
+mira **otras** filas, la protección desaparece: cada transacción hace su
+comprobación con su propia instantánea, ninguna ve lo que la otra todavía no
+confirma, y las dos pasan.
+
+Eso ya pasó en este proyecto. El control que impide dos variantes con la
+misma talla y color es una restricción diferida que consulta las filas
+hermanas; dos altas simultáneas la atravesaban y creaban el duplicado. La
+corrección fue un candado consultivo por producto
+(`pg_advisory_xact_lock` sobre `hashtextextended('...' || id)`), que serializa
+la comprobación completa. Está en `20260902150000_m2_candado_de_combinacion.sql`.
+
+**Regla para M3:**
+
+| Si la regla mira… | La protección correcta es… |
+|---|---|
+| Una sola fila de existencia | El `UPDATE` condicional con `returning`. No hace falta nada más |
+| Varias filas, o dos ubicaciones | Candado consultivo por la entidad que agrupa, tomado **antes** de comprobar |
+
+Los casos de M3 que caen en el segundo renglón, y que conviene no resolver
+con el primero:
+
+- **Traspasos** (§6): tocan dos ubicaciones y su invariante es que el total
+  global no cambie. Dos traspasos simultáneos de la misma variante entre las
+  mismas dos sucursales necesitan serializarse entre sí.
+- **Conteos** (§5): la diferencia se calcula contra un saldo que otro puede
+  estar moviendo mientras se cuenta.
+- **La invariante de la prueba 2** —que la suma de movimientos iguale el
+  saldo— es por definición de varias filas.
+
+Y la forma de comprobarlo, porque una prueba secuencial no prueba nada aquí:
+**dos conexiones de verdad en paralelo**, no dos llamadas seguidas. Si hace
+falta, se ensancha la ventana metiendo un `pg_sleep` dentro de la
+comprobación durante la prueba; sin eso la carrera casi nunca se reproduce y
+el control parece bueno cuando no lo es.
+
 ## 4. Ajustes
 
 Todo ajuste exige `inventory.adjust` y **motivo de una lista controlada**,
@@ -333,6 +381,12 @@ Las tres primeras son las pruebas bandera del proyecto.
 | 12 | `CASHIER` intenta un ajuste | Rechazado |
 | 13 | Conteo cerrado con movimientos posteriores a la captura | Señalados antes de aplicar |
 | 14 | 200 movimientos concurrentes sobre la misma variante | La invariante se sostiene |
+| 15 | Dos traspasos simultáneos de la misma variante entre las mismas sucursales | El total global no cambia; ninguno duplica existencia (§3.1) |
+| 16 | Un conteo abierto mientras otra caja vende la misma variante | La diferencia se calcula contra un saldo consistente, no contra uno movido a media cuenta |
+
+Las pruebas 1, 14, 15 y 16 se corren con **conexiones paralelas de verdad**.
+Dos llamadas seguidas en la misma sesión no reproducen ninguna carrera y dan
+un falso verde.
 
 La prueba 1 se implementa con dos conexiones reales en paralelo, no
 llamadas secuenciales. Si se corre en serie, no prueba nada.

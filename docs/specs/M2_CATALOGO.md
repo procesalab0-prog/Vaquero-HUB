@@ -9,8 +9,9 @@
 > las pruebas pasen.
 >
 > Estado al 2026-09-02: alta, búsqueda, agregado de variantes, códigos
-> externos, cámara y edición individual segura están implementados. Continúan
-> carga masiva, acciones de precio en lote, etiquetas y validación física.
+> externos, cámara, edición individual, carga masiva, acciones en lote y
+> etiquetas están implementados. Continúa la validación física con cámara,
+> lector e impresora reales.
 
 ## 1. Modelo de datos
 
@@ -244,6 +245,11 @@ El cambio de precio en lote es la acción peligrosa del milestone:
 Sin ese detalle, el reporte de la sección 51.4 del contexto maestro no
 puede responder «¿quién bajó el precio de esto y cuándo?».
 
+Implementado en 0.18.0: la selección admite hasta 500 variantes por operación,
+la vista previa exige el precio anterior observado y toda la operación se
+cancela si otra sesión cambió alguno antes de confirmar. Activar o desactivar
+conserva SKU y códigos; no borra identidad del catálogo.
+
 ## 6. Etiquetas
 
 - Plantillas guardadas como registros editables, no fijas en el código:
@@ -255,6 +261,11 @@ puede responder «¿quién bajó el precio de esto y cuándo?».
   desde el iPad.** El iPad imprime tickets; el etiquetado ocurre al
   recibir mercancía, no en la caja. Esto simplifica mucho el problema de
   impresión discutido para M4.
+
+Implementado en 0.18.0: las plantillas se guardan en Supabase con dimensiones,
+distribución y campos visibles controlados; no aceptan HTML ni CSS arbitrario.
+La impresión usa medidas físicas y un código de barras SVG real. Reimprimir una
+etiqueta reutiliza el código existente y nunca genera otra identidad.
 
 ## 7. Búsqueda
 
@@ -284,6 +295,32 @@ escaneando su código; el uso pesado llega en M3 (conteos) y M6
 Un requisito de este milestone: **verificar que la cámara funciona dentro
 de la PWA instalada**, en un iPhone y un Android reales, no sólo desde el
 navegador. Es una falla conocida que aparece tarde y de la peor forma.
+
+### 7.2 Qué significa dar de baja una variante, y qué no
+
+La columna `is_active` existía desde el primer esquema y **ninguna regla decía
+qué hace**. Conviene fijarla ahora, porque ya tiene consecuencias.
+
+Dar de baja **no borra nada**: la identidad de la variante es inmutable, su
+código sigue pegado en cajas y su historial no se toca. Sólo significa
+«esto ya no se vende».
+
+Por eso `search_catalog` **sí devuelve las variantes dadas de baja**, con el
+campo `is_active` al lado. Es deliberado: quien administra necesita
+encontrarlas para reactivarlas, y la regla del proyecto es que una variante
+que vuelve se reactiva, no se recrea.
+
+La contraparte es obligatoria: **quien consuma la búsqueda tiene que
+distinguirlas.** Si el estado se pierde en el camino —por ejemplo al mapear a
+un tipo de la interfaz que no lo incluye—, lo que ya no se vende se ve
+idéntico a lo vendible. Eso ya pasó una vez.
+
+Dos consecuencias concretas:
+
+- La pantalla de productos las marca **Dada de baja**.
+- `register_variant_barcode` **rechaza** una variante o un producto inactivo,
+  así que ninguna interfaz debe ofrecerlos para registrar un código: sólo
+  produciría un «variante no encontrada» que no explica nada.
 
 ## 8. RLS
 
@@ -321,6 +358,11 @@ navegador. Es una falla conocida que aparece tarde y de la peor forma.
 - [ ] El disparador de códigos heredados está activo y probado.
 - [ ] La validación de carga masiva no escribe nada en modo seco.
 - [ ] La búsqueda agrupa por producto padre.
+- [x] El cambio de precio en lote genera un renglón de auditoría por variante
+      y rechaza un lote cuya vista previa quedó desactualizada.
+- [x] Las plantillas de etiqueta persisten con permisos y RLS, y la cola de
+      impresión usa los códigos ya registrados.
+- [ ] Una etiqueta física se imprime y se lee con el hardware real de la tienda.
 
 ## 11. Preguntas abiertas de este milestone
 

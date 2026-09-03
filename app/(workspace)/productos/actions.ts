@@ -11,8 +11,122 @@ import {
   type CatalogImportState,
 } from "@/lib/catalog-import-shared";
 import type { ProductVariant } from "@/lib/domain";
+import type { BatchActionResult } from "@/lib/domain";
 
 const productsPath = "/productos";
+
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function validVariantIds(ids: string[]) {
+  return (
+    ids.length > 0 &&
+    ids.length <= 500 &&
+    new Set(ids).size === ids.length &&
+    ids.every((id) => uuidPattern.test(id))
+  );
+}
+
+export async function bulkUpdateVariantStatus(
+  variantIds: string[],
+  isActive: boolean,
+): Promise<BatchActionResult> {
+  try {
+    if (!validVariantIds(variantIds) || typeof isActive !== "boolean") {
+      return { ok: false, message: "La selección no es válida." };
+    }
+    const { supabase } = await requirePermission("products.update");
+    const { data, error } = await supabase.rpc("bulk_update_variant_status", {
+      p_variant_ids: variantIds,
+      p_is_active: isActive,
+    });
+    if (error) throw error;
+    const changedCount = Number(
+      (data as { changed_count?: number } | null)?.changed_count ?? 0,
+    );
+    revalidatePath(productsPath);
+    revalidatePath("/etiquetas");
+    return {
+      ok: true,
+      changedCount,
+      message: changedCount
+        ? `${changedCount} variantes quedaron ${isActive ? "activas" : "dadas de baja"}.`
+        : "Las variantes ya tenían ese estado.",
+    };
+  } catch (error) {
+    console.error("[productos/bulkUpdateVariantStatus] failed", {
+      message: error instanceof Error ? error.message : "UNKNOWN_ERROR",
+    });
+    return {
+      ok: false,
+      message:
+        error instanceof Error && error.message.includes("NOT_AUTHORIZED")
+          ? "Tu rol no tiene permiso para cambiar el estado del catálogo."
+          : "No se cambió ninguna variante. Actualiza la página e inténtalo de nuevo.",
+    };
+  }
+}
+
+export async function bulkUpdateVariantPrices(
+  changes: Array<{
+    variantId: string;
+    expectedPriceCents: number;
+    newPriceCents: number;
+  }>,
+): Promise<BatchActionResult> {
+  try {
+    const ids = changes.map((change) => change.variantId);
+    if (
+      !validVariantIds(ids) ||
+      changes.some(
+        ({ expectedPriceCents, newPriceCents }) =>
+          !Number.isSafeInteger(expectedPriceCents) ||
+          !Number.isSafeInteger(newPriceCents) ||
+          expectedPriceCents < 0 ||
+          newPriceCents < 0 ||
+          expectedPriceCents === newPriceCents,
+      )
+    ) {
+      return { ok: false, message: "La vista previa de precios no es válida." };
+    }
+    const { supabase } = await requirePermission("products.price_update");
+    const { data, error } = await supabase.rpc("bulk_update_variant_prices", {
+      p_changes: changes.map((change) => ({
+        variant_id: change.variantId,
+        expected_price_cents: change.expectedPriceCents,
+        new_price_cents: change.newPriceCents,
+      })),
+    });
+    if (error) throw error;
+    const changedCount = Number(
+      (data as { changed_count?: number } | null)?.changed_count ?? 0,
+    );
+    revalidatePath(productsPath);
+    revalidatePath("/etiquetas");
+    return {
+      ok: true,
+      changedCount,
+      message: `${changedCount} precios se actualizaron y quedaron en la bitácora.`,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+    console.error("[productos/bulkUpdateVariantPrices] failed", { message });
+    if (message.includes("STALE_PRICE_BATCH")) {
+      return {
+        ok: false,
+        stale: true,
+        message:
+          "Un precio cambió después de la vista previa. No se modificó ninguno; actualiza la página y revisa de nuevo.",
+      };
+    }
+    return {
+      ok: false,
+      message: message.includes("NOT_AUTHORIZED")
+        ? "Tu rol no tiene permiso para cambiar precios."
+        : "No se modificó ningún precio. Revisa la selección e inténtalo de nuevo.",
+    };
+  }
+}
 
 function textField(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();

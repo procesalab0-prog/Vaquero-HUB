@@ -49,8 +49,9 @@ saltando lo bloqueado.
 | **Componente 0.15.0**    | Cámara en Productos, detección nativa/ZXing, búsqueda real y recuperación de permisos                    |
 | **M2 (quinta entrega)**  | Edición segura de producto, costo/estado y precio con permisos separados e identidad inmutable           |
 | **M2 (sexta entrega)**   | Carga masiva CSV/XLSX con validación en seco, confirmación atómica y códigos propios protegidos          |
+| **M2.5 (0.18.0)**        | Selección y precios en lote auditados; plantillas persistentes e impresión real de etiquetas             |
 
-Veintinueve migraciones versionadas del repositorio. El proyecto de Supabase
+Treinta y una migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -58,14 +59,14 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 - **Producción:** Vercel Production usa la rama `main` de Supabase, proyecto
   `drubkjlmfbdeglucakmg`. Las correcciones de M2 fueron aplicadas y verificadas
   el 2 de septiembre de 2026; las cuatro consultas de contaminación devolvieron
-  cero hallazgos. La carga masiva 0.17.0 también quedó aplicada, con ejecución
-  anónima revocada y publicación verificada en Vercel.
+  cero hallazgos. M2.5 0.18.0 también quedó aplicado, con ejecución anónima
+  revocada y publicación verificada en Vercel.
 - **Pruebas:** la rama Supabase `staging`, referencia
   `zsezjtswqeijboezvado`, se reserva para Vercel Preview y validaciones previas
-  a producción. Quedó actualizada hasta la carga masiva 0.17.0; su corrida en
-  seco, escritura atómica, límites de entrada y permisos se probaron antes de
-  promoverla. Sus cuatro consultas de contaminación también devolvieron cero
-  hallazgos.
+  a producción. Quedó actualizada hasta M2.5 0.18.0; su corrida en seco,
+  escritura atómica, límites, permisos, cambio concurrente de precio y
+  auditoría de 300 variantes se probaron antes de promoverla. Sus cuatro
+  consultas de contaminación también devolvieron cero hallazgos.
 - Los dos entornos usan credenciales distintas. Las claves viven únicamente en
   variables protegidas de Vercel; nunca se copian al repositorio.
 - La clave secreta de staging se rotó después de separar los ambientes. Las
@@ -79,7 +80,7 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 | Milestone                                        | Estado de la especificación                                                                                                                                                |
 | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **M2** — catálogo, variantes, códigos, etiquetas | En progreso: alta, búsqueda, matriz, identidad, variantes, códigos externos, cámara, edición y carga masiva listos; faltan etiquetas, acciones en lote y validación física |
+| **M2** — catálogo, variantes, códigos, etiquetas | En progreso: desarrollo funcional listo; falta validación física con cámara, lector e impresora reales                                                                 |
 | **M3** — inventario, movimientos, traspasos      | [Escrita](specs/M3_INVENTARIO.md)                                                                                                                                          |
 | **M4** — POS, pagos mixtos, caja                 | [Escrita](specs/M4_POS_Y_CAJA.md)                                                                                                                                          |
 | **M5** — devoluciones, cambios, cancelaciones    | [Escrita](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)                                                                                                                              |

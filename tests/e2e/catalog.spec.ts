@@ -222,6 +222,39 @@ test("ofrece dar de alta un código que no existe", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("lleva una selección de Productos a un lote de etiquetas escaneables", async ({
+  page,
+}) => {
+  await page.goto("/productos");
+  const firstVariant = page
+    .locator(".data-table .table-row:not(.table-header)")
+    .first();
+  await firstVariant.locator('input[type="checkbox"]').check();
+  const toolbar = page.getByLabel("Acciones para variantes seleccionadas");
+  await expect(toolbar).toContainText("1 seleccionadas");
+  await toolbar.getByRole("button", { name: "Etiquetas" }).click();
+
+  await expect(page).toHaveURL(/\/etiquetas\?desde=productos/);
+  await expect(
+    page.getByRole("button", { name: "Imprimir 1 etiquetas" }),
+  ).toBeEnabled();
+  await expect(
+    page.locator(".label-preview-stage .label-barcode-svg rect").first(),
+  ).toBeVisible();
+  await page.evaluate(() => {
+    window.print = () => document.body.setAttribute("data-print-called", "yes");
+  });
+  await page.getByRole("button", { name: "Imprimir 1 etiquetas" }).click();
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-print-called",
+    "yes",
+  );
+  await expect(
+    page.locator(".print-label-sheet .print-product-label"),
+  ).toHaveCount(1);
+  await expect(page.locator("html")).toHaveJSProperty("scrollWidth", 390);
+});
+
 test("edita datos y precio sin habilitar SKU ni código", async ({ page }) => {
   await page.goto("/productos");
   await page

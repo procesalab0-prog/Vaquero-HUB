@@ -19,8 +19,10 @@
 - M2 ya permite agregar variantes a un producto existente y registrar códigos
   de proveedor o de reimpresión sin borrar los códigos físicos anteriores.
 - La carga masiva propia quedó terminada en 0.17.0 con corrida en seco y
-  confirmación atómica. Continúan dentro de M2: acciones de precio en lote,
-  plantillas de etiquetas y validación física del escaneo.
+  confirmación atómica.
+- M2.5 quedó implementado en 0.18.0 con acciones en lote, auditoría individual
+  de precios y plantillas persistentes de etiquetas. Para cerrar M2 falta la
+  validación física de cámara, lector e impresora.
 
 ## 0. Cómo usar este documento
 
