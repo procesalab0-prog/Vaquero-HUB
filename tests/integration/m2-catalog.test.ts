@@ -1200,6 +1200,12 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
 
   it("da de baja un lote sin borrar identidad y rechaza al cajero", async () => {
     const variantIds = state.variantIds.slice(0, 2);
+    const restored = await state.manager!.client.rpc(
+      "bulk_update_variant_status",
+      { p_variant_ids: variantIds, p_is_active: true },
+    );
+    expect(restored.error).toBeNull();
+
     const changed = await state.manager!.client.rpc(
       "bulk_update_variant_status",
       { p_variant_ids: variantIds, p_is_active: false },
