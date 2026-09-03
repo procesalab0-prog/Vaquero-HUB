@@ -10,6 +10,7 @@ const runCode = Date.now().toString().slice(-8);
 type Fixture = { id: string; client: SupabaseClient };
 
 const state = {
+  server: null as SupabaseClient | null,
   admin: null as Fixture | null,
   manager: null as Fixture | null,
   cashier: null as Fixture | null,
@@ -30,6 +31,7 @@ describe.sequential("M3.1: libro y saldos de inventario", () => {
     const server = createClient(url, secretKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+    state.server = server;
     const { data: roles, error: rolesError } = await server
       .from("roles")
       .select("id, code");
@@ -85,6 +87,14 @@ describe.sequential("M3.1: libro y saldos de inventario", () => {
       expect(signInError).toBeNull();
       state[definition.key] = { id, client };
     }
+
+    const { error: adminDestinationAssignmentError } = await server
+      .from("user_locations")
+      .insert({
+        user_id: state.admin!.id,
+        location_id: state.otherLocationId,
+      });
+    expect(adminDestinationAssignmentError).toBeNull();
 
     const { data: category, error: categoryError } = await server
       .from("categories")
@@ -278,5 +288,299 @@ describe.sequential("M3.1: libro y saldos de inventario", () => {
     );
     expect(error).toBeNull();
     expect(data).toEqual([]);
+  });
+
+  it("cierra un conteo contra el saldo vigente y señala movimientos posteriores", async () => {
+    const snapshot = await state.manager!.client.rpc("get_inventory_snapshot", {
+      p_location_id: state.locationId,
+      p_query: runCode,
+      p_limit: 10,
+    });
+    const initial = Number(snapshot.data[0].qty);
+    const created = await state.manager!.client.rpc("create_inventory_count", {
+      p_location_id: state.locationId,
+      p_scope: { type: "SELECTED" },
+    });
+    expect(created.error).toBeNull();
+    const countId = created.data.id as string;
+
+    const recorded = await state.manager!.client.rpc(
+      "record_inventory_count_item",
+      {
+        p_count_id: countId,
+        p_variant_id: state.variantId,
+        p_counted_qty: initial + 1,
+      },
+    );
+    expect(recorded.error).toBeNull();
+
+    const movementAfterCount = await state.manager!.client.rpc(
+      "apply_inventory_adjustment",
+      {
+        p_variant_id: state.variantId,
+        p_location_id: state.locationId,
+        p_expected_qty: initial,
+        p_counted_qty: initial + 2,
+        p_reason: "CONTEO_FISICO",
+        p_note: "Movimiento posterior a captura",
+      },
+    );
+    expect(movementAfterCount.error).toBeNull();
+
+    const closed = await state.manager!.client.rpc("close_inventory_count", {
+      p_count_id: countId,
+    });
+    expect(closed.error).toBeNull();
+    expect(closed.data).toMatchObject({
+      status: "CLOSED",
+      adjusted_items: 1,
+      warnings: 1,
+    });
+
+    const { data: items, error: itemsError } = await state
+      .manager!.client.from("inventory_count_items")
+      .select(
+        "system_qty, counted_qty, difference, had_movement_after_count, movement_id",
+      )
+      .eq("count_id", countId);
+    expect(itemsError).toBeNull();
+    expect(items).toHaveLength(1);
+    expect(Number(items![0].system_qty)).toBe(initial + 2);
+    expect(Number(items![0].counted_qty)).toBe(initial + 1);
+    expect(Number(items![0].difference)).toBe(-1);
+    expect(items![0].had_movement_after_count).toBe(true);
+    expect(items![0].movement_id).toBeTruthy();
+  });
+
+  it("serializa el cierre de conteo contra otro ajuste de la misma variante", async () => {
+    const snapshot = await state.manager!.client.rpc("get_inventory_snapshot", {
+      p_location_id: state.locationId,
+      p_query: runCode,
+      p_limit: 10,
+    });
+    const initial = Number(snapshot.data[0].qty);
+    const created = await state.manager!.client.rpc("create_inventory_count", {
+      p_location_id: state.locationId,
+      p_scope: { type: "SELECTED" },
+    });
+    const countId = created.data.id as string;
+    await state.manager!.client.rpc("record_inventory_count_item", {
+      p_count_id: countId,
+      p_variant_id: state.variantId,
+      p_counted_qty: initial + 1,
+    });
+
+    const [closed, adjusted] = await Promise.all([
+      state.manager!.client.rpc("close_inventory_count", {
+        p_count_id: countId,
+      }),
+      state.manager!.client.rpc("apply_inventory_adjustment", {
+        p_variant_id: state.variantId,
+        p_location_id: state.locationId,
+        p_expected_qty: initial,
+        p_counted_qty: initial + 2,
+        p_reason: "CONTEO_FISICO",
+        p_note: "Competidor concurrente",
+      }),
+    ]);
+    expect(closed.error).toBeNull();
+    if (adjusted.error) {
+      expect(adjusted.error.message).toContain("STALE_INVENTORY");
+    }
+
+    const invariant = await state.admin!.client.rpc(
+      "check_inventory_invariant",
+    );
+    expect(invariant.error).toBeNull();
+    expect(invariant.data).toEqual([]);
+  });
+
+  it("mantiene el total global y la mercancía fuera de ambos extremos durante el tránsito", async () => {
+    const current = await state.manager!.client.rpc("get_inventory_snapshot", {
+      p_location_id: state.locationId,
+      p_query: runCode,
+      p_limit: 10,
+    });
+    const sourceBeforeLoad = Number(current.data[0].qty);
+    const load = await state.manager!.client.rpc("apply_inventory_adjustment", {
+      p_variant_id: state.variantId,
+      p_location_id: state.locationId,
+      p_expected_qty: sourceBeforeLoad,
+      p_counted_qty: 20,
+      p_reason: "CONTEO_FISICO",
+      p_note: "Existencia para prueba de traspaso",
+    });
+    expect(load.error).toBeNull();
+
+    const destinationBefore = await state.admin!.client.rpc(
+      "get_inventory_snapshot",
+      {
+        p_location_id: state.otherLocationId,
+        p_query: runCode,
+        p_limit: 10,
+      },
+    );
+    const destinationInitial = Number(destinationBefore.data[0].qty);
+    const { data: transitLocation } = await state
+      .server!.from("locations")
+      .select("id")
+      .eq("type", "TRANSIT")
+      .single();
+
+    const created = await state.warehouse!.client.rpc("create_transfer", {
+      p_from_location_id: state.locationId,
+      p_to_location_id: state.otherLocationId,
+      p_items: [{ variant_id: state.variantId, qty: 5 }],
+      p_note: "Prueba bandera M3",
+    });
+    expect(created.error).toBeNull();
+    const transferId = created.data.id as string;
+    expect(
+      (
+        await state.manager!.client.rpc("approve_transfer", {
+          p_transfer_id: transferId,
+        })
+      ).error,
+    ).toBeNull();
+    expect(
+      (
+        await state.warehouse!.client.rpc("prepare_transfer", {
+          p_transfer_id: transferId,
+          p_items: [{ variant_id: state.variantId, qty: 5 }],
+        })
+      ).error,
+    ).toBeNull();
+    expect(
+      (
+        await state.warehouse!.client.rpc("dispatch_transfer", {
+          p_transfer_id: transferId,
+        })
+      ).error,
+    ).toBeNull();
+
+    const [sourceInTransit, destinationInTransit, transitBalance] =
+      await Promise.all([
+        state.manager!.client.rpc("get_inventory_snapshot", {
+          p_location_id: state.locationId,
+          p_query: runCode,
+          p_limit: 10,
+        }),
+        state.admin!.client.rpc("get_inventory_snapshot", {
+          p_location_id: state.otherLocationId,
+          p_query: runCode,
+          p_limit: 10,
+        }),
+        state
+          .server!.from("inventory_by_location")
+          .select("qty")
+          .eq("variant_id", state.variantId)
+          .eq("location_id", transitLocation!.id)
+          .single(),
+      ]);
+    expect(Number(sourceInTransit.data[0].qty)).toBe(15);
+    expect(Number(destinationInTransit.data[0].qty)).toBe(destinationInitial);
+    expect(Number(transitBalance.data!.qty)).toBe(5);
+    expect(
+      Number(sourceInTransit.data[0].qty) +
+        Number(destinationInTransit.data[0].qty) +
+        Number(transitBalance.data!.qty),
+    ).toBe(20 + destinationInitial);
+
+    const cancelInTransit = await state.warehouse!.client.rpc(
+      "cancel_transfer",
+      { p_transfer_id: transferId },
+    );
+    expect(cancelInTransit.error?.message).toContain(
+      "TRANSFER_NOT_CANCELLABLE",
+    );
+    const sameApproverReceives = await state.manager!.client.rpc(
+      "receive_transfer",
+      {
+        p_transfer_id: transferId,
+        p_items: [{ variant_id: state.variantId, qty: 4 }],
+      },
+    );
+    expect(sameApproverReceives.error?.message).toContain(
+      "SEPARATION_OF_DUTIES",
+    );
+
+    const received = await state.admin!.client.rpc("receive_transfer", {
+      p_transfer_id: transferId,
+      p_items: [{ variant_id: state.variantId, qty: 4 }],
+    });
+    expect(received.error).toBeNull();
+    expect(Number(received.data.remaining_in_transit)).toBe(1);
+
+    const [destinationAfter, transitAfter] = await Promise.all([
+      state.admin!.client.rpc("get_inventory_snapshot", {
+        p_location_id: state.otherLocationId,
+        p_query: runCode,
+        p_limit: 10,
+      }),
+      state
+        .server!.from("inventory_by_location")
+        .select("qty")
+        .eq("variant_id", state.variantId)
+        .eq("location_id", transitLocation!.id)
+        .single(),
+    ]);
+    expect(Number(destinationAfter.data[0].qty)).toBe(destinationInitial + 4);
+    expect(Number(transitAfter.data!.qty)).toBe(1);
+  });
+
+  it("serializa dos traspasos simultáneos sin cambiar el total global", async () => {
+    const createPrepared = async () => {
+      const created = await state.warehouse!.client.rpc("create_transfer", {
+        p_from_location_id: state.locationId,
+        p_to_location_id: state.otherLocationId,
+        p_items: [{ variant_id: state.variantId, qty: 2 }],
+        p_note: "Traspaso concurrente",
+      });
+      const id = created.data.id as string;
+      await state.manager!.client.rpc("approve_transfer", {
+        p_transfer_id: id,
+      });
+      await state.warehouse!.client.rpc("prepare_transfer", {
+        p_transfer_id: id,
+        p_items: [{ variant_id: state.variantId, qty: 2 }],
+      });
+      return id;
+    };
+    const [firstId, secondId] = await Promise.all([
+      createPrepared(),
+      createPrepared(),
+    ]);
+
+    const before = await state
+      .server!.from("inventory_by_location")
+      .select("qty")
+      .eq("variant_id", state.variantId);
+    const totalBefore = (before.data ?? []).reduce(
+      (sum, row) => sum + Number(row.qty),
+      0,
+    );
+    const results = await Promise.all([
+      state.warehouse!.client.rpc("dispatch_transfer", {
+        p_transfer_id: firstId,
+      }),
+      state.warehouse!.client.rpc("dispatch_transfer", {
+        p_transfer_id: secondId,
+      }),
+    ]);
+    expect(results.every((result) => result.error === null)).toBe(true);
+
+    const after = await state
+      .server!.from("inventory_by_location")
+      .select("qty")
+      .eq("variant_id", state.variantId);
+    const totalAfter = (after.data ?? []).reduce(
+      (sum, row) => sum + Number(row.qty),
+      0,
+    );
+    expect(totalAfter).toBe(totalBefore);
+    const invariant = await state.admin!.client.rpc(
+      "check_inventory_invariant",
+    );
+    expect(invariant.data).toEqual([]);
   });
 });

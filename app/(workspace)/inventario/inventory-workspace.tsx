@@ -3,6 +3,7 @@
 import {
   ArrowDownLeft,
   ArrowUpRight,
+  ArrowRightLeft,
   ClipboardCheck,
   History,
   MapPin,
@@ -13,7 +14,12 @@ import {
 } from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
 
-import type { InventoryItem, InventoryMovement } from "@/lib/domain";
+import type {
+  InventoryCount,
+  InventoryItem,
+  InventoryMovement,
+  InventoryTransfer,
+} from "@/lib/domain";
 
 type Location = { id: string; name: string; code: string };
 
@@ -64,6 +70,66 @@ const statusMessages: Record<
     copy: "Revisa los datos e intenta nuevamente.",
     tone: "error",
   },
+  "conteo-creado": {
+    title: "Conteo iniciado",
+    copy: "Ya puedes capturar las cantidades físicas.",
+  },
+  "conteo-capturado": {
+    title: "Cantidad guardada",
+    copy: "La pieza quedó incluida en el conteo.",
+  },
+  "conteo-cerrado": {
+    title: "Conteo cerrado",
+    copy: "Las diferencias quedaron aplicadas y auditadas.",
+  },
+  "conteo-cerrado-con-avisos": {
+    title: "Conteo cerrado con avisos",
+    copy: "Hubo movimientos mientras se contaba. Revisa los renglones marcados.",
+    tone: "error",
+  },
+  "conteo-cancelado": {
+    title: "Conteo cancelado",
+    copy: "No se modificó ninguna existencia.",
+  },
+  "traspaso-creado": {
+    title: "Traspaso solicitado",
+    copy: "Está listo para autorización.",
+  },
+  "traspaso-aprobado": {
+    title: "Traspaso aprobado",
+    copy: "El origen ya puede preparar la mercancía.",
+  },
+  "traspaso-preparado": {
+    title: "Traspaso preparado",
+    copy: "Revisa las cantidades antes de enviarlo.",
+  },
+  "traspaso-en-transito": {
+    title: "Mercancía en tránsito",
+    copy: "Ya salió del origen y todavía no está disponible en el destino.",
+  },
+  "traspaso-recibido": {
+    title: "Traspaso recibido",
+    copy: "Las cantidades recibidas ya están disponibles en el destino.",
+  },
+  "traspaso-cancelado": {
+    title: "Traspaso cancelado",
+    copy: "No se movió inventario.",
+  },
+  "inventario-separacion-funciones": {
+    title: "Se requiere otra persona",
+    copy: "Quien aprobó el traspaso no puede recibirlo.",
+    tone: "error",
+  },
+  "inventario-sin-existencia": {
+    title: "Existencia insuficiente",
+    copy: "El origen ya no tiene todas las piezas preparadas.",
+    tone: "error",
+  },
+  "inventario-operacion-invalida": {
+    title: "La operación ya no es válida",
+    copy: "Actualiza la pantalla y revisa el estado del documento.",
+    tone: "error",
+  },
 };
 
 const movementLabels: Record<string, string> = {
@@ -101,26 +167,239 @@ function variantDescription(item: InventoryItem) {
   return values.length ? values.join(" · ") : "Variante única";
 }
 
+const countStatus: Record<InventoryCount["status"], string> = {
+  OPEN: "Abierto",
+  COUNTING: "En captura",
+  CLOSED: "Cerrado",
+  CANCELLED: "Cancelado",
+};
+
+const transferStatus: Record<InventoryTransfer["status"], string> = {
+  REQUESTED: "Solicitado",
+  APPROVED: "Aprobado",
+  PREPARED: "Preparado",
+  IN_TRANSIT: "En tránsito",
+  RECEIVED: "Recibido",
+  CANCELLED: "Cancelado",
+};
+
+type ServerAction = (formData: FormData) => void | Promise<void>;
+
+function TransferItemForm({
+  action,
+  transfer,
+  locationId,
+  mode,
+  label,
+}: {
+  action?: ServerAction;
+  transfer: InventoryTransfer;
+  locationId: string;
+  mode: "prepare" | "receive";
+  label: string;
+}) {
+  const initial = Object.fromEntries(
+    transfer.items.map((item) => [
+      item.variantId,
+      mode === "prepare"
+        ? item.requestedQuantity
+        : (item.sentQuantity ?? item.requestedQuantity),
+    ]),
+  );
+  const [quantities, setQuantities] = useState<Record<string, number>>(initial);
+  const payload = transfer.items.map((item) => ({
+    variant_id: item.variantId,
+    qty: quantities[item.variantId] ?? 0,
+  }));
+  return (
+    <form action={action} className="inventory-document-action">
+      <input type="hidden" name="transfer_id" value={transfer.id} />
+      <input type="hidden" name="location_id" value={locationId} />
+      <input type="hidden" name="items" value={JSON.stringify(payload)} />
+      <div className="inventory-document-items editable">
+        {transfer.items.map((item) => (
+          <label key={item.variantId}>
+            <span>
+              {item.productName}
+              <small>{item.sku}</small>
+            </span>
+            <input
+              type="number"
+              min={mode === "prepare" ? 0.001 : 0}
+              max={
+                mode === "prepare"
+                  ? item.requestedQuantity
+                  : (item.sentQuantity ?? item.requestedQuantity)
+              }
+              step="0.001"
+              inputMode="decimal"
+              value={quantities[item.variantId] ?? 0}
+              onChange={(event) =>
+                setQuantities((current) => ({
+                  ...current,
+                  [item.variantId]: Number(event.target.value),
+                }))
+              }
+              aria-label={`${label}: ${item.productName}`}
+              required
+            />
+          </label>
+        ))}
+      </div>
+      <button className="primary-button wide" type="submit">
+        {label}
+      </button>
+    </form>
+  );
+}
+
+function NewTransferForm({
+  action,
+  items,
+  locations,
+  fromLocationId,
+}: {
+  action?: ServerAction;
+  items: InventoryItem[];
+  locations: Location[];
+  fromLocationId: string;
+}) {
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const payload = items
+    .filter((item) => (quantities[item.variantId] ?? 0) > 0)
+    .map((item) => ({
+      variant_id: item.variantId,
+      qty: quantities[item.variantId],
+    }));
+  const destinations = locations.filter(
+    (location) => location.id !== fromLocationId,
+  );
+  return (
+    <form
+      action={action}
+      className="inventory-adjust-form inventory-new-transfer"
+    >
+      <input type="hidden" name="from_location_id" value={fromLocationId} />
+      <input type="hidden" name="items" value={JSON.stringify(payload)} />
+      <label>
+        <span>Sucursal destino</span>
+        <select name="to_location_id" required defaultValue="">
+          <option value="" disabled>
+            Selecciona una sucursal
+          </option>
+          {destinations.map((location) => (
+            <option key={location.id} value={location.id}>
+              {location.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div className="inventory-transfer-picker">
+        <strong>Mercancía a enviar</strong>
+        {items
+          .filter((item) => item.availableQuantity > 0)
+          .map((item) => (
+            <label key={item.variantId}>
+              <span>
+                {item.productName}
+                <small>
+                  {variantDescription(item)} ·{" "}
+                  {formatQuantity(item.availableQuantity)} disponibles
+                </small>
+              </span>
+              <input
+                type="number"
+                min="0"
+                max={item.availableQuantity}
+                step="0.001"
+                inputMode="decimal"
+                value={quantities[item.variantId] ?? 0}
+                onChange={(event) =>
+                  setQuantities((current) => ({
+                    ...current,
+                    [item.variantId]: Number(event.target.value),
+                  }))
+                }
+                aria-label={`Cantidad de ${item.productName}`}
+              />
+            </label>
+          ))}
+      </div>
+      <label>
+        <span>Nota opcional</span>
+        <textarea
+          name="note"
+          maxLength={500}
+          placeholder="Motivo o indicación para quien recibe"
+        />
+      </label>
+      <button
+        className="primary-button wide"
+        type="submit"
+        disabled={!payload.length || !destinations.length}
+      >
+        Solicitar traspaso
+      </button>
+    </form>
+  );
+}
+
 export function InventoryWorkspace({
   items,
   movements,
+  counts,
+  transfers,
   locations,
+  transferLocations,
   activeLocationId,
   canAdjust = false,
+  canCount = false,
+  canCreateTransfer = false,
+  canApproveTransfer = false,
+  canReceiveTransfer = false,
   adjustmentAction,
+  createCountAction,
+  recordCountAction,
+  closeCountAction,
+  cancelCountAction,
+  createTransferAction,
+  approveTransferAction,
+  prepareTransferAction,
+  dispatchTransferAction,
+  receiveTransferAction,
+  cancelTransferAction,
   status,
   preview = false,
 }: {
   items: InventoryItem[];
   movements: InventoryMovement[];
+  counts: InventoryCount[];
+  transfers: InventoryTransfer[];
   locations: Location[];
+  transferLocations: Location[];
   activeLocationId: string;
   canAdjust?: boolean;
-  adjustmentAction?: (formData: FormData) => void | Promise<void>;
+  canCount?: boolean;
+  canCreateTransfer?: boolean;
+  canApproveTransfer?: boolean;
+  canReceiveTransfer?: boolean;
+  adjustmentAction?: ServerAction;
+  createCountAction?: ServerAction;
+  recordCountAction?: ServerAction;
+  closeCountAction?: ServerAction;
+  cancelCountAction?: ServerAction;
+  createTransferAction?: ServerAction;
+  approveTransferAction?: ServerAction;
+  prepareTransferAction?: ServerAction;
+  dispatchTransferAction?: ServerAction;
+  receiveTransferAction?: ServerAction;
+  cancelTransferAction?: ServerAction;
   status?: string;
   preview?: boolean;
 }) {
   const [showMovements, setShowMovements] = useState(false);
+  const [showCounts, setShowCounts] = useState(false);
+  const [showTransfers, setShowTransfers] = useState(false);
   const [adjusting, setAdjusting] = useState<InventoryItem | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
@@ -200,6 +479,26 @@ export function InventoryWorkspace({
             <History aria-hidden="true" />
             Ver movimientos
           </button>
+          {canCount ? (
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() => setShowCounts(true)}
+            >
+              <ClipboardCheck aria-hidden="true" />
+              Conteos
+            </button>
+          ) : null}
+          {canCreateTransfer || canApproveTransfer || canReceiveTransfer ? (
+            <button
+              className="primary-button"
+              type="button"
+              onClick={() => setShowTransfers(true)}
+            >
+              <ArrowRightLeft aria-hidden="true" />
+              Traspasos
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -518,6 +817,354 @@ export function InventoryWorkspace({
             >
               Cerrar
             </button>
+          </section>
+        </div>
+      ) : null}
+
+      {showCounts ? (
+        <div className="modal-backdrop">
+          <section
+            className="checkout-modal inventory-document-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="inventory-counts-title"
+          >
+            <header className="modal-heading">
+              <div>
+                <p className="eyebrow">
+                  Control físico · {activeLocation?.name}
+                </p>
+                <h2 id="inventory-counts-title">Conteos</h2>
+              </div>
+              <button
+                type="button"
+                aria-label="Cerrar conteos"
+                onClick={() => setShowCounts(false)}
+              >
+                <X aria-hidden="true" />
+              </button>
+            </header>
+            <form action={createCountAction}>
+              <input
+                type="hidden"
+                name="location_id"
+                value={activeLocationId}
+              />
+              <button className="primary-button wide" type="submit">
+                Iniciar conteo
+              </button>
+            </form>
+            <div className="inventory-document-list">
+              {counts.map((count) => {
+                const active =
+                  count.status === "OPEN" || count.status === "COUNTING";
+                const captured = new Set(
+                  count.items.map((item) => item.variantId),
+                );
+                return (
+                  <article className="inventory-document-card" key={count.id}>
+                    <header>
+                      <div>
+                        <strong>Conteo #{count.folio}</strong>
+                        <small>
+                          {formatDate(count.createdAt)} · {count.items.length}{" "}
+                          capturas
+                        </small>
+                      </div>
+                      <span
+                        className={`status-chip ${count.status.toLowerCase()}`}
+                      >
+                        {countStatus[count.status]}
+                      </span>
+                    </header>
+                    {active ? (
+                      <form
+                        action={recordCountAction}
+                        className="inventory-count-capture"
+                      >
+                        <input type="hidden" name="count_id" value={count.id} />
+                        <input
+                          type="hidden"
+                          name="location_id"
+                          value={activeLocationId}
+                        />
+                        <label>
+                          <span>Producto</span>
+                          <select name="variant_id" required defaultValue="">
+                            <option value="" disabled>
+                              Selecciona una variante
+                            </option>
+                            {items.map((item) => (
+                              <option
+                                value={item.variantId}
+                                key={item.variantId}
+                              >
+                                {captured.has(item.variantId) ? "✓ " : ""}
+                                {item.productName} · {variantDescription(item)}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label>
+                          <span>Cantidad física</span>
+                          <input
+                            name="counted_quantity"
+                            type="number"
+                            min="0"
+                            step="0.001"
+                            inputMode="decimal"
+                            required
+                          />
+                        </label>
+                        <button className="secondary-button" type="submit">
+                          Guardar captura
+                        </button>
+                      </form>
+                    ) : null}
+                    {count.items.length ? (
+                      <div className="inventory-count-results">
+                        {count.items.map((item) => {
+                          const catalog = items.find(
+                            (entry) => entry.variantId === item.variantId,
+                          );
+                          return (
+                            <span key={item.variantId}>
+                              <b>{catalog?.productName ?? item.variantId}</b>
+                              <small>
+                                Contado: {formatQuantity(item.countedQuantity)}
+                                {item.difference !== null
+                                  ? ` · Diferencia: ${formatQuantity(item.difference)}`
+                                  : ""}
+                                {item.hadMovementAfterCount
+                                  ? " · Revisar movimientos"
+                                  : ""}
+                              </small>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                    {active ? (
+                      <div className="inventory-document-actions">
+                        <form action={cancelCountAction}>
+                          <input
+                            type="hidden"
+                            name="count_id"
+                            value={count.id}
+                          />
+                          <input
+                            type="hidden"
+                            name="location_id"
+                            value={activeLocationId}
+                          />
+                          <button className="secondary-button" type="submit">
+                            Cancelar
+                          </button>
+                        </form>
+                        <form action={closeCountAction}>
+                          <input
+                            type="hidden"
+                            name="count_id"
+                            value={count.id}
+                          />
+                          <input
+                            type="hidden"
+                            name="location_id"
+                            value={activeLocationId}
+                          />
+                          <button
+                            className="primary-button"
+                            type="submit"
+                            disabled={!count.items.length}
+                          >
+                            Cerrar y aplicar
+                          </button>
+                        </form>
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
+              {!counts.length ? (
+                <div className="inventory-empty compact">
+                  <ClipboardCheck aria-hidden="true" />
+                  <strong>No hay conteos todavía</strong>
+                  <span>Inicia uno para comparar el inventario físico.</span>
+                </div>
+              ) : null}
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {showTransfers ? (
+        <div className="modal-backdrop">
+          <section
+            className="checkout-modal inventory-document-modal transfer-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="inventory-transfers-title"
+          >
+            <header className="modal-heading">
+              <div>
+                <p className="eyebrow">Entre sucursales</p>
+                <h2 id="inventory-transfers-title">Traspasos</h2>
+              </div>
+              <button
+                type="button"
+                aria-label="Cerrar traspasos"
+                onClick={() => setShowTransfers(false)}
+              >
+                <X aria-hidden="true" />
+              </button>
+            </header>
+            {canCreateTransfer ? (
+              <details className="inventory-new-document">
+                <summary>Nueva solicitud</summary>
+                <NewTransferForm
+                  action={createTransferAction}
+                  items={items}
+                  locations={transferLocations}
+                  fromLocationId={activeLocationId}
+                />
+              </details>
+            ) : null}
+            <div className="inventory-document-list">
+              {transfers.map((transfer) => {
+                const isOrigin = transfer.fromLocationId === activeLocationId;
+                const isDestination =
+                  transfer.toLocationId === activeLocationId;
+                return (
+                  <article
+                    className="inventory-document-card"
+                    key={transfer.id}
+                  >
+                    <header>
+                      <div>
+                        <strong>Traspaso #{transfer.folio}</strong>
+                        <small>
+                          {transfer.fromLocationName} →{" "}
+                          {transfer.toLocationName}
+                        </small>
+                      </div>
+                      <span
+                        className={`status-chip ${transfer.status.toLowerCase()}`}
+                      >
+                        {transferStatus[transfer.status]}
+                      </span>
+                    </header>
+                    <div className="inventory-document-items">
+                      {transfer.items.map((item) => (
+                        <span key={item.variantId}>
+                          <b>
+                            {item.productName}
+                            <small>{item.sku}</small>
+                          </b>
+                          <em>
+                            Solicitado {formatQuantity(item.requestedQuantity)}
+                            {item.sentQuantity !== null
+                              ? ` · Enviado ${formatQuantity(item.sentQuantity)}`
+                              : ""}
+                            {item.receivedQuantity !== null
+                              ? ` · Recibido ${formatQuantity(item.receivedQuantity)}`
+                              : ""}
+                          </em>
+                        </span>
+                      ))}
+                    </div>
+                    {transfer.note ? (
+                      <p className="inventory-document-note">{transfer.note}</p>
+                    ) : null}
+                    {transfer.status === "REQUESTED" && canApproveTransfer ? (
+                      <form action={approveTransferAction}>
+                        <input
+                          type="hidden"
+                          name="transfer_id"
+                          value={transfer.id}
+                        />
+                        <input
+                          type="hidden"
+                          name="location_id"
+                          value={activeLocationId}
+                        />
+                        <button className="primary-button wide" type="submit">
+                          Aprobar solicitud
+                        </button>
+                      </form>
+                    ) : null}
+                    {transfer.status === "APPROVED" &&
+                    isOrigin &&
+                    canCreateTransfer ? (
+                      <TransferItemForm
+                        action={prepareTransferAction}
+                        transfer={transfer}
+                        locationId={activeLocationId}
+                        mode="prepare"
+                        label="Confirmar preparación"
+                      />
+                    ) : null}
+                    {transfer.status === "PREPARED" &&
+                    isOrigin &&
+                    canCreateTransfer ? (
+                      <form action={dispatchTransferAction}>
+                        <input
+                          type="hidden"
+                          name="transfer_id"
+                          value={transfer.id}
+                        />
+                        <input
+                          type="hidden"
+                          name="location_id"
+                          value={activeLocationId}
+                        />
+                        <button className="primary-button wide" type="submit">
+                          Enviar mercancía
+                        </button>
+                      </form>
+                    ) : null}
+                    {transfer.status === "IN_TRANSIT" &&
+                    isDestination &&
+                    canReceiveTransfer ? (
+                      <TransferItemForm
+                        action={receiveTransferAction}
+                        transfer={transfer}
+                        locationId={activeLocationId}
+                        mode="receive"
+                        label="Confirmar recepción"
+                      />
+                    ) : null}
+                    {isOrigin &&
+                    canCreateTransfer &&
+                    ["REQUESTED", "APPROVED", "PREPARED"].includes(
+                      transfer.status,
+                    ) ? (
+                      <form action={cancelTransferAction}>
+                        <input
+                          type="hidden"
+                          name="transfer_id"
+                          value={transfer.id}
+                        />
+                        <input
+                          type="hidden"
+                          name="location_id"
+                          value={activeLocationId}
+                        />
+                        <button className="secondary-button wide" type="submit">
+                          Cancelar traspaso
+                        </button>
+                      </form>
+                    ) : null}
+                  </article>
+                );
+              })}
+              {!transfers.length ? (
+                <div className="inventory-empty compact">
+                  <ArrowRightLeft aria-hidden="true" />
+                  <strong>No hay traspasos</strong>
+                  <span>Las solicitudes aparecerán aquí.</span>
+                </div>
+              ) : null}
+            </div>
           </section>
         </div>
       ) : null}

@@ -94,3 +94,48 @@ export type InventoryMovement = {
   userName: string;
   metadata: Record<string, unknown>;
 };
+
+export type InventoryCountItem = {
+  variantId: string;
+  countedQuantity: number;
+  systemQuantity: number | null;
+  difference: number | null;
+  hadMovementAfterCount: boolean;
+};
+
+export type InventoryCount = {
+  id: string;
+  folio: number;
+  status: "OPEN" | "COUNTING" | "CLOSED" | "CANCELLED";
+  createdAt: string;
+  closedAt: string | null;
+  items: InventoryCountItem[];
+};
+
+export type InventoryTransferItem = {
+  variantId: string;
+  productName: string;
+  sku: string;
+  requestedQuantity: number;
+  sentQuantity: number | null;
+  receivedQuantity: number | null;
+};
+
+export type InventoryTransfer = {
+  id: string;
+  folio: number;
+  fromLocationId: string;
+  fromLocationName: string;
+  toLocationId: string;
+  toLocationName: string;
+  status:
+    | "REQUESTED"
+    | "APPROVED"
+    | "PREPARED"
+    | "IN_TRANSIT"
+    | "RECEIVED"
+    | "CANCELLED";
+  note: string | null;
+  requestedAt: string;
+  items: InventoryTransferItem[];
+};
