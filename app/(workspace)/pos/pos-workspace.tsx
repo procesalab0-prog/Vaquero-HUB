@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Banknote,
   Barcode,
@@ -12,6 +13,7 @@ import {
   Gift,
   Landmark,
   ListFilter,
+  LockKeyhole,
   Minus,
   PackageOpen,
   Plus,
@@ -27,6 +29,11 @@ import { formatReceiptDate, ThermalReceipt, type ReceiptLine } from "@/component
 import { CustomerLookup } from "@/components/customer-lookup";
 import { useWorkspace } from "@/components/workspace-context";
 import type { CustomerSummary } from "@/lib/customers";
+
+type SalePaymentInput = { method_code: "CASH" | "CARD" | "TRANSFER"; amount_cents: number; tendered_cents?: number; reference?: string };
+type SaleActionInput = { idempotencyKey: string; cashSessionId: string; items: Array<{ variant_id: string; quantity: number; gift_receipt: boolean }>; payments: SalePaymentInput[]; customerId?: string | null; discount?: { percent: number; authorizationToken: string } | null };
+type SaleActionResult = { ok: true; saleId: string; folio: string; soldAt: string; totalCents: number; receipt: Record<string, unknown> | null } | { ok: false; code: string; message: string };
+type StoredReceipt = { subtotal_cents: number; discount_cents: number; total_cents: number; cashier_name: string; location: { name: string; address: string | null; phone: string | null }; items: Array<{ product_name: string; variant_description: string; sku: string; quantity: number; unit_price_cents: number; gift_receipt: boolean }>; payments: Array<{ method_name: string; amount_cents: number; tendered_cents: number | null; change_cents: number }> };
 
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 const frequentCategories = [
@@ -63,7 +70,18 @@ function ProductCard({ variant, onAdd }: { variant: ProductVariant; onAdd: () =>
   );
 }
 
-export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
+type CashSession = { id: string; location_id: string; register_name: string };
+
+export function PosWorkspace({ variants, cashSession, preview = false, status, createSaleAction, authorizeDiscountAction, printAction }: {
+  variants: ProductVariant[];
+  cashSession?: CashSession | null;
+  preview?: boolean;
+  status?: string;
+  createSaleAction?: (input: SaleActionInput) => Promise<SaleActionResult>;
+  authorizeDiscountAction?: (input: { employeeCode: string; pin: string }) => Promise<{ ok: true; authorizationToken: string; expiresAt: string } | { ok: false; message: string }>;
+  printAction?: (saleId: string, mode: "sale" | "gift") => Promise<{ ok: true } | { ok: false; message: string }>;
+}) {
+  const router = useRouter();
   const { identity, activeLocation } = useWorkspace();
   const [query, setQuery] = useState("");
   const [showCatalog, setShowCatalog] = useState(false);
@@ -74,19 +92,36 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
   const [toast, setToast] = useState("");
   const [discountPercent, setDiscountPercent] = useState(0);
   const [discountInput, setDiscountInput] = useState("");
+  const [supervisorCode, setSupervisorCode] = useState("");
+  const [supervisorPin, setSupervisorPin] = useState("");
+  const [discountAuthorization, setDiscountAuthorization] = useState<string | null>(null);
+  const [discountError, setDiscountError] = useState("");
   const [extraDialog, setExtraDialog] = useState<"discount" | "layaway" | null>(null);
   const [layawayCustomer, setLayawayCustomer] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerSummary | null>(null);
   const [customerLookupOpen, setCustomerLookupOpen] = useState(false);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [cashMode, setCashMode] = useState(false);
+  const [splitMode, setSplitMode] = useState(false);
   const [cashInput, setCashInput] = useState("");
+  const [splitCash, setSplitCash] = useState("");
+  const [splitCard, setSplitCard] = useState("");
+  const [splitTransfer, setSplitTransfer] = useState("");
+  const [splitCardReference, setSplitCardReference] = useState("");
+  const [splitTransferReference, setSplitTransferReference] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [receiptMode, setReceiptMode] = useState<"sale" | "gift" | null>(null);
   const [paymentUsed, setPaymentUsed] = useState<PaymentMethod>("cash");
+  const [receiptPaymentLabel, setReceiptPaymentLabel] = useState("Efectivo");
+  const [paymentReference, setPaymentReference] = useState("");
+  const [saleError, setSaleError] = useState("");
+  const [saleFolio, setSaleFolio] = useState("V-000842");
+  const [saleId, setSaleId] = useState("");
+  const [storedReceipt, setStoredReceipt] = useState<StoredReceipt | null>(null);
   const [receiptDate, setReceiptDate] = useState("");
   const toastTimer = useRef<number | null>(null);
   const submittingRef = useRef(false);
+  const idempotencyKey = useRef(crypto.randomUUID());
 
   useEffect(() => () => {
     if (toastTimer.current) window.clearTimeout(toastTimer.current);
@@ -116,7 +151,6 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
   const cashTendered = Number(cashInput || 0);
   const change = Math.max(0, cashTendered - total);
   const receiptLines: ReceiptLine[] = cart.map((line) => ({ name: line.variant.productName, variant: `${line.variant.color} · ${line.variant.size}`, code: line.variant.legacyCode, quantity: line.quantity, unitPrice: line.variant.price }));
-  const giftLines = receiptLines.filter((_, index) => cart[index]?.giftReceipt);
   const paymentLabels: Record<PaymentMethod, string> = { cash: "Efectivo", card: "Tarjeta", transfer: "Transferencia" };
 
   function notify(message: string) {
@@ -151,15 +185,80 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
     }));
   }
 
-  function completeSale(method: PaymentMethod) {
+  async function submitSale(method: PaymentMethod, payments: SalePaymentInput[], receiptLabel = paymentLabels[method]) {
     if (submittingRef.current) return;
     if (method === "cash" && cashTendered < total) return;
+    if (!preview && !cashSession?.id) {
+      setSaleError("Abre una caja antes de cobrar.");
+      return;
+    }
     submittingRef.current = true;
     setSubmitting(true);
+    setSaleError("");
+    if (!preview) {
+      if (!createSaleAction) {
+        submittingRef.current = false; setSubmitting(false); setSaleError("El servicio de venta no está disponible."); return;
+      }
+      const result = await createSaleAction({
+        idempotencyKey: idempotencyKey.current,
+        cashSessionId: cashSession!.id,
+        items: cart.map((line) => ({ variant_id: line.variant.id, quantity: line.quantity, gift_receipt: line.giftReceipt })),
+        payments,
+        customerId: selectedCustomer?.id ?? null,
+        discount: discountPercent > 0 && discountAuthorization
+          ? { percent: discountPercent, authorizationToken: discountAuthorization }
+          : null,
+      });
+      if (!result.ok) {
+        submittingRef.current = false;
+        setSubmitting(false);
+        setSaleError(result.message);
+        return;
+      }
+      setSaleFolio(result.folio);
+      setSaleId(result.saleId);
+      setStoredReceipt(result.receipt as StoredReceipt | null);
+      setReceiptDate(formatReceiptDate(new Date(result.soldAt)));
+    } else {
+      setReceiptDate(formatReceiptDate());
+    }
     setPaymentUsed(method);
-    setReceiptDate(formatReceiptDate());
+    setReceiptPaymentLabel(receiptLabel);
     setCheckoutOpen(false);
     setCompleted(true);
+  }
+
+  function completeSale(method: PaymentMethod) {
+    const totalCents = Math.round(total * 100);
+    if (method === "cash") {
+      void submitSale(method, [{ method_code: "CASH", amount_cents: totalCents, tendered_cents: Math.round(cashTendered * 100) }]);
+      return;
+    }
+    if (paymentReference.trim().length < 3) {
+      setSaleError("Captura la referencia del pago electrónico.");
+      return;
+    }
+    void submitSale(method, [{ method_code: method === "card" ? "CARD" : "TRANSFER", amount_cents: totalCents, reference: paymentReference.trim() }]);
+  }
+
+  function completeSplitSale() {
+    const totalCents = Math.round(total * 100);
+    const cashCents = Math.round(Number(splitCash || 0) * 100);
+    const cardCents = Math.round(Number(splitCard || 0) * 100);
+    const transferCents = Math.round(Number(splitTransfer || 0) * 100);
+    if (cashCents + cardCents + transferCents !== totalCents) {
+      setSaleError("La suma de los pagos debe coincidir exactamente con el total.");
+      return;
+    }
+    if (cardCents > 0 && splitCardReference.trim().length < 3 || transferCents > 0 && splitTransferReference.trim().length < 3) {
+      setSaleError("Captura las referencias de los pagos electrónicos.");
+      return;
+    }
+    const payments: SalePaymentInput[] = [];
+    if (cashCents > 0) payments.push({ method_code: "CASH", amount_cents: cashCents, tendered_cents: cashCents });
+    if (cardCents > 0) payments.push({ method_code: "CARD", amount_cents: cardCents, reference: splitCardReference.trim() });
+    if (transferCents > 0) payments.push({ method_code: "TRANSFER", amount_cents: transferCents, reference: splitTransferReference.trim() });
+    void submitSale("cash", payments, "Pago combinado");
   }
 
   function newSale() {
@@ -168,13 +267,25 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
     setQuery("");
     setShowCatalog(false);
     setDiscountPercent(0);
+    setDiscountAuthorization(null);
+    setSupervisorCode("");
+    setSupervisorPin("");
     setCartDrawerOpen(false);
     setCashMode(false);
+    setSplitMode(false);
     setCashInput("");
+    setSplitCash(""); setSplitCard(""); setSplitTransfer("");
+    setSplitCardReference(""); setSplitTransferReference("");
     setSubmitting(false);
     submittingRef.current = false;
     setReceiptMode(null);
     setSelectedCustomer(null);
+    setPaymentReference("");
+    setSaleError("");
+    setSaleId("");
+    setStoredReceipt(null);
+    idempotencyKey.current = crypto.randomUUID();
+    router.refresh();
   }
 
   function selectCategory(label: string) {
@@ -192,9 +303,21 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
     });
   }
 
-  function applyDiscount() {
+  async function applyDiscount() {
     const value = Math.min(100, Math.max(0, Number(discountInput)));
     if (!Number.isFinite(value)) return;
+    if (value > 0 && !preview) {
+      setDiscountError("");
+      if (!authorizeDiscountAction) { setDiscountError("El servicio de autorización no está disponible."); return; }
+      const authorization = await authorizeDiscountAction({ employeeCode: supervisorCode, pin: supervisorPin });
+      if (!authorization.ok) {
+        setDiscountError(authorization.message);
+        return;
+      }
+      setDiscountAuthorization(authorization.authorizationToken);
+    } else {
+      setDiscountAuthorization(null);
+    }
     setDiscountPercent(value);
     setExtraDialog(null);
     notify(value ? `Descuento de ${value}% aplicado` : "Descuento eliminado");
@@ -209,13 +332,40 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
     notify("Apartado AP-000128 creado correctamente");
   }
 
+  async function printReceipt() {
+    if (!preview && saleId) {
+      if (!printAction) { setSaleError("El servicio de impresión no está disponible."); return; }
+      const result = await printAction(saleId, receiptMode ?? "sale");
+      if (!result.ok) { setSaleError(result.message); return; }
+    }
+    window.print();
+  }
+
+  if (!preview && !cashSession) {
+    return (
+      <section className="module-page cash-closed-state">
+        <span><LockKeyhole aria-hidden="true" /></span>
+        <p className="eyebrow">Punto de venta protegido</p>
+        <h1>Abre tu caja para vender</h1>
+        <p>{status ?? "Cada venta debe quedar ligada a una caja y a un turno. Puedes elegir una caja disponible en el módulo Caja."}</p>
+        <a className="primary-button" href="/caja">Ir a abrir caja</a>
+      </section>
+    );
+  }
+
   if (completed) {
+    const officialLines: ReceiptLine[] = storedReceipt?.items.map((item) => ({ name: item.product_name, variant: item.variant_description, code: item.sku, quantity: Number(item.quantity), unitPrice: Number(item.unit_price_cents) / 100 })) ?? receiptLines;
+    const officialGiftLines = officialLines.filter((_, index) => storedReceipt?.items[index]?.gift_receipt ?? cart[index]?.giftReceipt);
+    const officialPayments = storedReceipt?.payments ?? [];
+    const officialTendered = officialPayments.reduce((sum, item) => sum + Number(item.tendered_cents ?? item.amount_cents), 0) / 100;
+    const officialChange = officialPayments.reduce((sum, item) => sum + Number(item.change_cents), 0) / 100;
+    const officialLocation = storedReceipt ? { id: cashSession?.location_id ?? "", code: "", name: storedReceipt.location.name, address: storedReceipt.location.address, phone: storedReceipt.location.phone } : activeLocation;
     return (
       <><section className="sale-success">
           <span className="success-seal"><Check aria-hidden="true" strokeWidth={2.5} /></span>
           <p className="kicker">Venta completada</p>
           <h2>{money.format(total)}</h2>
-          <code>Folio V-000842 · {quantity} artículos</code>
+          <code>Folio {saleFolio} · {quantity} artículos</code>
           <div className="success-buttons">
             <button className="secondary-button" type="button" onClick={() => setReceiptMode("sale")}><Printer aria-hidden="true" />Ver e imprimir ticket</button>
             {giftCount > 0 ? (
@@ -224,7 +374,7 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
             <button className="primary-button" type="button" onClick={newSale}>Nueva venta</button>
           </div>
         </section>
-        {receiptMode ? <div className="modal-backdrop receipt-modal-backdrop"><section className="receipt-modal" role="dialog" aria-modal="true" aria-labelledby="receipt-preview-title"><header><div><p className="eyebrow">Vista previa · 80 mm</p><h2 id="receipt-preview-title">{receiptMode === "sale" ? "Ticket de venta" : "Ticket de regalo"}</h2><p>Así saldrá de la impresora térmica.</p></div><button type="button" aria-label="Cerrar ticket" onClick={() => setReceiptMode(null)}><X aria-hidden="true" /></button></header><div className="receipt-paper-stage"><ThermalReceipt mode={receiptMode} folio="V-000842" date={receiptDate} items={receiptMode === "gift" ? giftLines : receiptLines} subtotal={subtotal} discount={discountAmount} total={total} method={paymentLabels[paymentUsed]} tendered={paymentUsed === "cash" ? cashTendered : total} change={paymentUsed === "cash" ? change : 0} cashierName={identity.name} location={activeLocation} /></div><div className="receipt-modal-actions"><button className="secondary-button" type="button" onClick={() => setReceiptMode(null)}>Volver</button><button className="primary-button" type="button" onClick={() => window.print()}><Printer aria-hidden="true" />Imprimir ahora</button></div></section></div> : null}
+        {receiptMode ? <div className="modal-backdrop receipt-modal-backdrop"><section className="receipt-modal" role="dialog" aria-modal="true" aria-labelledby="receipt-preview-title" data-sale-id={saleId}><header><div><p className="eyebrow">Vista previa · 80 mm</p><h2 id="receipt-preview-title">{receiptMode === "sale" ? "Ticket de venta" : "Ticket de regalo"}</h2><p>Datos confirmados por la venta guardada.</p></div><button type="button" aria-label="Cerrar ticket" onClick={() => setReceiptMode(null)}><X aria-hidden="true" /></button></header><div className="receipt-paper-stage"><ThermalReceipt mode={receiptMode} folio={saleFolio} date={receiptDate} items={receiptMode === "gift" ? officialGiftLines : officialLines} subtotal={storedReceipt ? Number(storedReceipt.subtotal_cents) / 100 : subtotal} discount={storedReceipt ? Number(storedReceipt.discount_cents) / 100 : discountAmount} total={storedReceipt ? Number(storedReceipt.total_cents) / 100 : total} method={officialPayments.length ? officialPayments.map((item) => item.method_name).join(" + ") : receiptPaymentLabel} tendered={storedReceipt ? officialTendered : paymentUsed === "cash" ? cashTendered : total} change={storedReceipt ? officialChange : paymentUsed === "cash" ? change : 0} cashierName={storedReceipt?.cashier_name ?? identity.name} location={officialLocation} /></div><div className="receipt-modal-actions"><button className="secondary-button" type="button" onClick={() => setReceiptMode(null)}>Volver</button><button className="primary-button" type="button" onClick={() => void printReceipt()}><Printer aria-hidden="true" />Imprimir ahora</button></div></section></div> : null}
       </>
     );
   }
@@ -368,19 +518,22 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
       {toast ? (
         <div className="pos-toast" role="status"><span><Check aria-hidden="true" /></span>{toast}</div>
       ) : null}
+      {status || saleError ? <div className="inline-error" role="alert">{saleError || "No fue posible cargar el punto de venta. Intenta de nuevo."}</div> : null}
 
       {checkoutOpen ? (
         <div className="modal-backdrop">
           <section className="checkout-modal" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
             <p className="kicker">Confirmar cobro</p>
             <h2 id="checkout-title">{money.format(total)}</h2>
-            {!cashMode ? (
+            {!cashMode && !splitMode ? (
               <><p>Selecciona el método registrado en la venta.</p>
               <div className="payment-options">
                 <button className="payment-cash" type="button" onClick={() => setCashMode(true)}><Banknote aria-hidden="true" /><strong>Efectivo</strong><small>Calcular cambio</small></button>
-                <button className="payment-card" type="button" disabled={submitting} onClick={() => completeSale("card")}><CreditCard aria-hidden="true" /><strong>Tarjeta</strong><small>Terminal externa</small></button>
-                <button className="payment-transfer" type="button" disabled={submitting} onClick={() => completeSale("transfer")}><Landmark aria-hidden="true" /><strong>Transferencia</strong><small>Referencia externa</small></button>
-              </div></>
+                <button className="payment-card" type="button" disabled={submitting} onClick={() => setPaymentUsed("card")}><CreditCard aria-hidden="true" /><strong>Tarjeta</strong><small>Terminal externa</small></button>
+                <button className="payment-transfer" type="button" disabled={submitting} onClick={() => setPaymentUsed("transfer")}><Landmark aria-hidden="true" /><strong>Transferencia</strong><small>Referencia externa</small></button>
+              </div><button className="secondary-button wide" type="button" onClick={() => { setSplitMode(true); setPaymentUsed("cash"); setPaymentReference(""); }}>Dividir entre varios métodos</button></>
+            ) : splitMode ? (
+              <div className="split-payment-flow"><p>Distribuye el total. La suma debe ser exacta.</p><div className="form-stack"><label><span>Efectivo</span><input inputMode="decimal" value={splitCash} onChange={(event) => setSplitCash(event.target.value)} placeholder="0.00" /></label><label><span>Tarjeta</span><input inputMode="decimal" value={splitCard} onChange={(event) => setSplitCard(event.target.value)} placeholder="0.00" /></label>{Number(splitCard) > 0 ? <label><span>Referencia de terminal</span><input value={splitCardReference} onChange={(event) => setSplitCardReference(event.target.value)} /></label> : null}<label><span>Transferencia</span><input inputMode="decimal" value={splitTransfer} onChange={(event) => setSplitTransfer(event.target.value)} placeholder="0.00" /></label>{Number(splitTransfer) > 0 ? <label><span>Referencia de transferencia</span><input value={splitTransferReference} onChange={(event) => setSplitTransferReference(event.target.value)} /></label> : null}</div><button className="primary-button wide" type="button" disabled={submitting} onClick={completeSplitSale}>Confirmar pago combinado</button></div>
             ) : (
               <div className="cash-keypad-flow">
                 <div className="cash-display"><span>Recibido</span><strong>{money.format(cashTendered)}</strong><small className={cashTendered >= total ? "enough" : ""}>{cashTendered >= total ? `Cambio: ${money.format(change)}` : `Faltan ${money.format(total - cashTendered)}`}</small></div>
@@ -392,13 +545,14 @@ export function PosWorkspace({ variants }: { variants: ProductVariant[] }) {
                 <button className="confirm-cash-button" type="button" disabled={cashTendered < total || submitting} onClick={() => completeSale("cash")}>Confirmar efectivo</button>
               </div>
             )}
-            <button className="secondary-button wide" type="button" onClick={() => { if (cashMode) { setCashMode(false); setCashInput(""); } else { setCheckoutOpen(false); } }}>{cashMode ? "Cambiar método" : "Volver al carrito"}</button>
+            {!cashMode && paymentUsed !== "cash" ? <div className="form-stack electronic-reference"><label><span>Referencia de {paymentUsed === "card" ? "terminal" : "transferencia"}</span><input value={paymentReference} onChange={(event) => setPaymentReference(event.target.value)} placeholder="Últimos dígitos o folio" /></label><button className="primary-button wide" type="button" disabled={submitting || paymentReference.trim().length < 3} onClick={() => completeSale(paymentUsed)}>Confirmar cobro</button></div> : null}
+            <button className="secondary-button wide" type="button" onClick={() => { if (cashMode || splitMode) { setCashMode(false); setSplitMode(false); setCashInput(""); } else { setCheckoutOpen(false); } }}>{cashMode || splitMode ? "Cambiar método" : "Volver al carrito"}</button>
           </section>
         </div>
       ) : null}
 
       {extraDialog === "discount" ? (
-        <div className="modal-backdrop"><section className="checkout-modal compact-modal" role="dialog" aria-modal="true" aria-labelledby="discount-title"><p className="eyebrow">Venta en curso</p><h2 id="discount-title">Aplicar descuento</h2><div className="form-stack"><label><span>Porcentaje autorizado</span><input inputMode="decimal" value={discountInput} onChange={(event) => setDiscountInput(event.target.value)} placeholder="Ej. 10" /></label></div><div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setExtraDialog(null)}>Cancelar</button><button className="primary-button" type="button" onClick={applyDiscount}>Aplicar descuento</button></div></section></div>
+        <div className="modal-backdrop"><section className="checkout-modal compact-modal" role="dialog" aria-modal="true" aria-labelledby="discount-title"><p className="eyebrow">Venta en curso</p><h2 id="discount-title">Aplicar descuento</h2><div className="form-stack"><label><span>Porcentaje autorizado</span><input inputMode="decimal" value={discountInput} onChange={(event) => setDiscountInput(event.target.value)} placeholder="Ej. 10" /></label>{!preview ? <><label><span>Código del supervisor</span><input autoCapitalize="characters" value={supervisorCode} onChange={(event) => setSupervisorCode(event.target.value)} placeholder="Ej. ADMIN0" /></label><label><span>PIN del supervisor</span><input type="password" inputMode="numeric" value={supervisorPin} onChange={(event) => setSupervisorPin(event.target.value)} /></label></> : null}{discountError ? <p className="field-error" role="alert">{discountError}</p> : null}</div><div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setExtraDialog(null)}>Cancelar</button><button className="primary-button" type="button" onClick={() => void applyDiscount()}>Autorizar y aplicar</button></div></section></div>
       ) : null}
 
       {extraDialog === "layaway" ? (
