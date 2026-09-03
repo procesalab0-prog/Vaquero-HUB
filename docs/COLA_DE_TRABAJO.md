@@ -417,6 +417,50 @@ conexiones paralelas de verdad, no llamadas en serie); la invariante de
 que la suma de movimientos iguala el saldo; y que la mercancía en tránsito
 no aparezca disponible en ninguno de los dos extremos.
 
+### Lo que ya está, verificado ejecutando
+
+`20260903043840_m3_inventory_core.sql` trae el núcleo, y las dos pruebas
+bandera que se pueden correr hoy **pasan**:
+
+| Prueba | Resultado |
+|---|---|
+| Dos ventas concurrentes sobre existencia 1, conexiones paralelas | Una `INSUFFICIENT_STOCK`; existencia 0 y **una** venta registrada |
+| 20 ventas concurrentes tras cargar 50 | Existencia 30 = suma de movimientos 30 |
+| `check_inventory_invariant()` | Cero discrepancias |
+
+Y tres controles que resultaron ser estructurales, no de buena intención:
+
+- La bitácora de movimientos **no se edita ni se borra ni siendo
+  superusuario** (`INVENTORY_LEDGER_IMMUTABLE`).
+- `inventory_by_location` tampoco se toca directo: la existencia sólo se
+  mueve con su movimiento, que es la regla 3 del proyecto.
+- La tabla exige `new_qty = previous_qty + quantity` y ambas `>= 0`, así que
+  un renglón de bitácora no puede mentir sobre el saldo.
+- La ubicación `TRANSITO` rechaza escrituras directas.
+
+### Lo que falta: conteos y traspasos, y ahí cambia el juego
+
+**Aquí está el riesgo de seguir de largo.** Lo que falta de M3 —
+`inventory_counts`, `count_items`, `transfers`, `transfer_items` — es
+exactamente lo que §3.1 señala que **el patrón que acaba de funcionar no
+protege**.
+
+El `UPDATE` condicional se serializa contra el candado de *una fila*. Un
+traspaso toca dos ubicaciones y su invariante es que el total global no
+cambie; un conteo compara contra un saldo que otra caja está moviendo. En los
+dos casos, dos transacciones comprueban con su propia instantánea y las dos
+pasan. Es literalmente lo que pasó dos veces en M2.
+
+Así que para esta parte:
+
+1. **Candado consultivo antes de comprobar**, por la entidad que agrupa: el
+   par de ubicaciones en un traspaso, la sesión de conteo en un conteo.
+2. **La tercera prueba bandera todavía no se puede correr** —que la mercancía
+   en tránsito no aparezca disponible en ninguno de los dos extremos— porque
+   no hay traspasos. Es la que cierra M3, y no la sustituye ninguna otra.
+3. Las diferencias al recibir **se quedan en `TRANSITO`** (§6.2). No se
+   absorben solas: esconderlas esconde robos.
+
 ## 6. M4 — POS, pagos mixtos y caja
 
 **Especificación:** [`specs/M4_POS_Y_CAJA.md`](specs/M4_POS_Y_CAJA.md)
