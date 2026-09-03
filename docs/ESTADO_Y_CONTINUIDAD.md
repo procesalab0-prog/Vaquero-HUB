@@ -80,7 +80,7 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 | Milestone                                        | Estado de la especificación                                                                                                                                                |
 | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **M2** — catálogo, variantes, códigos, etiquetas | En progreso: desarrollo funcional listo; falta validación física con cámara, lector e impresora reales                                                                 |
+| **M2** — catálogo, variantes, códigos, etiquetas | **Terminado en software.** Sólo falta la validación física: imprimir una etiqueta real y escanearla, con cámara y lector                                              |
 | **M3** — inventario, movimientos, traspasos      | [Escrita](specs/M3_INVENTARIO.md)                                                                                                                                          |
 | **M4** — POS, pagos mixtos, caja                 | [Escrita](specs/M4_POS_Y_CAJA.md)                                                                                                                                          |
 | **M5** — devoluciones, cambios, cancelaciones    | [Escrita](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)                                                                                                                              |
@@ -88,6 +88,10 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 Recorridos a después de octubre: M6 compras, M7 apartados y lealtad, M8
 reportes y cotizaciones.
+
+**Con M2 cerrado quedan cinco semanas de trabajo contra unas seis de
+calendario.** El detalle, y las dos advertencias que impiden leer ese número
+con optimismo, están en [`PENDIENTES.md`](PENDIENTES.md).
 
 ## 3. Por qué la fecha es octubre
 
