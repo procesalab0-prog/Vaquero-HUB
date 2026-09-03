@@ -62,7 +62,9 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
   `drubkjlmfbdeglucakmg`. Las correcciones de M2 fueron aplicadas y verificadas
   el 2 de septiembre de 2026; las cuatro consultas de contaminación devolvieron
   cero hallazgos. M2.5 0.18.0 también quedó aplicado, con ejecución anónima
-  revocada y publicación verificada en Vercel.
+  revocada. M3 0.20.0 se promovió después de CI verde; la comprobación directa
+  posterior encontró cero descuadres entre libro y saldo, y Vercel confirmó la
+  publicación del merge en `main`.
 - **Pruebas:** la rama Supabase `staging`, referencia
   `zsezjtswqeijboezvado`, se reserva para Vercel Preview y validaciones previas
   a producción. Quedó actualizada hasta M3 0.20.0; las migraciones de inventario
