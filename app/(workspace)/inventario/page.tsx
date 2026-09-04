@@ -73,20 +73,21 @@ type CountRow = {
 };
 
 type TransferRow = {
-  id: string;
+  transfer_id: string;
   folio: number;
   from_location_id: string;
+  from_location_name: string;
   to_location_id: string;
+  to_location_name: string;
   status: InventoryTransfer["status"];
   note: string | null;
   requested_at: string;
-  transfer_items: Array<{
-    variant_id: string;
-    qty_requested: number | string;
-    qty_sent: number | string | null;
-    qty_received: number | string | null;
-    variants: { sku: string; products: { name: string } | null } | null;
-  }>;
+  variant_id: string;
+  product_name: string;
+  sku: string;
+  qty_requested: number | string;
+  qty_sent: number | string | null;
+  qty_received: number | string | null;
 };
 
 type Location = { id: string; name: string; code: string };
@@ -203,16 +204,10 @@ export default async function InventoryPage({
         .eq("location_id", activeLocation.id)
         .order("created_at", { ascending: false })
         .limit(20),
-      supabase
-        .from("transfers")
-        .select(
-          "id, folio, from_location_id, to_location_id, status, note, requested_at, transfer_items(variant_id, qty_requested, qty_sent, qty_received, variants(sku, products(name)))",
-        )
-        .or(
-          `from_location_id.eq.${activeLocation.id},to_location_id.eq.${activeLocation.id}`,
-        )
-        .order("requested_at", { ascending: false })
-        .limit(30),
+      supabase.rpc("list_inventory_transfers", {
+        p_location_id: activeLocation.id,
+        p_limit: 30,
+      }),
       permissionSet.has("transfers.create") ||
       permissionSet.has("transfers.receive")
         ? supabase.rpc("list_transfer_locations")
@@ -298,32 +293,32 @@ export default async function InventoryPage({
     }),
   );
   const transferLocations = (destinations.data ?? []) as Location[];
-  const locationNames = new Map(
-    transferLocations.map((location) => [location.id, location.name]),
-  );
-  const transfers: InventoryTransfer[] = (
-    (transfersData.data ?? []) as unknown as TransferRow[]
-  ).map((row) => ({
-    id: row.id,
-    folio: row.folio,
-    fromLocationId: row.from_location_id,
-    fromLocationName:
-      locationNames.get(row.from_location_id) ?? "Sucursal origen",
-    toLocationId: row.to_location_id,
-    toLocationName: locationNames.get(row.to_location_id) ?? "Sucursal destino",
-    status: row.status,
-    note: row.note,
-    requestedAt: row.requested_at,
-    items: row.transfer_items.map((item) => ({
-      variantId: item.variant_id,
-      productName: item.variants?.products?.name ?? "Producto",
-      sku: item.variants?.sku ?? "—",
-      requestedQuantity: Number(item.qty_requested),
-      sentQuantity: item.qty_sent === null ? null : Number(item.qty_sent),
+  const transfersById = new Map<string, InventoryTransfer>();
+  for (const row of (transfersData.data ?? []) as TransferRow[]) {
+    const transfer = transfersById.get(row.transfer_id) ?? {
+      id: row.transfer_id,
+      folio: row.folio,
+      fromLocationId: row.from_location_id,
+      fromLocationName: row.from_location_name,
+      toLocationId: row.to_location_id,
+      toLocationName: row.to_location_name,
+      status: row.status,
+      note: row.note,
+      requestedAt: row.requested_at,
+      items: [],
+    };
+    transfer.items.push({
+      variantId: row.variant_id,
+      productName: row.product_name,
+      sku: row.sku,
+      requestedQuantity: Number(row.qty_requested),
+      sentQuantity: row.qty_sent === null ? null : Number(row.qty_sent),
       receivedQuantity:
-        item.qty_received === null ? null : Number(item.qty_received),
-    })),
-  }));
+        row.qty_received === null ? null : Number(row.qty_received),
+    });
+    transfersById.set(row.transfer_id, transfer);
+  }
+  const transfers = Array.from(transfersById.values());
 
   return (
     <InventoryWorkspace

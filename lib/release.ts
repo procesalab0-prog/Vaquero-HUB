@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.20.1";
-export const APP_RELEASE = "M3 verificado de punta a punta";
+export const APP_VERSION = "0.21.3";
+export const APP_RELEASE = "M4 · Ventas, pagos mixtos y cajas";

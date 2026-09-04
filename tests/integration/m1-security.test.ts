@@ -116,7 +116,10 @@ describe.sequential("M1: matriz de identidad, permisos y RLS", () => {
 
     const { error: assignmentError } = await adminApi
       .from("user_locations")
-      .insert({ user_id: state.cashier!.id, location_id: firstLocationId });
+      .insert([
+        { user_id: state.cashier!.id, location_id: firstLocationId },
+        { user_id: state.supervisor!.id, location_id: firstLocationId },
+      ]);
     expect(assignmentError).toBeNull();
 
     for (const [fixture, pin] of [

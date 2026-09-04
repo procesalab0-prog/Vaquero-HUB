@@ -449,7 +449,7 @@ Ver la discusión de arquitectura en `PLAN_CODEX.md` sección 9.1.
 
 ## 11. Criterios de aceptación
 
-- [ ] Las 19 pruebas pasan en CI. La 1, la 3, la 9 y la 10 son las
+- [ ] Las 21 pruebas pasan en CI. La 1, la 3, la 9 y la 10 son las
       bandera.
 - [ ] Ningún precio ni total llega desde el cliente.
 - [ ] La restricción diferida de cuadre de pagos está activa.
