@@ -479,6 +479,21 @@ Funciones esperadas:
 - cierre de caja
 - cortes
 - movimientos de caja
+- ventas/tickets en espera para suspender un carrito y cobrar otro
+
+Operación rápida del POS:
+
+- Deberán existir atajos de teclado para abrir las funciones frecuentes,
+  como Ventas, Productos, Consultas y Clientes, además de acciones comunes
+  dentro del cobro cuando no entren en conflicto con la captura activa.
+- Los atajos serán visibles, configurables cuando corresponda y nunca
+  deberán omitir permisos, confirmaciones críticas ni validaciones del servidor.
+- Un ticket en espera deberá conservar artículos, cantidades, cliente y
+  empleado que lo dejó, y podrá recuperarse sin bloquear la caja para cobrar
+  otra venta.
+- Poner un ticket en espera no equivale a cobrarlo: no moverá caja ni
+  inventario definitivo. Al recuperarlo, el sistema deberá volver a validar
+  precios, disponibilidad y permisos antes del cobro.
 
 Entrega digital de tickets:
 
@@ -490,6 +505,9 @@ Entrega digital de tickets:
 - Una falla de WhatsApp, del menú Compartir, de SMS o de correo nunca deberá cancelar, duplicar ni revertir una venta ya cobrada.
 - El envío transaccional del comprobante y el consentimiento para promociones se tratarán como decisiones distintas. Compartir un ticket no habilita marketing.
 - Los intentos de entrega deberán dejar auditoría mínima de canal, estado, actor y fecha, sin copiar teléfonos, correos ni el contenido completo del ticket a los logs.
+- Cuando una venta se pague con varios métodos, el ticket impreso y digital
+  mostrará cada método y el importe aplicado por separado; en pagos
+  electrónicos también conservará su referencia según los permisos definidos.
 
 ⸻
 
@@ -597,6 +615,16 @@ Para productos nuevos Mi Tienda SM podrá:
 
 Diseñar una experiencia especialmente rápida para mercancía con tallas.
 
+- El alta deberá presentar tallas y variantes como una lista continua de
+  selección múltiple, para marcar varias de corrido sin cerrar ventanas ni
+  repetir los datos generales del producto.
+- Para usuarios autorizados, cada producto/variante mostrará costo, precio de
+  menudeo y los niveles de mayoreo **Precio 1, Precio 2 y Precio 3**. El costo
+  seguirá oculto para roles sin permiso.
+- Antes de activar los niveles de mayoreo en una venta deberá definirse quién
+  puede usarlos, cómo se asignan a clientes y si dependen de cantidad; el
+  sistema no inventará esas reglas de negocio.
+
 Ejemplo:
 
 Crear producto:
@@ -697,6 +725,12 @@ Toda devolución/cancelación deberá:
 - conservar motivo
 - mantener auditoría
 
+En un ticket con varios artículos se podrá seleccionar un solo renglón —o una
+cantidad menor de ese renglón— para devolverlo. La venta original permanecerá
+intacta y la devolución parcial se registrará como un documento relacionado,
+con su movimiento de inventario y dinero correspondiente. La cancelación total
+de la venta seguirá siendo una operación distinta y controlada.
+
 Nunca eliminar una venta histórica para simular una cancelación.
 
 ⸻
@@ -721,6 +755,13 @@ opened_by
 closed_by
 opened_at
 closed_at
+
+La caja deberá permitir configurar por sucursal o caja un límite operativo de
+efectivo. Al acercarse o llegar al límite mostrará un aviso claro para realizar
+un corte o retiro preventivo autorizado. El umbral no estará fijo en el código;
+el aviso, el retiro y el corte conservarán actor, fecha, caja e importes en la
+auditoría. La respuesta operativa exacta —corte completo o retiro parcial— se
+confirmará con Vaqueros SM antes de hacerla obligatoria.
 
 ⸻
 
@@ -779,6 +820,21 @@ valor anterior
 valor nuevo
 fecha
 metadata
+
+Para altas de producto y movimientos de inventario, la consulta de auditoría
+deberá responder de forma legible quién realizó la acción, qué producto y
+variante afectó, qué agregó o rebajó, cantidad anterior y nueva, motivo, fecha,
+hora, sucursal y documento de origen. No bastará con guardar un evento técnico
+difícil de interpretar.
+
+24.1. Consultas de ventas
+
+Las consultas de ventas deberán permitir filtrar por rango de fecha y hora,
+sucursal, cajero, categoría, producto y variante. Por ejemplo, se podrá elegir
+del día 9 al 14, filtrar únicamente la categoría Botas y conocer cada venta con
+su folio, día, hora, producto, variante, cantidad, precio aplicado y método de
+pago. La vista deberá ofrecer tanto resumen agregado como detalle trazable al
+ticket original, respetando los permisos y el alcance por sucursal.
 
 ⸻
 
