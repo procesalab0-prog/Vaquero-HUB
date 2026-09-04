@@ -472,7 +472,7 @@ desbloquea el trabajo en paralelo cuando el equipo se divida
 
 La regla que gobierna: el cliente nunca dice cuánto cuesta algo.
 
-### Implementación 0.21.2
+### Implementación 0.21.3
 
 - Varias cajas por sucursal, con una sola sesión abierta por caja y por
   cajero. Un administrador puede agregar cajas desde el propio módulo.
@@ -494,8 +494,10 @@ La regla que gobierna: el cliente nunca dice cuánto cuesta algo.
 - Inventario obtiene el historial de traspasos mediante una RPC autorizada y
   limitada. La pantalla vuelve a mostrar las existencias sin conceder lectura
   directa sobre las tablas protegidas de productos y variantes.
+- El pago combinado ya no pasa por la validación exclusiva del efectivo total;
+  una prueba de navegador confirma una venta dividida entre efectivo y tarjeta.
 
-**M4 quedó cerrado en software en 0.21.2:** CI reconstruye la base desde cero y
+**M4 quedó cerrado en software en 0.21.3:** CI reconstruye la base desde cero y
 confirmó 84 pruebas de integración, incluidas las carreras entre cajas. Quedan
 como validación operativa la prueba táctil en iPad y la prueba física con la
 impresora elegida. Cancelaciones y devoluciones siguen en M5; no se inventó la

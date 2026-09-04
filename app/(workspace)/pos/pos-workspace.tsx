@@ -187,7 +187,7 @@ export function PosWorkspace({ variants, cashSession, preview = false, status, c
 
   async function submitSale(method: PaymentMethod, payments: SalePaymentInput[], receiptLabel = paymentLabels[method]) {
     if (submittingRef.current) return;
-    if (method === "cash" && cashTendered < total) return;
+
     if (!preview && !cashSession?.id) {
       setSaleError("Abre una caja antes de cobrar.");
       return;
@@ -231,6 +231,10 @@ export function PosWorkspace({ variants, cashSession, preview = false, status, c
   function completeSale(method: PaymentMethod) {
     const totalCents = Math.round(total * 100);
     if (method === "cash") {
+      if (cashTendered < total) {
+        setSaleError("El efectivo recibido no cubre el total.");
+        return;
+      }
       void submitSale(method, [{ method_code: "CASH", amount_cents: totalCents, tendered_cents: Math.round(cashTendered * 100) }]);
       return;
     }
