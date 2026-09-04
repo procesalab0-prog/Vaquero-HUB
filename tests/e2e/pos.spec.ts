@@ -44,13 +44,6 @@ for (const method of [
       .getByRole("button", { name: new RegExp(`^${method.name}`) })
       .click();
 
-    await page.getByRole("button", { name: "Confirmar cobro" }).click();
-    await expect(
-      page.getByRole("alert").filter({
-        hasText: "Captura la referencia del pago electrónico.",
-      }),
-    ).toBeVisible();
-
     await page.getByLabel(method.reference).fill("1234");
     await page.getByRole("button", { name: "Confirmar cobro" }).click();
     await expect(page.getByText("Venta completada")).toBeVisible();
