@@ -52,7 +52,7 @@ saltando lo bloqueado.
 | **M2.5 (0.18.0)**        | Selección y precios en lote auditados; plantillas persistentes e impresión real de etiquetas             |
 | **M3.1 (0.19.0)**        | Saldos por sucursal, libro inmutable, ajustes auditados y pantalla de inventario con datos reales        |
 | **M3 (0.20.0)**          | Conteos formales y traspasos con aprobación, tránsito explícito, recepción parcial y auditoría           |
-| **M4 (0.21.2)**          | Ventas atómicas, pagos mixtos, cajas múltiples, corte ciego, descuentos autorizados y ticket persistido  |
+| **M4 (0.21.3)**          | Ventas atómicas, pagos mixtos, cajas múltiples, corte ciego, descuentos autorizados y ticket persistido  |
 
 Cuarenta y tres migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
@@ -69,8 +69,8 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
   CI verde, incluidas las pruebas concurrentes de venta e idempotencia.
 - **Pruebas:** la rama Supabase `staging`, referencia
   `zsezjtswqeijboezvado`, se reserva para Vercel Preview y validaciones previas
-  a producción. M4 0.21.2 conserva esa validación y corrige la lectura segura
-  del historial de traspasos que impedía mostrar existencias en Inventario.
+  a producción. M4 0.21.3 conserva esa validación, corrige la lectura segura
+  del historial de traspasos y confirma por navegador el pago combinado.
   M4 0.21.1 se validó primero en este ambiente antes de
   promoverse; las migraciones de inventario siguieron el mismo recorrido.
   M2.5 conserva sus pruebas de escritura atómica, límites, permisos, cambio
