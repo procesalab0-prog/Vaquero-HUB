@@ -415,8 +415,17 @@ Ver la discusión de arquitectura en `PLAN_CODEX.md` sección 9.1.
 
 - `sales`, `sale_items`, `sale_payments`: lectura por ubicación vía
   `app.can_access_location`. Escritura sólo por `create_sale`.
-- `cash_sessions`, `cash_movements`: igual, y sólo `cash.close` ve el
-  esperado antes del conteo.
+- `cash_sessions`, `cash_movements`: igual, pero la lectura del libro de
+  caja de una sesión **abierta** exige `reports.sales`, no `cash.close`.
+  Atarla a `cash.close` la volvía inútil: `cash.close` es el permiso de la
+  cajera, porque es ella quien cierra su propia caja, así que un
+  `select sum(amount_cents)` le entregaba el esperado antes de contar.
+  La cajera revisa su propia sesión completa una vez cerrada.
+- Mientras la sesión está abierta, ninguna RPC devuelve importes de venta al
+  cajero: `get_my_cash_session` entrega conteos de operaciones. Fondo inicial
+  más efectivo cobrado más entradas menos retiros reconstruye el esperado, así
+  que basta con publicar el desglose por método para que el conteo a ciegas
+  deje de serlo. **Esta regla es de la base, no de la pantalla.**
 - `payment_methods`: lectura para cualquier usuario activo.
 - Los costos (`unit_cost_cents`) sólo para quien tenga `reports.inventory`.
   **Una cajera no ve el margen.**

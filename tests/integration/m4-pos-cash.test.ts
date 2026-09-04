@@ -332,6 +332,38 @@ describe.sequential("M4: POS y caja", () => {
     ]);
   });
 
+  it("no entrega el esperado antes del conteo: ni por la sesión ni por el libro", async () => {
+    // Un corte a ciegas que se puede comparar antes de declararlo no detecta
+    // faltantes. La cajera no debe poder reconstruir el esperado ni desde su
+    // propia pantalla ni consultando la tabla.
+    const session = await state.cashierA!.client.rpc("get_my_cash_session");
+    expect(session.error).toBeNull();
+    expect(session.data.status).toBe("OPEN");
+    expect(session.data.sales_total_cents).toBeUndefined();
+    for (const payment of session.data.payments as Record<string, unknown>[]) {
+      expect(payment.amount_cents).toBeUndefined();
+      expect(Number(payment.count)).toBeGreaterThan(0);
+    }
+    const propio = await state
+      .cashierA!.client.from("cash_movements")
+      .select("amount_cents")
+      .eq("session_id", state.sessionA);
+    expect(propio.error).toBeNull();
+    expect(propio.data).toHaveLength(0);
+    const ajeno = await state
+      .cashierA!.client.from("cash_movements")
+      .select("amount_cents")
+      .eq("session_id", state.sessionB);
+    expect(ajeno.data ?? []).toHaveLength(0);
+    // La supervisión sí lo ve: el control es sobre quien cuenta, no sobre quien audita.
+    const supervisor = await state
+      .admin!.client.from("cash_movements")
+      .select("amount_cents")
+      .eq("session_id", state.sessionA);
+    expect(supervisor.error).toBeNull();
+    expect((supervisor.data ?? []).length).toBeGreaterThan(0);
+  });
+
   it("el cierre es ciego y exige explicación cuando hay diferencia", async () => {
     const preview = await state.cashierB!.client.rpc("preview_cash_close", {
       p_session_id: state.sessionB,

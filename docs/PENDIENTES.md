@@ -102,6 +102,41 @@ Opciones:
    opción técnica de menor privilegio, pero sigue necesitando aprobación del
    dueño.
 
+## Decisión del dueño: hasta dónde se puede cancelar una venta
+
+La spec de M4 §6 dejó la pregunta abierta y por eso `cancel_sale` no se
+implementó. La parte que nadie discute — la cajera se equivocó de ticket y lo
+anula en su turno, con su caja abierta — ya está en cola y se puede construir
+sin esperar nada.
+
+Lo que falta decidir:
+
+1. ¿Se puede cancelar una venta de un **turno o día anterior**, cuando la caja
+   de ese turno ya se cerró? La práctica común de tienda es que no: después del
+   corte sólo procede devolución, porque cancelar movería dinero de una caja
+   que ya cuadró.
+2. Si la respuesta es que sí, ¿quién autoriza: gerente con PIN, o sólo el
+   dueño?
+
+Mientras no haya respuesta, cancelar se limita a la sesión abierta y todo lo
+demás es devolución (M5).
+
+## Decisión del dueño: quién despacha y quién recibe un traspaso
+
+La regla que pide la spec de M3 §7 — que quien **aprueba** no pueda **recibir**
+— está implementada y probada. Pero se comprobó ejecutando que **la misma
+persona sí puede preparar, despachar y recibir** el mismo traspaso: el control
+cubre al que autoriza, no al que toca la mercancía en los dos extremos.
+
+En la práctica el que empaca la caja en una sucursal y el que la abre en la
+otra son personas distintas, porque están en edificios distintos. Si eso es
+siempre así, conviene exigir además que quien despacha no sea quien recibe: es
+una línea de código y cierra el hueco. Si hay una sola persona de almacén que
+viaja entre las dos tiendas, la regla la dejaría trabada y entonces no se pone.
+
+Es decisión del dueño porque depende de cómo opera Vaqueros SM, no de la
+arquitectura.
+
 ## Orden inmediato de implementación
 
 1. El lector de cámara quedó construido en 0.15.0. Probarlo dentro de la PWA
