@@ -230,7 +230,11 @@ export function PosWorkspace({ variants, cashSession, preview = false, status, c
 
   function completeSale(method: PaymentMethod) {
     const totalCents = Math.round(total * 100);
-    if (method === "cash") {\n      if (cashTendered < total) {\n        setSaleError("El efectivo recibido no cubre el total.");\n        return;\n      }
+    if (method === "cash") {
+      if (cashTendered < total) {
+        setSaleError("El efectivo recibido no cubre el total.");
+        return;
+      }
       void submitSale(method, [{ method_code: "CASH", amount_cents: totalCents, tendered_cents: Math.round(cashTendered * 100) }]);
       return;
     }
