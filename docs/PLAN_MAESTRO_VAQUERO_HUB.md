@@ -586,6 +586,21 @@ Considerar:
 - estados claros
 - prevención de doble toque/doble cobro
 
+Apariencia y modo nocturno:
+
+- La interfaz ofrecerá los modos **Claro**, **Oscuro** y **Automático**, con
+  un control accesible desde los ajustes y un cambio rápido desde la sesión.
+- En Automático podrá seguir la preferencia de apariencia del dispositivo o
+  un horario configurable de inicio y fin, usando la hora local de la sucursal.
+- La preferencia se conservará por usuario y dispositivo; el cambio de tema no
+  deberá cerrar modales, borrar capturas ni perder el carrito en curso.
+- Ambos temas mantendrán contraste accesible, estados distinguibles mediante
+  texto o iconos y los colores semánticos definidos para confirmación, alerta y
+  acciones destructivas. El sistema evitará mostrar primero un destello del
+  tema incorrecto al abrir la PWA.
+- Tickets térmicos, etiquetas y documentos impresos conservarán su plantilla
+  clara de alto contraste, independientemente del tema usado en pantalla.
+
 ⸻
 
 16. Hardware POS
