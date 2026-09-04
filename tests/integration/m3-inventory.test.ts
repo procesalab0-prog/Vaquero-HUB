@@ -435,6 +435,25 @@ describe.sequential("M3.1: libro y saldos de inventario", () => {
     });
     expect(created.error).toBeNull();
     const transferId = created.data.id as string;
+
+    const visibleTransfers = await state.manager!.client.rpc(
+      "list_inventory_transfers",
+      { p_location_id: state.locationId, p_limit: 30 },
+    );
+    expect(visibleTransfers.error).toBeNull();
+    expect(visibleTransfers.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          transfer_id: transferId,
+          from_location_name: "M3 Sucursal A",
+          to_location_name: "M3 Sucursal B",
+          variant_id: state.variantId,
+          sku: expect.any(String),
+          product_name: `Producto inventario ${runCode}`,
+        }),
+      ]),
+    );
+
     expect(
       (
         await state.manager!.client.rpc("approve_transfer", {
