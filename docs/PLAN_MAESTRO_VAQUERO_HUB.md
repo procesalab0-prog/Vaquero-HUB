@@ -451,6 +451,32 @@ IN_TRANSIT
 RECEIVED
 CANCELLED
 
+Solicitud de mercancía entre tiendas:
+
+- Desde su sucursal, un empleado autorizado podrá buscar o escanear un
+  producto/variante, consultar qué otras tiendas tienen existencia disponible
+  y solicitar una cantidad a una tienda origen específica.
+- La solicitud conservará tienda solicitante/destino, tienda origen,
+  producto, variante, cantidad, prioridad o nota operativa, solicitante y
+  fecha/hora.
+- La tienda origen tendrá una bandeja de solicitudes pendientes y podrá
+  aprobar la cantidad completa, aprobar parcialmente o rechazar con motivo.
+  La tienda solicitante podrá consultar el estado y la respuesta sin llamar
+  para confirmar manualmente.
+- Una solicitud en estado `REQUESTED` no mueve ni promete inventario por sí
+  sola. Antes de aprobar y nuevamente antes de enviar se validarán existencia,
+  permisos y estado vigente; el movimiento físico continuará usando el flujo
+  `APPROVED → PREPARED → IN_TRANSIT → RECEIVED`.
+- El sistema notificará dentro de Mi Tienda SM a la tienda origen cuando llegue
+  una solicitud y a la tienda solicitante cuando cambie de estado. Una falla de
+  notificación no deberá cambiar ni duplicar el traspaso.
+- Solicitar, aprobar, rechazar, preparar, enviar, recibir o cancelar dejará
+  auditoría con actor, sucursal, fecha, cantidades y motivo. RLS impedirá que
+  una tienda actúe sobre solicitudes ajenas a su origen o destino.
+- Los permisos para solicitar y aprobar serán distintos. La asignación exacta
+  por rol se confirmará con Vaqueros SM; la interfaz nunca sustituirá la
+  validación del servidor.
+
 Una mercancía en tránsito NO deberá aparecer simultáneamente como disponible en origen y destino.
 
 ⸻
@@ -559,6 +585,21 @@ Considerar:
 - buena operación horizontal y vertical
 - estados claros
 - prevención de doble toque/doble cobro
+
+Apariencia y modo nocturno:
+
+- La interfaz ofrecerá los modos **Claro**, **Oscuro** y **Automático**, con
+  un control accesible desde los ajustes y un cambio rápido desde la sesión.
+- En Automático podrá seguir la preferencia de apariencia del dispositivo o
+  un horario configurable de inicio y fin, usando la hora local de la sucursal.
+- La preferencia se conservará por usuario y dispositivo; el cambio de tema no
+  deberá cerrar modales, borrar capturas ni perder el carrito en curso.
+- Ambos temas mantendrán contraste accesible, estados distinguibles mediante
+  texto o iconos y los colores semánticos definidos para confirmación, alerta y
+  acciones destructivas. El sistema evitará mostrar primero un destello del
+  tema incorrecto al abrir la PWA.
+- Tickets térmicos, etiquetas y documentos impresos conservarán su plantilla
+  clara de alto contraste, independientemente del tema usado en pantalla.
 
 ⸻
 
