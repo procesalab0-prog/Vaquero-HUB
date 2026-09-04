@@ -1,3 +1,5 @@
+MI TIENDA SM — CONTEXTO MAESTRO DEL PROYECTO
+
 1. Descripción general
 
 Proyecto: Mi Tienda SM
