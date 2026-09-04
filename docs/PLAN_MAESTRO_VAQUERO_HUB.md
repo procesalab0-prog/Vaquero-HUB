@@ -1,5 +1,3 @@
-MI TIENDA SM — CONTEXTO MAESTRO DEL PROYECTO
-
 1. Descripción general
 
 Proyecto: Mi Tienda SM
@@ -491,6 +489,12 @@ Operación rápida del POS:
 - Un ticket en espera deberá conservar artículos, cantidades, cliente y
   empleado que lo dejó, y podrá recuperarse sin bloquear la caja para cobrar
   otra venta.
+- El carrito en curso se guardará automáticamente cuando el empleado cambie
+  de módulo o ventana dentro de Mi Tienda SM y se restaurará al volver al POS,
+  sin obligarlo a convertirlo manualmente en ticket en espera.
+- El carrito guardado quedará aislado por empleado, caja y sesión activa; no
+  deberá aparecer a otro usuario ni sobrevivir indebidamente al cierre de caja
+  o de sesión. Una venta completada lo eliminará para evitar cobros repetidos.
 - Poner un ticket en espera no equivale a cobrarlo: no moverá caja ni
   inventario definitivo. Al recuperarlo, el sistema deberá volver a validar
   precios, disponibilidad y permisos antes del cobro.
@@ -835,6 +839,13 @@ del día 9 al 14, filtrar únicamente la categoría Botas y conocer cada venta c
 su folio, día, hora, producto, variante, cantidad, precio aplicado y método de
 pago. La vista deberá ofrecer tanto resumen agregado como detalle trazable al
 ticket original, respetando los permisos y el alcance por sucursal.
+
+Cuando existan muchos datos, la consulta permitirá agrupar o dividir la
+información por **día, semana, mes o año**, además de usar un rango
+personalizado. Los periodos respetarán la zona horaria de la sucursal y la
+interfaz cargará resultados por páginas o bloques para no intentar mostrar
+miles de registros a la vez. Cambiar de resumen a detalle conservará los
+filtros seleccionados.
 
 ⸻
 
