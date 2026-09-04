@@ -451,6 +451,32 @@ IN_TRANSIT
 RECEIVED
 CANCELLED
 
+Solicitud de mercancía entre tiendas:
+
+- Desde su sucursal, un empleado autorizado podrá buscar o escanear un
+  producto/variante, consultar qué otras tiendas tienen existencia disponible
+  y solicitar una cantidad a una tienda origen específica.
+- La solicitud conservará tienda solicitante/destino, tienda origen,
+  producto, variante, cantidad, prioridad o nota operativa, solicitante y
+  fecha/hora.
+- La tienda origen tendrá una bandeja de solicitudes pendientes y podrá
+  aprobar la cantidad completa, aprobar parcialmente o rechazar con motivo.
+  La tienda solicitante podrá consultar el estado y la respuesta sin llamar
+  para confirmar manualmente.
+- Una solicitud en estado `REQUESTED` no mueve ni promete inventario por sí
+  sola. Antes de aprobar y nuevamente antes de enviar se validarán existencia,
+  permisos y estado vigente; el movimiento físico continuará usando el flujo
+  `APPROVED → PREPARED → IN_TRANSIT → RECEIVED`.
+- El sistema notificará dentro de Mi Tienda SM a la tienda origen cuando llegue
+  una solicitud y a la tienda solicitante cuando cambie de estado. Una falla de
+  notificación no deberá cambiar ni duplicar el traspaso.
+- Solicitar, aprobar, rechazar, preparar, enviar, recibir o cancelar dejará
+  auditoría con actor, sucursal, fecha, cantidades y motivo. RLS impedirá que
+  una tienda actúe sobre solicitudes ajenas a su origen o destino.
+- Los permisos para solicitar y aprobar serán distintos. La asignación exacta
+  por rol se confirmará con Vaqueros SM; la interfaz nunca sustituirá la
+  validación del servidor.
+
 Una mercancía en tránsito NO deberá aparecer simultáneamente como disponible en origen y destino.
 
 ⸻
