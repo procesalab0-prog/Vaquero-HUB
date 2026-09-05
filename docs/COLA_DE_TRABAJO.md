@@ -647,7 +647,10 @@ diferencias de precio, daño, devoluciones entre sucursales y sin ticket.
 ## 8. M9 — Importador y sincronizador de SICAR
 
 **Especificación:** [`PLAN_CODEX.md`](PLAN_CODEX.md) §5, milestone M9
-**BLOQUEADO:** hace falta una exportación de muestra de SICAR.
+**DESBLOQUEADO PARA ANÁLISIS:** se recibió `Plantilla_Productos.xlsx` el 4 de
+septiembre de 2026. El resumen canónico y sus compuertas están en el contexto
+maestro, sección 4.1. Falta confirmar físicamente qué campo corresponde al
+código escaneable antes de escribir el importador definitivo.
 
 El script de análisis —que sólo lee y reporta— se puede escribir en cuanto
 llegue el archivo, y de él sale la lista de limpieza que el cliente
