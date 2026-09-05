@@ -676,6 +676,33 @@ Captura repetitiva y cantidades:
 - El alta de producto conservará la selección múltiple de tallas y colores y
   la matriz editable ya definida. No deberá obligar a crear cada combinación
   individualmente ni repetir costo, precio u otros datos idénticos.
+- Tallas y colores se presentarán como una **lista o tabla continua**, visible
+  de una sola vez siempre que el tamaño de pantalla lo permita. El empleado
+  podrá marcar varias opciones de corrido, seleccionar o limpiar un rango y
+  recorrer la matriz con teclado o toque sin abrir un selector independiente
+  por cada talla o color.
+
+Ergonomía como compuerta de calidad:
+
+- La ergonomía es uno de los criterios principales del proyecto, al mismo
+  nivel operativo que seguridad, integridad de inventario y exactitud de caja.
+  No se tratará como decoración ni como una limpieza para el final.
+- A partir de M5, cada módulo operativo deberá pasar una revisión ergonómica
+  antes de darse por cerrado. Se medirán pasos, toques, tiempo, capturas
+  repetidas, cambios de contexto, errores evitables y claridad del lenguaje.
+- La revisión se ejecutará al menos en teléfono vertical, iPad horizontal y
+  computadora con teclado. Incluirá los recorridos frecuentes completos, no
+  sólo la apariencia aislada de cada pantalla.
+- La primera auditoría ergonómica formal se hará inmediatamente después de la
+  interfaz de cambios de M5 y antes de acumular los siguientes módulos. Tendrá
+  como focos iniciales el alta continua de tallas y colores, conteos rápidos,
+  traspasos, venta, tickets en espera y acciones en lote.
+- Los hallazgos se registrarán en la cola con evidencia y prioridad. Un flujo
+  frecuente que obligue a repetir capturas, esconda acciones necesarias o no
+  pueda completarse correctamente en un dispositivo objetivo bloqueará el
+  cierre de la entrega correspondiente.
+- La auditoría se repetirá antes del piloto y durante éste con empleados
+  reales. Lo observado en operación manda sobre suposiciones del equipo.
 
 Apariencia y modo nocturno:
 
@@ -1427,6 +1454,7 @@ Y para cada operación sensible preguntar:
 1. Diseñar con mínimo privilegio, validación del servidor y auditoría desde el inicio.
 1. Entender el proceso humano real antes de automatizarlo o rediseñarlo.
 1. Reducir trabajo repetitivo y prevenir errores sin debilitar reglas de negocio ni seguridad.
+1. Tratar la ergonomía como criterio de aceptación desde cada milestone; medirla y auditarla antes del piloto, no dejarla como pulido final.
 
 ⸻
 

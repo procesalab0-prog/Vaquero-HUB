@@ -6,7 +6,7 @@
 > contexto maestro dice **qué** se construye y por qué; este documento
 > dice **cómo, en qué orden y con qué criterios de aceptación**.
 >
-> Última actualización: 2026-09-02.
+> Última actualización: 2026-09-05.
 
 ## Estado de ejecución al 1 de septiembre de 2026
 
@@ -404,6 +404,23 @@ caja cuadra contra los pagos en efectivo del turno.
 **Aceptación:** después de una devolución, la venta original sigue intacta
 y el inventario regresa exactamente a su valor previo; un cambio con
 diferencia de precio queda trazado como una sola operación.
+
+### M5.5 — Auditoría ergonómica intermedia
+
+No es pulido final ni una semana decorativa. Al cerrar la interfaz de M5 se
+auditan los recorridos frecuentes en teléfono vertical, iPad horizontal y
+computadora antes de acumular los módulos siguientes. Se mide tiempo, pasos,
+captura repetida, errores evitables y conservación del contexto.
+
+Incluye obligatoriamente el alta con tallas y colores en lista o tabla
+continua, selección de rangos y matriz editable; también conteos consecutivos,
+traspasos, venta, tickets en espera y acciones en lote. M9 puede analizarse en
+paralelo, pero la siguiente entrega operativa no se cierra con hallazgos
+frecuentes o bloqueantes sin corregir.
+
+**Aceptación:** alta multivariante sin abrir selectores uno por uno; conteo de
+20 variantes con avance continuo; evidencia y hallazgos priorizados en
+`docs/AUDITORIA_ERGONOMIA.md`.
 
 ### M6 — Compras, proveedores y recepción _(semana 7)_
 
