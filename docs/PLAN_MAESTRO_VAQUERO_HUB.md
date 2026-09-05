@@ -586,6 +586,28 @@ Considerar:
 - estados claros
 - prevención de doble toque/doble cobro
 
+Captura repetitiva y cantidades:
+
+- Las existencias, conteos, ajustes y movimientos de mercancía que se vende
+  por pieza deberán capturarse como **enteros**. Las flechas de un campo
+  numérico aumentarán o disminuirán de uno en uno; no usarán pasos como
+  `0.001`. Sólo una unidad de medida configurada expresamente para venta
+  fraccionada podrá aceptar decimales.
+- Un conteo físico deberá favorecer el recorrido continuo: escanear o elegir
+  una variante, escribir la cantidad, confirmar con teclado y avanzar al
+  siguiente renglón sin abrir y cerrar formularios por cada producto.
+- Cuando una operación segura se repita sobre varios elementos —por ejemplo
+  elegir tallas y colores, contar variantes, imprimir etiquetas o actualizar
+  datos comunes— la interfaz ofrecerá selección múltiple, matriz, captura en
+  tabla, pegado desde una lista o acciones en lote según corresponda.
+- Los valores compartidos se capturarán una sola vez y se heredarán a las
+  variantes seleccionadas, permitiendo corregir excepciones antes de guardar.
+  Las acciones masivas mostrarán un resumen previo y conservarán permisos,
+  validaciones y auditoría; rapidez no significa saltarse controles.
+- El alta de producto conservará la selección múltiple de tallas y colores y
+  la matriz editable ya definida. No deberá obligar a crear cada combinación
+  individualmente ni repetir costo, precio u otros datos idénticos.
+
 Apariencia y modo nocturno:
 
 - La interfaz ofrecerá los modos **Claro**, **Oscuro** y **Automático**, con
