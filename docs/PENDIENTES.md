@@ -157,7 +157,7 @@ y conviene decirlo con números porque cambia una decisión.
 | M3 inventario   | 1                | **Terminado en software**; queda la validación física conjunta de etiqueta, cámara y lector |
 | M4 POS y caja   | 2                | **Terminado en software 0.22.0**; falta validación física de impresora y operación táctil    |
 | M5 devoluciones | 1                | **En curso:** base inmutable y cambio parejo terminados; reglas de dinero siguen pendientes  |
-| M9 importador   | 1                | Bloqueado por la muestra de SICAR                                                           |
+| M9 importador   | 1                | Muestra real recibida y perfilada; sigue el mapeo de columnas y la corrida en seco           |
 
 Quedan **cuatro semanas de trabajo** contra unas seis de calendario hasta
 mediados de octubre.
@@ -184,7 +184,8 @@ El calendario completo y la estrategia para la segunda sucursal viven en
 
 ## Asuntos todavía bloqueados
 
-- Exportación de muestra de SICAR y simbología que usa actualmente.
+- Confirmar físicamente si `clave1` de la exportación SICAR es el código que
+  lee la etiqueta y qué simbología usa actualmente.
 - Escalas de talla de sombreros, texanas y cinturones.
 - Reglas de puntos, crédito y apartados.
 - Forma definitiva de envío de tickets por SMS o correo.
