@@ -65,10 +65,12 @@ const ticketTime = new Intl.DateTimeFormat("es-MX", {
 export function TicketsRealWorkspace({
   tickets,
   status,
+  referenceTime,
   cancelSaleAction,
 }: {
   tickets: Ticket[];
   status?: string;
+  referenceTime: string;
   cancelSaleAction?: (saleId: string, reason: string) => Promise<CancelResult>;
 }) {
   const [rows, setRows] = useState(tickets);
@@ -85,7 +87,7 @@ export function TicketsRealWorkspace({
   const selected = rows.find((ticket) => ticket.id === selectedId) ?? null;
 
   const filtered = useMemo(() => {
-    const start = new Date();
+    const start = new Date(referenceTime);
     if (period === "today") start.setHours(0, 0, 0, 0);
     if (period === "week") start.setDate(start.getDate() - 7);
     if (period === "month") start.setDate(start.getDate() - 30);
@@ -104,7 +106,7 @@ export function TicketsRealWorkspace({
             .toLocaleLowerCase("es-MX")
             .includes(term)),
     );
-  }, [deferredQuery, period, rows]);
+  }, [deferredQuery, period, referenceTime, rows]);
 
   const lines: ReceiptLine[] =
     selected?.items.map((item) => ({
