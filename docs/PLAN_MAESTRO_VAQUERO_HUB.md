@@ -146,6 +146,75 @@ Antes de migrar deberá realizarse:
 - ceros iniciales
 - inconsistencias
 
+### 4.1 Primera exportación real de SICAR — 4 de septiembre de 2026
+
+Se recibió y analizó `Plantilla_Productos.xlsx`, exportación real con una hoja,
+32 columnas y **15,872 renglones de producto o variante**. Este archivo
+desbloquea el análisis de M9, pero todavía no autoriza una importación directa
+a producción.
+
+División actual por departamento:
+
+| Departamento   | Renglones |
+| -------------- | --------: |
+| Caballero      |     7,496 |
+| Dama           |     2,896 |
+| Unisex         |     2,633 |
+| Niño           |     1,633 |
+| Juvenil        |       499 |
+| Accesorios     |       400 |
+| Niña           |       157 |
+| Art. caballo   |       112 |
+| Art. limpieza  |        39 |
+| D1             |         5 |
+| Bebidas        |         1 |
+| Adhesivos      |         1 |
+
+La exportación contiene **299 categorías**. Las de mayor volumen incluyen
+Cintos Vaquero SM (1,381), Pantalones Wrangler (967), Botas Vaquero SM (592),
+Botas Rey Welt (558), Botas Cuadra (538), Camisas Wrangler (428), Camisas
+Rodeo West (425), Botas Nokota Horse (422) y Pantalones KAJM (413).
+
+Hallazgos que M9 debe tratar como compuertas de importación:
+
+- `clave1` está presente en todos los renglones y no tiene duplicados. Todas
+  las claves son numéricas, pero una conserva ceros iniciales
+  (`000007779`); por eso se importarán como texto y nunca como número.
+- Falta comprobar con una etiqueta física si `clave1` es el código que lee el
+  escáner o sólo la clave interna de SICAR. `clave2` está vacía en 15,503
+  renglones y no puede asumirse como fuente principal.
+- SICAR no entrega talla ni color en columnas separadas. Los atributos parecen
+  formar parte de `descripción`, por lo que el importador necesita reglas de
+  extracción, agrupación y una cola de excepciones revisable; nunca debe
+  adivinar silenciosamente el producto padre.
+- Hay 28 descripciones repetidas, equivalentes a 34 renglones adicionales.
+  Una descripción repetida no prueba que sean duplicados: se debe comparar la
+  clave, categoría y atributos antes de agrupar o rechazar.
+- Todos los renglones usan unidad `PIEZA`, son inventariables y no son granel.
+  La existencia no contiene fracciones, lo que confirma conteos enteros para
+  este catálogo.
+- La suma exportada es **22,598 unidades**: 8,483 renglones con existencia
+  positiva, 7,334 en cero y 55 con existencia negativa. Los negativos deben
+  conciliarse en SICAR o quedar como excepciones explícitas antes del corte.
+- 15,043 renglones tienen costo cero y sólo 829 costo positivo. Dos tienen
+  `precio1` en cero. Los costos faltantes no se sustituirán por precio ni por
+  cero silencioso; requieren una fuente o decisión de negocio.
+- `precio1` es el precio operativo en 15,870 renglones. `precio2`, `precio3` y
+  `precio4` sólo aparecen en 33, 29 y 28; `mayoreo2`, `mayoreo3` y `mayoreo4`
+  están vacíos en todo el archivo. Las escalas mayoristas requieren otra
+  exportación o confirmación del negocio.
+- La hoja trae una sola columna `existencia`; `localización 1`, `localización
+  2` y `localización 3` están vacías. No se distribuirá ese saldo entre
+  sucursales sin una exportación por ubicación o una conciliación física.
+- No vienen proveedores asociados por renglón, imágenes ni identificadores de
+  WooCommerce. Esos datos se obtendrán de exportaciones separadas y se unirán
+  mediante identificadores verificables, nunca sólo por nombre.
+
+Siguiente entregable de M9: mapeo de las 32 columnas a Mi Tienda SM,
+clasificador de renglones importables o en conflicto y corrida en seco en
+staging. La importación reportará conteos, claves y suma de existencias antes y
+después; no escribirá nada si quedan errores sin clasificar.
+
 ⸻
 
 5. Regla crítica sobre códigos
