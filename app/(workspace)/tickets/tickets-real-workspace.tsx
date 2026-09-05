@@ -65,17 +65,17 @@ const ticketTime = new Intl.DateTimeFormat("es-MX", {
 export function TicketsRealWorkspace({
   tickets,
   status,
-  referenceTime,
+  periodStarts,
   cancelSaleAction,
 }: {
   tickets: Ticket[];
   status?: string;
-  referenceTime: string;
+  periodStarts: Record<"today" | "week" | "month", string>;
   cancelSaleAction?: (saleId: string, reason: string) => Promise<CancelResult>;
 }) {
   const [rows, setRows] = useState(tickets);
   const [query, setQuery] = useState("");
-  const [period, setPeriod] = useState("today");
+  const [period, setPeriod] = useState<"today" | "week" | "month">("today");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [receiptMode, setReceiptMode] = useState<"sale" | "gift">("sale");
   const [reprintDate, setReprintDate] = useState("");
@@ -87,10 +87,7 @@ export function TicketsRealWorkspace({
   const selected = rows.find((ticket) => ticket.id === selectedId) ?? null;
 
   const filtered = useMemo(() => {
-    const start = new Date(referenceTime);
-    if (period === "today") start.setHours(0, 0, 0, 0);
-    if (period === "week") start.setDate(start.getDate() - 7);
-    if (period === "month") start.setDate(start.getDate() - 30);
+    const start = new Date(periodStarts[period]);
     const term = deferredQuery.trim().toLocaleLowerCase("es-MX");
     return rows.filter(
       (ticket) =>
@@ -106,7 +103,7 @@ export function TicketsRealWorkspace({
             .toLocaleLowerCase("es-MX")
             .includes(term)),
     );
-  }, [deferredQuery, period, referenceTime, rows]);
+  }, [deferredQuery, period, periodStarts, rows]);
 
   const lines: ReceiptLine[] =
     selected?.items.map((item) => ({
@@ -191,7 +188,9 @@ export function TicketsRealWorkspace({
           <select
             aria-label="Filtrar periodo"
             value={period}
-            onChange={(event) => setPeriod(event.target.value)}
+            onChange={(event) =>
+              setPeriod(event.target.value as "today" | "week" | "month")
+            }
           >
             <option value="today">Hoy</option>
             <option value="week">Últimos 7 días</option>

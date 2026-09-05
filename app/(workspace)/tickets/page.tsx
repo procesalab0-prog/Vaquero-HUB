@@ -8,6 +8,20 @@ import { TicketsWorkspace } from "./tickets-workspace";
 
 export const metadata: Metadata = { title: "Tickets" };
 
+function storeDayStart(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "America/Mexico_City",
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((entry) => entry.type === type)?.value;
+  return new Date(
+    `${part("year")}-${part("month")}-${part("day")}T00:00:00-06:00`,
+  );
+}
+
 export default async function TicketsPage({
   searchParams,
 }: {
@@ -26,12 +40,18 @@ export default async function TicketsPage({
   const location =
     locations.find((entry) => entry.id === params.ubicacion) ?? locations[0];
   const referenceTime = new Date().toISOString();
+  const todayStart = storeDayStart(new Date(referenceTime));
+  const periodStarts = {
+    today: todayStart.toISOString(),
+    week: new Date(todayStart.getTime() - 7 * 86_400_000).toISOString(),
+    month: new Date(todayStart.getTime() - 30 * 86_400_000).toISOString(),
+  };
   if (!location?.id)
     return (
       <TicketsRealWorkspace
         tickets={[]}
         status="Sin sucursal asignada"
-        referenceTime={referenceTime}
+        periodStarts={periodStarts}
       />
     );
   const from = new Date(referenceTime);
@@ -55,7 +75,7 @@ export default async function TicketsPage({
     <TicketsRealWorkspace
       tickets={(ticketsResult.data ?? []) as Ticket[]}
       status={ticketsResult.error?.message}
-      referenceTime={referenceTime}
+      periodStarts={periodStarts}
       cancelSaleAction={cancelPermission.data ? cancelPosSale : undefined}
     />
   );
