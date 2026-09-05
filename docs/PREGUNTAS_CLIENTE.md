@@ -102,7 +102,7 @@ queda detenido hasta tenerlas.
 
 | # | Pregunta | Bloquea | Urgencia |
 |---|---|---|---|
-| 8.1 | **Una exportación de muestra de SICAR, cuanto antes.** No es la migración: es leer un archivo para diseñar bien el catálogo. De ella depende M2 | M2, M9 | 🔴 |
+| 8.1 | **Una exportación de muestra de SICAR, cuanto antes.** Recibida y analizada el 4 de septiembre de 2026; falta la comprobación física de `clave1` contra una etiqueta | M2, M9 | 🟢 |
 | 8.2 | **¿SICAR permite acceso directo a su base de datos o exportaciones programadas?** Si sí, la sincronización semanal se automatiza en lugar de depender de que alguien exporte a mano durante meses | M9 | 🔴 |
 | 8.3 | **De todo lo migrable, ¿qué usan realmente?** Apartados con saldo, crédito de clientes, compras pedidas y no recibidas, notas de crédito pendientes. Lo que no se use, no se migra | M9 | 🟡 |
 | 8.4 | Durante la transición, **¿dónde se capturan los productos nuevos?** En SICAR hasta el cambio, o en Mi Tienda SM aprovechando que el alta es más rápida. Lo peligroso es el punto medio | M2, M9 | 🔴 |
