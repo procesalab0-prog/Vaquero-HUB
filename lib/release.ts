@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.22.0";
-export const APP_RELEASE = "Cancelación segura e inicio de cambios";
+export const APP_VERSION = "0.22.1";
+export const APP_RELEASE = "Tickets estables en todos los dispositivos";
