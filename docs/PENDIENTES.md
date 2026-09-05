@@ -102,6 +102,15 @@ Opciones:
    opción técnica de menor privilegio, pero sigue necesitando aprobación del
    dueño.
 
+## Decisiones confirmadas por el dueño el 4 de septiembre de 2026
+
+- Una venta sólo se cancela mientras la sesión de caja original siga abierta.
+  Después del corte únicamente procede devolución (M5).
+- Quien despacha un traspaso no puede recibirlo. La base lo impide aunque se
+  intente omitir la interfaz.
+
+Ambas reglas quedaron implementadas y probadas en staging en 0.22.0.
+
 ## Orden inmediato de implementación
 
 1. El lector de cámara quedó construido en 0.15.0. Probarlo dentro de la PWA
@@ -146,8 +155,8 @@ y conviene decirlo con números porque cambia una decisión.
 | M0, M1, M1B     | —                | Terminados                                                                                  |
 | **M2**          | 1                | **Terminado**, a falta de la validación física                                              |
 | M3 inventario   | 1                | **Terminado en software**; queda la validación física conjunta de etiqueta, cámara y lector |
-| M4 POS y caja   | 2                | Especificado, sin implementar                                                               |
-| M5 devoluciones | 1                | Especificado, sin implementar                                                               |
+| M4 POS y caja   | 2                | **Terminado en software 0.22.0**; falta validación física de impresora y operación táctil    |
+| M5 devoluciones | 1                | **En curso:** base inmutable y cambio parejo terminados; reglas de dinero siguen pendientes  |
 | M9 importador   | 1                | Bloqueado por la muestra de SICAR                                                           |
 
 Quedan **cuatro semanas de trabajo** contra unas seis de calendario hasta
@@ -167,10 +176,9 @@ Dos advertencias para no leer ese número con optimismo:
   exportación de muestra llega tarde, su semana se corre entera, y con ella la
   compuerta que autoriza generar códigos en producción.
 
-Cinco de once pantallas están conectadas a la base: Productos, Clientes,
-Administración, Etiquetas e Inventario; Inventario ya incluye conteos y
-traspasos. POS, Caja, Tickets, Ajustes, Inicio y Más siguen siendo cascarones,
-porque dependen de M4.
+Ocho de once pantallas están conectadas a la base: Productos, Clientes,
+Administración, Etiquetas, Inventario, POS, Caja y Tickets. Ajustes, Inicio y
+Más conservan contenido de navegación o demostración.
 El calendario completo y la estrategia para la segunda sucursal viven en
 [`PLAN_OCTUBRE.md`](PLAN_OCTUBRE.md).
 

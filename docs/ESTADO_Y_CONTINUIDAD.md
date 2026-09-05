@@ -52,9 +52,10 @@ saltando lo bloqueado.
 | **M2.5 (0.18.0)**        | Selección y precios en lote auditados; plantillas persistentes e impresión real de etiquetas             |
 | **M3.1 (0.19.0)**        | Saldos por sucursal, libro inmutable, ajustes auditados y pantalla de inventario con datos reales        |
 | **M3 (0.20.0)**          | Conteos formales y traspasos con aprobación, tránsito explícito, recepción parcial y auditoría           |
-| **M4 (0.21.3)**          | Ventas atómicas, pagos mixtos, cajas múltiples, corte ciego, descuentos autorizados y ticket persistido  |
+| **M4 (0.22.0)**          | Ventas atómicas, pagos mixtos, cajas, corte ciego, tickets reales y cancelación segura                    |
+| **M5 (primera entrega)** | Libro inmutable y cambio parejo con ticket, inventario atómico e idempotencia                             |
 
-Cuarenta y tres migraciones versionadas del repositorio. El proyecto de Supabase
+Cuarenta y ocho migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -92,14 +93,15 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 | **M2** — catálogo, variantes, códigos, etiquetas | **Terminado en software.** Sólo falta la validación física: imprimir una etiqueta real y escanearla, con cámara y lector |
 | **M3** — inventario, movimientos, traspasos      | **Terminado en software:** saldos, libro inmutable, ajustes, conteos, traspasos y mercancía en tránsito                  |
 | **M4** — POS, pagos mixtos, caja                 | **Terminado en software:** falta validar físicamente la operación táctil y la impresora elegida                          |
-| **M5** — devoluciones, cambios, cancelaciones    | [Escrita](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)                                                                            |
+| **M5** — devoluciones, cambios, cancelaciones    | **En curso:** base y cambio parejo terminados; reembolsos y diferencias esperan reglas del negocio                      |
 | **M9** — importador y sincronizador de SICAR     | Falta                                                                                                                    |
 
 Recorridos a después de octubre: M6 compras, M7 apartados y lealtad, M8
 reportes y cotizaciones.
 
-**Con M3 y M4 cerrados en software queda aproximadamente una semana de
-construcción del alcance de octubre, además de SICAR y el piloto físico.** El detalle, y las advertencias que impiden leer ese número
+**Con M3 y M4 cerrados y M5 iniciado queda menos de una semana de
+construcción definida del alcance de octubre, además de SICAR, las decisiones
+pendientes y el piloto físico.** El detalle, y las advertencias que impiden leer ese número
 con optimismo, están en [`PENDIENTES.md`](PENDIENTES.md).
 
 ## 3. Por qué la fecha es octubre

@@ -2150,3 +2150,31 @@ RECIBIDO`. No se puede cancelar mercancía que ya salió y quien aprobó no pued
   traspasos activos previos; Vercel publicó correctamente el merge de `main`.
 - M3 queda terminado en software. Sigue pendiente la validación física de M2:
   imprimir y escanear una etiqueta y probar la cámara dentro de la PWA instalada.
+
+Entrega visible 0.21.0–0.22.0 — cierre de M4 e inicio seguro de M5:
+
+- El POS registra ventas atómicas con pagos en efectivo, tarjeta,
+  transferencia o combinación; caja admite varias terminales, apertura,
+  movimientos y corte realmente ciego.
+- Tickets dejó de ser una demostración: consulta las ventas persistidas de los
+  últimos 30 días, permite filtrar por periodo y buscar folio, producto, SKU o
+  cajero, además de reimprimir el comprobante real.
+- `cancel_sale` exige permiso, motivo y que la sesión original continúe
+  abierta. Restaura inventario y efectivo en una sola transacción, conserva la
+  venta histórica y rechaza intentos repetidos. Después del corte sólo procede
+  devolución, por decisión del dueño del 4 de septiembre de 2026.
+- Quien despacha un traspaso no puede confirmar su recepción. La separación
+  vive en una restricción y un disparador de PostgreSQL, no sólo en la pantalla.
+- La bitácora general quedó sellada contra actualización y borrado, incluso con
+  acceso privilegiado. La cajera tampoco puede reconstruir el efectivo esperado
+  antes de declarar su conteo.
+- M5 comenzó con `returns`, `return_items` y `return_payments` como libro
+  inmutable. El primer flujo admite cambio parejo con ticket, en la misma
+  sucursal y con mercancía revendible; devuelve una variante y descuenta la
+  otra atómicamente sin modificar la venta original.
+- La diferencia de precio, reembolso, mercancía dañada, otra sucursal y
+  devolución sin ticket permanecen deshabilitados hasta que Vaqueros SM defina
+  sus reglas. El sistema devuelve un error explícito en vez de inventarlas.
+- Las migraciones y pruebas transaccionales de esta entrega se ejecutaron
+  primero en staging. Se comprobaron restauración de caja e inventario,
+  idempotencia, concurrencia, inmutabilidad y rechazo después del corte.

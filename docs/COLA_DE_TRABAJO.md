@@ -396,6 +396,45 @@ debe imprimir y escanear una etiqueta real; ese control no se sustituye con CI.
 
 ## 5. M3 — Inventario, movimientos y traspasos
 
+**TERMINADO y verificado ejecutando.** Las tres pruebas bandera pasan, con
+conexiones paralelas de verdad y no llamadas en serie:
+
+| Prueba bandera | Resultado medido |
+|---|---|
+| Dos ventas concurrentes sobre existencia 1 | Una `INSUFFICIENT_STOCK`; existencia 0 y **una** venta |
+| Suma de movimientos = saldo | `check_inventory_invariant()` → **cero discrepancias**, también después de traspasos |
+| Mercancía en tránsito no disponible en ningún extremo | SUC1 ve 6, SUC2 ve 0, las 4 viven en `TRANSIT`; `list_transfer_locations()` excluye tránsito |
+
+Y las que faltaban por comprobar del ciclo de traspaso:
+
+| Escenario | Resultado |
+|---|---|
+| Dos despachos simultáneos del mismo traspaso | Uno `IN_TRANSIT`, otro `INVALID_TRANSFER_STATE`; existencias movidas **una sola vez** |
+| Enviar 4 y recibir 3 (§6.2) | Destino recibe 3; **la pieza faltante se queda en tránsito**, no se absorbe |
+| Total global tras dos traspasos | Sin cambio: 10 antes, 10 después |
+
+Tres cosas del diseño que conviene no "simplificar" después:
+
+- **La llave del candado de traspaso usa `least`/`greatest` de las dos
+  ubicaciones**, así que A→B y B→A toman el mismo candado y se serializan.
+- **El despacho recorre los renglones ordenados por `variant_id`**, que es lo
+  que evita interbloqueos entre dos traspasos que comparten variantes.
+- **`SEPARATION_OF_DUTIES`: quien aprueba no puede recibir.** Es exactamente lo
+  que pide la spec en §7, y está bien implementado. Que no se caiga en un
+  refactor.
+
+  Corrección de una revisión anterior, que lo describió como «quien despacha no
+  puede recibir» y como un control que la implementación había agregado por su
+  cuenta. Las dos cosas eran inexactas: el control estaba especificado, y cubre
+  al que **aprueba**. Se comprobó ejecutando que la misma persona sí puede
+  preparar, despachar y recibir el mismo traspaso. Si conviene cerrar también
+  ese caso es decisión del dueño, anotada en `PENDIENTES.md`.
+
+La bitácora de movimientos no se edita ni se borra **ni siendo superusuario**,
+y la existencia no se mueve sin su movimiento.
+
+---
+
 **Antes de escribir la primera línea, leer §3.1 de la especificación.** Ahí
 quedó lo que costó dos correcciones en M2: el `UPDATE` condicional se
 serializa solo y basta para el saldo de una variante —comprobado con dos
@@ -500,13 +539,110 @@ La regla que gobierna: el cliente nunca dice cuánto cuesta algo.
 **M4 quedó cerrado en software en 0.21.3:** CI reconstruye la base desde cero y
 confirmó 84 pruebas de integración, incluidas las carreras entre cajas. Quedan
 como validación operativa la prueba táctil en iPad y la prueba física con la
-impresora elegida. Cancelaciones y devoluciones siguen en M5; no se inventó la
-regla pendiente sobre ventas de días o turnos anteriores.
+impresora elegida.
+
+### Revisión de M4, ejecutada contra una base reconstruida (0.21.4)
+
+Se levantó una base desde cero con las 43 migraciones y se corrieron las
+pruebas obligatorias de la spec §10 disparando SQL real, no leyendo código.
+
+| Prueba de la spec                                  | Resultado medido                                            |
+| -------------------------------------------------- | ----------------------------------------------------------- |
+| 1. Doble toque en «Cobrar» con la misma llave      | Una sola venta; la segunda llamada devolvió el mismo folio  |
+| 2. Misma llave con carrito distinto                | `IDEMPOTENCY_CONFLICT`                                       |
+| 3. Pago 30/70 sobre total impar                    | 30000 + 69900 == 99900, exacto                               |
+| 4. Pagos que no suman el total                     | `PAYMENT_TOTAL_MISMATCH`                                     |
+| 6. Descuento sin autorización de supervisor        | `DISCOUNT_AUTHORIZATION_INVALID`                             |
+| 7. Token de supervisor reutilizado                 | Rechazado: la capacidad se consume una sola vez             |
+| 8. Precio mandado por el cliente                   | Ignorado; cobró el precio de la base                        |
+| 9. Renglón sin existencia                          | Toda la venta se revirtió; no quedó folio ni llave huérfana |
+| 10. Dos cajas por la última pieza                  | Una venta, una `INSUFFICIENT_STOCK`, existencia en 0        |
+| 11. Seis cobros simultáneos entre dos cajas        | Seis folios consecutivos, sin huecos ni repetidos           |
+| 12. Venta con sesión de caja cerrada               | `SESSION_FORBIDDEN`                                          |
+| 13. Dos sesiones en la misma caja                  | `REGISTER_OR_CASHIER_ALREADY_OPEN`                           |
+| 14. Efectivo con vuelto                            | A la caja entraron 99900, no los 100000 recibidos           |
+| 15. Corte con ventas, retiro e ingreso             | El esperado cuadró al centavo                                |
+| 17. `UPDATE`/`DELETE` sobre una venta              | Rechazado incluso como superusuario                          |
+| 18. Costos de venta para una cajera                | `permission denied`: no ve el margen                         |
+
+También se comprobó que el orden de candados de `create_sale` sí protege
+contra bloqueos mutuos: el plan de ejecución pone el `Result` que toma los
+candados **encima** del `Sort`, así que se piden en orden de variante. Parecía
+un punto frágil y no lo es; no simplificar esa consulta.
+
+### Dos defectos encontrados y corregidos en esta revisión
+
+**1. El corte a ciegas no era ciego.** Es el hallazgo importante: es el
+control principal sobre el efectivo del día y no servía.
+
+La cajera obtenía el esperado exacto por dos caminos, y uno estaba impreso en
+su propia pantalla:
+
+- `get_my_cash_session` devolvía el desglose de pagos con importes. Fondo
+  inicial + efectivo cobrado + entradas − retiros == esperado. La pantalla de
+  caja lo mostraba como «Pagos registrados · Efectivo $6,593.10» mientras el
+  modal del corte decía «El sistema aún no te mostrará cuánto espera».
+- La política de `cash_movements` abría la tabla a quien tuviera `cash.close`,
+  y `cash.close` es justamente el permiso de la cajera. Un
+  `select sum(amount_cents)` devolvía el esperado sin salir de la aplicación.
+
+Medido antes del arreglo: la cajera leía 694310, su esperado real, y también
+419600, el de su compañera.
+
+Corregido en `20260904140000_m4_corte_ciego_de_verdad.sql`: mientras la sesión
+está abierta se devuelven **conteos de operaciones, no importes**; la lectura
+supervisora del libro de caja pasó de `cash.close` a `reports.sales`, que la
+cajera no tiene; y su propia sesión la puede revisar completa una vez cerrada,
+cuando comparar ya no sirve para acomodar el conteo. La pantalla de caja
+cambió en consecuencia: «Ventas del turno» muestra operaciones y el desglose
+por método muestra cuántas, no cuánto. El gerente sigue viendo todo.
+
+La prueba que decía «el cierre es ciego» sólo verificaba que una diferencia
+exigiera explicación; por eso el defecto pasó CI en verde. Se agregó la prueba
+que sí lo comprueba.
+
+**2. La bitácora se podía borrar.** El libro de inventario y el de ventas
+rechazan al superusuario; `audit_log` no. Un `delete from public.audit_log`
+desde el editor SQL de Supabase se llevaba los 27 registros. La bitácora es
+justamente lo que protege contra el fraude interno, así que no puede depender
+de que nadie tenga la contraseña de la base. Ahora un disparador bloquea
+`UPDATE` y `DELETE`; las inserciones no cambian, así que ninguna función tuvo
+que tocarse.
+
+### M4 cerrado en software en 0.22.0
+
+`cancel_sale` existe, exige `sales.cancel`, limita la operación a la sesión
+original abierta, restaura inventario y efectivo de forma atómica y deja
+auditoría. Está disponible después del cobro y en Tickets, que ya consulta
+ventas reales. La separación entre quien despacha y quien recibe un traspaso
+también quedó como restricción estructural.
+
+Se entiende por qué se pospuso: la spec deja abierta la pregunta de si se puede
+cancelar una venta de otro día. Pero esa duda sólo afecta la mitad discutible.
+La mitad que nadie discute — **la cajera se equivocó de ticket y quiere anularlo
+en su turno, con su caja abierta** — es de todos los días en una tienda, y hoy
+no tiene salida: la venta queda escrita, el inventario descontado y el efectivo
+esperado en la caja. Tampoco se puede arreglar a mano, porque `sales` rechaza
+escrituras directas.
+
+**Comprobado en staging:**
+
+1. La venta queda intacta salvo estado y datos de cancelación.
+2. Inventario y efectivo regresan dentro de la misma transacción.
+3. Una segunda cancelación se rechaza.
+4. Después del corte se rechaza y dirige a devolución.
+
+La decisión del dueño quedó asentada en `PENDIENTES.md`.
 
 ## 7. M5 — Devoluciones y cambios
 
 **Especificación:** [`specs/M5_DEVOLUCIONES_Y_CAMBIOS.md`](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)
 **Depende de:** M4.
+
+**En curso en 0.22.0.** Ya existen el libro inmutable, consulta de cantidades
+devueltas y el cambio parejo con ticket, misma sucursal, inventario atómico e
+idempotencia. Continúan bloqueados por decisión del negocio los reembolsos,
+diferencias de precio, daño, devoluciones entre sucursales y sin ticket.
 
 ## 8. M9 — Importador y sincronizador de SICAR
 
@@ -542,6 +678,29 @@ No se empieza hasta tener respuesta. Todas están en
 | Mudar la PWA de clientes a subdominio propio; actualizar `CUSTOMER_APP_URL` cuando exista | Issue #8           |
 | Las specs describen construir pantallas que ya existen en la interfaz 0.6.2               | Issue #4           |
 | El plan maestro no incluye el catálogo de los 19 requerimientos del cliente               | Issue #3           |
+
+## Regla nueva, salida de la revisión de M4
+
+**Un control que sólo vive en la pantalla no es un control.** El corte a
+ciegas de M4 pedía el conteo antes de revelar el esperado, y la misma pantalla
+mostraba los números con los que se calcula. Nadie tuvo que saltarse nada:
+bastaba mirar.
+
+Antes de dar por buena una regla de negocio, hacer la pregunta desde el otro
+lado: **¿qué le entrega la base a quien la regla intenta limitar?** No qué
+pinta la interfaz, sino qué devuelven las RPC y qué deja pasar RLS a un usuario
+de ese rol. Si la respuesta incluye el dato que la regla quería esconder, la
+regla es decorativa por más correcta que se vea el código.
+
+Y la prueba tiene que verificar eso mismo. La prueba de M4 se llamaba «el
+cierre es ciego» y sólo comprobaba que una diferencia exigiera explicación: por
+eso el defecto pasó CI en verde durante toda la entrega. El nombre de una
+prueba no es lo que prueba.
+
+**`package.json` y `lib/release.ts` van juntos.** M4 subió tres versiones en
+`release.ts` (0.21.0 → 0.21.3) mientras `package.json` se quedó en 0.20.0. Está
+en `CLAUDE.md` y se pasó tres veces seguidas; conviene revisarlo en cada
+entrega junto con la versión visible.
 
 ## Antes de dar por terminada cualquier tarea
 
