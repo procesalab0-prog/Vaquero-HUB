@@ -316,6 +316,19 @@ transfer_items  -- transfer_id, variant_id, qty_requested, qty_sent, qty_receive
 Estados: `REQUESTED` → `APPROVED` → `PREPARED` → `IN_TRANSIT` →
 `RECEIVED`, más `CANCELLED`.
 
+### 6.0 Ergonomía de captura física
+
+- Para productos vendidos por pieza, todos los controles de cantidad usan
+  enteros y `step = 1`; sus flechas nunca avanzan `0.001`.
+- Los decimales quedan reservados a variantes cuya unidad de medida permita
+  fracciones de forma explícita.
+- En conteos, preparación y recepción, Enter, Tab o un escaneo deben guardar
+  el renglón actual y llevar al siguiente campo útil. También debe existir una
+  tabla o lista de captura continua para registrar varias variantes sin abrir
+  un diálogo por cada una.
+- Antes de aplicar el documento completo se muestra un resumen de diferencias;
+  el guardado sigue siendo atómico, autorizado y auditado.
+
 ### 6.1 La mercancía en tránsito vive en una ubicación real
 
 Al enviar (`PREPARED` → `IN_TRANSIT`), por cada renglón:
