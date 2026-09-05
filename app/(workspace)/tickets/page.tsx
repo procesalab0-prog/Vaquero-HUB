@@ -25,9 +25,16 @@ export default async function TicketsPage({
   );
   const location =
     locations.find((entry) => entry.id === params.ubicacion) ?? locations[0];
+  const referenceTime = new Date().toISOString();
   if (!location?.id)
-    return <TicketsRealWorkspace tickets={[]} status="Sin sucursal asignada" />;
-  const from = new Date();
+    return (
+      <TicketsRealWorkspace
+        tickets={[]}
+        status="Sin sucursal asignada"
+        referenceTime={referenceTime}
+      />
+    );
+  const from = new Date(referenceTime);
   from.setDate(from.getDate() - 30);
   const [ticketsResult, cancelPermission] = await Promise.all([
     supabase.rpc("list_sale_tickets", {
@@ -48,6 +55,7 @@ export default async function TicketsPage({
     <TicketsRealWorkspace
       tickets={(ticketsResult.data ?? []) as Ticket[]}
       status={ticketsResult.error?.message}
+      referenceTime={referenceTime}
       cancelSaleAction={cancelPermission.data ? cancelPosSale : undefined}
     />
   );
