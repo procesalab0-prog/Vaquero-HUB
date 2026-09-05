@@ -6,7 +6,7 @@
 > Para entender el proyecto antes de tocarlo, empezar por
 > [`ESTADO_Y_CONTINUIDAD.md`](ESTADO_Y_CONTINUIDAD.md).
 >
-> Última actualización: 2026-09-02, tras aplicar las correcciones alojadas de M2.
+> Última actualización: 2026-09-05, al convertir ergonomía en compuerta de aceptación.
 
 ## Cómo usar esta cola
 
@@ -27,6 +27,24 @@ a una base que ya ejecutó la versión anterior.
 
 El registro operativo de estas comprobaciones vive en
 [`PENDIENTES.md`](PENDIENTES.md).
+
+## Regla permanente de ergonomía
+
+La ergonomía es una compuerta de aceptación, no una fase de maquillaje al
+final. Toda entrega operativa debe revisar el recorrido humano completo y
+reducir toques, capturas repetidas, esperas, formularios que se abren uno por
+uno y acciones ocultas, sin debilitar permisos ni validaciones.
+
+Desde M5, cada cierre de módulo debe incluir una comprobación en teléfono
+vertical, iPad horizontal y computadora con teclado. Se registran pasos,
+tiempo, errores evitables y puntos donde el usuario pierde el contexto. Los
+hallazgos frecuentes o bloqueantes entran en esta misma cola antes de continuar
+acumulando módulos.
+
+La lista o tabla continua de tallas y colores es un caso obligatorio: debe
+permitir marcar opciones de corrido, seleccionar rangos y editar la matriz sin
+abrir un selector por cada variante. El mismo criterio aplica a conteos,
+traspasos y otras capturas repetitivas.
 
 ## Regla nueva, salida de la revisión de M2
 
@@ -660,6 +678,30 @@ fuera hasta recibir las reglas de negocio.
 devueltas y el cambio parejo con ticket, misma sucursal, inventario atómico e
 idempotencia. Continúan bloqueados por decisión del negocio los reembolsos,
 diferencias de precio, daño, devoluciones entre sucursales y sin ticket.
+
+## 7.5 Auditoría ergonómica intermedia
+
+**Momento obligatorio:** inmediatamente después de terminar la interfaz de M5
+y antes de cerrar la siguiente entrega operativa. El análisis técnico de M9
+puede avanzar en paralelo, pero esta auditoría no se desplaza hasta el final.
+
+Recorridos iniciales:
+
+1. Alta de un producto con varias tallas y colores mediante lista o tabla
+   continua, selección de rangos y matriz editable, sin un selector por opción.
+2. Conteo de al menos 20 variantes usando escáner o teclado, cantidad entera,
+   confirmación y avance automático al siguiente renglón.
+3. Venta, recuperación de ticket en espera, traspaso y acciones en lote en
+   teléfono vertical, iPad horizontal y computadora.
+
+Se registrarán número de toques o teclas, tiempo, capturas repetidas, errores,
+acciones ocultas y pérdida de contexto. Los hallazgos críticos y los que
+afecten recorridos frecuentes se corrigen antes de continuar; los demás quedan
+priorizados con responsable y fecha previa al piloto.
+
+**Aceptación:** una persona puede seleccionar tallas y colores de corrido y
+terminar un conteo continuo sin abrir un formulario por cada variante. El
+resultado y sus correcciones quedan en `docs/AUDITORIA_ERGONOMIA.md`.
 
 ## 8. M9 — Importador y sincronizador de SICAR
 
