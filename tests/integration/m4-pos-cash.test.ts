@@ -18,6 +18,7 @@ const state = {
   registerB: "",
   sessionA: "",
   sessionB: "",
+  closedSessionSaleId: "",
 };
 
 function publicClient() {
@@ -332,6 +333,117 @@ describe.sequential("M4: POS y caja", () => {
     ]);
   });
 
+  it("cancela una venta solo con permiso y restaura inventario y efectivo", async () => {
+    const variantId = await createVariant("Cancelación", 2, 18000);
+    const sale = await state.cashierA!.client.rpc("create_sale", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_items: [{ variant_id: variantId, quantity: 1 }],
+      p_payments: cashPayment(18000),
+      p_customer_id: null,
+      p_discounts: [],
+      p_notes: null,
+    });
+    expect(sale.error).toBeNull();
+
+    const forbidden = await state.cashierA!.client.rpc("cancel_sale", {
+      p_sale_id: sale.data.id,
+      p_reason: "Cobro duplicado",
+    });
+    expect(forbidden.error?.message).toContain("NOT_AUTHORIZED");
+
+    const cancelled = await state.admin!.client.rpc("cancel_sale", {
+      p_sale_id: sale.data.id,
+      p_reason: "Cobro duplicado",
+    });
+    expect(cancelled.error).toBeNull();
+    expect(cancelled.data).toMatchObject({
+      status: "CANCELLED",
+      cash_reversed_cents: 18000,
+    });
+
+    const [stock, cash, audit] = await Promise.all([
+      state
+        .server!.from("inventory_by_location")
+        .select("qty")
+        .eq("variant_id", variantId)
+        .eq("location_id", state.locationId)
+        .single(),
+      state
+        .server!.from("cash_movements")
+        .select("amount_cents,movement_type")
+        .eq("session_id", state.sessionA)
+        .eq("reference_id", sale.data.id)
+        .eq("movement_type", "CANCELLATION")
+        .single(),
+      state
+        .server!.from("audit_log")
+        .select("action")
+        .eq("entity_id", sale.data.id)
+        .eq("action", "sale.cancelled")
+        .single(),
+    ]);
+    expect(Number(stock.data!.qty)).toBe(2);
+    expect(cash.data).toEqual({
+      amount_cents: -18000,
+      movement_type: "CANCELLATION",
+    });
+    expect(audit.data?.action).toBe("sale.cancelled");
+
+    const repeated = await state.admin!.client.rpc("cancel_sale", {
+      p_sale_id: sale.data.id,
+      p_reason: "Segundo intento",
+    });
+    expect(repeated.error?.message).toContain("SALE_NOT_CANCELLABLE");
+  });
+
+  it("prepara una venta para probar el límite del cierre de caja", async () => {
+    const variantId = await createVariant("Caja por cerrar", 1, 12000);
+    const sale = await state.cashierB!.client.rpc("create_sale", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionB,
+      p_items: [{ variant_id: variantId, quantity: 1 }],
+      p_payments: cashPayment(12000),
+      p_customer_id: null,
+      p_discounts: [],
+      p_notes: null,
+    });
+    expect(sale.error).toBeNull();
+    state.closedSessionSaleId = sale.data.id;
+  });
+
+  it("no entrega el esperado antes del conteo: ni por la sesión ni por el libro", async () => {
+    // Un corte a ciegas que se puede comparar antes de declararlo no detecta
+    // faltantes. La cajera no debe poder reconstruir el esperado ni desde su
+    // propia pantalla ni consultando la tabla.
+    const session = await state.cashierA!.client.rpc("get_my_cash_session");
+    expect(session.error).toBeNull();
+    expect(session.data.status).toBe("OPEN");
+    expect(session.data.sales_total_cents).toBeUndefined();
+    for (const payment of session.data.payments as Record<string, unknown>[]) {
+      expect(payment.amount_cents).toBeUndefined();
+      expect(Number(payment.count)).toBeGreaterThan(0);
+    }
+    const propio = await state
+      .cashierA!.client.from("cash_movements")
+      .select("amount_cents")
+      .eq("session_id", state.sessionA);
+    expect(propio.error).toBeNull();
+    expect(propio.data).toHaveLength(0);
+    const ajeno = await state
+      .cashierA!.client.from("cash_movements")
+      .select("amount_cents")
+      .eq("session_id", state.sessionB);
+    expect(ajeno.data ?? []).toHaveLength(0);
+    // La supervisión sí lo ve: el control es sobre quien cuenta, no sobre quien audita.
+    const supervisor = await state
+      .admin!.client.from("cash_movements")
+      .select("amount_cents")
+      .eq("session_id", state.sessionA);
+    expect(supervisor.error).toBeNull();
+    expect((supervisor.data ?? []).length).toBeGreaterThan(0);
+  });
+
   it("el cierre es ciego y exige explicación cuando hay diferencia", async () => {
     const preview = await state.cashierB!.client.rpc("preview_cash_close", {
       p_session_id: state.sessionB,
@@ -352,6 +464,14 @@ describe.sequential("M4: POS y caja", () => {
     });
     expect(closed.error).toBeNull();
     expect(closed.data.status).toBe("CLOSED");
+  });
+
+  it("después del corte ya no cancela: obliga a usar devolución", async () => {
+    const result = await state.admin!.client.rpc("cancel_sale", {
+      p_sale_id: state.closedSessionSaleId,
+      p_reason: "Intento posterior al corte",
+    });
+    expect(result.error?.message).toContain("SALE_SESSION_CLOSED");
   });
 
   it("un cliente autenticado no puede escribir directamente en los libros", async () => {

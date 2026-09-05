@@ -1,5 +1,11 @@
 # M5 — Devoluciones, cambios y cancelaciones
 
+> Estado 0.22.0: base de datos, libro inmutable, consulta de renglones
+> disponibles y cambio parejo `create_equal_exchange` implementados. Esta
+> primera entrega exige ticket, misma sucursal, mercancía revendible y
+> diferencia cero. Los casos con dinero, daño, otra sucursal o sin ticket
+> siguen fuera hasta resolver las preguntas de la sección 14.
+
 > Especificación para quien implemente. Depende de M3 (movimientos de
 > inventario) y M4 (ventas y caja).
 >
