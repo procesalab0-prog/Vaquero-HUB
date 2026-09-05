@@ -399,19 +399,19 @@ debe imprimir y escanear una etiqueta real; ese control no se sustituye con CI.
 **TERMINADO y verificado ejecutando.** Las tres pruebas bandera pasan, con
 conexiones paralelas de verdad y no llamadas en serie:
 
-| Prueba bandera | Resultado medido |
-|---|---|
-| Dos ventas concurrentes sobre existencia 1 | Una `INSUFFICIENT_STOCK`; existencia 0 y **una** venta |
-| Suma de movimientos = saldo | `check_inventory_invariant()` → **cero discrepancias**, también después de traspasos |
+| Prueba bandera                                        | Resultado medido                                                                             |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Dos ventas concurrentes sobre existencia 1            | Una `INSUFFICIENT_STOCK`; existencia 0 y **una** venta                                       |
+| Suma de movimientos = saldo                           | `check_inventory_invariant()` → **cero discrepancias**, también después de traspasos         |
 | Mercancía en tránsito no disponible en ningún extremo | SUC1 ve 6, SUC2 ve 0, las 4 viven en `TRANSIT`; `list_transfer_locations()` excluye tránsito |
 
 Y las que faltaban por comprobar del ciclo de traspaso:
 
-| Escenario | Resultado |
-|---|---|
+| Escenario                                    | Resultado                                                                             |
+| -------------------------------------------- | ------------------------------------------------------------------------------------- |
 | Dos despachos simultáneos del mismo traspaso | Uno `IN_TRANSIT`, otro `INVALID_TRANSFER_STATE`; existencias movidas **una sola vez** |
-| Enviar 4 y recibir 3 (§6.2) | Destino recibe 3; **la pieza faltante se queda en tránsito**, no se absorbe |
-| Total global tras dos traspasos | Sin cambio: 10 antes, 10 después |
+| Enviar 4 y recibir 3 (§6.2)                  | Destino recibe 3; **la pieza faltante se queda en tránsito**, no se absorbe           |
+| Total global tras dos traspasos              | Sin cambio: 10 antes, 10 después                                                      |
 
 Tres cosas del diseño que conviene no "simplificar" después:
 
@@ -546,24 +546,24 @@ impresora elegida.
 Se levantó una base desde cero con las 43 migraciones y se corrieron las
 pruebas obligatorias de la spec §10 disparando SQL real, no leyendo código.
 
-| Prueba de la spec                                  | Resultado medido                                            |
-| -------------------------------------------------- | ----------------------------------------------------------- |
-| 1. Doble toque en «Cobrar» con la misma llave      | Una sola venta; la segunda llamada devolvió el mismo folio  |
-| 2. Misma llave con carrito distinto                | `IDEMPOTENCY_CONFLICT`                                       |
-| 3. Pago 30/70 sobre total impar                    | 30000 + 69900 == 99900, exacto                               |
-| 4. Pagos que no suman el total                     | `PAYMENT_TOTAL_MISMATCH`                                     |
-| 6. Descuento sin autorización de supervisor        | `DISCOUNT_AUTHORIZATION_INVALID`                             |
-| 7. Token de supervisor reutilizado                 | Rechazado: la capacidad se consume una sola vez             |
-| 8. Precio mandado por el cliente                   | Ignorado; cobró el precio de la base                        |
-| 9. Renglón sin existencia                          | Toda la venta se revirtió; no quedó folio ni llave huérfana |
-| 10. Dos cajas por la última pieza                  | Una venta, una `INSUFFICIENT_STOCK`, existencia en 0        |
-| 11. Seis cobros simultáneos entre dos cajas        | Seis folios consecutivos, sin huecos ni repetidos           |
-| 12. Venta con sesión de caja cerrada               | `SESSION_FORBIDDEN`                                          |
-| 13. Dos sesiones en la misma caja                  | `REGISTER_OR_CASHIER_ALREADY_OPEN`                           |
-| 14. Efectivo con vuelto                            | A la caja entraron 99900, no los 100000 recibidos           |
-| 15. Corte con ventas, retiro e ingreso             | El esperado cuadró al centavo                                |
-| 17. `UPDATE`/`DELETE` sobre una venta              | Rechazado incluso como superusuario                          |
-| 18. Costos de venta para una cajera                | `permission denied`: no ve el margen                         |
+| Prueba de la spec                             | Resultado medido                                            |
+| --------------------------------------------- | ----------------------------------------------------------- |
+| 1. Doble toque en «Cobrar» con la misma llave | Una sola venta; la segunda llamada devolvió el mismo folio  |
+| 2. Misma llave con carrito distinto           | `IDEMPOTENCY_CONFLICT`                                      |
+| 3. Pago 30/70 sobre total impar               | 30000 + 69900 == 99900, exacto                              |
+| 4. Pagos que no suman el total                | `PAYMENT_TOTAL_MISMATCH`                                    |
+| 6. Descuento sin autorización de supervisor   | `DISCOUNT_AUTHORIZATION_INVALID`                            |
+| 7. Token de supervisor reutilizado            | Rechazado: la capacidad se consume una sola vez             |
+| 8. Precio mandado por el cliente              | Ignorado; cobró el precio de la base                        |
+| 9. Renglón sin existencia                     | Toda la venta se revirtió; no quedó folio ni llave huérfana |
+| 10. Dos cajas por la última pieza             | Una venta, una `INSUFFICIENT_STOCK`, existencia en 0        |
+| 11. Seis cobros simultáneos entre dos cajas   | Seis folios consecutivos, sin huecos ni repetidos           |
+| 12. Venta con sesión de caja cerrada          | `SESSION_FORBIDDEN`                                         |
+| 13. Dos sesiones en la misma caja             | `REGISTER_OR_CASHIER_ALREADY_OPEN`                          |
+| 14. Efectivo con vuelto                       | A la caja entraron 99900, no los 100000 recibidos           |
+| 15. Corte con ventas, retiro e ingreso        | El esperado cuadró al centavo                               |
+| 17. `UPDATE`/`DELETE` sobre una venta         | Rechazado incluso como superusuario                         |
+| 18. Costos de venta para una cajera           | `permission denied`: no ve el margen                        |
 
 También se comprobó que el orden de candados de `create_sale` sí protege
 contra bloqueos mutuos: el plan de ejecución pone el `Result` que toma los
@@ -633,6 +633,23 @@ escrituras directas.
 4. Después del corte se rechaza y dirige a devolución.
 
 La decisión del dueño quedó asentada en `PENDIENTES.md`.
+
+### Extensión operativa 0.23.0 — carrito y tickets en espera
+
+- El carrito se guarda automáticamente y se restaura por empleado, caja y
+  sesión; no queda ligado al dispositivo ni se comparte con otros usuarios.
+- Se pueden suspender varios tickets, recuperar uno cuando el carrito actual
+  está vacío y descartar un borrador con auditoría.
+- Guardar o suspender no reserva mercancía ni mueve caja. La venta real vuelve
+  a validar precio, existencia, permisos y descuentos.
+- Una venta confirmada consume su carrito dentro de PostgreSQL y el cierre de
+  caja elimina cualquier borrador restante.
+- Las cantidades del inventario actual, definido por pieza, se validan como
+  enteros también en servidor y base; la interfaz avanza de uno en uno.
+
+**Siguiente sin bloqueo:** interfaz de M5 para ejecutar el cambio parejo ya
+implementado. Las diferencias de precio, reembolsos y mercancía dañada siguen
+fuera hasta recibir las reglas de negocio.
 
 ## 7. M5 — Devoluciones y cambios
 

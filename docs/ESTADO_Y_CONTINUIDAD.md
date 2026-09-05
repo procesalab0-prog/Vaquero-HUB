@@ -52,10 +52,10 @@ saltando lo bloqueado.
 | **M2.5 (0.18.0)**        | Selección y precios en lote auditados; plantillas persistentes e impresión real de etiquetas             |
 | **M3.1 (0.19.0)**        | Saldos por sucursal, libro inmutable, ajustes auditados y pantalla de inventario con datos reales        |
 | **M3 (0.20.0)**          | Conteos formales y traspasos con aprobación, tránsito explícito, recepción parcial y auditoría           |
-| **M4 (0.22.0)**          | Ventas atómicas, pagos mixtos, cajas, corte ciego, tickets reales y cancelación segura                    |
-| **M5 (primera entrega)** | Libro inmutable y cambio parejo con ticket, inventario atómico e idempotencia                             |
+| **M4 (0.23.0)**          | Ventas atómicas, pagos mixtos, cajas, corte ciego, tickets reales, cancelación y tickets en espera       |
+| **M5 (primera entrega)** | Libro inmutable y cambio parejo con ticket, inventario atómico e idempotencia                            |
 
-Cuarenta y ocho migraciones versionadas del repositorio. El proyecto de Supabase
+Cincuenta y una migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -92,8 +92,8 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
 | **M2** — catálogo, variantes, códigos, etiquetas | **Terminado en software.** Sólo falta la validación física: imprimir una etiqueta real y escanearla, con cámara y lector |
 | **M3** — inventario, movimientos, traspasos      | **Terminado en software:** saldos, libro inmutable, ajustes, conteos, traspasos y mercancía en tránsito                  |
-| **M4** — POS, pagos mixtos, caja                 | **Terminado en software:** falta validar físicamente la operación táctil y la impresora elegida                          |
-| **M5** — devoluciones, cambios, cancelaciones    | **En curso:** base y cambio parejo terminados; reembolsos y diferencias esperan reglas del negocio                      |
+| **M4** — POS, pagos mixtos, caja                 | **Terminado en software:** incluye carrito persistente y tickets en espera; falta validar iPad e impresora               |
+| **M5** — devoluciones, cambios, cancelaciones    | **En curso:** base y cambio parejo terminados; reembolsos y diferencias esperan reglas del negocio                       |
 | **M9** — importador y sincronizador de SICAR     | Falta                                                                                                                    |
 
 Recorridos a después de octubre: M6 compras, M7 apartados y lealtad, M8
@@ -155,6 +155,9 @@ Están completas en `PLAN_CODEX.md` §2. Las que más se rompen por descuido:
 8. **Esquema sólo por migraciones versionadas**, nunca desde el panel.
 9. **Una migración ya fusionada no se edita:** toda corrección usa otra
    migración y se prueba en staging antes de producción.
+10. **El historial no se maquilla para aprobar una regla nueva:** dos
+    movimientos antiguos con milésimas se conservan; desde 0.23.0 se rechazan
+    nuevas cantidades fraccionarias mientras el catálogo sea por pieza.
 
 ## 6. Cómo se trabaja
 

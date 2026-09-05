@@ -37,6 +37,33 @@ export type SaleActionResult =
 export type CancelSaleActionResult =
   { ok: true; folio: string } | { ok: false; code: string; message: string };
 
+export type PosDraftItemInput = {
+  variant_id: string;
+  quantity: number;
+  gift_receipt: boolean;
+};
+
+export type PosDraftPayload = {
+  id: string;
+  status: "CURRENT" | "HELD";
+  label: string | null;
+  items: PosDraftItemInput[];
+  discount_percent: number;
+  held_at: string | null;
+  updated_at: string;
+  customer: {
+    id: string;
+    member_number: string;
+    full_name: string;
+    phone_e164: string;
+    email: string | null;
+  } | null;
+};
+
+type PosDraftActionResult =
+  | { ok: true; draftId?: string; draft?: PosDraftPayload }
+  | { ok: false; message: string };
+
 function saleError(error: unknown): SaleActionResult {
   const raw = error instanceof Error ? error.message : "UNKNOWN_ERROR";
   const definitions: Array<[string, string]> = [
@@ -74,6 +101,97 @@ function saleError(error: unknown): SaleActionResult {
       match?.[1] ??
       "No fue posible registrar la venta. No se realizó ningún cargo ni movimiento.",
   };
+}
+
+function draftError(error: unknown): PosDraftActionResult {
+  const raw = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+  const message = raw.includes("CURRENT_DRAFT_NOT_EMPTY")
+    ? "Guarda o vacía la venta actual antes de recuperar otra."
+    : raw.includes("DRAFT_ITEMS_UNAVAILABLE")
+      ? "Ese ticket contiene artículos que ya no están disponibles para venta."
+      : raw.includes("DRAFT_NOT_FOUND")
+        ? "Ese ticket en espera ya no está disponible."
+        : raw.includes("SESSION_FORBIDDEN")
+          ? "La caja cambió o ya fue cerrada."
+          : "No fue posible guardar el carrito. Intenta nuevamente.";
+  return { ok: false, message };
+}
+
+export async function savePosCurrentDraft(input: {
+  cashSessionId: string;
+  items: PosDraftItemInput[];
+  customerId?: string | null;
+  discountPercent?: number;
+}): Promise<PosDraftActionResult> {
+  try {
+    const { supabase } = await requirePermission("pos.sell");
+    const { data, error } = await supabase.rpc("save_pos_current_draft", {
+      p_cash_session_id: input.cashSessionId,
+      p_items: input.items,
+      p_customer_id: input.customerId ?? null,
+      p_discount_percent: input.discountPercent ?? 0,
+    });
+    if (error) throw error;
+    return { ok: true, draftId: (data as string | null) ?? undefined };
+  } catch (error) {
+    return draftError(error);
+  }
+}
+
+export async function holdPosDraft(input: {
+  cashSessionId: string;
+  items: PosDraftItemInput[];
+  customerId?: string | null;
+  discountPercent?: number;
+  label?: string;
+}): Promise<PosDraftActionResult> {
+  try {
+    const { supabase } = await requirePermission("pos.sell");
+    const { data, error } = await supabase.rpc("hold_pos_draft", {
+      p_cash_session_id: input.cashSessionId,
+      p_items: input.items,
+      p_customer_id: input.customerId ?? null,
+      p_discount_percent: input.discountPercent ?? 0,
+      p_label: input.label?.trim() || null,
+    });
+    if (error) throw error;
+    revalidatePath("/pos");
+    return { ok: true, draftId: data as string };
+  } catch (error) {
+    return draftError(error);
+  }
+}
+
+export async function resumePosDraft(
+  draftId: string,
+): Promise<PosDraftActionResult> {
+  try {
+    const { supabase } = await requirePermission("pos.sell");
+    const { data, error } = await supabase.rpc("resume_pos_draft", {
+      p_draft_id: draftId,
+    });
+    if (error) throw error;
+    revalidatePath("/pos");
+    return { ok: true, draft: data as PosDraftPayload };
+  } catch (error) {
+    return draftError(error);
+  }
+}
+
+export async function discardPosDraft(
+  draftId: string,
+): Promise<PosDraftActionResult> {
+  try {
+    const { supabase } = await requirePermission("pos.sell");
+    const { error } = await supabase.rpc("discard_pos_draft", {
+      p_draft_id: draftId,
+    });
+    if (error) throw error;
+    revalidatePath("/pos");
+    return { ok: true };
+  } catch (error) {
+    return draftError(error);
+  }
 }
 
 export async function authorizeSaleDiscount(input: {
