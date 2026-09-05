@@ -7,7 +7,12 @@ import {
   authorizeSaleDiscount,
   cancelPosSale,
   createPosSale,
+  discardPosDraft,
+  holdPosDraft,
   requestSalePrint,
+  resumePosDraft,
+  savePosCurrentDraft,
+  type PosDraftPayload,
 } from "./actions";
 
 export const metadata: Metadata = { title: "Punto de venta" };
@@ -40,7 +45,7 @@ export default async function PosPage({
     location_id?: string;
     register_name?: string;
   } | null;
-  if (!cashSession?.location_id) {
+  if (!cashSession?.id || !cashSession.location_id) {
     return <PosWorkspace variants={[]} cashSession={null} />;
   }
   if (params.ubicacion && params.ubicacion !== cashSession.location_id) {
@@ -52,18 +57,22 @@ export default async function PosPage({
       />
     );
   }
-  const [catalogResult, inventoryResult] = await Promise.all([
+  const [catalogResult, inventoryResult, draftsResult] = await Promise.all([
     supabase.rpc("search_catalog", { p_query: "", p_limit: 500 }),
     supabase.rpc("get_inventory_snapshot", {
       p_location_id: cashSession.location_id,
       p_query: "",
       p_limit: 500,
     }),
+    supabase.rpc("list_my_pos_drafts", {
+      p_cash_session_id: cashSession.id,
+    }),
   ]);
-  if (catalogResult.error || inventoryResult.error) {
+  if (catalogResult.error || inventoryResult.error || draftsResult.error) {
     console.error("[pos] data unavailable", {
       catalog: catalogResult.error?.message,
       inventory: inventoryResult.error?.message,
+      drafts: draftsResult.error?.message,
     });
     return (
       <PosWorkspace
@@ -102,6 +111,7 @@ export default async function PosPage({
   return (
     <PosWorkspace
       variants={variants}
+      initialDrafts={(draftsResult.data ?? []) as PosDraftPayload[]}
       cashSession={
         cashSession as {
           id: string;
@@ -113,6 +123,10 @@ export default async function PosPage({
       authorizeDiscountAction={authorizeSaleDiscount}
       printAction={requestSalePrint}
       cancelSaleAction={cancelPosSale}
+      saveDraftAction={savePosCurrentDraft}
+      holdDraftAction={holdPosDraft}
+      resumeDraftAction={resumePosDraft}
+      discardDraftAction={discardPosDraft}
     />
   );
 }

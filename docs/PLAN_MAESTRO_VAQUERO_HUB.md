@@ -155,20 +155,20 @@ a producción.
 
 División actual por departamento:
 
-| Departamento   | Renglones |
-| -------------- | --------: |
-| Caballero      |     7,496 |
-| Dama           |     2,896 |
-| Unisex         |     2,633 |
-| Niño           |     1,633 |
-| Juvenil        |       499 |
-| Accesorios     |       400 |
-| Niña           |       157 |
-| Art. caballo   |       112 |
-| Art. limpieza  |        39 |
-| D1             |         5 |
-| Bebidas        |         1 |
-| Adhesivos      |         1 |
+| Departamento  | Renglones |
+| ------------- | --------: |
+| Caballero     |     7,496 |
+| Dama          |     2,896 |
+| Unisex        |     2,633 |
+| Niño          |     1,633 |
+| Juvenil       |       499 |
+| Accesorios    |       400 |
+| Niña          |       157 |
+| Art. caballo  |       112 |
+| Art. limpieza |        39 |
+| D1            |         5 |
+| Bebidas       |         1 |
+| Adhesivos     |         1 |
 
 La exportación contiene **299 categorías**. Las de mayor volumen incluyen
 Cintos Vaquero SM (1,381), Pantalones Wrangler (967), Botas Vaquero SM (592),
@@ -2269,3 +2269,23 @@ Entrega visible 0.21.0–0.22.0 — cierre de M4 e inicio seguro de M5:
 - Las migraciones y pruebas transaccionales de esta entrega se ejecutaron
   primero en staging. Se comprobaron restauración de caja e inventario,
   idempotencia, concurrencia, inmutabilidad y rechazo después del corte.
+
+Entrega visible 0.23.0 — carrito persistente y tickets en espera:
+
+- El carrito activo se guarda automáticamente en Supabase y se recupera al
+  volver al POS, incluso desde otro dispositivo, siempre dentro del mismo
+  empleado, caja y sesión abierta.
+- El cajero puede dejar varios tickets en espera, cobrar a otra persona y
+  recuperar el anterior. Ningún borrador reserva inventario ni mueve caja.
+- La base impide consultar o recuperar borradores ajenos. Al recuperar se
+  vuelven a comprobar artículos activos y, al cobrar, precio, existencia,
+  permisos y cualquier descuento.
+- La venta confirmada consume el carrito activo dentro de PostgreSQL; cerrar
+  caja elimina los borradores restantes. Guardar, recuperar y descartar deja
+  auditoría sin copiar datos personales a los logs.
+- Como el catálogo actual se maneja por pieza, conteos, ajustes y traspasos
+  avanzan de uno en uno y el servidor y la base rechazan milésimas. Una futura
+  venta fraccionada requerirá primero modelar explícitamente su unidad.
+- Producción conserva dos movimientos históricos con milésimas que dejaron el
+  saldo final entero. No se reescriben ni se borran: la restricción se agrega
+  `NOT VALID` para respetar la bitácora y bloquear sólo movimientos nuevos.

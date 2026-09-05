@@ -265,6 +265,76 @@ describe.sequential("M4: POS y caja", () => {
     expect(Number(stock.data!.qty)).toBe(1);
   });
 
+  it("guarda, pone en espera, recupera y consume un carrito sin compartirlo", async () => {
+    const variantId = await createVariant("Ticket en espera", 2, 22500);
+    const items = [{ variant_id: variantId, quantity: 1, gift_receipt: false }];
+    const saved = await state.cashierA!.client.rpc("save_pos_current_draft", {
+      p_cash_session_id: state.sessionA,
+      p_items: items,
+      p_customer_id: null,
+      p_discount_percent: 0,
+    });
+    expect(saved.error).toBeNull();
+
+    const held = await state.cashierA!.client.rpc("hold_pos_draft", {
+      p_cash_session_id: state.sessionA,
+      p_items: items,
+      p_customer_id: null,
+      p_discount_percent: 0,
+      p_label: "Cliente mostrador",
+    });
+    expect(held.error).toBeNull();
+    const [ownDrafts, otherDrafts] = await Promise.all([
+      state.cashierA!.client.rpc("list_my_pos_drafts", {
+        p_cash_session_id: state.sessionA,
+      }),
+      state.cashierB!.client.rpc("list_my_pos_drafts", {
+        p_cash_session_id: state.sessionB,
+      }),
+    ]);
+    expect(ownDrafts.data).toMatchObject([
+      { id: held.data, status: "HELD", label: "Cliente mostrador" },
+    ]);
+    expect(otherDrafts.data).toEqual([]);
+
+    const resumed = await state.cashierA!.client.rpc("resume_pos_draft", {
+      p_draft_id: held.data,
+    });
+    expect(resumed.error).toBeNull();
+    expect(resumed.data.status).toBe("CURRENT");
+    const sale = await state.cashierA!.client.rpc("create_sale", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_items: items,
+      p_payments: cashPayment(22500),
+      p_customer_id: null,
+      p_discounts: [],
+      p_notes: null,
+    });
+    expect(sale.error).toBeNull();
+    const consumed = await state
+      .server!.from("pos_drafts")
+      .select("id")
+      .eq("id", held.data);
+    expect(consumed.data).toEqual([]);
+    expect(
+      (await state.cashierA!.client.from("pos_drafts").select("id")).error,
+    ).not.toBeNull();
+  });
+
+  it("rechaza cantidades fraccionarias mientras el catálogo sea por pieza", async () => {
+    const variantId = await createVariant("Pieza entera", 0, 10000);
+    const result = await state.admin!.client.rpc("apply_inventory_adjustment", {
+      p_variant_id: variantId,
+      p_location_id: state.locationId,
+      p_expected_qty: 0,
+      p_counted_qty: 0.001,
+      p_reason: "CONTEO_FISICO",
+      p_note: "No debe aceptar milésimas",
+    });
+    expect(result.error).not.toBeNull();
+  });
+
   it("dos cajas disputando la última pieza producen una sola venta", async () => {
     const variantId = await createVariant("Última pieza", 1, 40000);
     const sale = (client: SupabaseClient, sessionId: string) =>
@@ -410,6 +480,21 @@ describe.sequential("M4: POS y caja", () => {
     });
     expect(sale.error).toBeNull();
     state.closedSessionSaleId = sale.data.id;
+    const heldVariant = await createVariant("Borrador al cierre", 1, 13000);
+    const held = await state.cashierB!.client.rpc("hold_pos_draft", {
+      p_cash_session_id: state.sessionB,
+      p_items: [
+        {
+          variant_id: heldVariant,
+          quantity: 1,
+          gift_receipt: false,
+        },
+      ],
+      p_customer_id: null,
+      p_discount_percent: 0,
+      p_label: "No sobrevivir al corte",
+    });
+    expect(held.error).toBeNull();
   });
 
   it("no entrega el esperado antes del conteo: ni por la sesión ni por el libro", async () => {
@@ -464,6 +549,11 @@ describe.sequential("M4: POS y caja", () => {
     });
     expect(closed.error).toBeNull();
     expect(closed.data.status).toBe("CLOSED");
+    const drafts = await state
+      .server!.from("pos_drafts")
+      .select("id")
+      .eq("cash_session_id", state.sessionB);
+    expect(drafts.data).toEqual([]);
   });
 
   it("después del corte ya no cancela: obliga a usar devolución", async () => {

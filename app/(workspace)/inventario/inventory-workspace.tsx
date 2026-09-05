@@ -225,14 +225,14 @@ function TransferItemForm({
             </span>
             <input
               type="number"
-              min={mode === "prepare" ? 0.001 : 0}
+              min={mode === "prepare" ? 1 : 0}
               max={
                 mode === "prepare"
                   ? item.requestedQuantity
                   : (item.sentQuantity ?? item.requestedQuantity)
               }
-              step="0.001"
-              inputMode="decimal"
+              step="1"
+              inputMode="numeric"
               value={quantities[item.variantId] ?? 0}
               onChange={(event) =>
                 setQuantities((current) => ({
@@ -311,8 +311,8 @@ function NewTransferForm({
                 type="number"
                 min="0"
                 max={item.availableQuantity}
-                step="0.001"
-                inputMode="decimal"
+                step="1"
+                inputMode="numeric"
                 value={quantities[item.variantId] ?? 0}
                 onChange={(event) =>
                   setQuantities((current) => ({
@@ -699,9 +699,9 @@ export function InventoryWorkspace({
                   name="counted_quantity"
                   type="number"
                   min="0"
-                  max="999999999.999"
-                  step="0.001"
-                  inputMode="decimal"
+                  max="999999999"
+                  step="1"
+                  inputMode="numeric"
                   defaultValue={adjusting.quantity}
                   required
                 />
@@ -911,8 +911,8 @@ export function InventoryWorkspace({
                             name="counted_quantity"
                             type="number"
                             min="0"
-                            step="0.001"
-                            inputMode="decimal"
+                            step="1"
+                            inputMode="numeric"
                             required
                           />
                         </label>

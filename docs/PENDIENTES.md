@@ -123,8 +123,9 @@ Ambas reglas quedaron implementadas y probadas en staging en 0.22.0.
    corrida en seco y confirmación atómica. No importa SICAR ni WooCommerce.
 4. M2.5 quedó implementado en 0.18.0: acciones en lote, precios auditados,
    plantillas persistentes e impresión de etiquetas desde computadora.
-5. **Siguiente:** realizar la prueba física de cámara/lector/impresora cuando
-   esté disponible y comenzar M3, inventario, movimientos y traspasos.
+5. M3 y M4 quedaron cerrados en software. La extensión 0.23.0 agrega carrito
+   persistente, tickets en espera y cantidades por pieza enteras. **Siguiente:**
+   construir la interfaz del cambio parejo de M5 ya soportado por la base.
 
 La validación física necesita dispositivos y una impresión real; las pruebas
 automatizadas no la sustituyen.
@@ -155,9 +156,9 @@ y conviene decirlo con números porque cambia una decisión.
 | M0, M1, M1B     | —                | Terminados                                                                                  |
 | **M2**          | 1                | **Terminado**, a falta de la validación física                                              |
 | M3 inventario   | 1                | **Terminado en software**; queda la validación física conjunta de etiqueta, cámara y lector |
-| M4 POS y caja   | 2                | **Terminado en software 0.22.0**; falta validación física de impresora y operación táctil    |
-| M5 devoluciones | 1                | **En curso:** base inmutable y cambio parejo terminados; reglas de dinero siguen pendientes  |
-| M9 importador   | 1                | Muestra real recibida y perfilada; sigue el mapeo de columnas y la corrida en seco           |
+| M4 POS y caja   | 2                | **Terminado en software 0.23.0**; falta validación física de impresora y operación táctil   |
+| M5 devoluciones | 1                | **En curso:** base inmutable y cambio parejo terminados; reglas de dinero siguen pendientes |
+| M9 importador   | 1                | Muestra real recibida y perfilada; sigue el mapeo de columnas y la corrida en seco          |
 
 Quedan **cuatro semanas de trabajo** contra unas seis de calendario hasta
 mediados de octubre.

@@ -411,6 +411,25 @@ Existe `print_jobs` desde este milestone, con el controlador
 intercambiable, para que la decisión de impresora no quede soldada al POS.
 Ver la discusión de arquitectura en `PLAN_CODEX.md` sección 9.1.
 
+### 8.1 Carrito persistente y tickets en espera
+
+Implementado en 0.23.0 como estado operativo separado de la venta:
+
+- El carrito activo se guarda automáticamente por empleado, caja y sesión
+  abierta, y se restaura al volver al POS incluso desde otro dispositivo.
+- Un empleado puede convertir el carrito activo en uno de varios tickets en
+  espera y continuar cobrando sin alterar inventario ni caja.
+- Ningún empleado puede listar, recuperar o descartar borradores ajenos. Las
+  tablas no admiten acceso directo; las RPC vuelven a validar `pos.sell`, la
+  propiedad de la sesión y el alcance de sucursal.
+- Recuperar un ticket vuelve a comprobar que productos y variantes sigan
+  activos. Precios, existencia y permisos se validan otra vez al cobrar; una
+  autorización de descuento nunca se conserva como credencial reutilizable.
+- Cobrar una venta consume el carrito activo dentro de la misma transacción.
+  Cerrar la caja elimina todos sus borradores para que no sobrevivan al turno.
+- Guardar, recuperar y descartar tickets en espera deja auditoría resumida sin
+  copiar datos personales del cliente a los logs.
+
 ## 9. RLS
 
 - `sales`, `sale_items`, `sale_payments`: lectura por ubicación vía
@@ -432,29 +451,33 @@ Ver la discusión de arquitectura en `PLAN_CODEX.md` sección 9.1.
 
 ## 10. Pruebas obligatorias
 
-| # | Escenario | Resultado esperado |
-|---|---|---|
-| 1 | **Doble toque en «Cobrar»** con la misma llave | Una sola venta; la segunda llamada devuelve la primera |
-| 2 | Misma llave con carrito distinto | `IDEMPOTENCY_CONFLICT` |
-| 3 | **Pago 30/70 sobre un total impar** | La suma cuadra exacto al centavo |
-| 4 | Pagos que no suman el total | Rechazado |
-| 5 | Descuento 10% sobre tres renglones con residuo | La suma de descuentos por renglón == descuento total |
-| 6 | Descuento sin autorización de supervisor | Rechazado |
-| 7 | Descuento con `authorized_by` sin el permiso | Rechazado |
-| 8 | Venta con `unit_price` mandado por el cliente | Ignorado: se usa el precio de la base |
-| 9 | Venta sobre existencia insuficiente en un renglón | **Toda** la venta falla; nada queda escrito |
-| 10 | Dos cajas vendiendo la última pieza a la vez | Exactamente una tiene éxito |
-| 11 | Dos cajas cobrando a la vez | Folios distintos |
-| 12 | Venta con sesión de caja cerrada | Rechazada |
-| 13 | Abrir dos sesiones en la misma caja | Rechazado por la base |
-| 14 | Pago en efectivo con vuelto | `Σ amount_cents == total`; el vuelto no es renglón |
-| 15 | Corte con ventas en efectivo, retiro e ingreso | El esperado cuadra |
-| 16 | Cancelación | La venta original intacta salvo `status`; inventario regresa |
-| 17 | `UPDATE` o `DELETE` sobre una venta | Rechazado por el disparador |
-| 18 | `CASHIER` consulta ventas de otra sucursal | Cero filas |
-| 19 | `CASHIER` consulta el costo de un renglón | No lo ve |
-| 20 | Vender una variante dada de baja | Rechazado, con el motivo (§2.2) |
-| 21 | Vender un producto dado de baja con variante activa | Rechazado igual |
+| #   | Escenario                                            | Resultado esperado                                           |
+| --- | ---------------------------------------------------- | ------------------------------------------------------------ |
+| 1   | **Doble toque en «Cobrar»** con la misma llave       | Una sola venta; la segunda llamada devuelve la primera       |
+| 2   | Misma llave con carrito distinto                     | `IDEMPOTENCY_CONFLICT`                                       |
+| 3   | **Pago 30/70 sobre un total impar**                  | La suma cuadra exacto al centavo                             |
+| 4   | Pagos que no suman el total                          | Rechazado                                                    |
+| 5   | Descuento 10% sobre tres renglones con residuo       | La suma de descuentos por renglón == descuento total         |
+| 6   | Descuento sin autorización de supervisor             | Rechazado                                                    |
+| 7   | Descuento con `authorized_by` sin el permiso         | Rechazado                                                    |
+| 8   | Venta con `unit_price` mandado por el cliente        | Ignorado: se usa el precio de la base                        |
+| 9   | Venta sobre existencia insuficiente en un renglón    | **Toda** la venta falla; nada queda escrito                  |
+| 10  | Dos cajas vendiendo la última pieza a la vez         | Exactamente una tiene éxito                                  |
+| 11  | Dos cajas cobrando a la vez                          | Folios distintos                                             |
+| 12  | Venta con sesión de caja cerrada                     | Rechazada                                                    |
+| 13  | Abrir dos sesiones en la misma caja                  | Rechazado por la base                                        |
+| 14  | Pago en efectivo con vuelto                          | `Σ amount_cents == total`; el vuelto no es renglón           |
+| 15  | Corte con ventas en efectivo, retiro e ingreso       | El esperado cuadra                                           |
+| 16  | Cancelación                                          | La venta original intacta salvo `status`; inventario regresa |
+| 17  | `UPDATE` o `DELETE` sobre una venta                  | Rechazado por el disparador                                  |
+| 18  | `CASHIER` consulta ventas de otra sucursal           | Cero filas                                                   |
+| 19  | `CASHIER` consulta el costo de un renglón            | No lo ve                                                     |
+| 20  | Vender una variante dada de baja                     | Rechazado, con el motivo (§2.2)                              |
+| 21  | Vender un producto dado de baja con variante activa  | Rechazado igual                                              |
+| 22  | Cambiar de módulo con carrito abierto y volver       | Se restaura el mismo carrito del empleado y sesión           |
+| 23  | Otro empleado intenta listar o recuperar el borrador | No obtiene el contenido                                      |
+| 24  | Poner un ticket en espera                            | No cambia inventario ni caja; permite iniciar otro carrito   |
+| 25  | Cobrar o cerrar la caja con borradores               | El activo se consume al cobrar y todos desaparecen al cerrar |
 
 ## 11. Criterios de aceptación
 
