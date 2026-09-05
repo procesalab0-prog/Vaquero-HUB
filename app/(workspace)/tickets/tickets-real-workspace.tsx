@@ -56,6 +56,11 @@ const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
   currency: "MXN",
 });
+const ticketTime = new Intl.DateTimeFormat("es-MX", {
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "America/Mexico_City",
+});
 
 export function TicketsRealWorkspace({
   tickets,
@@ -223,12 +228,7 @@ export function TicketsRealWorkspace({
                   </small>
                 ) : null}
               </span>
-              <span>
-                {new Date(ticket.sold_at).toLocaleTimeString("es-MX", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
+              <span>{ticketTime.format(new Date(ticket.sold_at))}</span>
               <span>
                 {ticket.payments.map((item) => item.method_name).join(" + ")}
               </span>
