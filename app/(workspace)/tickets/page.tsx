@@ -3,6 +3,11 @@ import type { Metadata } from "next";
 import { requirePermission } from "@/lib/auth/authorization";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { cancelPosSale } from "../pos/actions";
+import {
+  createEqualExchange,
+  prepareEqualExchange,
+  searchEqualExchangeVariants,
+} from "./actions";
 import { TicketsRealWorkspace, type Ticket } from "./tickets-real-workspace";
 import { TicketsWorkspace } from "./tickets-workspace";
 
@@ -56,27 +61,44 @@ export default async function TicketsPage({
     );
   const from = new Date(referenceTime);
   from.setDate(from.getDate() - 30);
-  const [ticketsResult, cancelPermission] = await Promise.all([
-    supabase.rpc("list_sale_tickets", {
-      p_location_id: location.id,
-      p_query: "",
-      p_from: from.toISOString(),
-      p_to: null,
-      p_limit: 200,
-    }),
-    supabase
-      .from("role_permissions")
-      .select("permission_code")
-      .eq("role_id", roleId)
-      .eq("permission_code", "sales.cancel")
-      .maybeSingle(),
-  ]);
+  const [ticketsResult, cancelPermission, returnPermission] = await Promise.all(
+    [
+      supabase.rpc("list_sale_tickets", {
+        p_location_id: location.id,
+        p_query: "",
+        p_from: from.toISOString(),
+        p_to: null,
+        p_limit: 200,
+      }),
+      supabase
+        .from("role_permissions")
+        .select("permission_code")
+        .eq("role_id", roleId)
+        .eq("permission_code", "sales.cancel")
+        .maybeSingle(),
+      supabase
+        .from("role_permissions")
+        .select("permission_code")
+        .eq("role_id", roleId)
+        .eq("permission_code", "returns.create")
+        .maybeSingle(),
+    ],
+  );
   return (
     <TicketsRealWorkspace
       tickets={(ticketsResult.data ?? []) as Ticket[]}
       status={ticketsResult.error?.message}
       periodStarts={periodStarts}
       cancelSaleAction={cancelPermission.data ? cancelPosSale : undefined}
+      prepareExchangeAction={
+        returnPermission.data ? prepareEqualExchange : undefined
+      }
+      searchExchangeVariantsAction={
+        returnPermission.data ? searchEqualExchangeVariants : undefined
+      }
+      createExchangeAction={
+        returnPermission.data ? createEqualExchange : undefined
+      }
     />
   );
 }

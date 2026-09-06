@@ -6397,3 +6397,210 @@ a:active {
     min-height: 124px;
   }
 }
+
+/* M5: cambio parejo desde un ticket real */
+.exchange-modal {
+  width: min(820px, calc(100vw - 32px));
+  max-height: min(90dvh, 900px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.exchange-modal-header,
+.exchange-step-heading,
+.exchange-item,
+.exchange-candidate,
+.exchange-summary {
+  display: flex;
+  align-items: center;
+}
+
+.exchange-modal-header {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.exchange-modal-header .icon-button {
+  flex: 0 0 48px;
+  min-width: 48px;
+  min-height: 48px;
+}
+
+.exchange-loading {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.exchange-step {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.exchange-step-heading {
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.exchange-step-heading > span {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 50%;
+  color: white;
+  background: var(--accent);
+  font-weight: 900;
+}
+
+.exchange-step-heading > div,
+.exchange-item > span,
+.exchange-candidate > span {
+  display: grid;
+  gap: 3px;
+}
+
+.exchange-step-heading small,
+.exchange-item small,
+.exchange-candidate small {
+  color: var(--muted);
+}
+
+.exchange-item-list,
+.exchange-candidate-list {
+  display: grid;
+  gap: 10px;
+}
+
+.exchange-item,
+.exchange-candidate {
+  width: 100%;
+  min-height: 68px;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: inherit;
+}
+
+.exchange-item > span:last-child,
+.exchange-candidate > span:last-child {
+  text-align: right;
+}
+
+.exchange-item.selected,
+.exchange-candidate.selected {
+  border-color: var(--accent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+}
+
+.exchange-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.exchange-search .module-search {
+  width: 100%;
+}
+
+.exchange-summary {
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+
+.exchange-summary svg {
+  flex: 0 0 24px;
+  color: var(--accent);
+}
+
+.exchange-reason {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+  font-weight: 700;
+}
+
+.exchange-reason textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.exchange-success {
+  min-height: 320px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.exchange-success-icon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: white;
+  background: #23824f;
+}
+
+.exchange-success-icon svg {
+  width: 34px;
+  height: 34px;
+}
+
+.exchange-actions {
+  position: sticky;
+  bottom: -1px;
+  padding-top: 14px;
+  padding-bottom: max(4px, env(safe-area-inset-bottom));
+  background: var(--surface);
+}
+
+@media (max-width: 640px) {
+  .exchange-modal {
+    width: 100%;
+    max-height: calc(100dvh - env(safe-area-inset-top));
+    border-radius: 18px 18px 0 0;
+    padding-bottom: max(18px, env(safe-area-inset-bottom));
+  }
+
+  .exchange-search,
+  .exchange-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .exchange-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .exchange-summary svg {
+    transform: rotate(90deg);
+  }
+
+  .exchange-item,
+  .exchange-candidate {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .exchange-item > span:last-child,
+  .exchange-candidate > span:last-child {
+    text-align: left;
+  }
+}

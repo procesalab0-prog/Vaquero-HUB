@@ -1,7 +1,7 @@
 # M5 — Devoluciones, cambios y cancelaciones
 
-> Estado 0.22.0: base de datos, libro inmutable, consulta de renglones
-> disponibles y cambio parejo `create_equal_exchange` implementados. Esta
+> Estado 0.24.0: base de datos, libro inmutable, consulta de renglones y
+> cambio parejo implementados, incluida su interfaz desde Tickets. Esta
 > primera entrega exige ticket, misma sucursal, mercancía revendible y
 > diferencia cero. Los casos con dinero, daño, otra sucursal o sin ticket
 > siguen fuera hasta resolver las preguntas de la sección 14.
@@ -15,11 +15,11 @@
 
 ## 1. Tres operaciones distintas, no una
 
-| Operación | Qué pasa | Dónde vive |
-|---|---|---|
-| **Cancelación** | Se anula una venta completa poco después de hecha, normalmente por un error de captura | M4 §6 |
-| **Devolución** | El cliente trae mercancía y recibe su dinero | Aquí |
-| **Cambio** | El cliente trae mercancía y se lleva otra; la diferencia se cobra o se devuelve | Aquí |
+| Operación       | Qué pasa                                                                               | Dónde vive |
+| --------------- | -------------------------------------------------------------------------------------- | ---------- |
+| **Cancelación** | Se anula una venta completa poco después de hecha, normalmente por un error de captura | M4 §6      |
+| **Devolución**  | El cliente trae mercancía y recibe su dinero                                           | Aquí       |
+| **Cambio**      | El cliente trae mercancía y se lleva otra; la diferencia se cobra o se devuelve        | Aquí       |
 
 Se confunden seguido, y modelarlas igual trae problemas. Una cancelación
 niega que la venta debió existir; una devolución reconoce que existió y la
@@ -142,11 +142,11 @@ pieza en M3, sólo que aquí el que se duplica es el dinero.
 difference_cents = delivered_cents − returned_cents
 ```
 
-| Signo | Qué significa | Qué se hace |
-|---|---|---|
-| Positivo | Lo nuevo cuesta más | El cliente paga: renglones `CHARGE` en `return_payments` |
-| Negativo | Lo nuevo cuesta menos | La tienda devuelve: renglones `REFUND` |
-| Cero | Cambio parejo, típico de talla | Ningún movimiento de dinero |
+| Signo    | Qué significa                  | Qué se hace                                              |
+| -------- | ------------------------------ | -------------------------------------------------------- |
+| Positivo | Lo nuevo cuesta más            | El cliente paga: renglones `CHARGE` en `return_payments` |
+| Negativo | Lo nuevo cuesta menos          | La tienda devuelve: renglones `REFUND`                   |
+| Cero     | Cambio parejo, típico de talla | Ningún movimiento de dinero                              |
 
 Y la igualdad que se impone con restricción diferida, igual que en M4:
 
@@ -232,24 +232,24 @@ devuelve una compra, ¿se retiran los puntos?
 
 ## 12. Pruebas obligatorias
 
-| # | Escenario | Resultado esperado |
-|---|---|---|
-| 1 | **Devolver más de lo vendido** | `RETURN_EXCEEDS_SOLD` |
-| 2 | **Dos devoluciones simultáneas del mismo renglón** | La suma nunca supera lo vendido |
-| 3 | **Devolver algo comprado con descuento** | Se reembolsa el precio pagado, no el de lista |
-| 4 | Cambio de talla al mismo precio | Diferencia cero; sin movimiento de dinero |
-| 5 | Cambio por algo más caro | Cobro por la diferencia exacta |
-| 6 | Cambio por algo más barato | Reembolso por la diferencia exacta |
-| 7 | Cambio sin existencia de lo que se lleva | Todo el cambio falla; nada queda escrito |
-| 8 | Devolución de mercancía dañada | Dos movimientos: `RETURN` y `ADJUSTMENT` con motivo |
-| 9 | Devolución en efectivo | Afecta la sesión de caja **de hoy** |
-| 10 | **La venta original después de una devolución** | Idéntica: mismos renglones, importes y pagos |
-| 11 | Devolución sobre una venta cancelada | Rechazada |
-| 12 | Renglón que no pertenece a la venta referida | Rechazado |
-| 13 | Doble toque en «Devolver» | Un solo documento |
-| 14 | Devolución sin autorización cuando se requiere | Rechazada |
-| 15 | `UPDATE` o `DELETE` sobre una devolución | Rechazado por el disparador |
-| 16 | Inventario tras devolver y volver a vender | El libro cuadra con el saldo |
+| #   | Escenario                                          | Resultado esperado                                  |
+| --- | -------------------------------------------------- | --------------------------------------------------- |
+| 1   | **Devolver más de lo vendido**                     | `RETURN_EXCEEDS_SOLD`                               |
+| 2   | **Dos devoluciones simultáneas del mismo renglón** | La suma nunca supera lo vendido                     |
+| 3   | **Devolver algo comprado con descuento**           | Se reembolsa el precio pagado, no el de lista       |
+| 4   | Cambio de talla al mismo precio                    | Diferencia cero; sin movimiento de dinero           |
+| 5   | Cambio por algo más caro                           | Cobro por la diferencia exacta                      |
+| 6   | Cambio por algo más barato                         | Reembolso por la diferencia exacta                  |
+| 7   | Cambio sin existencia de lo que se lleva           | Todo el cambio falla; nada queda escrito            |
+| 8   | Devolución de mercancía dañada                     | Dos movimientos: `RETURN` y `ADJUSTMENT` con motivo |
+| 9   | Devolución en efectivo                             | Afecta la sesión de caja **de hoy**                 |
+| 10  | **La venta original después de una devolución**    | Idéntica: mismos renglones, importes y pagos        |
+| 11  | Devolución sobre una venta cancelada               | Rechazada                                           |
+| 12  | Renglón que no pertenece a la venta referida       | Rechazado                                           |
+| 13  | Doble toque en «Devolver»                          | Un solo documento                                   |
+| 14  | Devolución sin autorización cuando se requiere     | Rechazada                                           |
+| 15  | `UPDATE` o `DELETE` sobre una devolución           | Rechazado por el disparador                         |
+| 16  | Inventario tras devolver y volver a vender         | El libro cuadra con el saldo                        |
 
 ## 13. Criterios de aceptación
 

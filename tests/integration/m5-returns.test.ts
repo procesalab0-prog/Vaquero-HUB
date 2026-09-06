@@ -195,6 +195,29 @@ describe.sequential("M5: base de devoluciones y cambio parejo", () => {
     ]);
   });
 
+  it("busca para el cambio sólo variantes con el mismo precio y existencia", async () => {
+    const returnedVariant = await createVariant("Buscar entrada", 18000, 1);
+    const exactVariant = await createVariant("Buscar exacta", 18000, 2);
+    const otherPriceVariant = await createVariant(
+      "Buscar otro precio",
+      19000,
+      2,
+    );
+    const result = await state.admin!.rpc("search_equal_exchange_variants", {
+      p_price_cents: 18000,
+      p_exclude_variant_id: returnedVariant,
+      p_query: "",
+      p_limit: 100,
+    });
+    expect(result.error).toBeNull();
+    const ids = (result.data ?? []).map(
+      (row: { variant_id: string }) => row.variant_id,
+    );
+    expect(ids).toContain(exactVariant);
+    expect(ids).not.toContain(returnedVariant);
+    expect(ids).not.toContain(otherPriceVariant);
+  });
+
   it("dos cambios concurrentes nunca devuelven dos veces el mismo renglón", async () => {
     const returnedVariant = await createVariant(
       "Concurrente entrada",

@@ -1,13 +1,31 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
-import { FileText, Gift, Printer, Search, Undo2, X } from "lucide-react";
+import { useDeferredValue, useMemo, useRef, useState } from "react";
+import {
+  ArrowRightLeft,
+  Check,
+  FileText,
+  Gift,
+  Printer,
+  Search,
+  Undo2,
+  X,
+} from "lucide-react";
 
 import {
   formatReceiptDate,
   ThermalReceipt,
   type ReceiptLine,
 } from "@/components/thermal-receipt";
+import {
+  unitExchangeValue,
+  type CreateExchangeResult,
+  type ExchangeSearchResult,
+  type ExchangeVariant,
+  type PrepareExchangeResult,
+  type ReturnableSale,
+  type ReturnableSaleItem,
+} from "@/lib/returns";
 
 type TicketItem = {
   line_number: number;
@@ -67,11 +85,28 @@ export function TicketsRealWorkspace({
   status,
   periodStarts,
   cancelSaleAction,
+  prepareExchangeAction,
+  searchExchangeVariantsAction,
+  createExchangeAction,
 }: {
   tickets: Ticket[];
   status?: string;
   periodStarts: Record<"today" | "week" | "month", string>;
   cancelSaleAction?: (saleId: string, reason: string) => Promise<CancelResult>;
+  prepareExchangeAction?: (saleId: string) => Promise<PrepareExchangeResult>;
+  searchExchangeVariantsAction?: (input: {
+    query: string;
+    priceCents: number;
+    excludeVariantId: string;
+  }) => Promise<ExchangeSearchResult>;
+  createExchangeAction?: (input: {
+    idempotencyKey: string;
+    cashSessionId: string;
+    originalSaleId: string;
+    saleItemId: string;
+    outputVariantId: string;
+    reason: string;
+  }) => Promise<CreateExchangeResult>;
 }) {
   const [rows, setRows] = useState(tickets);
   const [query, setQuery] = useState("");
@@ -83,8 +118,28 @@ export function TicketsRealWorkspace({
   const [cancelReason, setCancelReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [exchangeOpen, setExchangeOpen] = useState(false);
+  const [exchangeSale, setExchangeSale] = useState<ReturnableSale | null>(null);
+  const [exchangeCashSessionId, setExchangeCashSessionId] = useState("");
+  const [exchangeLoading, setExchangeLoading] = useState(false);
+  const [exchangeError, setExchangeError] = useState("");
+  const [returnItemId, setReturnItemId] = useState("");
+  const [exchangeQuery, setExchangeQuery] = useState("");
+  const [exchangeVariants, setExchangeVariants] = useState<ExchangeVariant[]>(
+    [],
+  );
+  const [outputVariantId, setOutputVariantId] = useState("");
+  const [exchangeReason, setExchangeReason] = useState("Cambio de talla");
+  const [exchangeFolio, setExchangeFolio] = useState("");
+  const exchangeOperation = useRef(false);
+  const exchangeIdempotencyKey = useRef(crypto.randomUUID());
   const deferredQuery = useDeferredValue(query);
   const selected = rows.find((ticket) => ticket.id === selectedId) ?? null;
+  const selectedReturnItem =
+    exchangeSale?.items.find((item) => item.sale_item_id === returnItemId) ??
+    null;
+  const selectedOutput =
+    exchangeVariants.find((variant) => variant.id === outputVariantId) ?? null;
 
   const filtered = useMemo(() => {
     const start = new Date(periodStarts[period]);
@@ -154,6 +209,94 @@ export function TicketsRealWorkspace({
     );
     setCancelOpen(false);
     setCancelReason("");
+  }
+
+  async function openExchange() {
+    if (!selected || !prepareExchangeAction || exchangeOperation.current)
+      return;
+    exchangeOperation.current = true;
+    setExchangeOpen(true);
+    setExchangeLoading(true);
+    setExchangeError("");
+    setExchangeSale(null);
+    setExchangeCashSessionId("");
+    setReturnItemId("");
+    setExchangeVariants([]);
+    setOutputVariantId("");
+    setExchangeReason("Cambio de talla");
+    setExchangeFolio("");
+    exchangeIdempotencyKey.current = crypto.randomUUID();
+    const result = await prepareExchangeAction(selected.id);
+    setExchangeLoading(false);
+    exchangeOperation.current = false;
+    if (!result.ok) {
+      setExchangeError(result.message);
+      return;
+    }
+    setExchangeSale(result.sale);
+    setExchangeCashSessionId(result.cashSessionId);
+  }
+
+  async function loadExchangeVariants(
+    item: ReturnableSaleItem,
+    search: string,
+  ) {
+    if (!searchExchangeVariantsAction || exchangeOperation.current) return;
+    exchangeOperation.current = true;
+    setExchangeLoading(true);
+    setExchangeError("");
+    setOutputVariantId("");
+    const result = await searchExchangeVariantsAction({
+      query: search,
+      priceCents: unitExchangeValue(item),
+      excludeVariantId: item.variant_id,
+    });
+    setExchangeLoading(false);
+    exchangeOperation.current = false;
+    if (!result.ok) {
+      setExchangeError(result.message);
+      setExchangeVariants([]);
+      return;
+    }
+    setExchangeVariants(result.variants);
+  }
+
+  function chooseReturnItem(item: ReturnableSaleItem) {
+    setReturnItemId(item.sale_item_id);
+    setExchangeQuery("");
+    setOutputVariantId("");
+    void loadExchangeVariants(item, "");
+  }
+
+  async function confirmExchange() {
+    if (
+      !exchangeSale ||
+      !selectedReturnItem ||
+      !selectedOutput ||
+      !exchangeCashSessionId ||
+      !createExchangeAction ||
+      exchangeReason.trim().length < 3 ||
+      exchangeOperation.current
+    )
+      return;
+    exchangeOperation.current = true;
+    setExchangeLoading(true);
+    setExchangeError("");
+    const result = await createExchangeAction({
+      idempotencyKey: exchangeIdempotencyKey.current,
+      cashSessionId: exchangeCashSessionId,
+      originalSaleId: exchangeSale.id,
+      saleItemId: selectedReturnItem.sale_item_id,
+      outputVariantId: selectedOutput.id,
+      reason: exchangeReason,
+    });
+    setExchangeLoading(false);
+    exchangeOperation.current = false;
+    if (!result.ok) {
+      setExchangeError(result.message);
+      return;
+    }
+    setExchangeFolio(result.folio);
   }
 
   return (
@@ -327,6 +470,16 @@ export function TicketsRealWorkspace({
                   <Printer aria-hidden="true" />
                   Imprimir esta vista
                 </button>
+                {prepareExchangeAction && selected.status === "COMPLETED" ? (
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => void openExchange()}
+                  >
+                    <ArrowRightLeft aria-hidden="true" />
+                    Registrar cambio
+                  </button>
+                ) : null}
                 {cancelSaleAction &&
                 selected.status === "COMPLETED" &&
                 selected.cash_session_status === "OPEN" ? (
@@ -405,6 +558,257 @@ export function TicketsRealWorkspace({
                 {busy ? "Cancelando…" : "Confirmar cancelación"}
               </button>
             </div>
+          </section>
+        </div>
+      ) : null}
+      {exchangeOpen && selected ? (
+        <div className="modal-backdrop">
+          <section
+            className="checkout-modal exchange-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ticket-exchange-title"
+          >
+            <div className="exchange-modal-header">
+              <div>
+                <p className="eyebrow">Cambio con ticket</p>
+                <h2 id="ticket-exchange-title">
+                  {exchangeFolio
+                    ? "Cambio registrado"
+                    : `Cambiar artículo de ${selected.folio}`}
+                </h2>
+              </div>
+              <button
+                className="icon-button"
+                type="button"
+                aria-label="Cerrar cambio"
+                disabled={exchangeLoading}
+                onClick={() => setExchangeOpen(false)}
+              >
+                <X aria-hidden="true" />
+              </button>
+            </div>
+
+            {exchangeLoading && !exchangeSale ? (
+              <div className="exchange-loading" role="status">
+                Consultando ticket y caja…
+              </div>
+            ) : null}
+
+            {exchangeFolio ? (
+              <div className="exchange-success">
+                <span className="exchange-success-icon">
+                  <Check aria-hidden="true" />
+                </span>
+                <strong>{exchangeFolio}</strong>
+                <p>
+                  El artículo recibido volvió al inventario y la pieza nueva se
+                  descontó. Ambos movimientos quedaron auditados.
+                </p>
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() => setExchangeOpen(false)}
+                >
+                  Terminar
+                </button>
+              </div>
+            ) : exchangeSale ? (
+              <>
+                <section className="exchange-step">
+                  <div className="exchange-step-heading">
+                    <span>1</span>
+                    <div>
+                      <strong>¿Qué pieza regresa?</strong>
+                      <small>Selecciona una pieza del ticket.</small>
+                    </div>
+                  </div>
+                  <div className="exchange-item-list">
+                    {exchangeSale.items
+                      .filter((item) => Number(item.remaining_quantity) >= 1)
+                      .map((item) => (
+                        <button
+                          className={
+                            returnItemId === item.sale_item_id
+                              ? "exchange-item selected"
+                              : "exchange-item"
+                          }
+                          type="button"
+                          key={item.sale_item_id}
+                          disabled={exchangeLoading}
+                          onClick={() => chooseReturnItem(item)}
+                        >
+                          <span>
+                            <strong>{item.product_name}</strong>
+                            <small>
+                              {item.variant_description} · {item.sku}
+                            </small>
+                          </span>
+                          <span>
+                            <strong>
+                              {money.format(unitExchangeValue(item) / 100)}
+                            </strong>
+                            <small>
+                              {Number(item.remaining_quantity)} disponible(s)
+                            </small>
+                          </span>
+                        </button>
+                      ))}
+                  </div>
+                  {exchangeSale.items.every(
+                    (item) => Number(item.remaining_quantity) < 1,
+                  ) ? (
+                    <p className="inline-warning">
+                      Este ticket ya no tiene piezas disponibles para cambio.
+                    </p>
+                  ) : null}
+                </section>
+
+                {selectedReturnItem ? (
+                  <section className="exchange-step">
+                    <div className="exchange-step-heading">
+                      <span>2</span>
+                      <div>
+                        <strong>¿Qué pieza se lleva?</strong>
+                        <small>
+                          Sólo aparecen artículos con existencia y el mismo
+                          valor.
+                        </small>
+                      </div>
+                    </div>
+                    <form
+                      className="exchange-search"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void loadExchangeVariants(
+                          selectedReturnItem,
+                          exchangeQuery,
+                        );
+                      }}
+                    >
+                      <label className="module-search">
+                        <Search aria-hidden="true" />
+                        <input
+                          value={exchangeQuery}
+                          maxLength={120}
+                          onChange={(event) =>
+                            setExchangeQuery(event.target.value)
+                          }
+                          placeholder="Buscar producto, SKU o código"
+                          aria-label="Buscar artículo para entregar"
+                        />
+                      </label>
+                      <button
+                        className="secondary-button"
+                        type="submit"
+                        disabled={exchangeLoading}
+                      >
+                        Buscar
+                      </button>
+                    </form>
+                    <div className="exchange-candidate-list">
+                      {exchangeVariants.map((variant) => (
+                        <button
+                          className={
+                            outputVariantId === variant.id
+                              ? "exchange-candidate selected"
+                              : "exchange-candidate"
+                          }
+                          type="button"
+                          key={variant.id}
+                          onClick={() => setOutputVariantId(variant.id)}
+                        >
+                          <span>
+                            <strong>{variant.productName}</strong>
+                            <small>
+                              {variant.brand} · Talla {variant.size} ·{" "}
+                              {variant.color}
+                            </small>
+                            <code>{variant.sku}</code>
+                          </span>
+                          <span>
+                            <strong>
+                              {money.format(variant.priceCents / 100)}
+                            </strong>
+                            <small>{variant.stock} en existencia</small>
+                          </span>
+                        </button>
+                      ))}
+                      {!exchangeLoading && exchangeVariants.length === 0 ? (
+                        <p className="demo-caption">
+                          Busca por nombre, SKU o código. Sólo mostraremos
+                          opciones del mismo valor.
+                        </p>
+                      ) : null}
+                    </div>
+                  </section>
+                ) : null}
+
+                {selectedReturnItem && selectedOutput ? (
+                  <section className="exchange-step">
+                    <div className="exchange-step-heading">
+                      <span>3</span>
+                      <div>
+                        <strong>Confirma el cambio</strong>
+                        <small>La diferencia debe permanecer en $0.00.</small>
+                      </div>
+                    </div>
+                    <div className="exchange-summary">
+                      <span>
+                        Regresa:{" "}
+                        <strong>{selectedReturnItem.product_name}</strong>
+                      </span>
+                      <ArrowRightLeft aria-hidden="true" />
+                      <span>
+                        Entrega: <strong>{selectedOutput.productName}</strong>
+                      </span>
+                    </div>
+                    <label className="exchange-reason">
+                      <span>Motivo obligatorio</span>
+                      <textarea
+                        value={exchangeReason}
+                        minLength={3}
+                        maxLength={500}
+                        onChange={(event) =>
+                          setExchangeReason(event.target.value)
+                        }
+                      />
+                    </label>
+                  </section>
+                ) : null}
+              </>
+            ) : null}
+
+            {exchangeError ? (
+              <p className="field-error" role="alert">
+                {exchangeError}
+              </p>
+            ) : null}
+            {!exchangeFolio ? (
+              <div className="modal-actions exchange-actions">
+                <button
+                  className="secondary-button"
+                  type="button"
+                  disabled={exchangeLoading}
+                  onClick={() => setExchangeOpen(false)}
+                >
+                  Cerrar
+                </button>
+                <button
+                  className="primary-button"
+                  type="button"
+                  disabled={
+                    exchangeLoading ||
+                    !selectedReturnItem ||
+                    !selectedOutput ||
+                    exchangeReason.trim().length < 3
+                  }
+                  onClick={() => void confirmExchange()}
+                >
+                  {exchangeLoading ? "Registrando…" : "Confirmar cambio"}
+                </button>
+              </div>
+            ) : null}
           </section>
         </div>
       ) : null}

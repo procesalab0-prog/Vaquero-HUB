@@ -123,11 +123,10 @@ Ambas reglas quedaron implementadas y probadas en staging en 0.22.0.
    corrida en seco y confirmación atómica. No importa SICAR ni WooCommerce.
 4. M2.5 quedó implementado en 0.18.0: acciones en lote, precios auditados,
    plantillas persistentes e impresión de etiquetas desde computadora.
-5. M3 y M4 quedaron cerrados en software. La extensión 0.23.0 agrega carrito
-   persistente, tickets en espera y cantidades por pieza enteras. **Siguiente:**
-   construir la interfaz del cambio parejo de M5 ya soportado por la base.
-6. Al terminar la interfaz de M5 se ejecuta M5.5, la primera auditoría
-   ergonómica formal. Debe comprobar alta continua de tallas y colores,
+5. M3 y M4 quedaron cerrados en software. La entrega 0.24.0 agrega la interfaz
+   del cambio parejo de M5 desde un ticket real. **Siguiente:** ejecutar M5.5,
+   la primera auditoría ergonómica formal.
+6. M5.5 debe comprobar alta continua de tallas y colores,
    conteos consecutivos y recorridos frecuentes en teléfono, iPad y
    computadora; no se pospone hasta el final del proyecto.
 
@@ -161,7 +160,7 @@ y conviene decirlo con números porque cambia una decisión.
 | **M2**          | 1                | **Terminado**, a falta de la validación física                                              |
 | M3 inventario   | 1                | **Terminado en software**; queda la validación física conjunta de etiqueta, cámara y lector |
 | M4 POS y caja   | 2                | **Terminado en software 0.23.0**; falta validación física de impresora y operación táctil   |
-| M5 devoluciones | 1                | **En curso:** base inmutable y cambio parejo terminados; reglas de dinero siguen pendientes |
+| M5 devoluciones | 1                | **Primera entrega 0.24.0 terminada**; reglas de dinero siguen pendientes                    |
 | M9 importador   | 1                | Muestra real recibida y perfilada; sigue el mapeo de columnas y la corrida en seco          |
 
 Quedan **cuatro semanas de trabajo** contra unas seis de calendario hasta
