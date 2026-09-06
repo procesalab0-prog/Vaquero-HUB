@@ -137,6 +137,26 @@ viaja entre las dos tiendas, la regla la dejaría trabada y entonces no se pone.
 Es decisión del dueño porque depende de cómo opera Vaqueros SM, no de la
 arquitectura.
 
+## Impresoras: ya no hay que comprar nada
+
+Confirmado con foto en [`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md): la
+tienda usa una **BIXOLON** para tickets y una **marca SICAR** para etiquetas,
+y el sistema debe funcionar con ésas. Coincide con lo construido, así que no
+hay rediseño; se cancela la compra que suponía el plan.
+
+Falta confirmar, mirando la etiqueta de cada equipo y el rollo:
+
+1. Modelo exacto de las dos. En la BIXOLON, además, si tiene puerto de red.
+2. Ancho del rollo de tickets. El sistema asume 80 mm; si son 58, es cambiar
+   una constante.
+3. Medida en milímetros de la etiqueta que usan hoy.
+4. Si el cajón de dinero está conectado a la BIXOLON.
+
+Y una decisión que se deriva del hardware: **el punto de venta que imprime
+corre en la computadora del mostrador, no en el iPad**, porque un iPad no
+tiene controladores y ninguna de las dos es AirPrint. El iPad se queda con
+catálogo, inventario, conteos y consulta.
+
 ## Orden inmediato de implementación
 
 1. El lector de cámara quedó construido en 0.15.0. Probarlo dentro de la PWA
@@ -149,8 +169,11 @@ arquitectura.
    corrida en seco y confirmación atómica. No importa SICAR ni WooCommerce.
 4. M2.5 quedó implementado en 0.18.0: acciones en lote, precios auditados,
    plantillas persistentes e impresión de etiquetas desde computadora.
-5. **Siguiente:** realizar la prueba física de cámara/lector/impresora cuando
-   esté disponible y comenzar M3, inventario, movimientos y traspasos.
+5. M3 quedó terminado y verificado, y M4 entregó POS y caja reales.
+6. **Siguiente:** `cancel_sale`, y la prueba física frente al mostrador con
+   las dos impresoras que ya están definidas: imprimir un ticket, imprimir
+   una etiqueta y escanearla con la cámara. La lista completa está en
+   [`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md).
 
 La validación física necesita dispositivos y una impresión real; las pruebas
 automatizadas no la sustituyen.

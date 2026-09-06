@@ -630,19 +630,36 @@ indica qué milestone bloquea.
 | Credenciales de WooCommerce                       | Post-corte     | Más adelante               |
 | Lista de sucursales, cajas y empleados con su rol | M1             | Semana 1                   |
 
-### 9.1 Riesgo de hardware que conviene despejar temprano
+### 9.1 Riesgo de hardware: resuelto, y no como se esperaba
 
-La impresión de tickets desde Safari en iPad es la parte con más riesgo
-técnico de todo el POS: un navegador no habla ESC/POS directamente con
-una impresora por USB o Bluetooth. La salida habitual es una **impresora
-térmica de red** que acepte impresión por HTTP desde el navegador
-(Epson con ePOS-Print o Star con WebPRNT son las opciones típicas), con
-el cajón de dinero conectado al puerto de la propia impresora.
+**Actualización de septiembre: no se compra impresora.** El dueño confirmó
+que el sistema debe funcionar con las dos que la tienda ya tiene:
 
-Esto conviene probarlo con hardware real **antes de la semana 4**, no al
-final: si la impresora que se compre no soporta ese modo, cambia la
-arquitectura del POS. El lector de códigos Bluetooth en modo teclado (HID)
-sí funciona sin problema en iPad y no representa riesgo.
+| Uso        | Equipo                                    |
+| ---------- | ----------------------------------------- |
+| Tickets    | **BIXOLON** térmica de mostrador          |
+| Etiquetas  | Impresora de etiquetas **marca SICAR**    |
+
+Esto **retira el riesgo en vez de agravarlo**, porque coincide con lo que
+ya se construyó. Tanto el ticket como la etiqueta se imprimen con
+`window.print()` contra el controlador del sistema operativo, no con un
+protocolo propio. Las dos impresoras ya tienen su controlador instalado en
+la computadora del mostrador, porque es con lo que opera SICAR hoy. No hace
+falta ePOS-Print, ni WebPRNT, ni comprar nada.
+
+El párrafo anterior de esta sección suponía comprar una impresora de red
+Epson o Star. Esa suposición queda cancelada.
+
+**Lo que sí cambia es dónde corre el punto de venta.** Un iPad no tiene
+controladores de impresora y ninguna de las dos es AirPrint, así que Safari
+no les puede mandar nada. La venta con ticket impreso corre en la
+**computadora del mostrador**, en su navegador. El iPad sigue sirviendo para
+catálogo, inventario, conteos y consulta, que es donde su comodidad importa
+de verdad; si más adelante se quiere cobrar desde el iPad, el camino es un
+puente local que consuma `print_jobs`, y por eso esa tabla existe desde M4.
+
+El lector de códigos Bluetooth en modo teclado (HID) sí funciona sin
+problema en iPad y no representa riesgo.
 
 ## 10. Quién ejecuta el corte
 

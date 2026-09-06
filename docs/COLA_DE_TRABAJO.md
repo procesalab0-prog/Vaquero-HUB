@@ -643,6 +643,32 @@ escrituras directas.
 Cancelar una venta de un turno o un día anterior queda fuera hasta que el dueño
 decida; está anotado en `PENDIENTES.md`. Mientras tanto eso es devolución (M5).
 
+### Impresión: el hardware ya está definido y coincide con lo construido
+
+El dueño confirmó que **no se compra impresora**: el sistema debe funcionar
+con la **BIXOLON** de tickets y la de etiquetas **marca SICAR** que ya están
+en el mostrador. Detalle, foto y lista de verificación en
+[`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md).
+
+Coincide con lo que ya se construyó, así que no hay que rehacer nada: ticket
+y etiqueta se generan como HTML y salen por el controlador del sistema
+operativo con `window.print()`. Se cancela la compra de una impresora de red
+Epson o Star que suponía `PLAN_CODEX.md` §9.1.
+
+Lo único que faltaba en código era el tamaño de página del ticket. Estaba
+declarado el ancho (80 mm) pero no la altura, así que el controlador usaba su
+tamaño por omisión y cada venta podía alimentar una hoja completa de rollo.
+Ahora `components/thermal-receipt.tsx` emite `@page { size: 80mm auto }` desde
+`lib/printing.ts`, que es la única constante a cambiar si el rollo resulta ser
+de 58 mm.
+
+**Consecuencia que sí importa para el diseño:** un iPad no tiene
+controladores y ninguna de las dos impresoras es AirPrint. La venta con
+ticket impreso corre en la computadora del mostrador. El iPad se queda con
+catálogo, inventario, conteos y consulta. Cobrar desde el iPad más adelante
+significa un puente local que consuma `print_jobs`; la tabla existe desde M4
+para eso. No rehacer el POS por esto ahora.
+
 ## 7. M5 — Devoluciones y cambios
 
 **Especificación:** [`specs/M5_DEVOLUCIONES_Y_CAMBIOS.md`](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)

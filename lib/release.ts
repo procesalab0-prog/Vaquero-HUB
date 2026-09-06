@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.21.4";
-export const APP_RELEASE = "Corte ciego real y bitácora sellada";
+export const APP_VERSION = "0.21.5";
+export const APP_RELEASE = "Impresoras del mostrador definidas";

@@ -409,7 +409,17 @@ está atascada, la venta ya es válida y se reimprime.
 
 Existe `print_jobs` desde este milestone, con el controlador
 intercambiable, para que la decisión de impresora no quede soldada al POS.
-Ver la discusión de arquitectura en `PLAN_CODEX.md` sección 9.1.
+
+**El hardware ya está definido:** la BIXOLON de tickets y la de etiquetas
+marca SICAR que la tienda ya tiene, ambas por controlador del sistema
+operativo con `window.print()`. No se compra impresora de red. Ver
+[`../hardware/IMPRESORAS.md`](../hardware/IMPRESORAS.md) y `PLAN_CODEX.md`
+sección 9.1.
+
+Eso implica que **el equipo que cobra e imprime es la computadora del
+mostrador**, no el iPad: Safari no puede mandar a una impresora sin
+controlador ni AirPrint. El diseño táctil de §7 se conserva; lo que cambia es
+en qué pantalla se cobra.
 
 ## 9. RLS
 
