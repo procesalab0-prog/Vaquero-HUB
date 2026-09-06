@@ -669,6 +669,62 @@ catálogo, inventario, conteos y consulta. Cobrar desde el iPad más adelante
 significa un puente local que consuma `print_jobs`; la tabla existe desde M4
 para eso. No rehacer el POS por esto ahora.
 
+### Retirado del POS: el apartado que no apartaba
+
+El botón «Apartar» estaba conectado a una función de demostración:
+**vaciaba el carrito, anunciaba «Apartado AP-000128 creado correctamente»
+con un folio inventado y no guardaba nada**. Una cajera lo habría usado
+creyendo que quedó registrado, y la mercancía se habría ido con el cliente
+sin rastro en el sistema.
+
+No es un descuido de M4: es un resto de la interfaz de demostración 0.6.x que
+sobrevivió cuando el POS se conectó de verdad. Los apartados son M7 y no se
+van a improvisar.
+
+Se retiró la función y su diálogo; el botón queda visible pero inhabilitado y
+dice «Apartar · pendiente», para que se note que falta en vez de mentir.
+Mientras tanto los apartados se registran como hasta hoy, fuera del sistema.
+
+**Al conectar M7, la referencia de qué debe guardar un apartado está en
+`RUNBOOK_CORTE.md` §1:** los apartados abiertos son de los compromisos que
+rompen una tienda si se pierden, porque esa mercancía está físicamente
+separada y no debe aparecer disponible.
+
+Verificados y reales: descuento con PIN de supervisor, ticket de regalo y
+cobro. La pantalla de tickets, no.
+
+### Pendiente: conectar la pantalla de Tickets
+
+`app/(workspace)/tickets/tickets-workspace.tsx` **no consulta la base**: son
+cuatro ventas escritas a mano en el archivo, con folios inventados
+(`V-000842`), productos de ejemplo y la fecha fija `27/08/2026`. Un gerente
+que abra esa pantalla ve ventas que nunca ocurrieron, y el botón de
+reimprimir imprime una de ellas.
+
+Se le puso un aviso visible de «Pantalla de demostración» para que no engañe
+mientras tanto, pero el arreglo real es conectarla.
+
+Casi todo lo necesario ya existe: `get_sale_receipt(sale_id)` devuelve el
+ticket completo, `request_sale_print` registra la reimpresión, y la política
+de `sales` ya resuelve quién ve qué —una cajera ve sólo sus ventas; con
+`reports.sales` se ven todas las de la sucursal—. Falta:
+
+1. Una RPC `list_sales(p_location_id, p_from, p_to, p_limit)` que devuelva
+   folio, hora, método de pago, total y cliente. Sin costos: la cajera no ve
+   el margen, igual que en el ticket.
+2. Cambiar la pantalla para que lea de ahí, con los filtros de periodo y caja
+   que hoy están dibujados pero no filtran nada.
+3. Reimprimir contra `get_sale_receipt` en vez del arreglo local, pasando por
+   `request_sale_print` para que la reimpresión quede en bitácora.
+
+Va después de `cancel_sale` y antes de M5: reimprimir un ticket es
+operación diaria de mostrador, y es además donde vivirá el botón de cancelar.
+
+Y una regla que sale de estos dos hallazgos: **antes de abrir, recorrer cada
+pantalla preguntando si lo que muestra viene de la base.** Cualquier botón
+que responda con un `notify()` sin tocar la base, y cualquier lista escrita
+en el archivo, es una trampa del mismo tipo.
+
 ## 7. M5 — Devoluciones y cambios
 
 **Especificación:** [`specs/M5_DEVOLUCIONES_Y_CAMBIOS.md`](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)
