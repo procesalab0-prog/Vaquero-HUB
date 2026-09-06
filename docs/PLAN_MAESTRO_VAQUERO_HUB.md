@@ -204,7 +204,7 @@ Hallazgos que M9 debe tratar como compuertas de importación:
   están vacíos en todo el archivo. Las escalas mayoristas requieren otra
   exportación o confirmación del negocio.
 - La hoja trae una sola columna `existencia`; `localización 1`, `localización
-  2` y `localización 3` están vacías. No se distribuirá ese saldo entre
+2` y `localización 3` están vacías. No se distribuirá ese saldo entre
   sucursales sin una exportación por ubicación o una conciliación física.
 - No vienen proveedores asociados por renglón, imágenes ni identificadores de
   WooCommerce. Esos datos se obtendrán de exportaciones separadas y se unirán
@@ -2317,3 +2317,14 @@ Entrega visible 0.23.0 — carrito persistente y tickets en espera:
 - Producción conserva dos movimientos históricos con milésimas que dejaron el
   saldo final entero. No se reescriben ni se borran: la restricción se agrega
   `NOT VALID` para respetar la bitácora y bloquear sólo movimientos nuevos.
+
+Entrega visible 0.24.0 — cambio parejo desde Tickets:
+
+- Desde una venta real, el personal con permiso puede seleccionar una pieza
+  devuelta y otra variante disponible del mismo valor.
+- La búsqueda usa la sucursal de la caja abierta y filtra precio y existencia
+  del lado servidor, aun con el catálogo completo de SICAR.
+- La venta original permanece intacta. El documento de cambio y ambos
+  movimientos de inventario se registran juntos, con auditoría e idempotencia.
+- Los casos con diferencia, reembolso, daño, otra sucursal o sin ticket siguen
+  deshabilitados hasta definir sus reglas de negocio.

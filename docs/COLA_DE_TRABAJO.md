@@ -665,18 +665,28 @@ La decisión del dueño quedó asentada en `PENDIENTES.md`.
 - Las cantidades del inventario actual, definido por pieza, se validan como
   enteros también en servidor y base; la interfaz avanza de uno en uno.
 
-**Siguiente sin bloqueo:** interfaz de M5 para ejecutar el cambio parejo ya
-implementado. Las diferencias de precio, reembolsos y mercancía dañada siguen
-fuera hasta recibir las reglas de negocio.
+### Entrega visible 0.24.0 — cambio parejo desde Tickets
+
+- El empleado autorizado abre un ticket real, elige una pieza disponible para
+  devolución y entrega otra variante con existencia y exactamente el mismo valor.
+- La búsqueda se resuelve en la caja y sucursal abiertas, incluso con un
+  catálogo grande; no confía en filtros del navegador.
+- La confirmación conserva la venta original, actualiza ambos inventarios en
+  una sola operación y deja auditoría e idempotencia.
+- Diferencias de precio, reembolsos, mercancía dañada, otra sucursal y venta sin
+  ticket permanecen bloqueados hasta recibir las reglas del negocio.
+
+**Siguiente sin bloqueo:** ejecutar M5.5, la auditoría ergonómica intermedia,
+y corregir los hallazgos críticos antes de la siguiente entrega operativa.
 
 ## 7. M5 — Devoluciones y cambios
 
 **Especificación:** [`specs/M5_DEVOLUCIONES_Y_CAMBIOS.md`](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)
 **Depende de:** M4.
 
-**En curso en 0.22.0.** Ya existen el libro inmutable, consulta de cantidades
-devueltas y el cambio parejo con ticket, misma sucursal, inventario atómico e
-idempotencia. Continúan bloqueados por decisión del negocio los reembolsos,
+**Primera entrega operativa terminada en 0.24.0.** Ya existen el libro
+inmutable, consulta de cantidades devueltas y la interfaz de cambio parejo con
+ticket, misma sucursal, inventario atómico e idempotencia. Continúan bloqueados por decisión del negocio los reembolsos,
 diferencias de precio, daño, devoluciones entre sucursales y sin ticket.
 
 ## 7.5 Auditoría ergonómica intermedia
