@@ -18,6 +18,7 @@ const state = {
   registerB: "",
   sessionA: "",
   sessionB: "",
+  closedSessionSaleId: "",
 };
 
 function publicClient() {
@@ -264,6 +265,76 @@ describe.sequential("M4: POS y caja", () => {
     expect(Number(stock.data!.qty)).toBe(1);
   });
 
+  it("guarda, pone en espera, recupera y consume un carrito sin compartirlo", async () => {
+    const variantId = await createVariant("Ticket en espera", 2, 22500);
+    const items = [{ variant_id: variantId, quantity: 1, gift_receipt: false }];
+    const saved = await state.cashierA!.client.rpc("save_pos_current_draft", {
+      p_cash_session_id: state.sessionA,
+      p_items: items,
+      p_customer_id: null,
+      p_discount_percent: 0,
+    });
+    expect(saved.error).toBeNull();
+
+    const held = await state.cashierA!.client.rpc("hold_pos_draft", {
+      p_cash_session_id: state.sessionA,
+      p_items: items,
+      p_customer_id: null,
+      p_discount_percent: 0,
+      p_label: "Cliente mostrador",
+    });
+    expect(held.error).toBeNull();
+    const [ownDrafts, otherDrafts] = await Promise.all([
+      state.cashierA!.client.rpc("list_my_pos_drafts", {
+        p_cash_session_id: state.sessionA,
+      }),
+      state.cashierB!.client.rpc("list_my_pos_drafts", {
+        p_cash_session_id: state.sessionB,
+      }),
+    ]);
+    expect(ownDrafts.data).toMatchObject([
+      { id: held.data, status: "HELD", label: "Cliente mostrador" },
+    ]);
+    expect(otherDrafts.data).toEqual([]);
+
+    const resumed = await state.cashierA!.client.rpc("resume_pos_draft", {
+      p_draft_id: held.data,
+    });
+    expect(resumed.error).toBeNull();
+    expect(resumed.data.status).toBe("CURRENT");
+    const sale = await state.cashierA!.client.rpc("create_sale", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_items: items,
+      p_payments: cashPayment(22500),
+      p_customer_id: null,
+      p_discounts: [],
+      p_notes: null,
+    });
+    expect(sale.error).toBeNull();
+    const consumed = await state
+      .server!.from("pos_drafts")
+      .select("id")
+      .eq("id", held.data);
+    expect(consumed.data).toEqual([]);
+    expect(
+      (await state.cashierA!.client.from("pos_drafts").select("id")).error,
+    ).not.toBeNull();
+  });
+
+  it("rechaza cantidades fraccionarias mientras el catálogo sea por pieza", async () => {
+    const variantId = await createVariant("Pieza entera", 0, 10000);
+    const result = await state.admin!.client.rpc("apply_inventory_adjustment", {
+      p_variant_id: variantId,
+      p_location_id: state.locationId,
+      p_expected_qty: 0,
+      p_counted_qty: 0.001,
+      p_reason: "CONTEO_FISICO",
+      p_note: "No debe aceptar milésimas",
+    });
+    expect(result.error).not.toBeNull();
+  });
+
   it("dos cajas disputando la última pieza producen una sola venta", async () => {
     const variantId = await createVariant("Última pieza", 1, 40000);
     const sale = (client: SupabaseClient, sessionId: string) =>
@@ -332,6 +403,100 @@ describe.sequential("M4: POS y caja", () => {
     ]);
   });
 
+  it("cancela una venta solo con permiso y restaura inventario y efectivo", async () => {
+    const variantId = await createVariant("Cancelación", 2, 18000);
+    const sale = await state.cashierA!.client.rpc("create_sale", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_items: [{ variant_id: variantId, quantity: 1 }],
+      p_payments: cashPayment(18000),
+      p_customer_id: null,
+      p_discounts: [],
+      p_notes: null,
+    });
+    expect(sale.error).toBeNull();
+
+    const forbidden = await state.cashierA!.client.rpc("cancel_sale", {
+      p_sale_id: sale.data.id,
+      p_reason: "Cobro duplicado",
+    });
+    expect(forbidden.error?.message).toContain("NOT_AUTHORIZED");
+
+    const cancelled = await state.admin!.client.rpc("cancel_sale", {
+      p_sale_id: sale.data.id,
+      p_reason: "Cobro duplicado",
+    });
+    expect(cancelled.error).toBeNull();
+    expect(cancelled.data).toMatchObject({
+      status: "CANCELLED",
+      cash_reversed_cents: 18000,
+    });
+
+    const [stock, cash, audit] = await Promise.all([
+      state
+        .server!.from("inventory_by_location")
+        .select("qty")
+        .eq("variant_id", variantId)
+        .eq("location_id", state.locationId)
+        .single(),
+      state
+        .server!.from("cash_movements")
+        .select("amount_cents,movement_type")
+        .eq("session_id", state.sessionA)
+        .eq("reference_id", sale.data.id)
+        .eq("movement_type", "CANCELLATION")
+        .single(),
+      state
+        .server!.from("audit_log")
+        .select("action")
+        .eq("entity_id", sale.data.id)
+        .eq("action", "sale.cancelled")
+        .single(),
+    ]);
+    expect(Number(stock.data!.qty)).toBe(2);
+    expect(cash.data).toEqual({
+      amount_cents: -18000,
+      movement_type: "CANCELLATION",
+    });
+    expect(audit.data?.action).toBe("sale.cancelled");
+
+    const repeated = await state.admin!.client.rpc("cancel_sale", {
+      p_sale_id: sale.data.id,
+      p_reason: "Segundo intento",
+    });
+    expect(repeated.error?.message).toContain("SALE_NOT_CANCELLABLE");
+  });
+
+  it("prepara una venta para probar el límite del cierre de caja", async () => {
+    const variantId = await createVariant("Caja por cerrar", 1, 12000);
+    const sale = await state.cashierB!.client.rpc("create_sale", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionB,
+      p_items: [{ variant_id: variantId, quantity: 1 }],
+      p_payments: cashPayment(12000),
+      p_customer_id: null,
+      p_discounts: [],
+      p_notes: null,
+    });
+    expect(sale.error).toBeNull();
+    state.closedSessionSaleId = sale.data.id;
+    const heldVariant = await createVariant("Borrador al cierre", 1, 13000);
+    const held = await state.cashierB!.client.rpc("hold_pos_draft", {
+      p_cash_session_id: state.sessionB,
+      p_items: [
+        {
+          variant_id: heldVariant,
+          quantity: 1,
+          gift_receipt: false,
+        },
+      ],
+      p_customer_id: null,
+      p_discount_percent: 0,
+      p_label: "No sobrevivir al corte",
+    });
+    expect(held.error).toBeNull();
+  });
+
   it("no entrega el esperado antes del conteo: ni por la sesión ni por el libro", async () => {
     // Un corte a ciegas que se puede comparar antes de declararlo no detecta
     // faltantes. La cajera no debe poder reconstruir el esperado ni desde su
@@ -384,6 +549,19 @@ describe.sequential("M4: POS y caja", () => {
     });
     expect(closed.error).toBeNull();
     expect(closed.data.status).toBe("CLOSED");
+    const drafts = await state
+      .server!.from("pos_drafts")
+      .select("id")
+      .eq("cash_session_id", state.sessionB);
+    expect(drafts.data).toEqual([]);
+  });
+
+  it("después del corte ya no cancela: obliga a usar devolución", async () => {
+    const result = await state.admin!.client.rpc("cancel_sale", {
+      p_sale_id: state.closedSessionSaleId,
+      p_reason: "Intento posterior al corte",
+    });
+    expect(result.error?.message).toContain("SALE_SESSION_CLOSED");
   });
 
   it("un cliente autenticado no puede escribir directamente en los libros", async () => {

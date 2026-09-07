@@ -16,11 +16,13 @@ import {
   LockKeyhole,
   Minus,
   PackageOpen,
+  PauseCircle,
   Plus,
   Search,
   ShoppingCart,
   Trash2,
   Printer,
+  Undo2,
   UserRoundPlus,
   X,
 } from "lucide-react";
@@ -33,6 +35,23 @@ import {
 import { CustomerLookup } from "@/components/customer-lookup";
 import { useWorkspace } from "@/components/workspace-context";
 import type { CustomerSummary } from "@/lib/customers";
+
+type PosDraftItemInput = {
+  variant_id: string;
+  quantity: number;
+  gift_receipt: boolean;
+};
+
+type PosDraftPayload = {
+  id: string;
+  status: "CURRENT" | "HELD";
+  label: string | null;
+  items: PosDraftItemInput[];
+  discount_percent: number;
+  held_at: string | null;
+  updated_at: string;
+  customer: CustomerSummary | null;
+};
 
 type SalePaymentInput = {
   method_code: "CASH" | "CARD" | "TRANSFER";
@@ -58,6 +77,8 @@ type SaleActionResult =
       receipt: Record<string, unknown> | null;
     }
   | { ok: false; code: string; message: string };
+type CancelSaleActionResult =
+  { ok: true; folio: string } | { ok: false; code: string; message: string };
 type StoredReceipt = {
   subtotal_cents: number;
   discount_cents: number;
@@ -90,6 +111,7 @@ const frequentCategories = [
   { label: "Cintos", terms: ["cinturón", "cinto"] },
   { label: "Camisas", terms: ["camisa"] },
 ];
+const EMPTY_POS_DRAFTS: PosDraftPayload[] = [];
 
 function ProductCard({
   variant,
@@ -143,14 +165,21 @@ type CashSession = { id: string; location_id: string; register_name: string };
 
 export function PosWorkspace({
   variants,
+  initialDrafts = EMPTY_POS_DRAFTS,
   cashSession,
   preview = false,
   status,
   createSaleAction,
   authorizeDiscountAction,
   printAction,
+  cancelSaleAction,
+  saveDraftAction,
+  holdDraftAction,
+  resumeDraftAction,
+  discardDraftAction,
 }: {
   variants: ProductVariant[];
+  initialDrafts?: PosDraftPayload[];
   cashSession?: CashSession | null;
   preview?: boolean;
   status?: string;
@@ -166,17 +195,71 @@ export function PosWorkspace({
     saleId: string,
     mode: "sale" | "gift",
   ) => Promise<{ ok: true } | { ok: false; message: string }>;
+  cancelSaleAction?: (
+    saleId: string,
+    reason: string,
+  ) => Promise<CancelSaleActionResult>;
+  saveDraftAction?: (input: {
+    cashSessionId: string;
+    items: PosDraftItemInput[];
+    customerId?: string | null;
+    discountPercent?: number;
+  }) => Promise<
+    { ok: true; draftId?: string } | { ok: false; message: string }
+  >;
+  holdDraftAction?: (input: {
+    cashSessionId: string;
+    items: PosDraftItemInput[];
+    customerId?: string | null;
+    discountPercent?: number;
+    label?: string;
+  }) => Promise<
+    { ok: true; draftId?: string } | { ok: false; message: string }
+  >;
+  resumeDraftAction?: (
+    draftId: string,
+  ) => Promise<
+    { ok: true; draft?: PosDraftPayload } | { ok: false; message: string }
+  >;
+  discardDraftAction?: (
+    draftId: string,
+  ) => Promise<{ ok: true } | { ok: false; message: string }>;
 }) {
   const router = useRouter();
   const { identity, activeLocation } = useWorkspace();
+  const variantsById = useMemo(
+    () => new Map(variants.map((variant) => [variant.id, variant])),
+    [variants],
+  );
+  const currentDraft = initialDrafts.find(
+    (draft) => draft.status === "CURRENT",
+  );
+  const restoredCart = useMemo(
+    () =>
+      (currentDraft?.items ?? []).flatMap((item) => {
+        const variant = variantsById.get(item.variant_id);
+        return variant
+          ? [
+              {
+                variant,
+                quantity: item.quantity,
+                giftReceipt: item.gift_receipt,
+              },
+            ]
+          : [];
+      }),
+    [currentDraft?.items, variantsById],
+  );
   const [query, setQuery] = useState("");
   const [showCatalog, setShowCatalog] = useState(false);
   const [activeCategory, setActiveCategory] = useState("");
-  const [cart, setCart] = useState<CartLine[]>([]);
+  const [cart, setCart] = useState<CartLine[]>(restoredCart);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [toast, setToast] = useState("");
-  const [discountPercent, setDiscountPercent] = useState(0);
+  const [discountPercent, setDiscountPercent] = useState(
+    Number(currentDraft?.discount_percent ?? 0),
+  );
   const [discountInput, setDiscountInput] = useState("");
   const [supervisorCode, setSupervisorCode] = useState("");
   const [supervisorPin, setSupervisorPin] = useState("");
@@ -184,9 +267,12 @@ export function PosWorkspace({
     string | null
   >(null);
   const [discountError, setDiscountError] = useState("");
-  const [extraDialog, setExtraDialog] = useState<"discount" | null>(null);
+  const [extraDialog, setExtraDialog] = useState<"discount" | "layaway" | null>(
+    null,
+  );
+  const [layawayCustomer, setLayawayCustomer] = useState("");
   const [selectedCustomer, setSelectedCustomer] =
-    useState<CustomerSummary | null>(null);
+    useState<CustomerSummary | null>(currentDraft?.customer ?? null);
   const [customerLookupOpen, setCustomerLookupOpen] = useState(false);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [cashMode, setCashMode] = useState(false);
@@ -209,16 +295,74 @@ export function PosWorkspace({
     null,
   );
   const [receiptDate, setReceiptDate] = useState("");
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelled, setCancelled] = useState(false);
+  const [heldDrafts, setHeldDrafts] = useState<PosDraftPayload[]>(
+    initialDrafts.filter((draft) => draft.status === "HELD"),
+  );
+  const [heldTicketsOpen, setHeldTicketsOpen] = useState(false);
+  const [draftBusy, setDraftBusy] = useState(false);
+  const [draftStatus, setDraftStatus] = useState(
+    currentDraft ? "Carrito recuperado" : "",
+  );
   const toastTimer = useRef<number | null>(null);
+  const draftTimer = useRef<number | null>(null);
+  const draftSaveChain = useRef<Promise<void>>(Promise.resolve());
+  const draftRevision = useRef(0);
+  const draftOperationRef = useRef(false);
   const submittingRef = useRef(false);
   const idempotencyKey = useRef(crypto.randomUUID());
 
   useEffect(
     () => () => {
       if (toastTimer.current) window.clearTimeout(toastTimer.current);
+      if (draftTimer.current) window.clearTimeout(draftTimer.current);
     },
     [],
   );
+
+  useEffect(() => {
+    if (preview || !cashSession?.id || !saveDraftAction || completed) return;
+    if (draftTimer.current) window.clearTimeout(draftTimer.current);
+    const revision = ++draftRevision.current;
+    const snapshot = {
+      cashSessionId: cashSession.id,
+      items: cart.map((line) => ({
+        variant_id: line.variant.id,
+        quantity: line.quantity,
+        gift_receipt: line.giftReceipt,
+      })),
+      customerId: selectedCustomer?.id ?? null,
+      discountPercent,
+    };
+    draftTimer.current = window.setTimeout(() => {
+      draftSaveChain.current = draftSaveChain.current.then(async () => {
+        const result = await saveDraftAction(snapshot);
+        if (revision === draftRevision.current) {
+          setDraftStatus(
+            result.ok
+              ? snapshot.items.length
+                ? "Guardado automático"
+                : ""
+              : "No se pudo guardar",
+          );
+        }
+      });
+    }, 650);
+    return () => {
+      if (draftTimer.current) window.clearTimeout(draftTimer.current);
+    };
+  }, [
+    cart,
+    cashSession?.id,
+    completed,
+    discountPercent,
+    preview,
+    saveDraftAction,
+    selectedCustomer?.id,
+  ]);
 
   const results = useMemo(() => {
     const term = query.trim().toLocaleLowerCase("es-MX");
@@ -320,6 +464,138 @@ export function PosWorkspace({
     );
   }
 
+  function draftItems(): PosDraftItemInput[] {
+    return cart.map((line) => ({
+      variant_id: line.variant.id,
+      quantity: line.quantity,
+      gift_receipt: line.giftReceipt,
+    }));
+  }
+
+  async function holdCurrentSale() {
+    if (
+      draftOperationRef.current ||
+      !cashSession?.id ||
+      !holdDraftAction ||
+      cart.length === 0
+    )
+      return;
+    draftOperationRef.current = true;
+    if (draftTimer.current) window.clearTimeout(draftTimer.current);
+    setDraftBusy(true);
+    setSaleError("");
+    await draftSaveChain.current;
+    const label = `Ticket ${heldDrafts.length + 1}`;
+    const result = await holdDraftAction({
+      cashSessionId: cashSession.id,
+      items: draftItems(),
+      customerId: selectedCustomer?.id ?? null,
+      discountPercent,
+      label,
+    });
+    setDraftBusy(false);
+    draftOperationRef.current = false;
+    if (!result.ok || !result.draftId) {
+      setSaleError(
+        result.ok
+          ? "No fue posible identificar el ticket guardado."
+          : result.message,
+      );
+      return;
+    }
+    const now = new Date().toISOString();
+    setHeldDrafts((current) => [
+      {
+        id: result.draftId!,
+        status: "HELD",
+        label,
+        items: draftItems(),
+        discount_percent: discountPercent,
+        held_at: now,
+        updated_at: now,
+        customer: selectedCustomer,
+      },
+      ...current,
+    ]);
+    setCart([]);
+    setSelectedCustomer(null);
+    setDiscountPercent(0);
+    setDiscountAuthorization(null);
+    idempotencyKey.current = crypto.randomUUID();
+    setCartDrawerOpen(false);
+    setDraftStatus("");
+    notify(`${label} quedó en espera`);
+  }
+
+  async function resumeHeldSale(draftId: string) {
+    if (draftOperationRef.current) return;
+    if (!resumeDraftAction || cart.length > 0) {
+      setSaleError("Guarda o vacía la venta actual antes de recuperar otra.");
+      return;
+    }
+    draftOperationRef.current = true;
+    if (draftTimer.current) window.clearTimeout(draftTimer.current);
+    setDraftBusy(true);
+    setSaleError("");
+    await draftSaveChain.current;
+    const result = await resumeDraftAction(draftId);
+    setDraftBusy(false);
+    draftOperationRef.current = false;
+    if (!result.ok || !result.draft) {
+      setSaleError(
+        result.ok ? "No fue posible recuperar el ticket." : result.message,
+      );
+      return;
+    }
+    const missing: string[] = [];
+    const nextCart = result.draft.items.flatMap((item) => {
+      const variant = variantsById.get(item.variant_id);
+      if (!variant) {
+        missing.push(item.variant_id);
+        return [];
+      }
+      return [
+        { variant, quantity: item.quantity, giftReceipt: item.gift_receipt },
+      ];
+    });
+    if (!nextCart.length) {
+      setSaleError("Los artículos de ese ticket ya no están disponibles.");
+      return;
+    }
+    setCart(nextCart);
+    setSelectedCustomer(result.draft.customer);
+    setDiscountPercent(Number(result.draft.discount_percent ?? 0));
+    setDiscountAuthorization(null);
+    setHeldDrafts((current) => current.filter((draft) => draft.id !== draftId));
+    setHeldTicketsOpen(false);
+    setCartDrawerOpen(true);
+    idempotencyKey.current = crypto.randomUUID();
+    setDraftStatus(
+      "Ticket recuperado · precios y existencia se validarán al cobrar",
+    );
+    notify(
+      missing.length
+        ? "Ticket recuperado con artículos no disponibles"
+        : "Ticket recuperado",
+    );
+  }
+
+  async function discardHeldSale(draftId: string) {
+    if (draftOperationRef.current || !discardDraftAction) return;
+    draftOperationRef.current = true;
+    setDraftBusy(true);
+    setSaleError("");
+    const result = await discardDraftAction(draftId);
+    setDraftBusy(false);
+    draftOperationRef.current = false;
+    if (!result.ok) {
+      setSaleError(result.message);
+      return;
+    }
+    setHeldDrafts((current) => current.filter((draft) => draft.id !== draftId));
+    notify("Ticket en espera descartado");
+  }
+
   async function submitSale(
     method: PaymentMethod,
     payments: SalePaymentInput[],
@@ -331,9 +607,17 @@ export function PosWorkspace({
       setSaleError("Abre una caja antes de cobrar.");
       return;
     }
+    if (discountPercent > 0 && !discountAuthorization) {
+      setSaleError(
+        "Vuelve a autorizar el descuento antes de cobrar este ticket.",
+      );
+      return;
+    }
     submittingRef.current = true;
     setSubmitting(true);
     setSaleError("");
+    if (draftTimer.current) window.clearTimeout(draftTimer.current);
+    await draftSaveChain.current;
     if (!preview) {
       if (!createSaleAction) {
         submittingRef.current = false;
@@ -473,6 +757,9 @@ export function PosWorkspace({
     setSaleError("");
     setSaleId("");
     setStoredReceipt(null);
+    setCancelled(false);
+    setCancelReason("");
+    setCancelDialogOpen(false);
     idempotencyKey.current = crypto.randomUUID();
     router.refresh();
   }
@@ -533,6 +820,21 @@ export function PosWorkspace({
     window.print();
   }
 
+  async function cancelCompletedSale() {
+    if (!saleId || !cancelSaleAction || cancelReason.trim().length < 3) return;
+    setCancelling(true);
+    setSaleError("");
+    const result = await cancelSaleAction(saleId, cancelReason);
+    setCancelling(false);
+    if (!result.ok) {
+      setSaleError(result.message);
+      return;
+    }
+    setCancelled(true);
+    setCancelDialogOpen(false);
+    notify(`Venta ${result.folio || saleFolio} cancelada`);
+  }
+
   if (!preview && !cashSession) {
     return (
       <section className="module-page cash-closed-state">
@@ -591,7 +893,9 @@ export function PosWorkspace({
           <span className="success-seal">
             <Check aria-hidden="true" strokeWidth={2.5} />
           </span>
-          <p className="kicker">Venta completada</p>
+          <p className="kicker">
+            {cancelled ? "Venta cancelada" : "Venta completada"}
+          </p>
           <h2>{money.format(total)}</h2>
           <code>
             Folio {saleFolio} · {quantity} artículos
@@ -615,10 +919,25 @@ export function PosWorkspace({
                 Ver ticket de regalo ({giftCount})
               </button>
             ) : null}
+            {!preview && cancelSaleAction && !cancelled ? (
+              <button
+                className="danger-button"
+                type="button"
+                onClick={() => setCancelDialogOpen(true)}
+              >
+                <Undo2 aria-hidden="true" />
+                Cancelar venta
+              </button>
+            ) : null}
             <button className="primary-button" type="button" onClick={newSale}>
               Nueva venta
             </button>
           </div>
+          {saleError ? (
+            <p className="field-error" role="alert">
+              {saleError}
+            </p>
+          ) : null}
         </section>
         {receiptMode ? (
           <div className="modal-backdrop receipt-modal-backdrop">
@@ -710,6 +1029,58 @@ export function PosWorkspace({
                 >
                   <Printer aria-hidden="true" />
                   Imprimir ahora
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
+        {cancelDialogOpen ? (
+          <div className="modal-backdrop">
+            <section
+              className="checkout-modal compact-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="cancel-sale-title"
+            >
+              <p className="eyebrow">Acción con auditoría</p>
+              <h2 id="cancel-sale-title">Cancelar {saleFolio}</h2>
+              <p>
+                Solo es posible mientras la caja original siga abierta. Se
+                devolverá la mercancía al inventario y el efectivo a la misma
+                sesión.
+              </p>
+              <div className="form-stack">
+                <label>
+                  <span>Motivo obligatorio</span>
+                  <textarea
+                    value={cancelReason}
+                    onChange={(event) => setCancelReason(event.target.value)}
+                    maxLength={500}
+                    placeholder="Ej. Cobro duplicado"
+                  />
+                </label>
+              </div>
+              {saleError ? (
+                <p className="field-error" role="alert">
+                  {saleError}
+                </p>
+              ) : null}
+              <div className="modal-actions">
+                <button
+                  className="secondary-button"
+                  type="button"
+                  disabled={cancelling}
+                  onClick={() => setCancelDialogOpen(false)}
+                >
+                  Volver
+                </button>
+                <button
+                  className="danger-button"
+                  type="button"
+                  disabled={cancelling || cancelReason.trim().length < 3}
+                  onClick={() => void cancelCompletedSale()}
+                >
+                  {cancelling ? "Cancelando…" : "Confirmar cancelación"}
                 </button>
               </div>
             </section>
@@ -863,6 +1234,26 @@ export function PosWorkspace({
             <X aria-hidden="true" />
           </button>
         </header>
+
+        <div className="draft-toolbar">
+          <button
+            type="button"
+            disabled={cart.length === 0 || draftBusy || preview}
+            onClick={() => void holdCurrentSale()}
+          >
+            <PauseCircle aria-hidden="true" />
+            {draftBusy ? "Guardando…" : "Dejar en espera"}
+          </button>
+          <button
+            type="button"
+            disabled={heldDrafts.length === 0 || draftBusy || preview}
+            onClick={() => setHeldTicketsOpen(true)}
+          >
+            En espera
+            <b>{heldDrafts.length}</b>
+          </button>
+          {draftStatus ? <small role="status">{draftStatus}</small> : null}
+        </div>
 
         <button
           className={
@@ -1021,10 +1412,10 @@ export function PosWorkspace({
             </button>
             <button
               type="button"
-              disabled
-              title="Los apartados llegan en M7. Mientras tanto se registran como hasta hoy, fuera del sistema."
+              disabled={cart.length === 0}
+              onClick={() => setExtraDialog("layaway")}
             >
-              Apartar · pendiente
+              Apartar
             </button>
           </div>
         </footer>
@@ -1049,6 +1440,85 @@ export function PosWorkspace({
             <Check aria-hidden="true" />
           </span>
           {toast}
+        </div>
+      ) : null}
+
+      {heldTicketsOpen ? (
+        <div className="modal-backdrop">
+          <section
+            className="checkout-modal held-tickets-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="held-tickets-title"
+          >
+            <p className="eyebrow">Caja {cashSession?.register_name}</p>
+            <h2 id="held-tickets-title">Tickets en espera</h2>
+            <p>
+              Sólo tú puedes verlos durante esta sesión. No apartan existencia
+              ni mueven dinero hasta que se cobran.
+            </p>
+            <div className="held-ticket-list">
+              {heldDrafts.map((draft) => (
+                <article key={draft.id}>
+                  <div>
+                    <strong>{draft.label ?? "Ticket en espera"}</strong>
+                    <span>
+                      {draft.items.reduce(
+                        (sum, item) => sum + item.quantity,
+                        0,
+                      )}{" "}
+                      artículos
+                      {draft.customer ? ` · ${draft.customer.full_name}` : ""}
+                    </span>
+                    <small>
+                      Guardado{" "}
+                      {draft.held_at
+                        ? formatReceiptDate(new Date(draft.held_at))
+                        : "ahora"}
+                    </small>
+                  </div>
+                  <div>
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      disabled={draftBusy || cart.length > 0}
+                      onClick={() => void resumeHeldSale(draft.id)}
+                    >
+                      Recuperar
+                    </button>
+                    <button
+                      className="text-danger-button"
+                      type="button"
+                      disabled={draftBusy}
+                      onClick={() => void discardHeldSale(draft.id)}
+                    >
+                      Descartar
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+            {cart.length > 0 ? (
+              <p className="field-hint">
+                Primero deja en espera o vacía la venta actual para recuperar
+                otra.
+              </p>
+            ) : null}
+            {saleError ? (
+              <p className="field-error" role="alert">
+                {saleError}
+              </p>
+            ) : null}
+            <div className="modal-actions">
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() => setHeldTicketsOpen(false)}
+              >
+                Volver al POS
+              </button>
+            </div>
+          </section>
         </div>
       ) : null}
       {status || saleError ? (
@@ -1333,6 +1803,49 @@ export function PosWorkspace({
                 onClick={() => void applyDiscount()}
               >
                 Autorizar y aplicar
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {extraDialog === "layaway" ? (
+        <div className="modal-backdrop">
+          <section
+            className="checkout-modal compact-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="layaway-title"
+          >
+            <p className="eyebrow">Apartado</p>
+            <h2 id="layaway-title">Guardar apartado</h2>
+            <p>
+              Los artículos saldrán del carrito y quedarán asociados al cliente.
+            </p>
+            <div className="form-stack">
+              <label>
+                <span>Nombre del cliente</span>
+                <input
+                  value={layawayCustomer}
+                  onChange={(event) => setLayawayCustomer(event.target.value)}
+                  placeholder="Nombre completo"
+                />
+              </label>
+            </div>
+            <div className="modal-actions">
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => setExtraDialog(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="primary-button"
+                type="button"
+                onClick={createLayaway}
+              >
+                Crear apartado
               </button>
             </div>
           </section>

@@ -201,6 +201,11 @@ Es la función central del milestone. El flujo:
 7. Guardar genera códigos, crea los renglones de inventario en cero y
    deja las etiquetas listas para imprimir.
 
+La captura de tallas y colores es múltiple y continua: debe permitir marcar
+varias opciones de corrido, seleccionar o deseleccionar grupos completos y
+editar sólo las excepciones en la matriz. El flujo no puede degradarse a un
+formulario o confirmación independiente por variante.
+
 Dos requisitos que se olvidan y luego duelen:
 
 - **Agregar tallas después.** A los seis meses llega la 29 del mismo

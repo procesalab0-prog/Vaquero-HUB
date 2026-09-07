@@ -6,7 +6,7 @@
 > Para entender el proyecto antes de tocarlo, empezar por
 > [`ESTADO_Y_CONTINUIDAD.md`](ESTADO_Y_CONTINUIDAD.md).
 >
-> Última actualización: 2026-09-02, tras aplicar las correcciones alojadas de M2.
+> Última actualización: 2026-09-06, al completar la auditoría ergonómica M5.5.
 
 ## Cómo usar esta cola
 
@@ -27,6 +27,24 @@ a una base que ya ejecutó la versión anterior.
 
 El registro operativo de estas comprobaciones vive en
 [`PENDIENTES.md`](PENDIENTES.md).
+
+## Regla permanente de ergonomía
+
+La ergonomía es una compuerta de aceptación, no una fase de maquillaje al
+final. Toda entrega operativa debe revisar el recorrido humano completo y
+reducir toques, capturas repetidas, esperas, formularios que se abren uno por
+uno y acciones ocultas, sin debilitar permisos ni validaciones.
+
+Desde M5, cada cierre de módulo debe incluir una comprobación en teléfono
+vertical, iPad horizontal y computadora con teclado. Se registran pasos,
+tiempo, errores evitables y puntos donde el usuario pierde el contexto. Los
+hallazgos frecuentes o bloqueantes entran en esta misma cola antes de continuar
+acumulando módulos.
+
+La lista o tabla continua de tallas y colores es un caso obligatorio: debe
+permitir marcar opciones de corrido, seleccionar rangos y editar la matriz sin
+abrir un selector por cada variante. El mismo criterio aplica a conteos,
+traspasos y otras capturas repetitivas.
 
 ## Regla nueva, salida de la revisión de M2
 
@@ -399,19 +417,19 @@ debe imprimir y escanear una etiqueta real; ese control no se sustituye con CI.
 **TERMINADO y verificado ejecutando.** Las tres pruebas bandera pasan, con
 conexiones paralelas de verdad y no llamadas en serie:
 
-| Prueba bandera | Resultado medido |
-|---|---|
-| Dos ventas concurrentes sobre existencia 1 | Una `INSUFFICIENT_STOCK`; existencia 0 y **una** venta |
-| Suma de movimientos = saldo | `check_inventory_invariant()` → **cero discrepancias**, también después de traspasos |
+| Prueba bandera                                        | Resultado medido                                                                             |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Dos ventas concurrentes sobre existencia 1            | Una `INSUFFICIENT_STOCK`; existencia 0 y **una** venta                                       |
+| Suma de movimientos = saldo                           | `check_inventory_invariant()` → **cero discrepancias**, también después de traspasos         |
 | Mercancía en tránsito no disponible en ningún extremo | SUC1 ve 6, SUC2 ve 0, las 4 viven en `TRANSIT`; `list_transfer_locations()` excluye tránsito |
 
 Y las que faltaban por comprobar del ciclo de traspaso:
 
-| Escenario | Resultado |
-|---|---|
+| Escenario                                    | Resultado                                                                             |
+| -------------------------------------------- | ------------------------------------------------------------------------------------- |
 | Dos despachos simultáneos del mismo traspaso | Uno `IN_TRANSIT`, otro `INVALID_TRANSFER_STATE`; existencias movidas **una sola vez** |
-| Enviar 4 y recibir 3 (§6.2) | Destino recibe 3; **la pieza faltante se queda en tránsito**, no se absorbe |
-| Total global tras dos traspasos | Sin cambio: 10 antes, 10 después |
+| Enviar 4 y recibir 3 (§6.2)                  | Destino recibe 3; **la pieza faltante se queda en tránsito**, no se absorbe           |
+| Total global tras dos traspasos              | Sin cambio: 10 antes, 10 después                                                      |
 
 Tres cosas del diseño que conviene no "simplificar" después:
 
@@ -546,24 +564,24 @@ impresora elegida.
 Se levantó una base desde cero con las 43 migraciones y se corrieron las
 pruebas obligatorias de la spec §10 disparando SQL real, no leyendo código.
 
-| Prueba de la spec                                  | Resultado medido                                            |
-| -------------------------------------------------- | ----------------------------------------------------------- |
-| 1. Doble toque en «Cobrar» con la misma llave      | Una sola venta; la segunda llamada devolvió el mismo folio  |
-| 2. Misma llave con carrito distinto                | `IDEMPOTENCY_CONFLICT`                                       |
-| 3. Pago 30/70 sobre total impar                    | 30000 + 69900 == 99900, exacto                               |
-| 4. Pagos que no suman el total                     | `PAYMENT_TOTAL_MISMATCH`                                     |
-| 6. Descuento sin autorización de supervisor        | `DISCOUNT_AUTHORIZATION_INVALID`                             |
-| 7. Token de supervisor reutilizado                 | Rechazado: la capacidad se consume una sola vez             |
-| 8. Precio mandado por el cliente                   | Ignorado; cobró el precio de la base                        |
-| 9. Renglón sin existencia                          | Toda la venta se revirtió; no quedó folio ni llave huérfana |
-| 10. Dos cajas por la última pieza                  | Una venta, una `INSUFFICIENT_STOCK`, existencia en 0        |
-| 11. Seis cobros simultáneos entre dos cajas        | Seis folios consecutivos, sin huecos ni repetidos           |
-| 12. Venta con sesión de caja cerrada               | `SESSION_FORBIDDEN`                                          |
-| 13. Dos sesiones en la misma caja                  | `REGISTER_OR_CASHIER_ALREADY_OPEN`                           |
-| 14. Efectivo con vuelto                            | A la caja entraron 99900, no los 100000 recibidos           |
-| 15. Corte con ventas, retiro e ingreso             | El esperado cuadró al centavo                                |
-| 17. `UPDATE`/`DELETE` sobre una venta              | Rechazado incluso como superusuario                          |
-| 18. Costos de venta para una cajera                | `permission denied`: no ve el margen                         |
+| Prueba de la spec                             | Resultado medido                                            |
+| --------------------------------------------- | ----------------------------------------------------------- |
+| 1. Doble toque en «Cobrar» con la misma llave | Una sola venta; la segunda llamada devolvió el mismo folio  |
+| 2. Misma llave con carrito distinto           | `IDEMPOTENCY_CONFLICT`                                      |
+| 3. Pago 30/70 sobre total impar               | 30000 + 69900 == 99900, exacto                              |
+| 4. Pagos que no suman el total                | `PAYMENT_TOTAL_MISMATCH`                                    |
+| 6. Descuento sin autorización de supervisor   | `DISCOUNT_AUTHORIZATION_INVALID`                            |
+| 7. Token de supervisor reutilizado            | Rechazado: la capacidad se consume una sola vez             |
+| 8. Precio mandado por el cliente              | Ignorado; cobró el precio de la base                        |
+| 9. Renglón sin existencia                     | Toda la venta se revirtió; no quedó folio ni llave huérfana |
+| 10. Dos cajas por la última pieza             | Una venta, una `INSUFFICIENT_STOCK`, existencia en 0        |
+| 11. Seis cobros simultáneos entre dos cajas   | Seis folios consecutivos, sin huecos ni repetidos           |
+| 12. Venta con sesión de caja cerrada          | `SESSION_FORBIDDEN`                                         |
+| 13. Dos sesiones en la misma caja             | `REGISTER_OR_CASHIER_ALREADY_OPEN`                          |
+| 14. Efectivo con vuelto                       | A la caja entraron 99900, no los 100000 recibidos           |
+| 15. Corte con ventas, retiro e ingreso        | El esperado cuadró al centavo                               |
+| 17. `UPDATE`/`DELETE` sobre una venta         | Rechazado incluso como superusuario                         |
+| 18. Costos de venta para una cajera           | `permission denied`: no ve el margen                        |
 
 También se comprobó que el orden de candados de `create_sale` sí protege
 contra bloqueos mutuos: el plan de ejecución pone el `Result` que toma los
@@ -609,14 +627,13 @@ de que nadie tenga la contraseña de la base. Ahora un disparador bloquea
 `UPDATE` y `DELETE`; las inserciones no cambian, así que ninguna función tuvo
 que tocarse.
 
-### Lo que falta de M4: cancelar una venta
+### M4 cerrado en software en 0.22.0
 
-`cancel_sale` **no existe**. La spec la define en §6 y la prueba obligatoria 16
-la exige; la spec de M5 la atribuye explícitamente a M4. El esquema ya está
-listo — `status`, `cancelled_at`, `cancelled_by`, `cancellation_reason`, la
-restricción `sales_cancellation_complete`, el índice de `cancelled_by`, el
-permiso `sales.cancel` y el tipo de movimiento `CANCELLATION` en
-`app.apply_movement` — pero no hay función ni botón.
+`cancel_sale` existe, exige `sales.cancel`, limita la operación a la sesión
+original abierta, restaura inventario y efectivo de forma atómica y deja
+auditoría. Está disponible después del cobro y en Tickets, que ya consulta
+ventas reales. La separación entre quien despacha y quien recibe un traspaso
+también quedó como restricción estructural.
 
 Se entiende por qué se pospuso: la spec deja abierta la pregunta de si se puede
 cancelar una venta de otro día. Pero esa duda sólo afecta la mitad discutible.
@@ -626,118 +643,97 @@ no tiene salida: la venta queda escrita, el inventario descontado y el efectivo
 esperado en la caja. Tampoco se puede arreglar a mano, porque `sales` rechaza
 escrituras directas.
 
-**Tarea, en este orden:**
+**Comprobado en staging:**
 
-1. `cancel_sale(p_sale_id, p_reason)` con `sales.cancel`, limitada a ventas de
-   la **sesión de caja abierta actual**. La venta original no se modifica salvo
-   `status = 'CANCELLED'` más las tres columnas de cancelación.
-2. Movimientos `CANCELLATION` que devuelven cada renglón al inventario, en
-   orden de variante y por `app.apply_movement`, nunca con `UPDATE` directo.
-3. Si hubo efectivo, un `cash_movements` negativo en la sesión abierta actual.
-4. Motivo obligatorio de al menos tres caracteres y registro en bitácora.
-5. Botón en el ticket recién cobrado y en la pantalla de tickets, con
-   confirmación; una cancelación no se dispara por un toque distraído.
-6. Pruebas: la venta queda intacta salvo el estado, el inventario regresa, la
-   caja baja, y una segunda cancelación de la misma venta se rechaza.
+1. La venta queda intacta salvo estado y datos de cancelación.
+2. Inventario y efectivo regresan dentro de la misma transacción.
+3. Una segunda cancelación se rechaza.
+4. Después del corte se rechaza y dirige a devolución.
 
-Cancelar una venta de un turno o un día anterior queda fuera hasta que el dueño
-decida; está anotado en `PENDIENTES.md`. Mientras tanto eso es devolución (M5).
+La decisión del dueño quedó asentada en `PENDIENTES.md`.
 
-### Impresión: el hardware ya está definido y coincide con lo construido
+### Extensión operativa 0.23.0 — carrito y tickets en espera
 
-El dueño confirmó que **no se compra impresora**: el sistema debe funcionar
-con la **BIXOLON** de tickets y la de etiquetas **marca SICAR** que ya están
-en el mostrador. Detalle, foto y lista de verificación en
-[`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md).
+- El carrito se guarda automáticamente y se restaura por empleado, caja y
+  sesión; no queda ligado al dispositivo ni se comparte con otros usuarios.
+- Se pueden suspender varios tickets, recuperar uno cuando el carrito actual
+  está vacío y descartar un borrador con auditoría.
+- Guardar o suspender no reserva mercancía ni mueve caja. La venta real vuelve
+  a validar precio, existencia, permisos y descuentos.
+- Una venta confirmada consume su carrito dentro de PostgreSQL y el cierre de
+  caja elimina cualquier borrador restante.
+- Las cantidades del inventario actual, definido por pieza, se validan como
+  enteros también en servidor y base; la interfaz avanza de uno en uno.
 
-Coincide con lo que ya se construyó, así que no hay que rehacer nada: ticket
-y etiqueta se generan como HTML y salen por el controlador del sistema
-operativo con `window.print()`. Se cancela la compra de una impresora de red
-Epson o Star que suponía `PLAN_CODEX.md` §9.1.
+### Entrega visible 0.24.0 — cambio parejo desde Tickets
 
-Lo único que faltaba en código era el tamaño de página del ticket. Estaba
-declarado el ancho (80 mm) pero no la altura, así que el controlador usaba su
-tamaño por omisión y cada venta podía alimentar una hoja completa de rollo.
-Ahora `components/thermal-receipt.tsx` emite `@page { size: 80mm auto }` desde
-`lib/printing.ts`, que es la única constante a cambiar si el rollo resulta ser
-de 58 mm.
+- El empleado autorizado abre un ticket real, elige una pieza disponible para
+  devolución y entrega otra variante con existencia y exactamente el mismo valor.
+- La búsqueda se resuelve en la caja y sucursal abiertas, incluso con un
+  catálogo grande; no confía en filtros del navegador.
+- La confirmación conserva la venta original, actualiza ambos inventarios en
+  una sola operación y deja auditoría e idempotencia.
+- Diferencias de precio, reembolsos, mercancía dañada, otra sucursal y venta sin
+  ticket permanecen bloqueados hasta recibir las reglas del negocio.
 
-**Consecuencia que sí importa para el diseño:** un iPad no tiene
-controladores y ninguna de las dos impresoras es AirPrint. La venta con
-ticket impreso corre en la computadora del mostrador. El iPad se queda con
-catálogo, inventario, conteos y consulta. Cobrar desde el iPad más adelante
-significa un puente local que consuma `print_jobs`; la tabla existe desde M4
-para eso. No rehacer el POS por esto ahora.
-
-### Retirado del POS: el apartado que no apartaba
-
-El botón «Apartar» estaba conectado a una función de demostración:
-**vaciaba el carrito, anunciaba «Apartado AP-000128 creado correctamente»
-con un folio inventado y no guardaba nada**. Una cajera lo habría usado
-creyendo que quedó registrado, y la mercancía se habría ido con el cliente
-sin rastro en el sistema.
-
-No es un descuido de M4: es un resto de la interfaz de demostración 0.6.x que
-sobrevivió cuando el POS se conectó de verdad. Los apartados son M7 y no se
-van a improvisar.
-
-Se retiró la función y su diálogo; el botón queda visible pero inhabilitado y
-dice «Apartar · pendiente», para que se note que falta en vez de mentir.
-Mientras tanto los apartados se registran como hasta hoy, fuera del sistema.
-
-**Al conectar M7, la referencia de qué debe guardar un apartado está en
-`RUNBOOK_CORTE.md` §1:** los apartados abiertos son de los compromisos que
-rompen una tienda si se pierden, porque esa mercancía está físicamente
-separada y no debe aparecer disponible.
-
-Verificados y reales: descuento con PIN de supervisor, ticket de regalo y
-cobro. La pantalla de tickets, no.
-
-### Pendiente: conectar la pantalla de Tickets
-
-`app/(workspace)/tickets/tickets-workspace.tsx` **no consulta la base**: son
-cuatro ventas escritas a mano en el archivo, con folios inventados
-(`V-000842`), productos de ejemplo y la fecha fija `27/08/2026`. Un gerente
-que abra esa pantalla ve ventas que nunca ocurrieron, y el botón de
-reimprimir imprime una de ellas.
-
-Se le puso un aviso visible de «Pantalla de demostración» para que no engañe
-mientras tanto, pero el arreglo real es conectarla.
-
-Casi todo lo necesario ya existe: `get_sale_receipt(sale_id)` devuelve el
-ticket completo, `request_sale_print` registra la reimpresión, y la política
-de `sales` ya resuelve quién ve qué —una cajera ve sólo sus ventas; con
-`reports.sales` se ven todas las de la sucursal—. Falta:
-
-1. Una RPC `list_sales(p_location_id, p_from, p_to, p_limit)` que devuelva
-   folio, hora, método de pago, total y cliente. Sin costos: la cajera no ve
-   el margen, igual que en el ticket.
-2. Cambiar la pantalla para que lea de ahí, con los filtros de periodo y caja
-   que hoy están dibujados pero no filtran nada.
-3. Reimprimir contra `get_sale_receipt` en vez del arreglo local, pasando por
-   `request_sale_print` para que la reimpresión quede en bitácora.
-
-Va después de `cancel_sale` y antes de M5: reimprimir un ticket es
-operación diaria de mostrador, y es además donde vivirá el botón de cancelar.
-
-Y una regla que sale de estos dos hallazgos: **antes de abrir, recorrer cada
-pantalla preguntando si lo que muestra viene de la base.** Cualquier botón
-que responda con un `notify()` sin tocar la base, y cualquier lista escrita
-en el archivo, es una trampa del mismo tipo.
+**M5.5 terminada en 0.25.0:** los hallazgos críticos de selección de variantes,
+conteo continuo y búsqueda en traspasos quedaron corregidos y documentados en
+[`AUDITORIA_ERGONOMIA.md`](AUDITORIA_ERGONOMIA.md).
 
 ## 7. M5 — Devoluciones y cambios
 
 **Especificación:** [`specs/M5_DEVOLUCIONES_Y_CAMBIOS.md`](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)
 **Depende de:** M4.
 
+**Primera entrega operativa terminada en 0.24.0.** Ya existen el libro
+inmutable, consulta de cantidades devueltas y la interfaz de cambio parejo con
+ticket, misma sucursal, inventario atómico e idempotencia. Continúan bloqueados por decisión del negocio los reembolsos,
+diferencias de precio, daño, devoluciones entre sucursales y sin ticket.
+
+## 7.5 Auditoría ergonómica intermedia
+
+**Momento obligatorio:** inmediatamente después de terminar la interfaz de M5
+y antes de cerrar la siguiente entrega operativa. El análisis técnico de M9
+puede avanzar en paralelo, pero esta auditoría no se desplaza hasta el final.
+
+Recorridos iniciales:
+
+1. Alta de un producto con varias tallas y colores mediante lista o tabla
+   continua, selección de rangos y matriz editable, sin un selector por opción.
+2. Conteo de al menos 20 variantes usando escáner o teclado, cantidad entera,
+   confirmación y avance automático al siguiente renglón.
+3. Venta, recuperación de ticket en espera, traspaso y acciones en lote en
+   teléfono vertical, iPad horizontal y computadora.
+
+Se registrarán número de toques o teclas, tiempo, capturas repetidas, errores,
+acciones ocultas y pérdida de contexto. Los hallazgos críticos y los que
+afecten recorridos frecuentes se corrigen antes de continuar; los demás quedan
+priorizados con responsable y fecha previa al piloto.
+
+**Aceptación:** una persona puede seleccionar tallas y colores de corrido y
+terminar un conteo continuo sin abrir un formulario por cada variante. El
+resultado y sus correcciones quedan en `docs/AUDITORIA_ERGONOMIA.md`.
+
+**Estado:** terminada en 0.25.0. Sigue pendiente la medición humana y el equipo
+físico antes del piloto; el siguiente trabajo de software sin bloqueo es M9 en
+modo analizador y corrida en seco.
+
 ## 8. M9 — Importador y sincronizador de SICAR
 
 **Especificación:** [`PLAN_CODEX.md`](PLAN_CODEX.md) §5, milestone M9
-**BLOQUEADO:** hace falta una exportación de muestra de SICAR.
+**DESBLOQUEADO PARA ANÁLISIS E IMPLEMENTACIÓN EN SECO:** se recibieron dos
+exportaciones reales, del 4 y 6 de septiembre de 2026. El perfil inicial y la
+comparación canónica están en el contexto maestro, secciones 4.1 y 4.2. Ya se
+pueden construir el analizador, el mapeo y la corrida en seco en staging. Falta
+confirmar físicamente qué campo corresponde al código escaneable antes de
+confirmar una importación definitiva.
 
-El script de análisis —que sólo lee y reporta— se puede escribir en cuanto
-llegue el archivo, y de él sale la lista de limpieza que el cliente
-trabaja durante semanas. Conviene adelantarlo apenas se pueda.
+La comparación ya demostró que el catálogo cambia entre exportaciones y que
+existen costos en cero y saldos negativos. El siguiente trabajo es convertir
+ese análisis en una herramienta repetible: conservar la fotografía, clasificar
+altas/cambios/ausencias, producir excepciones y reconciliar conteos sin inventar
+la causa de un movimiento. Una baja de existencia no se registra como venta sin
+el reporte de ventas o kardex que lo demuestre.
 
 ---
 

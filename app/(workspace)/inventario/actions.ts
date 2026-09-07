@@ -68,8 +68,9 @@ function jsonItems(formData: FormData, field = "items") {
       (item) =>
         item.variant_id &&
         Number.isFinite(item.qty) &&
+        Number.isSafeInteger(item.qty) &&
         item.qty >= 0 &&
-        item.qty <= 999999999.999,
+        item.qty <= 999999999,
     )
       ? items
       : null;
@@ -95,8 +96,10 @@ export async function applyInventoryAdjustment(formData: FormData) {
       !locationId ||
       expectedQuantity === null ||
       expectedQuantity < 0 ||
+      !Number.isSafeInteger(expectedQuantity) ||
       countedQuantity === null ||
       countedQuantity < 0 ||
+      !Number.isSafeInteger(countedQuantity) ||
       !reason
     ) {
       status = "inventario-datos-invalidos";
@@ -158,7 +161,8 @@ export async function recordInventoryCountItem(formData: FormData) {
       !countId ||
       !variantId ||
       countedQuantity === null ||
-      countedQuantity < 0
+      countedQuantity < 0 ||
+      !Number.isSafeInteger(countedQuantity)
     )
       throw new Error("INVALID_COUNT_QUANTITY");
     const { error } = await supabase.rpc("record_inventory_count_item", {
@@ -175,6 +179,39 @@ export async function recordInventoryCountItem(formData: FormData) {
     });
   }
   redirectToInventory(status, locationId);
+}
+
+export async function recordInventoryCountItemInline(formData: FormData) {
+  let status = "conteo-capturado";
+  try {
+    const { supabase } = await requirePermission("inventory.count");
+    const countId = textField(formData, "count_id");
+    const variantId = textField(formData, "variant_id");
+    const countedQuantity = numberField(formData, "counted_quantity");
+    if (
+      !countId ||
+      !variantId ||
+      countedQuantity === null ||
+      countedQuantity < 0 ||
+      !Number.isSafeInteger(countedQuantity)
+    )
+      throw new Error("INVALID_COUNT_QUANTITY");
+    const { error } = await supabase.rpc("record_inventory_count_item", {
+      p_count_id: countId,
+      p_variant_id: variantId,
+      p_counted_qty: countedQuantity,
+    });
+    if (error) throw error;
+    revalidatePath(inventoryPath);
+    return { ok: true, status, variantId, countedQuantity };
+  } catch (error) {
+    status = errorStatus(error);
+    console.error("[inventario/recordInventoryCountItemInline] failed", {
+      status,
+      message: error instanceof Error ? error.message : "UNKNOWN_ERROR",
+    });
+    return { ok: false, status };
+  }
 }
 
 export async function closeInventoryCount(formData: FormData) {

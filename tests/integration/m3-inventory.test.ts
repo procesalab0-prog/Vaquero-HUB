@@ -95,6 +95,13 @@ describe.sequential("M3.1: libro y saldos de inventario", () => {
         location_id: state.otherLocationId,
       });
     expect(adminDestinationAssignmentError).toBeNull();
+    const { error: warehouseDestinationAssignmentError } = await server
+      .from("user_locations")
+      .insert({
+        user_id: state.warehouse!.id,
+        location_id: state.otherLocationId,
+      });
+    expect(warehouseDestinationAssignmentError).toBeNull();
 
     const { data: category, error: categoryError } = await server
       .from("categories")
@@ -511,6 +518,16 @@ describe.sequential("M3.1: libro y saldos de inventario", () => {
     );
     expect(cancelInTransit.error?.message).toContain(
       "TRANSFER_NOT_CANCELLABLE",
+    );
+    const sameDispatcherReceives = await state.warehouse!.client.rpc(
+      "receive_transfer",
+      {
+        p_transfer_id: transferId,
+        p_items: [{ variant_id: state.variantId, qty: 4 }],
+      },
+    );
+    expect(sameDispatcherReceives.error?.message).toContain(
+      "SEPARATION_OF_DUTIES",
     );
     const sameApproverReceives = await state.manager!.client.rpc(
       "receive_transfer",

@@ -4,7 +4,7 @@
 > [`COLA_DE_TRABAJO.md`](COLA_DE_TRABAJO.md). Aquí viven las tareas de los
 > entornos alojados, decisiones del dueño y riesgos de proceso.
 >
-> Última actualización: 2026-09-02.
+> Última actualización: 2026-09-05.
 
 ## Supabase: estado verificado
 
@@ -37,16 +37,25 @@ la validación ni la confirmación; `authenticated` sólo entra a funciones que
 vuelven a exigir `products.create`. La publicación real en Vercel quedó
 verificada el 2 de septiembre de 2026.
 
-## Compuerta pendiente de SICAR
+## Compuertas pendientes de SICAR
 
-No se debe habilitar la generación de códigos para operación real hasta
-revisar una exportación de muestra de SICAR y demostrar que ningún código
+Las exportaciones del 4 y 6 de septiembre ya fueron recibidas y perfiladas; su
+comparación vive en las secciones 4.1 y 4.2 del contexto maestro. M9 está
+desbloqueado para construir el analizador, el mapeo y la corrida en seco.
+
+No se debe confirmar una importación real ni habilitar la generación de códigos
+para operación hasta comprobar físicamente que `clave1` corresponde a la
+etiqueta escaneable, identificar su simbología y demostrar que ningún código
 heredado de trece dígitos comienza con `20`–`29`.
+
+También falta acordar cómo conciliar los saldos negativos y costos en cero. La
+herramienta debe reportarlos como excepciones; no puede convertirlos en cero,
+inventar costos ni atribuir los cambios de existencia a ventas por suposición.
 
 La base de producción contiene 18 códigos `GENERATED` creados durante el
 desarrollo. No son códigos externos ni se modificaron en esta corrección. Se
-deben identificar como pruebas o mercancía real cuando llegue la exportación;
-los códigos generados son inmutables y no se borran por suposición.
+deben identificar como pruebas o mercancía real contra la exportación; los
+códigos generados son inmutables y no se borran por suposición.
 
 ## Los 18 productos de prueba no se pueden borrar
 
@@ -102,60 +111,14 @@ Opciones:
    opción técnica de menor privilegio, pero sigue necesitando aprobación del
    dueño.
 
-## Decisión del dueño: hasta dónde se puede cancelar una venta
+## Decisiones confirmadas por el dueño el 4 de septiembre de 2026
 
-La spec de M4 §6 dejó la pregunta abierta y por eso `cancel_sale` no se
-implementó. La parte que nadie discute — la cajera se equivocó de ticket y lo
-anula en su turno, con su caja abierta — ya está en cola y se puede construir
-sin esperar nada.
+- Una venta sólo se cancela mientras la sesión de caja original siga abierta.
+  Después del corte únicamente procede devolución (M5).
+- Quien despacha un traspaso no puede recibirlo. La base lo impide aunque se
+  intente omitir la interfaz.
 
-Lo que falta decidir:
-
-1. ¿Se puede cancelar una venta de un **turno o día anterior**, cuando la caja
-   de ese turno ya se cerró? La práctica común de tienda es que no: después del
-   corte sólo procede devolución, porque cancelar movería dinero de una caja
-   que ya cuadró.
-2. Si la respuesta es que sí, ¿quién autoriza: gerente con PIN, o sólo el
-   dueño?
-
-Mientras no haya respuesta, cancelar se limita a la sesión abierta y todo lo
-demás es devolución (M5).
-
-## Decisión del dueño: quién despacha y quién recibe un traspaso
-
-La regla que pide la spec de M3 §7 — que quien **aprueba** no pueda **recibir**
-— está implementada y probada. Pero se comprobó ejecutando que **la misma
-persona sí puede preparar, despachar y recibir** el mismo traspaso: el control
-cubre al que autoriza, no al que toca la mercancía en los dos extremos.
-
-En la práctica el que empaca la caja en una sucursal y el que la abre en la
-otra son personas distintas, porque están en edificios distintos. Si eso es
-siempre así, conviene exigir además que quien despacha no sea quien recibe: es
-una línea de código y cierra el hueco. Si hay una sola persona de almacén que
-viaja entre las dos tiendas, la regla la dejaría trabada y entonces no se pone.
-
-Es decisión del dueño porque depende de cómo opera Vaqueros SM, no de la
-arquitectura.
-
-## Impresoras: ya no hay que comprar nada
-
-Confirmado con foto en [`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md): la
-tienda usa una **BIXOLON** para tickets y una **marca SICAR** para etiquetas,
-y el sistema debe funcionar con ésas. Coincide con lo construido, así que no
-hay rediseño; se cancela la compra que suponía el plan.
-
-Falta confirmar, mirando la etiqueta de cada equipo y el rollo:
-
-1. Modelo exacto de las dos. En la BIXOLON, además, si tiene puerto de red.
-2. Ancho del rollo de tickets. El sistema asume 80 mm; si son 58, es cambiar
-   una constante.
-3. Medida en milímetros de la etiqueta que usan hoy.
-4. Si el cajón de dinero está conectado a la BIXOLON.
-
-Y una decisión que se deriva del hardware: **el punto de venta que imprime
-corre en la computadora del mostrador, no en el iPad**, porque un iPad no
-tiene controladores y ninguna de las dos es AirPrint. El iPad se queda con
-catálogo, inventario, conteos y consulta.
+Ambas reglas quedaron implementadas y probadas en staging en 0.22.0.
 
 ## Orden inmediato de implementación
 
@@ -169,11 +132,11 @@ catálogo, inventario, conteos y consulta.
    corrida en seco y confirmación atómica. No importa SICAR ni WooCommerce.
 4. M2.5 quedó implementado en 0.18.0: acciones en lote, precios auditados,
    plantillas persistentes e impresión de etiquetas desde computadora.
-5. M3 quedó terminado y verificado, y M4 entregó POS y caja reales.
-6. **Siguiente:** `cancel_sale`, y la prueba física frente al mostrador con
-   las dos impresoras que ya están definidas: imprimir un ticket, imprimir
-   una etiqueta y escanearla con la cámara. La lista completa está en
-   [`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md).
+5. M3 y M4 quedaron cerrados en software. La entrega 0.24.0 agrega la interfaz
+   del cambio parejo de M5 desde un ticket real.
+6. M5.5 quedó terminada en 0.25.0: alta por rangos, conteos consecutivos y
+   traspasos buscables están documentados en `AUDITORIA_ERGONOMIA.md`.
+   **Siguiente:** construir el analizador repetible y la corrida en seco de M9.
 
 La validación física necesita dispositivos y una impresión real; las pruebas
 automatizadas no la sustituyen.
@@ -204,9 +167,9 @@ y conviene decirlo con números porque cambia una decisión.
 | M0, M1, M1B     | —                | Terminados                                                                                  |
 | **M2**          | 1                | **Terminado**, a falta de la validación física                                              |
 | M3 inventario   | 1                | **Terminado en software**; queda la validación física conjunta de etiqueta, cámara y lector |
-| M4 POS y caja   | 2                | Especificado, sin implementar                                                               |
-| M5 devoluciones | 1                | Especificado, sin implementar                                                               |
-| M9 importador   | 1                | Bloqueado por la muestra de SICAR                                                           |
+| M4 POS y caja   | 2                | **Terminado en software 0.23.0**; falta validación física de impresora y operación táctil   |
+| M5 devoluciones | 1                | **Primera entrega 0.24.0 terminada**; reglas de dinero siguen pendientes                    |
+| M9 importador   | 1                | Muestra real recibida y perfilada; sigue el mapeo de columnas y la corrida en seco          |
 
 Quedan **cuatro semanas de trabajo** contra unas seis de calendario hasta
 mediados de octubre.
@@ -225,16 +188,16 @@ Dos advertencias para no leer ese número con optimismo:
   exportación de muestra llega tarde, su semana se corre entera, y con ella la
   compuerta que autoriza generar códigos en producción.
 
-Cinco de once pantallas están conectadas a la base: Productos, Clientes,
-Administración, Etiquetas e Inventario; Inventario ya incluye conteos y
-traspasos. POS, Caja, Tickets, Ajustes, Inicio y Más siguen siendo cascarones,
-porque dependen de M4.
+Ocho de once pantallas están conectadas a la base: Productos, Clientes,
+Administración, Etiquetas, Inventario, POS, Caja y Tickets. Ajustes, Inicio y
+Más conservan contenido de navegación o demostración.
 El calendario completo y la estrategia para la segunda sucursal viven en
 [`PLAN_OCTUBRE.md`](PLAN_OCTUBRE.md).
 
 ## Asuntos todavía bloqueados
 
-- Exportación de muestra de SICAR y simbología que usa actualmente.
+- Confirmar físicamente si `clave1` de la exportación SICAR es el código que
+  lee la etiqueta y qué simbología usa actualmente.
 - Escalas de talla de sombreros, texanas y cinturones.
 - Reglas de puntos, crédito y apartados.
 - Forma definitiva de envío de tickets por SMS o correo.

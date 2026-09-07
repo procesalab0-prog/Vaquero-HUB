@@ -7,7 +7,7 @@
 > memoria del proyecto.** Todo lo que haga falta para continuar tiene que
 > estar aquí, no en un chat.
 >
-> Última actualización: 2026-09-02.
+> Última actualización: 2026-09-06.
 
 ## 1. Qué es esto
 
@@ -52,9 +52,11 @@ saltando lo bloqueado.
 | **M2.5 (0.18.0)**        | Selección y precios en lote auditados; plantillas persistentes e impresión real de etiquetas             |
 | **M3.1 (0.19.0)**        | Saldos por sucursal, libro inmutable, ajustes auditados y pantalla de inventario con datos reales        |
 | **M3 (0.20.0)**          | Conteos formales y traspasos con aprobación, tránsito explícito, recepción parcial y auditoría           |
-| **M4 (0.21.3)**          | Ventas atómicas, pagos mixtos, cajas múltiples, corte ciego, descuentos autorizados y ticket persistido  |
+| **M4 (0.23.0)**          | Ventas atómicas, pagos mixtos, cajas, corte ciego, tickets reales, cancelación y tickets en espera       |
+| **M5 (0.24.0)**          | Cambio parejo operable desde Tickets, libro inmutable, inventario atómico e idempotencia                 |
+| **M5.5 (0.25.0)**        | Alta por rangos, conteo continuo de 20 variantes y traspasos buscables, auditados en tres tamaños        |
 
-Cuarenta y tres migraciones versionadas del repositorio. El proyecto de Supabase
+Cincuenta y dos migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -91,16 +93,17 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
 | **M2** — catálogo, variantes, códigos, etiquetas | **Terminado en software.** Sólo falta la validación física: imprimir una etiqueta real y escanearla, con cámara y lector |
 | **M3** — inventario, movimientos, traspasos      | **Terminado en software:** saldos, libro inmutable, ajustes, conteos, traspasos y mercancía en tránsito                  |
-| **M4** — POS, pagos mixtos, caja                 | **Terminado en software:** falta validar físicamente la operación táctil y la impresora elegida                          |
-| **M5** — devoluciones, cambios, cancelaciones    | [Escrita](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)                                                                            |
-| **M9** — importador y sincronizador de SICAR     | Falta                                                                                                                    |
+| **M4** — POS, pagos mixtos, caja                 | **Terminado en software:** incluye carrito persistente y tickets en espera; falta validar iPad e impresora               |
+| **M5** — devoluciones, cambios, cancelaciones    | **Primera entrega 0.24.0 terminada:** cambio parejo visible; reembolsos y diferencias esperan reglas del negocio         |
+| **M9** — importador y sincronizador de SICAR     | Dos exportaciones reales perfiladas y comparadas; sigue analizador repetible, mapeo y corrida en seco en staging         |
 
 Recorridos a después de octubre: M6 compras, M7 apartados y lealtad, M8
 reportes y cotizaciones.
 
-**Con M3 y M4 cerrados en software queda aproximadamente una semana de
-construcción del alcance de octubre, además de SICAR y el piloto físico.** El detalle, y las advertencias que impiden leer ese número
-con optimismo, están en [`PENDIENTES.md`](PENDIENTES.md).
+**Con M3, M4, la primera entrega de M5 y M5.5 cerrados, el siguiente trabajo de
+software sin bloqueo es el analizador y la corrida en seco de SICAR M9.** Siguen
+separados las decisiones de negocio bloqueadas y el piloto físico. El detalle
+está en [`PENDIENTES.md`](PENDIENTES.md).
 
 ## 3. Por qué la fecha es octubre
 
@@ -153,6 +156,9 @@ Están completas en `PLAN_CODEX.md` §2. Las que más se rompen por descuido:
 8. **Esquema sólo por migraciones versionadas**, nunca desde el panel.
 9. **Una migración ya fusionada no se edita:** toda corrección usa otra
    migración y se prueba en staging antes de producción.
+10. **El historial no se maquilla para aprobar una regla nueva:** dos
+    movimientos antiguos con milésimas se conservan; desde 0.23.0 se rechazan
+    nuevas cantidades fraccionarias mientras el catálogo sea por pieza.
 
 ## 6. Cómo se trabaja
 

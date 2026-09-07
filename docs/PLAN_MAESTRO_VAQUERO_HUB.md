@@ -146,6 +146,125 @@ Antes de migrar deberá realizarse:
 - ceros iniciales
 - inconsistencias
 
+### 4.1 Primera exportación real de SICAR — 4 de septiembre de 2026
+
+Se recibió y analizó `Plantilla_Productos.xlsx`, exportación real con una hoja,
+32 columnas y **15,872 renglones de producto o variante**. Este archivo
+desbloquea el análisis de M9, pero todavía no autoriza una importación directa
+a producción.
+
+División actual por departamento:
+
+| Departamento  | Renglones |
+| ------------- | --------: |
+| Caballero     |     7,496 |
+| Dama          |     2,896 |
+| Unisex        |     2,633 |
+| Niño          |     1,633 |
+| Juvenil       |       499 |
+| Accesorios    |       400 |
+| Niña          |       157 |
+| Art. caballo  |       112 |
+| Art. limpieza |        39 |
+| D1            |         5 |
+| Bebidas       |         1 |
+| Adhesivos     |         1 |
+
+La exportación contiene **299 categorías**. Las de mayor volumen incluyen
+Cintos Vaquero SM (1,381), Pantalones Wrangler (967), Botas Vaquero SM (592),
+Botas Rey Welt (558), Botas Cuadra (538), Camisas Wrangler (428), Camisas
+Rodeo West (425), Botas Nokota Horse (422) y Pantalones KAJM (413).
+
+Hallazgos que M9 debe tratar como compuertas de importación:
+
+- `clave1` está presente en todos los renglones y no tiene duplicados. Todas
+  las claves son numéricas, pero una conserva ceros iniciales
+  (`000007779`); por eso se importarán como texto y nunca como número.
+- Falta comprobar con una etiqueta física si `clave1` es el código que lee el
+  escáner o sólo la clave interna de SICAR. `clave2` está vacía en 15,503
+  renglones y no puede asumirse como fuente principal.
+- SICAR no entrega talla ni color en columnas separadas. Los atributos parecen
+  formar parte de `descripción`, por lo que el importador necesita reglas de
+  extracción, agrupación y una cola de excepciones revisable; nunca debe
+  adivinar silenciosamente el producto padre.
+- Hay 28 descripciones repetidas, equivalentes a 34 renglones adicionales.
+  Una descripción repetida no prueba que sean duplicados: se debe comparar la
+  clave, categoría y atributos antes de agrupar o rechazar.
+- Todos los renglones usan unidad `PIEZA`, son inventariables y no son granel.
+  La existencia no contiene fracciones, lo que confirma conteos enteros para
+  este catálogo.
+- La suma exportada es **22,598 unidades**: 8,483 renglones con existencia
+  positiva, 7,334 en cero y 55 con existencia negativa. Los negativos deben
+  conciliarse en SICAR o quedar como excepciones explícitas antes del corte.
+- 15,043 renglones tienen costo cero y sólo 829 costo positivo. Dos tienen
+  `precio1` en cero. Los costos faltantes no se sustituirán por precio ni por
+  cero silencioso; requieren una fuente o decisión de negocio.
+- `precio1` es el precio operativo en 15,870 renglones. `precio2`, `precio3` y
+  `precio4` sólo aparecen en 33, 29 y 28; `mayoreo2`, `mayoreo3` y `mayoreo4`
+  están vacíos en todo el archivo. Las escalas mayoristas requieren otra
+  exportación o confirmación del negocio.
+- La hoja trae una sola columna `existencia`; `localización 1`, `localización
+2` y `localización 3` están vacías. No se distribuirá ese saldo entre
+  sucursales sin una exportación por ubicación o una conciliación física.
+- No vienen proveedores asociados por renglón, imágenes ni identificadores de
+  WooCommerce. Esos datos se obtendrán de exportaciones separadas y se unirán
+  mediante identificadores verificables, nunca sólo por nombre.
+
+Siguiente entregable de M9: mapeo de las 32 columnas a Mi Tienda SM,
+clasificador de renglones importables o en conflicto y corrida en seco en
+staging. La importación reportará conteos, claves y suma de existencias antes y
+después; no escribirá nada si quedan errores sin clasificar.
+
+### 4.2 Segunda exportación y prueba de cambios — 6 de septiembre de 2026
+
+Se comparó `Plantilla_Productos (1).xlsx` contra la exportación del 4 de
+septiembre usando `clave1` como identidad de comparación, sin escribir en
+SICAR ni en Supabase. La segunda fotografía contiene **16,009 renglones** y
+**22,985 unidades**. `clave1` continúa completa y sin duplicados.
+
+En dos días se observaron cambios reales:
+
+- **140 claves nuevas** y **3 ausentes** respecto de la primera exportación;
+  las tres ausentes tenían existencia cero.
+- **270 claves existentes cambiaron de saldo**: 108 bajaron 131 unidades y
+  162 subieron 259, para un cambio neto de +128 sobre el catálogo común.
+- Las claves nuevas aportaron 259 unidades; el total general pasó de 22,598 a
+  22,985, una diferencia neta de **+387 unidades**.
+- Entre las claves comunes también cambiaron cinco precios, un costo, una
+  descripción y un departamento. El sincronizador no puede limitarse a altas
+  ni a existencias.
+- La segunda fotografía contiene **56 saldos negativos** y **15,177 costos en
+  cero**. Son datos heredados reales que requieren conciliación o una excepción
+  explícita; nunca se corregirán o inventarán silenciosamente al importar.
+
+La comparación de fotografías detecta **qué cambió**, pero no demuestra la
+causa. Una disminución puede provenir de venta, ajuste, devolución, traspaso u
+otra operación de SICAR. Por ello, ningún delta entre archivos se registrará
+como venta ni con un motivo inventado. Para reconstruir causas se necesitarán
+los reportes de ventas o el kardex del mismo periodo.
+
+Consecuencias obligatorias para M9:
+
+- Conservar cada exportación con fecha y huella del archivo para que el proceso
+  sea repetible y auditable.
+- El modo catálogo será incremental e idempotente: distinguirá altas, cambios
+  de datos o precio y claves ausentes, sin interpretar una ausencia como
+  eliminación automática.
+- El modo de existencias conciliará la fotografía final contra el saldo de Mi
+  Tienda SM mediante movimientos explícitos de importación o conciliación;
+  nunca editará directamente el saldo ni falsificará ventas históricas.
+- Costos cero, saldos negativos, claves dudosas y cambios incompatibles se
+  enviarán a una cola de excepciones. Un cero heredado no sobrescribirá un costo
+  válido sin una regla aprobada.
+- Como SICAR continúa cambiando durante la operación, habrá corridas periódicas
+  de ensayo y una última exportación con la tienda cerrada. El reporte final
+  deberá cuadrar conteos, claves y existencias antes de autorizar la apertura.
+
+Con estas dos fotografías, M9 ya no está bloqueado para construir el analizador,
+el mapeo de columnas y la corrida en seco. Continúan pendientes la comprobación
+física de `clave1` y su simbología, la fuente que explique los movimientos y
+las decisiones del negocio sobre costos cero e inventario negativo.
+
 ⸻
 
 5. Regla crítica sobre códigos
@@ -451,6 +570,32 @@ IN_TRANSIT
 RECEIVED
 CANCELLED
 
+Solicitud de mercancía entre tiendas:
+
+- Desde su sucursal, un empleado autorizado podrá buscar o escanear un
+  producto/variante, consultar qué otras tiendas tienen existencia disponible
+  y solicitar una cantidad a una tienda origen específica.
+- La solicitud conservará tienda solicitante/destino, tienda origen,
+  producto, variante, cantidad, prioridad o nota operativa, solicitante y
+  fecha/hora.
+- La tienda origen tendrá una bandeja de solicitudes pendientes y podrá
+  aprobar la cantidad completa, aprobar parcialmente o rechazar con motivo.
+  La tienda solicitante podrá consultar el estado y la respuesta sin llamar
+  para confirmar manualmente.
+- Una solicitud en estado `REQUESTED` no mueve ni promete inventario por sí
+  sola. Antes de aprobar y nuevamente antes de enviar se validarán existencia,
+  permisos y estado vigente; el movimiento físico continuará usando el flujo
+  `APPROVED → PREPARED → IN_TRANSIT → RECEIVED`.
+- El sistema notificará dentro de Mi Tienda SM a la tienda origen cuando llegue
+  una solicitud y a la tienda solicitante cuando cambie de estado. Una falla de
+  notificación no deberá cambiar ni duplicar el traspaso.
+- Solicitar, aprobar, rechazar, preparar, enviar, recibir o cancelar dejará
+  auditoría con actor, sucursal, fecha, cantidades y motivo. RLS impedirá que
+  una tienda actúe sobre solicitudes ajenas a su origen o destino.
+- Los permisos para solicitar y aprobar serán distintos. La asignación exacta
+  por rol se confirmará con Vaqueros SM; la interfaz nunca sustituirá la
+  validación del servidor.
+
 Una mercancía en tránsito NO deberá aparecer simultáneamente como disponible en origen y destino.
 
 ⸻
@@ -479,6 +624,27 @@ Funciones esperadas:
 - cierre de caja
 - cortes
 - movimientos de caja
+- ventas/tickets en espera para suspender un carrito y cobrar otro
+
+Operación rápida del POS:
+
+- Deberán existir atajos de teclado para abrir las funciones frecuentes,
+  como Ventas, Productos, Consultas y Clientes, además de acciones comunes
+  dentro del cobro cuando no entren en conflicto con la captura activa.
+- Los atajos serán visibles, configurables cuando corresponda y nunca
+  deberán omitir permisos, confirmaciones críticas ni validaciones del servidor.
+- Un ticket en espera deberá conservar artículos, cantidades, cliente y
+  empleado que lo dejó, y podrá recuperarse sin bloquear la caja para cobrar
+  otra venta.
+- El carrito en curso se guardará automáticamente cuando el empleado cambie
+  de módulo o ventana dentro de Mi Tienda SM y se restaurará al volver al POS,
+  sin obligarlo a convertirlo manualmente en ticket en espera.
+- El carrito guardado quedará aislado por empleado, caja y sesión activa; no
+  deberá aparecer a otro usuario ni sobrevivir indebidamente al cierre de caja
+  o de sesión. Una venta completada lo eliminará para evitar cobros repetidos.
+- Poner un ticket en espera no equivale a cobrarlo: no moverá caja ni
+  inventario definitivo. Al recuperarlo, el sistema deberá volver a validar
+  precios, disponibilidad y permisos antes del cobro.
 
 Entrega digital de tickets:
 
@@ -490,6 +656,9 @@ Entrega digital de tickets:
 - Una falla de WhatsApp, del menú Compartir, de SMS o de correo nunca deberá cancelar, duplicar ni revertir una venta ya cobrada.
 - El envío transaccional del comprobante y el consentimiento para promociones se tratarán como decisiones distintas. Compartir un ticket no habilita marketing.
 - Los intentos de entrega deberán dejar auditoría mínima de canal, estado, actor y fecha, sin copiar teléfonos, correos ni el contenido completo del ticket a los logs.
+- Cuando una venta se pague con varios métodos, el ticket impreso y digital
+  mostrará cada método y el importe aplicado por separado; en pagos
+  electrónicos también conservará su referencia según los permisos definidos.
 
 ⸻
 
@@ -535,6 +704,70 @@ Considerar:
 - buena operación horizontal y vertical
 - estados claros
 - prevención de doble toque/doble cobro
+
+Captura repetitiva y cantidades:
+
+- Las existencias, conteos, ajustes y movimientos de mercancía que se vende
+  por pieza deberán capturarse como **enteros**. Las flechas de un campo
+  numérico aumentarán o disminuirán de uno en uno; no usarán pasos como
+  `0.001`. Sólo una unidad de medida configurada expresamente para venta
+  fraccionada podrá aceptar decimales.
+- Un conteo físico deberá favorecer el recorrido continuo: escanear o elegir
+  una variante, escribir la cantidad, confirmar con teclado y avanzar al
+  siguiente renglón sin abrir y cerrar formularios por cada producto.
+- Cuando una operación segura se repita sobre varios elementos —por ejemplo
+  elegir tallas y colores, contar variantes, imprimir etiquetas o actualizar
+  datos comunes— la interfaz ofrecerá selección múltiple, matriz, captura en
+  tabla, pegado desde una lista o acciones en lote según corresponda.
+- Los valores compartidos se capturarán una sola vez y se heredarán a las
+  variantes seleccionadas, permitiendo corregir excepciones antes de guardar.
+  Las acciones masivas mostrarán un resumen previo y conservarán permisos,
+  validaciones y auditoría; rapidez no significa saltarse controles.
+- El alta de producto conservará la selección múltiple de tallas y colores y
+  la matriz editable ya definida. No deberá obligar a crear cada combinación
+  individualmente ni repetir costo, precio u otros datos idénticos.
+- Tallas y colores se presentarán como una **lista o tabla continua**, visible
+  de una sola vez siempre que el tamaño de pantalla lo permita. El empleado
+  podrá marcar varias opciones de corrido, seleccionar o limpiar un rango y
+  recorrer la matriz con teclado o toque sin abrir un selector independiente
+  por cada talla o color.
+
+Ergonomía como compuerta de calidad:
+
+- La ergonomía es uno de los criterios principales del proyecto, al mismo
+  nivel operativo que seguridad, integridad de inventario y exactitud de caja.
+  No se tratará como decoración ni como una limpieza para el final.
+- A partir de M5, cada módulo operativo deberá pasar una revisión ergonómica
+  antes de darse por cerrado. Se medirán pasos, toques, tiempo, capturas
+  repetidas, cambios de contexto, errores evitables y claridad del lenguaje.
+- La revisión se ejecutará al menos en teléfono vertical, iPad horizontal y
+  computadora con teclado. Incluirá los recorridos frecuentes completos, no
+  sólo la apariencia aislada de cada pantalla.
+- La primera auditoría ergonómica formal se hará inmediatamente después de la
+  interfaz de cambios de M5 y antes de acumular los siguientes módulos. Tendrá
+  como focos iniciales el alta continua de tallas y colores, conteos rápidos,
+  traspasos, venta, tickets en espera y acciones en lote.
+- Los hallazgos se registrarán en la cola con evidencia y prioridad. Un flujo
+  frecuente que obligue a repetir capturas, esconda acciones necesarias o no
+  pueda completarse correctamente en un dispositivo objetivo bloqueará el
+  cierre de la entrega correspondiente.
+- La auditoría se repetirá antes del piloto y durante éste con empleados
+  reales. Lo observado en operación manda sobre suposiciones del equipo.
+
+Apariencia y modo nocturno:
+
+- La interfaz ofrecerá los modos **Claro**, **Oscuro** y **Automático**, con
+  un control accesible desde los ajustes y un cambio rápido desde la sesión.
+- En Automático podrá seguir la preferencia de apariencia del dispositivo o
+  un horario configurable de inicio y fin, usando la hora local de la sucursal.
+- La preferencia se conservará por usuario y dispositivo; el cambio de tema no
+  deberá cerrar modales, borrar capturas ni perder el carrito en curso.
+- Ambos temas mantendrán contraste accesible, estados distinguibles mediante
+  texto o iconos y los colores semánticos definidos para confirmación, alerta y
+  acciones destructivas. El sistema evitará mostrar primero un destello del
+  tema incorrecto al abrir la PWA.
+- Tickets térmicos, etiquetas y documentos impresos conservarán su plantilla
+  clara de alto contraste, independientemente del tema usado en pantalla.
 
 ⸻
 
@@ -596,6 +829,16 @@ Para productos nuevos Mi Tienda SM podrá:
 - opcionalmente crear producto WooCommerce
 
 Diseñar una experiencia especialmente rápida para mercancía con tallas.
+
+- El alta deberá presentar tallas y variantes como una lista continua de
+  selección múltiple, para marcar varias de corrido sin cerrar ventanas ni
+  repetir los datos generales del producto.
+- Para usuarios autorizados, cada producto/variante mostrará costo, precio de
+  menudeo y los niveles de mayoreo **Precio 1, Precio 2 y Precio 3**. El costo
+  seguirá oculto para roles sin permiso.
+- Antes de activar los niveles de mayoreo en una venta deberá definirse quién
+  puede usarlos, cómo se asignan a clientes y si dependen de cantidad; el
+  sistema no inventará esas reglas de negocio.
 
 Ejemplo:
 
@@ -697,6 +940,12 @@ Toda devolución/cancelación deberá:
 - conservar motivo
 - mantener auditoría
 
+En un ticket con varios artículos se podrá seleccionar un solo renglón —o una
+cantidad menor de ese renglón— para devolverlo. La venta original permanecerá
+intacta y la devolución parcial se registrará como un documento relacionado,
+con su movimiento de inventario y dinero correspondiente. La cancelación total
+de la venta seguirá siendo una operación distinta y controlada.
+
 Nunca eliminar una venta histórica para simular una cancelación.
 
 ⸻
@@ -721,6 +970,13 @@ opened_by
 closed_by
 opened_at
 closed_at
+
+La caja deberá permitir configurar por sucursal o caja un límite operativo de
+efectivo. Al acercarse o llegar al límite mostrará un aviso claro para realizar
+un corte o retiro preventivo autorizado. El umbral no estará fijo en el código;
+el aviso, el retiro y el corte conservarán actor, fecha, caja e importes en la
+auditoría. La respuesta operativa exacta —corte completo o retiro parcial— se
+confirmará con Vaqueros SM antes de hacerla obligatoria.
 
 ⸻
 
@@ -779,6 +1035,28 @@ valor anterior
 valor nuevo
 fecha
 metadata
+
+Para altas de producto y movimientos de inventario, la consulta de auditoría
+deberá responder de forma legible quién realizó la acción, qué producto y
+variante afectó, qué agregó o rebajó, cantidad anterior y nueva, motivo, fecha,
+hora, sucursal y documento de origen. No bastará con guardar un evento técnico
+difícil de interpretar.
+
+24.1. Consultas de ventas
+
+Las consultas de ventas deberán permitir filtrar por rango de fecha y hora,
+sucursal, cajero, categoría, producto y variante. Por ejemplo, se podrá elegir
+del día 9 al 14, filtrar únicamente la categoría Botas y conocer cada venta con
+su folio, día, hora, producto, variante, cantidad, precio aplicado y método de
+pago. La vista deberá ofrecer tanto resumen agregado como detalle trazable al
+ticket original, respetando los permisos y el alcance por sucursal.
+
+Cuando existan muchos datos, la consulta permitirá agrupar o dividir la
+información por **día, semana, mes o año**, además de usar un rango
+personalizado. Los periodos respetarán la zona horaria de la sucursal y la
+interfaz cargará resultados por páginas o bloques para no intentar mostrar
+miles de registros a la vez. Cambiar de resumen a detalle conservará los
+filtros seleccionados.
 
 ⸻
 
@@ -1226,6 +1504,7 @@ Y para cada operación sensible preguntar:
 1. Diseñar con mínimo privilegio, validación del servidor y auditoría desde el inicio.
 1. Entender el proceso humano real antes de automatizarlo o rediseñarlo.
 1. Reducir trabajo repetitivo y prevenir errores sin debilitar reglas de negocio ni seguridad.
+1. Tratar la ergonomía como criterio de aceptación desde cada milestone; medirla y auditarla antes del piloto, no dejarla como pulido final.
 
 ⸻
 
@@ -2040,3 +2319,77 @@ RECIBIDO`. No se puede cancelar mercancía que ya salió y quien aprobó no pued
   traspasos activos previos; Vercel publicó correctamente el merge de `main`.
 - M3 queda terminado en software. Sigue pendiente la validación física de M2:
   imprimir y escanear una etiqueta y probar la cámara dentro de la PWA instalada.
+
+Entrega visible 0.21.0–0.22.0 — cierre de M4 e inicio seguro de M5:
+
+- El POS registra ventas atómicas con pagos en efectivo, tarjeta,
+  transferencia o combinación; caja admite varias terminales, apertura,
+  movimientos y corte realmente ciego.
+- Tickets dejó de ser una demostración: consulta las ventas persistidas de los
+  últimos 30 días, permite filtrar por periodo y buscar folio, producto, SKU o
+  cajero, además de reimprimir el comprobante real.
+- `cancel_sale` exige permiso, motivo y que la sesión original continúe
+  abierta. Restaura inventario y efectivo en una sola transacción, conserva la
+  venta histórica y rechaza intentos repetidos. Después del corte sólo procede
+  devolución, por decisión del dueño del 4 de septiembre de 2026.
+- Quien despacha un traspaso no puede confirmar su recepción. La separación
+  vive en una restricción y un disparador de PostgreSQL, no sólo en la pantalla.
+- La bitácora general quedó sellada contra actualización y borrado, incluso con
+  acceso privilegiado. La cajera tampoco puede reconstruir el efectivo esperado
+  antes de declarar su conteo.
+- M5 comenzó con `returns`, `return_items` y `return_payments` como libro
+  inmutable. El primer flujo admite cambio parejo con ticket, en la misma
+  sucursal y con mercancía revendible; devuelve una variante y descuenta la
+  otra atómicamente sin modificar la venta original.
+- La diferencia de precio, reembolso, mercancía dañada, otra sucursal y
+  devolución sin ticket permanecen deshabilitados hasta que Vaqueros SM defina
+  sus reglas. El sistema devuelve un error explícito en vez de inventarlas.
+- Las migraciones y pruebas transaccionales de esta entrega se ejecutaron
+  primero en staging. Se comprobaron restauración de caja e inventario,
+  idempotencia, concurrencia, inmutabilidad y rechazo después del corte.
+
+Entrega visible 0.23.0 — carrito persistente y tickets en espera:
+
+- El carrito activo se guarda automáticamente en Supabase y se recupera al
+  volver al POS, incluso desde otro dispositivo, siempre dentro del mismo
+  empleado, caja y sesión abierta.
+- El cajero puede dejar varios tickets en espera, cobrar a otra persona y
+  recuperar el anterior. Ningún borrador reserva inventario ni mueve caja.
+- La base impide consultar o recuperar borradores ajenos. Al recuperar se
+  vuelven a comprobar artículos activos y, al cobrar, precio, existencia,
+  permisos y cualquier descuento.
+- La venta confirmada consume el carrito activo dentro de PostgreSQL; cerrar
+  caja elimina los borradores restantes. Guardar, recuperar y descartar deja
+  auditoría sin copiar datos personales a los logs.
+- Como el catálogo actual se maneja por pieza, conteos, ajustes y traspasos
+  avanzan de uno en uno y el servidor y la base rechazan milésimas. Una futura
+  venta fraccionada requerirá primero modelar explícitamente su unidad.
+- Producción conserva dos movimientos históricos con milésimas que dejaron el
+  saldo final entero. No se reescriben ni se borran: la restricción se agrega
+  `NOT VALID` para respetar la bitácora y bloquear sólo movimientos nuevos.
+
+Entrega visible 0.24.0 — cambio parejo desde Tickets:
+
+- Desde una venta real, el personal con permiso puede seleccionar una pieza
+  devuelta y otra variante disponible del mismo valor.
+- La búsqueda usa la sucursal de la caja abierta y filtra precio y existencia
+  del lado servidor, aun con el catálogo completo de SICAR.
+- La venta original permanece intacta. El documento de cambio y ambos
+  movimientos de inventario se registran juntos, con auditoría e idempotencia.
+- Los casos con diferencia, reembolso, daño, otra sucursal o sin ticket siguen
+  deshabilitados hasta definir sus reglas de negocio.
+
+Entrega visible 0.25.0 — auditoría ergonómica intermedia M5.5:
+
+- El alta de producto permite marcar todos los colores o tallas, limpiar la
+  selección y elegir un rango continuo Desde–Hasta sin tocar cada talla.
+- Los conteos físicos avanzan de forma continua: Enter guarda, conserva el
+  foco y prepara la siguiente variante sin recargar la pantalla. Incluyen
+  búsqueda por nombre, SKU o código y progreso visible.
+- Las solicitudes de traspaso permiten buscar mercancía aun con un catálogo
+  grande y conservan las cantidades elegidas al cambiar el filtro.
+- Los recorridos se verifican en teléfono vertical, iPad horizontal y
+  computadora. La evidencia, interacciones y pendientes físicos quedan en
+  `docs/AUDITORIA_ERGONOMIA.md`.
+- El siguiente trabajo de software sin bloqueo es M9: analizador repetible,
+  mapeo y corrida en seco de las exportaciones reales de SICAR.
