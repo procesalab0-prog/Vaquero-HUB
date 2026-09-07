@@ -95,13 +95,14 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 | **M3** — inventario, movimientos, traspasos      | **Terminado en software:** saldos, libro inmutable, ajustes, conteos, traspasos y mercancía en tránsito                  |
 | **M4** — POS, pagos mixtos, caja                 | **Terminado en software:** incluye carrito persistente y tickets en espera; falta validar iPad e impresora               |
 | **M5** — devoluciones, cambios, cancelaciones    | **Primera entrega 0.24.0 terminada:** cambio parejo visible; reembolsos y diferencias esperan reglas del negocio         |
-| **M9** — importador y sincronizador de SICAR     | Dos exportaciones reales perfiladas y comparadas; sigue analizador repetible, mapeo y corrida en seco en staging         |
+| **M9** — importador y sincronizador de SICAR     | Analizador, mapeo y corrida en seco terminados en 0.26.0; sigue sincronizador idempotente de catálogo sólo en staging    |
 
 Recorridos a después de octubre: M6 compras, M7 apartados y lealtad, M8
 reportes y cotizaciones.
 
-**Con M3, M4, la primera entrega de M5 y M5.5 cerrados, el siguiente trabajo de
-software sin bloqueo es el analizador y la corrida en seco de SICAR M9.** Siguen
+**Con M3, M4, la primera entrega de M5 y M5.5 cerrados, M9 ya cuenta con
+analizador y corrida en seco. El siguiente trabajo sin bloqueo es el
+sincronizador idempotente de catálogo exclusivamente en staging.** Siguen
 separados las decisiones de negocio bloqueadas y el piloto físico. El detalle
 está en [`PENDIENTES.md`](PENDIENTES.md).
 
