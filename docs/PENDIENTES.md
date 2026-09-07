@@ -37,16 +37,25 @@ la validación ni la confirmación; `authenticated` sólo entra a funciones que
 vuelven a exigir `products.create`. La publicación real en Vercel quedó
 verificada el 2 de septiembre de 2026.
 
-## Compuerta pendiente de SICAR
+## Compuertas pendientes de SICAR
 
-No se debe habilitar la generación de códigos para operación real hasta
-revisar una exportación de muestra de SICAR y demostrar que ningún código
+Las exportaciones del 4 y 6 de septiembre ya fueron recibidas y perfiladas; su
+comparación vive en las secciones 4.1 y 4.2 del contexto maestro. M9 está
+desbloqueado para construir el analizador, el mapeo y la corrida en seco.
+
+No se debe confirmar una importación real ni habilitar la generación de códigos
+para operación hasta comprobar físicamente que `clave1` corresponde a la
+etiqueta escaneable, identificar su simbología y demostrar que ningún código
 heredado de trece dígitos comienza con `20`–`29`.
+
+También falta acordar cómo conciliar los saldos negativos y costos en cero. La
+herramienta debe reportarlos como excepciones; no puede convertirlos en cero,
+inventar costos ni atribuir los cambios de existencia a ventas por suposición.
 
 La base de producción contiene 18 códigos `GENERATED` creados durante el
 desarrollo. No son códigos externos ni se modificaron en esta corrección. Se
-deben identificar como pruebas o mercancía real cuando llegue la exportación;
-los códigos generados son inmutables y no se borran por suposición.
+deben identificar como pruebas o mercancía real contra la exportación; los
+códigos generados son inmutables y no se borran por suposición.
 
 ## Los 18 productos de prueba no se pueden borrar
 
