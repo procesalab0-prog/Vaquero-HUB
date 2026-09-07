@@ -716,14 +716,19 @@ resultado y sus correcciones quedan en `docs/AUDITORIA_ERGONOMIA.md`.
 ## 8. M9 — Importador y sincronizador de SICAR
 
 **Especificación:** [`PLAN_CODEX.md`](PLAN_CODEX.md) §5, milestone M9
-**DESBLOQUEADO PARA ANÁLISIS:** se recibió `Plantilla_Productos.xlsx` el 4 de
-septiembre de 2026. El resumen canónico y sus compuertas están en el contexto
-maestro, sección 4.1. Falta confirmar físicamente qué campo corresponde al
-código escaneable antes de escribir el importador definitivo.
+**DESBLOQUEADO PARA ANÁLISIS E IMPLEMENTACIÓN EN SECO:** se recibieron dos
+exportaciones reales, del 4 y 6 de septiembre de 2026. El perfil inicial y la
+comparación canónica están en el contexto maestro, secciones 4.1 y 4.2. Ya se
+pueden construir el analizador, el mapeo y la corrida en seco en staging. Falta
+confirmar físicamente qué campo corresponde al código escaneable antes de
+confirmar una importación definitiva.
 
-El script de análisis —que sólo lee y reporta— se puede escribir en cuanto
-llegue el archivo, y de él sale la lista de limpieza que el cliente
-trabaja durante semanas. Conviene adelantarlo apenas se pueda.
+La comparación ya demostró que el catálogo cambia entre exportaciones y que
+existen costos en cero y saldos negativos. El siguiente trabajo es convertir
+ese análisis en una herramienta repetible: conservar la fotografía, clasificar
+altas/cambios/ausencias, producir excepciones y reconciliar conteos sin inventar
+la causa de un movimiento. Una baja de existencia no se registra como venta sin
+el reporte de ventas o kardex que lo demuestre.
 
 ---
 

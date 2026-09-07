@@ -7,7 +7,7 @@
 > memoria del proyecto.** Todo lo que haga falta para continuar tiene que
 > estar aquí, no en un chat.
 >
-> Última actualización: 2026-09-02.
+> Última actualización: 2026-09-06.
 
 ## 1. Qué es esto
 
@@ -94,7 +94,7 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 | **M3** — inventario, movimientos, traspasos      | **Terminado en software:** saldos, libro inmutable, ajustes, conteos, traspasos y mercancía en tránsito                  |
 | **M4** — POS, pagos mixtos, caja                 | **Terminado en software:** incluye carrito persistente y tickets en espera; falta validar iPad e impresora               |
 | **M5** — devoluciones, cambios, cancelaciones    | **Primera entrega 0.24.0 terminada:** cambio parejo visible; reembolsos y diferencias esperan reglas del negocio         |
-| **M9** — importador y sincronizador de SICAR     | Falta                                                                                                                    |
+| **M9** — importador y sincronizador de SICAR     | Dos exportaciones reales perfiladas y comparadas; sigue analizador repetible, mapeo y corrida en seco en staging         |
 
 Recorridos a después de octubre: M6 compras, M7 apartados y lealtad, M8
 reportes y cotizaciones.

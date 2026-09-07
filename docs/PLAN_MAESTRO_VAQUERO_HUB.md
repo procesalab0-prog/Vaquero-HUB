@@ -215,6 +215,56 @@ clasificador de renglones importables o en conflicto y corrida en seco en
 staging. La importación reportará conteos, claves y suma de existencias antes y
 después; no escribirá nada si quedan errores sin clasificar.
 
+### 4.2 Segunda exportación y prueba de cambios — 6 de septiembre de 2026
+
+Se comparó `Plantilla_Productos (1).xlsx` contra la exportación del 4 de
+septiembre usando `clave1` como identidad de comparación, sin escribir en
+SICAR ni en Supabase. La segunda fotografía contiene **16,009 renglones** y
+**22,985 unidades**. `clave1` continúa completa y sin duplicados.
+
+En dos días se observaron cambios reales:
+
+- **140 claves nuevas** y **3 ausentes** respecto de la primera exportación;
+  las tres ausentes tenían existencia cero.
+- **270 claves existentes cambiaron de saldo**: 108 bajaron 131 unidades y
+  162 subieron 259, para un cambio neto de +128 sobre el catálogo común.
+- Las claves nuevas aportaron 259 unidades; el total general pasó de 22,598 a
+  22,985, una diferencia neta de **+387 unidades**.
+- Entre las claves comunes también cambiaron cinco precios, un costo, una
+  descripción y un departamento. El sincronizador no puede limitarse a altas
+  ni a existencias.
+- La segunda fotografía contiene **56 saldos negativos** y **15,177 costos en
+  cero**. Son datos heredados reales que requieren conciliación o una excepción
+  explícita; nunca se corregirán o inventarán silenciosamente al importar.
+
+La comparación de fotografías detecta **qué cambió**, pero no demuestra la
+causa. Una disminución puede provenir de venta, ajuste, devolución, traspaso u
+otra operación de SICAR. Por ello, ningún delta entre archivos se registrará
+como venta ni con un motivo inventado. Para reconstruir causas se necesitarán
+los reportes de ventas o el kardex del mismo periodo.
+
+Consecuencias obligatorias para M9:
+
+- Conservar cada exportación con fecha y huella del archivo para que el proceso
+  sea repetible y auditable.
+- El modo catálogo será incremental e idempotente: distinguirá altas, cambios
+  de datos o precio y claves ausentes, sin interpretar una ausencia como
+  eliminación automática.
+- El modo de existencias conciliará la fotografía final contra el saldo de Mi
+  Tienda SM mediante movimientos explícitos de importación o conciliación;
+  nunca editará directamente el saldo ni falsificará ventas históricas.
+- Costos cero, saldos negativos, claves dudosas y cambios incompatibles se
+  enviarán a una cola de excepciones. Un cero heredado no sobrescribirá un costo
+  válido sin una regla aprobada.
+- Como SICAR continúa cambiando durante la operación, habrá corridas periódicas
+  de ensayo y una última exportación con la tienda cerrada. El reporte final
+  deberá cuadrar conteos, claves y existencias antes de autorizar la apertura.
+
+Con estas dos fotografías, M9 ya no está bloqueado para construir el analizador,
+el mapeo de columnas y la corrida en seco. Continúan pendientes la comprobación
+física de `clave1` y su simbología, la fuente que explique los movimientos y
+las decisiones del negocio sobre costos cero e inventario negativo.
+
 ⸻
 
 5. Regla crítica sobre códigos
