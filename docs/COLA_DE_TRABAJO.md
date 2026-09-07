@@ -749,10 +749,19 @@ La corrida quedó bloqueada por 56 saldos negativos, 3 precios inválidos, 15,17
 costos cero y la comprobación física pendiente del código. Los cambios de saldo
 siempre salen con causa desconocida: nunca se convierten en ventas inventadas.
 
-**Siguiente entrega de M9:** construir el sincronizador transaccional e
-idempotente en modo catálogo para staging, consumiendo sólo reportes aprobados.
-El modo existencias y la escritura en producción permanecen bloqueados hasta el
-corte final y las compuertas del runbook.
+**Entrega 0.29.0:** el sincronizador transaccional e idempotente en modo catálogo
+ya está construido y probado exclusivamente en staging. Sólo consume un reporte
+aprobado cuyo SHA coincide con el Excel, exige evidencia de lectura física y
+aprobación administrativa. Repetir un archivo no duplica; un conflicto cancela
+todo; los costos cero no pisan costos válidos; las ausencias no dan de baja y el
+inventario no cambia.
+
+**Siguiente paso de M9:** corregir o clasificar los tres precios en cero de la
+exportación real, imprimir y escanear una etiqueta para confirmar `clave1` y la
+simbología, volver a generar el reporte aprobado y ejecutar el primer ensayo
+completo en staging con conciliación. El modo existencias, producción y
+WooCommerce permanecen bloqueados hasta el corte final y las compuertas del
+runbook.
 
 ---
 

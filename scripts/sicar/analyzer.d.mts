@@ -10,6 +10,11 @@ export function rowFromValues(
   rowNumber: number,
 ): SicarRow;
 export function parseDecimal(value: unknown): number;
+export function decimalToCents(
+  value: unknown,
+  options?: { allowZero?: boolean },
+): number;
+export function sicarBoolean(value: unknown): boolean;
 export function analyzeRows(
   rows: SicarRow[],
   options?: { physicalBarcodeVerified?: boolean },

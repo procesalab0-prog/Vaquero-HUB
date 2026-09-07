@@ -516,6 +516,15 @@ Por su naturaleza, este milestone conviene adelantarlo en cuanto exista el
 catálogo (M2): mientras antes empiecen las corridas periódicas contra
 datos reales, más tiempo tiene el cliente para limpiar SICAR.
 
+**Estado de ejecución 0.29.0:** el modo catálogo ya existe como sincronizador
+transaccional e idempotente exclusivo de staging. Conserva SHA-256 del archivo y
+reporte, requiere aprobación administrativa y evidencia de escaneo físico,
+preserva costos válidos frente a ceros, no desactiva ausentes y se revierte
+completo ante un conflicto de identidad. El modo existencias, producción y
+WooCommerce siguen bloqueados. La exportación real aún no se aplica: contiene
+tres precios de venta en cero y falta confirmar físicamente `clave1` y su
+simbología.
+
 ## 6. Lo que Codex NO hace todavía
 
 | Bloqueado                                  | Por qué                                                      | Cuándo                    |

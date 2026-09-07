@@ -100,6 +100,12 @@ const COMPARABLE_FIELDS = [
   "mostrar_ventas",
 ];
 
+const STOCK_ONLY_ERROR_CODES = new Set([
+  "INVALID_STOCK",
+  "NEGATIVE_STOCK",
+  "NON_INTEGER_STOCK",
+]);
+
 function plain(value) {
   if (value == null) return "";
   if (typeof value === "object") {
@@ -265,6 +271,10 @@ export function analyzeRows(rows, { physicalBarcodeVerified = false } = {}) {
   }
 
   const errors = exceptions.filter((item) => item.severity === "error").length;
+  const catalogErrors = exceptions.filter(
+    (item) =>
+      item.severity === "error" && !STOCK_ONLY_ERROR_CODES.has(item.code),
+  ).length;
   return {
     rows: rows.length,
     uniqueKeys: keyCounts.size,
@@ -289,7 +299,15 @@ export function analyzeRows(rows, { physicalBarcodeVerified = false } = {}) {
     gates: {
       physicalBarcodeVerified,
       canWriteStaging: errors === 0 && physicalBarcodeVerified,
+      canWriteCatalogStaging: catalogErrors === 0 && physicalBarcodeVerified,
       canWriteProduction: false,
+      catalogErrors,
+      catalogReason:
+        catalogErrors > 0
+          ? `${catalogErrors} errores de catálogo requieren clasificación o corrección`
+          : physicalBarcodeVerified
+            ? "El catálogo está listo únicamente para staging"
+            : "Falta verificar físicamente clave1 y la simbología",
       reason:
         errors > 0
           ? `${errors} errores requieren clasificación o corrección`
@@ -298,6 +316,27 @@ export function analyzeRows(rows, { physicalBarcodeVerified = false } = {}) {
             : "Falta verificar físicamente clave1 y la simbología",
     },
   };
+}
+
+export function decimalToCents(value, { allowZero = true } = {}) {
+  const decimal = parseDecimal(value);
+  const cents = Math.round(decimal * 100);
+  if (
+    !Number.isFinite(decimal) ||
+    !Number.isSafeInteger(cents) ||
+    decimal < 0 ||
+    (!allowZero && cents <= 0) ||
+    Math.abs(decimal * 100 - cents) > 0.000001
+  ) {
+    throw new Error(`INVALID_MONEY_VALUE: ${value}`);
+  }
+  return cents;
+}
+
+export function sicarBoolean(value) {
+  return ["s", "si", "sí", "1", "true"].includes(
+    plain(value).toLocaleLowerCase("es-MX"),
+  );
 }
 
 export function compareRows(previousRows, currentRows) {
