@@ -2441,3 +2441,15 @@ Entrega visible 0.27.0 — cierre de M5:
 - El ticket usa un CODE 128 real y puede localizarse con lector conectado,
   teclado o cámara del teléfono. Sin ticket y entre sucursales permanecen fuera
   de V1.
+
+Entrega visible 0.28.0 — cierre ergonómico y control de efectivo de M5:
+
+- Venta muestra una acción principal de cambios y devoluciones que abre
+  directamente la captura del ticket, sin duplicar la lógica sensible.
+- Un administrador puede guardar el PIN de su propia cuenta sin poder cambiarse
+  de rol ni desactivarse. Los PIN nunca se muestran ni se almacenan en texto.
+- Una devolución en efectivo se serializa contra la sesión de caja y se rechaza
+  si el cajón no contiene el importe; la operación completa se revierte sin
+  alterar inventario, autorización ni libros.
+- La impresión declara rollo continuo de 80 mm y mantiene pendiente la prueba
+  física con los modelos reales de impresora.

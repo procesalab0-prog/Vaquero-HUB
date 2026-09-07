@@ -32,7 +32,7 @@ function storeDayStart(date: Date) {
 export default async function TicketsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ubicacion?: string }>;
+  searchParams: Promise<{ ubicacion?: string; accion?: string }>;
 }) {
   if (!isSupabaseConfigured()) return <TicketsWorkspace />;
   const { supabase, roleId, profile } = await requirePermission("pos.sell");
@@ -110,6 +110,7 @@ export default async function TicketsPage({
       createReturnExchangeAction={
         returnPermission.data ? createReturnExchange : undefined
       }
+      initialReturnLookup={params.accion === "devolver"}
     />
   );
 }

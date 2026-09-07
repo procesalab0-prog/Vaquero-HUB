@@ -91,6 +91,7 @@ export function TicketsRealWorkspace({
   searchExchangeVariantsAction,
   authorizeReturnAction,
   createReturnExchangeAction,
+  initialReturnLookup = false,
 }: {
   tickets: Ticket[];
   status?: string;
@@ -129,6 +130,7 @@ export function TicketsRealWorkspace({
     authorizationToken: string;
     reason: string;
   }) => Promise<CreateExchangeResult>;
+  initialReturnLookup?: boolean;
 }) {
   const [rows, setRows] = useState(tickets);
   const [query, setQuery] = useState("");
@@ -141,7 +143,8 @@ export function TicketsRealWorkspace({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
-  const [ticketScannerOpen, setTicketScannerOpen] = useState(false);
+  const [ticketScannerOpen, setTicketScannerOpen] =
+    useState(initialReturnLookup);
   const deferredQuery = useDeferredValue(query);
   const selected = rows.find((ticket) => ticket.id === selectedId) ?? null;
 
@@ -248,6 +251,12 @@ export function TicketsRealWorkspace({
           </p>
         </div>
       </div>
+      {initialReturnLookup ? (
+        <div className="admin-status" role="status">
+          Escanea el ticket del cliente o escribe su folio para iniciar el
+          cambio o la devolución.
+        </div>
+      ) : null}
       {status ? (
         <div className="inline-error" role="alert">
           No fue posible consultar los tickets. {status}

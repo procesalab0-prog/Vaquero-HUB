@@ -129,33 +129,50 @@ export async function updateEmployee(formData: FormData) {
     const roleId = textField(formData, "role_id");
     const supervisorPin = textField(formData, "supervisor_pin");
     const isActive = formData.get("is_active") === "on";
-    if (
-      !id ||
-      id === userId ||
-      !fullName ||
-      !roleId ||
-      (supervisorPin && !/^\d{4,8}$/.test(supervisorPin))
-    )
-      throw new Error("INVALID_INPUT");
-
-    const { error } = await supabase
-      .from("app_users")
-      .update({ full_name: fullName, role_id: roleId, is_active: isActive })
-      .eq("id", id);
-    if (error) throw error;
-    if (supervisorPin) {
-      const { error: pinError } = await supabase.rpc(
-        "reset_employee_supervisor_pin",
-        {
-          p_user_id: id,
-          p_new_pin: supervisorPin,
-        },
-      );
-      if (pinError) throw pinError;
+    if (!id || (supervisorPin && !/^\d{4,8}$/.test(supervisorPin))) {
+      status = "empleado-pin-invalido";
+      throw new Error("INVALID_PIN");
     }
-    status = "empleado-actualizado";
-  } catch {
-    status = "empleado-error";
+
+    // La cuenta propia no puede cambiarse de rol ni desactivarse desde esta
+    // pantalla. Su PIN sí puede actualizarse con el RPC seguro de perfil.
+    if (id === userId) {
+      if (!supervisorPin) {
+        status = "empleado-pin-vacio";
+        throw new Error("PIN_REQUIRED");
+      }
+      const { error: ownPinError } = await supabase.rpc("update_my_profile", {
+        p_full_name: null,
+        p_new_pin: supervisorPin,
+      });
+      if (ownPinError) throw ownPinError;
+      status = "empleado-pin-actualizado";
+    } else {
+      if (!fullName || !roleId) throw new Error("INVALID_INPUT");
+
+      const { error } = await supabase
+        .from("app_users")
+        .update({ full_name: fullName, role_id: roleId, is_active: isActive })
+        .eq("id", id);
+      if (error) throw error;
+      if (supervisorPin) {
+        const { error: pinError } = await supabase.rpc(
+          "reset_employee_supervisor_pin",
+          {
+            p_user_id: id,
+            p_new_pin: supervisorPin,
+          },
+        );
+        if (pinError) throw pinError;
+      }
+      status = "empleado-actualizado";
+    }
+  } catch (error) {
+    if (!status.startsWith("empleado-pin-")) status = "empleado-error";
+    console.error("[administracion/updateEmployee] failed", {
+      status,
+      message: error instanceof Error ? error.message : "UNKNOWN_ERROR",
+    });
   }
   revalidatePath(adminPath);
   redirect(`${adminPath}?tab=empleados&status=${status}`);

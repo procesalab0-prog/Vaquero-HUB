@@ -53,10 +53,10 @@ saltando lo bloqueado.
 | **M3.1 (0.19.0)**        | Saldos por sucursal, libro inmutable, ajustes auditados y pantalla de inventario con datos reales        |
 | **M3 (0.20.0)**          | Conteos formales y traspasos con aprobación, tránsito explícito, recepción parcial y auditoría           |
 | **M4 (0.23.0)**          | Ventas atómicas, pagos mixtos, cajas, corte ciego, tickets reales, cancelación y tickets en espera       |
-| **M5 (0.27.0)**          | Devolución parcial, cambios con diferencia, reembolso por método original, daño, plazo y PIN de gerente  |
+| **M5 (0.28.0)**          | Devolución parcial, reembolso por método original, caja nunca negativa, plazo y PIN de gerente           |
 | **M5.5 (0.25.0)**        | Alta por rangos, conteo continuo de 20 variantes y traspasos buscables, auditados en tres tamaños        |
 
-Cincuenta y siete migraciones versionadas del repositorio. El proyecto de Supabase
+Sesenta migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -94,7 +94,7 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 | **M2** — catálogo, variantes, códigos, etiquetas | **Terminado en software.** Sólo falta la validación física: imprimir una etiqueta real y escanearla, con cámara y lector |
 | **M3** — inventario, movimientos, traspasos      | **Terminado en software:** saldos, libro inmutable, ajustes, conteos, traspasos y mercancía en tránsito                  |
 | **M4** — POS, pagos mixtos, caja                 | **Terminado en software:** incluye carrito persistente y tickets en espera; falta validar iPad e impresora               |
-| **M5** — devoluciones, cambios, cancelaciones    | **Terminado en software en 0.27.0:** devolución parcial, diferencias, mismos métodos, daño, plazo y autorización         |
+| **M5** — devoluciones, cambios, cancelaciones    | **Terminado en software en 0.28.0:** acceso desde Venta, PIN propio, mismos métodos y efectivo limitado al cajón         |
 | **M9** — importador y sincronizador de SICAR     | Analizador, mapeo y corrida en seco terminados en 0.26.0; sigue sincronizador idempotente de catálogo sólo en staging    |
 
 Recorridos a después de octubre: M6 compras, M7 apartados y lealtad, M8

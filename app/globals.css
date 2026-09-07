@@ -648,6 +648,13 @@ code {
 .draft-toolbar button:first-child {
   color: var(--accent);
 }
+.draft-toolbar .returns-shortcut {
+  grid-column: 1 / -1;
+  min-height: 46px;
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: var(--accent-soft);
+  color: var(--accent);
+}
 .draft-toolbar button:disabled {
   color: var(--muted-light);
   cursor: not-allowed;
@@ -5822,6 +5829,7 @@ a:active {
 
 @media print {
   @page {
+    size: 80mm auto;
     margin: 0;
   }
   body {
