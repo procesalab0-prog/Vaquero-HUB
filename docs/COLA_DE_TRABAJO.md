@@ -709,10 +709,13 @@ lo que muestra viene de la base.** Cualquier botón que responda con un
 **Especificación:** [`specs/M5_DEVOLUCIONES_Y_CAMBIOS.md`](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)
 **Depende de:** M4.
 
-**Primera entrega operativa terminada en 0.24.0.** Ya existen el libro
-inmutable, consulta de cantidades devueltas y la interfaz de cambio parejo con
-ticket, misma sucursal, inventario atómico e idempotencia. Continúan bloqueados por decisión del negocio los reembolsos,
-diferencias de precio, daño, devoluciones entre sucursales y sin ticket.
+**M5 cerrado en 0.27.0.** El flujo admite devolución parcial y cambio por
+producto de cualquier precio; cobra o devuelve la diferencia exacta, y los
+reembolsos conservan los mismos métodos del ticket original. Todo exige una
+capacidad de gerente por código y PIN, el plazo es configurable por sucursal,
+la mercancía dañada entra y se da de baja en dos movimientos auditables, y la
+venta original permanece intacta. El ticket imprime un CODE 128 real que puede
+buscarse con lector o cámara. Otra sucursal y sin ticket siguen fuera de V1.
 
 ## 7.5 Auditoría ergonómica intermedia
 
@@ -758,6 +761,20 @@ ese análisis en una herramienta repetible: conservar la fotografía, clasificar
 altas/cambios/ausencias, producir excepciones y reconciliar conteos sin inventar
 la causa de un movimiento. Una baja de existencia no se registra como venta sin
 el reporte de ventas o kardex que lo demuestre.
+
+**Entrega 0.26.0:** ya existe `pnpm sicar:analyze`. Lee una exportación XLSX,
+conserva su huella SHA-256 en el reporte, valida las 32 columnas, preserva
+`clave1` como texto, clasifica altas/cambios/ausencias y genera excepciones sin
+escribir en SICAR ni en Supabase. La comparación real del 4 al 6 de septiembre
+reprodujo 140 altas, 3 ausencias, 6 cambios de catálogo y 270 cambios de saldo.
+La corrida quedó bloqueada por 56 saldos negativos, 3 precios inválidos, 15,177
+costos cero y la comprobación física pendiente del código. Los cambios de saldo
+siempre salen con causa desconocida: nunca se convierten en ventas inventadas.
+
+**Siguiente entrega de M9:** construir el sincronizador transaccional e
+idempotente en modo catálogo para staging, consumiendo sólo reportes aprobados.
+El modo existencias y la escritura en producción permanecen bloqueados hasta el
+corte final y las compuertas del runbook.
 
 ---
 

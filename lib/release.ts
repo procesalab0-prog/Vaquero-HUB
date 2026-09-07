@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.25.1";
-export const APP_RELEASE = "Sin apartados de mentira y ticket a la medida del rollo";
+export const APP_VERSION = "0.27.0";
+export const APP_RELEASE = "Devoluciones y cambios completos";

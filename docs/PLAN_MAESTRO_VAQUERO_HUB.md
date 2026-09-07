@@ -2393,3 +2393,51 @@ Entrega visible 0.25.0 — auditoría ergonómica intermedia M5.5:
   `docs/AUDITORIA_ERGONOMIA.md`.
 - El siguiente trabajo de software sin bloqueo es M9: analizador repetible,
   mapeo y corrida en seco de las exportaciones reales de SICAR.
+
+Entrega visible 0.26.0 — primera entrega ejecutable de M9:
+
+- `pnpm sicar:analyze` analiza archivos XLSX reales de SICAR en modo de sólo
+  lectura, valida las 32 columnas y registra nombre, hoja y huella SHA-256 de
+  cada fotografía para hacer el proceso repetible y auditable.
+- El reporte conserva `clave1` como texto, cuenta claves, existencias,
+  departamentos, costos y precios, y clasifica altas, ausencias, cambios de
+  catálogo y cambios de saldo. Ninguna ausencia se convierte en baja automática.
+- La corrida real entre el 4 y 6 de septiembre reprodujo 140 altas, 3 ausencias,
+  6 cambios de catálogo y 270 cambios de saldo. Cada delta conserva causa nula:
+  no se inventan ventas, devoluciones, ajustes ni traspasos.
+- La herramienta bloqueó cualquier escritura por 56 saldos negativos, 3 precios
+  inválidos y la comprobación física pendiente de `clave1`. Los 15,177 costos
+  cero se reportan como advertencias y nunca sustituyen un costo válido.
+- La herramienta no contiene credenciales ni llama a SICAR o Supabase. El
+  siguiente paso de M9 es el sincronizador idempotente de catálogo sólo en
+  staging; existencias, producción y WooCommerce siguen cerrados hasta cumplir
+  el runbook del corte.
+- Se eliminó la simulación peligrosa de “Apartar”: el botón ahora declara que
+  está pendiente de M7 y no vacía el carrito ni fabrica folios. Se verificó que
+  la impresión conserve ancho de 80 mm sin fijar una altura inválida; el papel
+  continuo depende del controlador y aún requiere validación física.
+- Sigue pendiente confirmar si una misma persona puede despachar y recibir un
+  traspaso. La política de devoluciones ya quedó decidida e implementada en M5.
+
+Entrega visible 0.27.0 — cierre de M5:
+
+- El plazo de cambios y devoluciones se configura por sucursal entre 0 y 365
+  días, se imprime en el ticket y se aplica en PostgreSQL.
+- Todo cambio o devolución requiere gerente mediante código y PIN; la
+  autorización dura cinco minutos, pertenece al cajero solicitante y se consume
+  una sola vez.
+- Se permite devolver una parte del ticket y cambiar por mercancía de precio
+  distinto. Si falta dinero se cobra la diferencia; si sobra se devuelve por
+  los mismos métodos originales, proporcionalmente cuando el pago fue dividido.
+- Tarjeta y transferencia exigen referencia nueva de reembolso. El efectivo
+  sale de la caja abierta del día y queda incluido en su corte.
+- La mercancía revendible regresa a existencia. La dañada registra primero la
+  entrada y después la merma, conservando ambas evidencias sin dar permiso de
+  ajuste general al cajero.
+- La venta y sus pagos originales permanecen inmutables. Idempotencia, candado
+  de renglón, libro inmutable y auditoría evitan doble devolución o doble pago.
+- La función anterior de cambio parejo quedó revocada para empleados, evitando
+  que una llamada directa pueda saltarse la autorización de gerente.
+- El ticket usa un CODE 128 real y puede localizarse con lector conectado,
+  teclado o cámara del teléfono. Sin ticket y entre sucursales permanecen fuera
+  de V1.

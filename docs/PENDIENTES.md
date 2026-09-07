@@ -41,7 +41,8 @@ verificada el 2 de septiembre de 2026.
 
 Las exportaciones del 4 y 6 de septiembre ya fueron recibidas y perfiladas; su
 comparación vive en las secciones 4.1 y 4.2 del contexto maestro. M9 está
-desbloqueado para construir el analizador, el mapeo y la corrida en seco.
+desbloqueado: el analizador, el mapeo y la corrida en seco quedaron terminados
+en 0.26.0. Sigue el sincronizador idempotente de catálogo sólo en staging.
 
 No se debe confirmar una importación real ni habilitar la generación de códigos
 para operación hasta comprobar físicamente que `clave1` corresponde a la
@@ -146,7 +147,9 @@ impresora de etiquetas, que pudo haber llegado dentro de su instalador.
    del cambio parejo de M5 desde un ticket real.
 6. M5.5 quedó terminada en 0.25.0: alta por rangos, conteos consecutivos y
    traspasos buscables están documentados en `AUDITORIA_ERGONOMIA.md`.
-   **Siguiente:** construir el analizador repetible y la corrida en seco de M9.
+7. M9 inició en 0.26.0: el analizador repetible y la corrida en seco sobre las
+   dos exportaciones reales ya están construidos y verificados. **Siguiente:**
+   sincronizador idempotente de catálogo exclusivamente en staging.
 
 La validación física necesita dispositivos y una impresión real; las pruebas
 automatizadas no la sustituyen.
@@ -179,10 +182,10 @@ y conviene decirlo con números porque cambia una decisión.
 | M3 inventario   | 1                | **Terminado en software**; queda la validación física conjunta de etiqueta, cámara y lector |
 | M4 POS y caja   | 2                | **Terminado en software 0.23.0**; falta validación física de impresora y operación táctil   |
 | M5 devoluciones | 1                | **Primera entrega 0.24.0 terminada**; reglas de dinero siguen pendientes                    |
-| M9 importador   | 1                | Muestra real recibida y perfilada; sigue el mapeo de columnas y la corrida en seco          |
+| M9 importador   | 1                | Analizador y corrida en seco listos; sigue sincronizador de catálogo sólo en staging         |
 
-Quedan **cuatro semanas de trabajo** contra unas seis de calendario hasta
-mediados de octubre.
+Quedan aproximadamente **tres semanas de trabajo del alcance operativo de
+octubre**, además de validaciones físicas y decisiones del negocio.
 
 Eso cambia lo que veníamos diciendo: hace unos días faltaban seis o siete
 semanas contra seis, y no cuadraba a una sola vía. **Ahora cuadra**, aunque sin
@@ -192,11 +195,11 @@ condición para llegar y pasa a ser el margen de seguridad.
 
 Dos advertencias para no leer ese número con optimismo:
 
-- **M4 son dos de esas cuatro semanas y es donde el dinero se puede perder.**
-  No es un milestone que se pueda apretar.
-- **M9 sigue bloqueado por algo que no depende de programar.** Si la
-  exportación de muestra llega tarde, su semana se corre entera, y con ella la
-  compuerta que autoriza generar códigos en producción.
+- **M4 está terminado en software, pero todavía mueve dinero real.** La prueba
+  física de caja, operación táctil e impresora no se puede omitir.
+- **M9 puede seguir en staging, pero no pasar a producción.** La comprobación
+  física del código, la limpieza de excepciones y el corte con tienda cerrada
+  siguen siendo compuertas obligatorias.
 
 Ocho de once pantallas están conectadas a la base: Productos, Clientes,
 Administración, Etiquetas, Inventario, POS, Caja y Tickets. Ajustes, Inicio y

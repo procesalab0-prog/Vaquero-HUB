@@ -1,10 +1,9 @@
 # M5 — Devoluciones, cambios y cancelaciones
 
-> Estado 0.24.0: base de datos, libro inmutable, consulta de renglones y
-> cambio parejo implementados, incluida su interfaz desde Tickets. Esta
-> primera entrega exige ticket, misma sucursal, mercancía revendible y
-> diferencia cero. Los casos con dinero, daño, otra sucursal o sin ticket
-> siguen fuera hasta resolver las preguntas de la sección 14.
+> Estado 0.27.0: M5 terminado en software. Incluye devolución parcial,
+> cambios con diferencia, reembolso por los métodos originales, mercancía
+> dañada, plazo configurable y autorización obligatoria de gerente. Exige
+> ticket y misma sucursal; sin ticket y entre sucursales quedan fuera de V1.
 
 > Especificación para quien implemente. Depende de M3 (movimientos de
 > inventario) y M4 (ventas y caja).
@@ -154,10 +153,10 @@ Y la igualdad que se impone con restricción diferida, igual que en M4:
 Σ CHARGE − Σ REFUND = difference_cents
 ```
 
-**Pregunta de negocio pendiente:** cuando lo nuevo cuesta menos, ¿se
-devuelve efectivo o se emite un saldo a favor? Muchas tiendas prefieren lo
-segundo. Sin respuesta, se implementa sólo el efectivo y el saldo a favor
-queda fuera.
+**Decisión del dueño, 7 de septiembre de 2026:** cuando lo nuevo cuesta
+menos, se devuelve la diferencia por los mismos métodos de la venta original.
+Si la compra fue dividida, el servidor reparte el reembolso proporcionalmente
+y nunca permite elegir un método que no participó en el ticket.
 
 ## 6. Movimientos de inventario
 
@@ -194,15 +193,20 @@ tarjeta en M4.
 ## 8. Autorización
 
 El rol `CASHIER` tiene `returns.create`, porque devolver es parte del
-trabajo diario. Pero se exige autorización de supervisor con PIN, igual
-que los descuentos de M4, cuando:
+trabajo diario. **Todo cambio o devolución exige autorización de gerente**
+con código de empleado y PIN. La capacidad dura cinco minutos, pertenece al
+cajero que la solicitó y se consume una sola vez.
 
-- La devolución es en efectivo por encima de un monto a definir.
-- La mercancía viene marcada como `DAMAGED`.
-- Pasó más tiempo del plazo permitido.
+El plazo se configura por sucursal entre 0 y 365 días. Fuera del plazo la
+operación se rechaza en el servidor; no existe una excepción escondida en la
+interfaz.
 
 `authorized_by` se verifica contra la base dentro de la función, nunca se
 confía en que la interfaz ya validó.
+
+El RPC anterior de cambio parejo queda revocado para usuarios autenticados:
+no puede usarse directamente para saltarse el PIN y sólo la nueva operación
+atómica admite cambios o devoluciones.
 
 ## 9. Idempotencia
 
@@ -253,22 +257,19 @@ devuelve una compra, ¿se retiran los puntos?
 
 ## 13. Criterios de aceptación
 
-- [ ] Las 16 pruebas pasan en CI. La 1, la 2, la 3 y la 10 son las
+- [x] Las pruebas automatizadas pasan en CI. La 1, la 2, la 3 y la 10 son las
       bandera.
-- [ ] Ninguna consulta modifica `sales`, `sale_items` ni `sale_payments`.
-- [ ] El `for update` sobre `sale_items` está presente y hay una prueba
+- [x] Ninguna consulta modifica `sales`, `sale_items` ni `sale_payments`.
+- [x] El `for update` sobre `sale_items` está presente y hay una prueba
       concurrente que lo demuestra.
-- [ ] Un cambio queda como **un** documento, no dos.
+- [x] Un cambio queda como **un** documento, no dos.
 - [ ] Hacer un cambio de talla en el POS toma menos de 45 segundos,
       cronometrado con una persona real.
 
 ## 14. Preguntas abiertas
 
-1. ¿Cuántos días se aceptan devoluciones? ¿Con ticket obligatorio?
-2. ¿Se permite cambio por producto de distinto precio, y cómo se maneja la
-   diferencia a favor del cliente: efectivo o saldo?
-3. ¿A partir de qué monto una devolución en efectivo necesita autorización
-   de supervisor?
-4. ¿Qué se hace con la mercancía devuelta en mal estado? ¿Existe una
-   categoría de saldos o se da de baja?
-5. ¿Se aceptan devoluciones sin venta original?
+Decisiones cerradas: plazo configurable por sucursal; ticket original
+obligatorio; producto de distinto precio permitido; diferencia devuelta por
+el mismo método; gerente obligatorio en todos los casos; mercancía dañada se
+registra como entrada y merma. La devolución sin venta original queda fuera de
+V1 porque no existe una fuente confiable para el precio pagado.

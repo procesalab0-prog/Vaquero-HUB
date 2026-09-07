@@ -1410,7 +1410,7 @@ export function PosWorkspace({
             <button
               type="button"
               disabled
-              title="Los apartados llegan en M7. Mientras tanto se registran como hasta hoy, fuera del sistema."
+              title="Los apartados se implementan en M7. Por ahora se registran con el proceso vigente fuera del sistema."
             >
               Apartar · pendiente
             </button>
