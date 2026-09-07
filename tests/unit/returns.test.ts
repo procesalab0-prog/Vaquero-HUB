@@ -1,10 +1,25 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  databaseErrorText,
   selectedReturnValue,
   unitExchangeValue,
   type ReturnableSaleItem,
 } from "../../lib/returns";
+
+describe("databaseErrorText", () => {
+  it("lee el mensaje de los objetos que devuelve Supabase", () => {
+    expect(
+      databaseErrorText({ message: "INSUFFICIENT_STOCK", code: "P0001" }),
+    ).toBe("INSUFFICIENT_STOCK");
+  });
+
+  it("conserva los errores nativos", () => {
+    expect(databaseErrorText(new Error("RETURN_WINDOW_EXPIRED"))).toBe(
+      "RETURN_WINDOW_EXPIRED",
+    );
+  });
+});
 
 function item(overrides: Partial<ReturnableSaleItem> = {}): ReturnableSaleItem {
   return {

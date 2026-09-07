@@ -66,6 +66,10 @@ const tabs: Array<{ id: Tab; label: string; icon: typeof Users }> = [
 const statusMessages: Record<string, string> = {
   "empleado-creado": "Empleado creado y listo para iniciar sesión.",
   "empleado-actualizado": "Empleado actualizado correctamente.",
+  "empleado-pin-actualizado":
+    "Tu PIN de supervisor quedó guardado. Ya puedes autorizar operaciones.",
+  "empleado-pin-invalido": "El PIN debe tener de 4 a 8 números.",
+  "empleado-pin-vacio": "Escribe un PIN de 4 a 8 números para guardarlo.",
   "empleado-error":
     "No fue posible guardar el empleado. Revisa datos, permisos y configuración.",
   "empleado-configuracion-error":
@@ -99,10 +103,12 @@ export default async function AdministrationPage({
   const statusIsError = Boolean(
     params.status &&
     (params.status.includes("error") ||
-      params.status === "empleado-correo-existe"),
+      params.status === "empleado-correo-existe" ||
+      params.status === "empleado-pin-invalido" ||
+      params.status === "empleado-pin-vacio"),
   );
   if (!isSupabaseConfigured()) return <AdministrationPreview tab={tab} />;
-  const { supabase } = await requirePermission(
+  const { supabase, userId } = await requirePermission(
     tab === "bitacora"
       ? "audit.read"
       : tab === "sucursales"
@@ -205,6 +211,7 @@ export default async function AdministrationPage({
           roles={roles}
           locations={activeLocations}
           canCreate={isSupabaseAdminConfigured()}
+          currentUserId={userId}
         />
       ) : null}
       {tab === "sucursales" ? <LocationsPanel locations={locations} /> : null}
@@ -266,11 +273,13 @@ function EmployeesPanel({
   roles,
   locations,
   canCreate,
+  currentUserId,
 }: {
   employees: Employee[];
   roles: Role[];
   locations: Location[];
   canCreate: boolean;
+  currentUserId: string;
 }) {
   return (
     <div className="admin-panel">
@@ -371,24 +380,36 @@ function EmployeesPanel({
             </summary>
             <form action={updateEmployee} className="admin-form compact">
               <input name="id" type="hidden" value={employee.id} />
-              <label>
-                <span>Nombre</span>
-                <input
-                  name="full_name"
-                  defaultValue={employee.full_name}
-                  required
-                />
-              </label>
-              <label>
-                <span>Rol</span>
-                <select name="role_id" defaultValue={employee.roles?.id}>
-                  {roles.map((role) => (
-                    <option value={role.id} key={role.id}>
-                      {role.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {employee.id === currentUserId ? (
+                <div className="admin-inline-warning wide-field">
+                  <strong>Esta es tu cuenta</strong>
+                  <span>
+                    Por seguridad, aquí sólo puedes cambiar tu PIN. Tu rol y
+                    estado no se modifican desde tu propia sesión.
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <label>
+                    <span>Nombre</span>
+                    <input
+                      name="full_name"
+                      defaultValue={employee.full_name}
+                      required
+                    />
+                  </label>
+                  <label>
+                    <span>Rol</span>
+                    <select name="role_id" defaultValue={employee.roles?.id}>
+                      {roles.map((role) => (
+                        <option value={role.id} key={role.id}>
+                          {role.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </>
+              )}
               <label>
                 <span>Nuevo PIN de supervisor</span>
                 <input
@@ -402,14 +423,16 @@ function EmployeesPanel({
                 />
                 <small>De 4 a 8 números. Nunca se vuelve a mostrar.</small>
               </label>
-              <label className="admin-switch">
-                <span>Empleado activo</span>
-                <input
-                  name="is_active"
-                  type="checkbox"
-                  defaultChecked={employee.is_active}
-                />
-              </label>
+              {employee.id !== currentUserId ? (
+                <label className="admin-switch">
+                  <span>Empleado activo</span>
+                  <input
+                    name="is_active"
+                    type="checkbox"
+                    defaultChecked={employee.is_active}
+                  />
+                </label>
+              ) : null}
               <div className="employee-meta">
                 <span>
                   <MapPin aria-hidden="true" />
@@ -421,7 +444,9 @@ function EmployeesPanel({
                 <span>{employee.email ?? "Sin correo"}</span>
               </div>
               <button className="primary-button" type="submit">
-                Guardar empleado
+                {employee.id === currentUserId
+                  ? "Guardar mi PIN"
+                  : "Guardar empleado"}
               </button>
             </form>
           </details>

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Banknote,
+  ArrowRightLeft,
   Barcode,
   Check,
   ChevronRight,
@@ -1233,6 +1234,16 @@ export function PosWorkspace({
         </header>
 
         <div className="draft-toolbar">
+          {!preview ? (
+            <button
+              className="returns-shortcut"
+              type="button"
+              onClick={() => router.push("/tickets?accion=devolver")}
+            >
+              <ArrowRightLeft aria-hidden="true" />
+              Cambios / devoluciones
+            </button>
+          ) : null}
           <button
             type="button"
             disabled={cart.length === 0 || draftBusy || preview}

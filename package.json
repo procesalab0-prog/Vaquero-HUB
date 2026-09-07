@@ -1,6 +1,6 @@
 {
   "name": "vaquero-hub",
-  "version": "0.27.1",
+  "version": "0.29.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -17,6 +17,7 @@
     "test:e2e": "playwright test",
     "bootstrap:admin": "node scripts/bootstrap-admin.mjs",
     "sicar:analyze": "node scripts/analyze-sicar.mjs",
+    "sicar:sync": "node scripts/sync-sicar.mjs",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",

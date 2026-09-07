@@ -12,6 +12,7 @@ const state = {
   admin: null as SupabaseClient | null,
   adminId: "",
   locationId: "",
+  registerId: "",
   sessionId: "",
   categoryId: "",
   lastReturnId: "",
@@ -171,6 +172,7 @@ describe.sequential("M5: base de devoluciones y cambio parejo", () => {
       p_code: "CAJA01",
       p_name: "Caja 01",
     });
+    state.registerId = register.data.id;
     const session = await client.rpc("open_cash_session", {
       p_register_id: register.data.id,
       p_opening_amount_cents: 100000,
@@ -632,5 +634,55 @@ describe.sequential("M5: base de devoluciones y cambio parejo", () => {
         })
       ).error,
     ).toBeNull();
+  });
+
+  it("rechaza devolver más efectivo del que existe en el cajón", async () => {
+    const variant = await createVariant("Devolución sin efectivo", 99900, 1);
+    const sale = await createSale(variant, 1, 99900);
+    const cashBeforeClose = await state
+      .server!.from("cash_movements")
+      .select("amount_cents")
+      .eq("session_id", state.sessionId);
+    const expected = (cashBeforeClose.data ?? []).reduce(
+      (sum, movement) => sum + Number(movement.amount_cents),
+      0,
+    );
+    expect(
+      (
+        await state.admin!.rpc("close_cash_session", {
+          p_session_id: state.sessionId,
+          p_counted_amount_cents: expected,
+          p_difference_reason: null,
+        })
+      ).error,
+    ).toBeNull();
+    const nextSession = await state.admin!.rpc("open_cash_session", {
+      p_register_id: state.registerId,
+      p_opening_amount_cents: 10000,
+    });
+    expect(nextSession.error).toBeNull();
+    state.sessionId = nextSession.data.id;
+
+    const created = await state.admin!.rpc("create_return_exchange", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionId,
+      p_original_sale_id: sale.saleId,
+      p_items_in: [
+        { sale_item_id: sale.saleItemId, quantity: 1, condition: "RESELLABLE" },
+      ],
+      p_items_out: [],
+      p_charge_payments: [],
+      p_refund_references: [],
+      p_authorization_token: await authorizeReturn(),
+      p_reason: "La caja no tiene efectivo suficiente",
+    });
+
+    expect(created.error?.message).toContain("INSUFFICIENT_CASH");
+    expect(await stockOf(variant)).toBe(0);
+    const recorded = await state
+      .server!.from("return_items")
+      .select("id")
+      .eq("sale_item_id", sale.saleItemId);
+    expect(recorded.data).toEqual([]);
   });
 });

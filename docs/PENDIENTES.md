@@ -4,7 +4,7 @@
 > [`COLA_DE_TRABAJO.md`](COLA_DE_TRABAJO.md). Aquí viven las tareas de los
 > entornos alojados, decisiones del dueño y riesgos de proceso.
 >
-> Última actualización: 2026-09-05.
+> Última actualización: 2026-09-07.
 
 ## Supabase: estado verificado
 
@@ -40,18 +40,34 @@ verificada el 2 de septiembre de 2026.
 ## Compuertas pendientes de SICAR
 
 Las exportaciones del 4 y 6 de septiembre ya fueron recibidas y perfiladas; su
-comparación vive en las secciones 4.1 y 4.2 del contexto maestro. M9 está
-desbloqueado: el analizador, el mapeo y la corrida en seco quedaron terminados
-en 0.26.0. Sigue el sincronizador idempotente de catálogo sólo en staging.
+comparación vive en las secciones 4.1 y 4.2 del contexto maestro. M9 avanzó en
+0.29.0: además del analizador y el mapeo, ya existe el sincronizador
+transaccional e idempotente de catálogo y está habilitado exclusivamente en el
+proyecto de staging `zsezjtswqeijboezvado`. Producción permanece cerrada.
+
+La corrida en seco de la exportación de 16,009 renglones detectó tres errores
+que sí bloquean el catálogo: las claves SICAR `11420`, `12189` y `17878` tienen
+`precio1` en cero. Deben corregirse en SICAR o clasificarse explícitamente antes
+del primer ensayo completo. También reportó 15,177 costos en cero como
+advertencia: un cero de origen nunca sustituirá un costo positivo existente.
+Los 56 saldos negativos quedan fuera del modo catálogo y serán una compuerta
+obligatoria cuando se habilite el modo inventario.
 
 No se debe confirmar una importación real ni habilitar la generación de códigos
 para operación hasta comprobar físicamente que `clave1` corresponde a la
 etiqueta escaneable, identificar su simbología y demostrar que ningún código
 heredado de trece dígitos comienza con `20`–`29`.
 
-También falta acordar cómo conciliar los saldos negativos y costos en cero. La
-herramienta debe reportarlos como excepciones; no puede convertirlos en cero,
-inventar costos ni atribuir los cambios de existencia a ventas por suposición.
+También falta acordar cómo conciliar los saldos negativos. La herramienta ya
+los reporta como excepciones; no los convierte en cero, no inventa costos ni
+atribuye los cambios de existencia a ventas por suposición.
+
+La prueba transaccional de staging comprobó que repetir el mismo archivo no
+duplica productos, un costo cero no borra un costo positivo, la ausencia de un
+producto no lo da de baja, una colisión de código reservado revierte el archivo
+completo y ninguna corrida de catálogo modifica inventario. Las tablas de
+preparación son privadas y sólo `service_role` puede usarlas; los avisos de RLS
+sin políticas son intencionales porque se aplica denegación total a usuarios.
 
 La base de producción contiene 18 códigos `GENERATED` creados durante el
 desarrollo. No son códigos externos ni se modificaron en esta corrección. Se
@@ -147,9 +163,11 @@ impresora de etiquetas, que pudo haber llegado dentro de su instalador.
    del cambio parejo de M5 desde un ticket real.
 6. M5.5 quedó terminada en 0.25.0: alta por rangos, conteos consecutivos y
    traspasos buscables están documentados en `AUDITORIA_ERGONOMIA.md`.
-7. M9 inició en 0.26.0: el analizador repetible y la corrida en seco sobre las
-   dos exportaciones reales ya están construidos y verificados. **Siguiente:**
-   sincronizador idempotente de catálogo exclusivamente en staging.
+7. M9 avanzó en 0.29.0: el analizador y el sincronizador idempotente de catálogo
+   sólo en staging están construidos y verificados. **Siguiente:** corregir o
+   clasificar los tres precios en cero, validar físicamente `clave1` y ejecutar
+   la primera conciliación completa en staging. Inventario, producción y
+   WooCommerce continúan cerrados.
 
 La validación física necesita dispositivos y una impresión real; las pruebas
 automatizadas no la sustituyen.
@@ -182,7 +200,7 @@ y conviene decirlo con números porque cambia una decisión.
 | M3 inventario   | 1                | **Terminado en software**; queda la validación física conjunta de etiqueta, cámara y lector |
 | M4 POS y caja   | 2                | **Terminado en software 0.23.0**; falta validación física de impresora y operación táctil   |
 | M5 devoluciones | 1                | **Primera entrega 0.24.0 terminada**; reglas de dinero siguen pendientes                    |
-| M9 importador   | 1                | Analizador y corrida en seco listos; sigue sincronizador de catálogo sólo en staging         |
+| M9 importador   | 1                | Sincronizador de catálogo listo en staging; el ensayo real espera tres precios y el escaneo físico |
 
 Quedan aproximadamente **tres semanas de trabajo del alcance operativo de
 octubre**, además de validaciones físicas y decisiones del negocio.

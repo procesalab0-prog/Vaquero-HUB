@@ -2441,3 +2441,38 @@ Entrega visible 0.27.0 — cierre de M5:
 - El ticket usa un CODE 128 real y puede localizarse con lector conectado,
   teclado o cámara del teléfono. Sin ticket y entre sucursales permanecen fuera
   de V1.
+
+Entrega visible 0.28.0 — cierre ergonómico y control de efectivo de M5:
+
+- Venta muestra una acción principal de cambios y devoluciones que abre
+  directamente la captura del ticket, sin duplicar la lógica sensible.
+- Un administrador puede guardar el PIN de su propia cuenta sin poder cambiarse
+  de rol ni desactivarse. Los PIN nunca se muestran ni se almacenan en texto.
+- Una devolución en efectivo se serializa contra la sesión de caja y se rechaza
+  si el cajón no contiene el importe; la operación completa se revierte sin
+  alterar inventario, autorización ni libros.
+- La impresión declara rollo continuo de 80 mm y mantiene pendiente la prueba
+  física con los modelos reales de impresora.
+
+Entrega visible 0.29.0 — sincronizador seguro de catálogo SICAR:
+
+- M9 ya prepara exportaciones por lotes en tablas privadas y confirma todo el
+  catálogo dentro de una sola transacción. Una falla revierte altas y cambios.
+- Cada corrida conserva SHA-256 del Excel y del reporte, evidencia de la prueba
+  física, simbología y administrador aprobador. Repetir el mismo archivo devuelve
+  el resultado anterior y no crea duplicados.
+- El modo catálogo agrega o actualiza por la identidad heredada, respeta claves
+  con ceros iniciales, no toca existencias, no desactiva ausentes y nunca deja que
+  un costo cero sustituya un costo válido.
+- La herramienta y la base rechazan proyectos que no sean staging. La migración
+  nace deshabilitada y necesita una confirmación explícita del entorno; no fue
+  aplicada a producción.
+- Las pruebas reversibles en staging comprobaron idempotencia, actualización de
+  precio, preservación de costo, producto propio intacto y rollback completo ante
+  choque con un código interno reservado.
+- El Excel real conserva 16,009 claves únicas, pero no se importó: las claves
+  `11420`, `12189` y `17878` tienen precio de venta cero y falta confirmar con una
+  etiqueta impresa si `clave1` se lee como CODE128, EAN13 u otra simbología.
+- La pantalla de cambios ahora interpreta los objetos de error de Supabase y
+  muestra causas útiles en vez del mensaje genérico; el servidor registra el
+  código técnico sin guardar PIN ni contenido del ticket.

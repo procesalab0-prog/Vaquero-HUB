@@ -70,6 +70,19 @@ export type ReturnAuthorizationResult =
   | { ok: true; authorizationToken: string; expiresAt: string }
   | { ok: false; message: string };
 
+export function databaseErrorText(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+  return String(error ?? "UNKNOWN_ERROR");
+}
+
 export function unitExchangeValue(item: ReturnableSaleItem) {
   const sold = Number(item.quantity);
   const remaining = Number(item.remaining_quantity);

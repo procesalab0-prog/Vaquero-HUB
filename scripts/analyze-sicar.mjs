@@ -1,24 +1,18 @@
 #!/usr/bin/env node
-import ExcelJS from "exceljs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";
-import {
-  analyzeRows,
-  canonicalHeaders,
-  compareRows,
-  rowFromValues,
-  sha256File,
-  SICAR_COLUMNS,
-} from "./sicar/analyzer.mjs";
+import { analyzeRows, compareRows, SICAR_COLUMNS } from "./sicar/analyzer.mjs";
+import { loadSicarWorkbook } from "./sicar/workbook.mjs";
 
 function usage() {
   console.error(
-    "Uso: pnpm sicar:analyze -- <actual.xlsx> [--previous anterior.xlsx] [--output reporte.json]",
+    "Uso: pnpm sicar:analyze -- <actual.xlsx> [--previous anterior.xlsx] [--output reporte.json] [--physical-barcode-verified evidencia --symbology CODE128]",
   );
   process.exit(2);
 }
 
 const args = process.argv.slice(2);
+if (args[0] === "--") args.shift();
 if (!args.length || args.includes("--help")) usage();
 const currentPath = resolve(args[0]);
 const option = (name) => {
@@ -33,30 +27,22 @@ const outputPath = resolve(
     `sicar-dry-run-${new Date().toISOString().slice(0, 10)}.json`,
 );
 
-async function load(path) {
-  const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.readFile(path);
-  const sheet = workbook.worksheets[0];
-  if (!sheet) throw new Error(`EMPTY_WORKBOOK: ${path}`);
-  const headers = canonicalHeaders(sheet.getRow(1).values.slice(1));
-  const missing = SICAR_COLUMNS.map(([source]) => source).filter(
-    (header) => !headers.includes(header),
-  );
-  if (missing.length) throw new Error(`MISSING_COLUMNS: ${missing.join(", ")}`);
-  const rows = [];
-  for (let index = 2; index <= sheet.rowCount; index += 1) {
-    const values = sheet.getRow(index).values.slice(1);
-    if (values.every((value) => value == null || String(value).trim() === ""))
-      continue;
-    rows.push(rowFromValues(headers, values, index));
-  }
-  return { rows, sheet: sheet.name, sha256: await sha256File(path) };
+const barcodeTestReference = option("--physical-barcode-verified") ?? null;
+const barcodeSymbology = option("--symbology")?.toUpperCase() ?? null;
+if (Boolean(barcodeTestReference) !== Boolean(barcodeSymbology)) {
+  throw new Error("BARCODE_VERIFICATION_REQUIRES_REFERENCE_AND_SYMBOLOGY");
+}
+if (
+  barcodeSymbology &&
+  !["EAN13", "CODE128", "LEGACY"].includes(barcodeSymbology)
+) {
+  throw new Error("INVALID_BARCODE_SYMBOLOGY");
 }
 
-const current = await load(currentPath);
-const previous = previousPath ? await load(previousPath) : null;
+const current = await loadSicarWorkbook(currentPath);
+const previous = previousPath ? await loadSicarWorkbook(previousPath) : null;
 const report = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   generatedAt: new Date().toISOString(),
   mode: "DRY_RUN_READ_ONLY",
   source: {
@@ -64,6 +50,13 @@ const report = {
     sheet: current.sheet,
     sha256: current.sha256,
   },
+  barcodeVerification: barcodeTestReference
+    ? {
+        verified: true,
+        reference: barcodeTestReference,
+        symbology: barcodeSymbology,
+      }
+    : { verified: false, reference: null, symbology: null },
   previousSource: previous
     ? {
         file: basename(previousPath),
@@ -76,7 +69,9 @@ const report = {
     target,
     rule,
   })),
-  current: analyzeRows(current.rows),
+  current: analyzeRows(current.rows, {
+    physicalBarcodeVerified: Boolean(barcodeTestReference),
+  }),
   comparison: previous ? compareRows(previous.rows, current.rows) : null,
   guarantees: {
     writesDatabase: false,
