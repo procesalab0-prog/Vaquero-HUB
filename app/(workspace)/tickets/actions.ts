@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requirePermission } from "@/lib/auth/authorization";
+import { databaseErrorText } from "@/lib/returns";
 import type {
   CreateExchangeResult,
   ExchangeSearchResult,
@@ -48,7 +49,7 @@ export async function findTicketByCode(input: {
 }
 
 function exchangeMessage(error: unknown) {
-  const raw = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+  const raw = databaseErrorText(error);
   const messages: Array<[string, string]> = [
     ["RETURN_EXCEEDS_SOLD", "Ese artículo ya fue cambiado o devuelto."],
     ["INSUFFICIENT_STOCK", "La existencia cambió. Elige otro artículo."],
@@ -276,6 +277,9 @@ export async function createReturnExchange(input: {
       payments: result.payments ?? [],
     };
   } catch (error) {
+    console.error("[tickets/createReturnExchange] failed", {
+      message: databaseErrorText(error),
+    });
     return { ok: false, message: exchangeMessage(error) };
   }
 }

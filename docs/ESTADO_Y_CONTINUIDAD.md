@@ -55,8 +55,9 @@ saltando lo bloqueado.
 | **M4 (0.23.0)**          | Ventas atómicas, pagos mixtos, cajas, corte ciego, tickets reales, cancelación y tickets en espera       |
 | **M5 (0.28.0)**          | Devolución parcial, reembolso por método original, caja nunca negativa, plazo y PIN de gerente           |
 | **M5.5 (0.25.0)**        | Alta por rangos, conteo continuo de 20 variantes y traspasos buscables, auditados en tres tamaños        |
+| **M9 (0.29.0)**          | Sincronizador idempotente de catálogo restringido a staging; conserva SHA, aprobación y conciliación     |
 
-Sesenta migraciones versionadas del repositorio. El proyecto de Supabase
+Sesenta y una migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -77,7 +78,10 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
   promoverse; las migraciones de inventario siguieron el mismo recorrido.
   M2.5 conserva sus pruebas de escritura atómica, límites, permisos, cambio
   concurrente de precio y auditoría de 300 variantes. Sus cuatro consultas de
-  contaminación también devolvieron cero hallazgos.
+  contaminación también devolvieron cero hallazgos. M9 0.29.0 agregó únicamente
+  en staging el área privada de preparación y el sincronizador de catálogo. Las
+  pruebas reversibles confirmaron idempotencia, costo cero protegido, ausencias
+  conservadas, cero cambios de inventario y rollback total ante conflictos.
 - Los dos entornos usan credenciales distintas. Las claves viven únicamente en
   variables protegidas de Vercel; nunca se copian al repositorio.
 - La clave secreta de staging se rotó después de separar los ambientes. Las
@@ -95,16 +99,16 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 | **M3** — inventario, movimientos, traspasos      | **Terminado en software:** saldos, libro inmutable, ajustes, conteos, traspasos y mercancía en tránsito                  |
 | **M4** — POS, pagos mixtos, caja                 | **Terminado en software:** incluye carrito persistente y tickets en espera; falta validar iPad e impresora               |
 | **M5** — devoluciones, cambios, cancelaciones    | **Terminado en software en 0.28.0:** acceso desde Venta, PIN propio, mismos métodos y efectivo limitado al cajón         |
-| **M9** — importador y sincronizador de SICAR     | Analizador, mapeo y corrida en seco terminados en 0.26.0; sigue sincronizador idempotente de catálogo sólo en staging    |
+| **M9** — importador y sincronizador de SICAR     | Sincronizador de catálogo listo en staging en 0.29.0; falta primer ensayo real tras limpiar tres precios y validar código |
 
 Recorridos a después de octubre: M6 compras, M7 apartados y lealtad, M8
 reportes y cotizaciones.
 
-**Con M3, M4, M5 y M5.5 cerrados, M9 ya cuenta con
-analizador y corrida en seco. El siguiente trabajo sin bloqueo es el
-sincronizador idempotente de catálogo exclusivamente en staging.** Siguen
-separados las decisiones de negocio bloqueadas y el piloto físico. El detalle
-está en [`PENDIENTES.md`](PENDIENTES.md).
+**Con M3, M4, M5 y M5.5 cerrados, M9 ya cuenta con analizador y sincronizador
+de catálogo en staging.** El primer ensayo con los 16,009 productos permanece
+bloqueado hasta corregir tres precios de venta en cero y comprobar físicamente
+`clave1` y su simbología. Inventario, producción y WooCommerce no se habilitan.
+El detalle está en [`PENDIENTES.md`](PENDIENTES.md).
 
 ## 3. Por qué la fecha es octubre
 

@@ -21,10 +21,11 @@ Antes de implementar cualquier módulo, consulta:
 
 ## Estado actual
 
-La versión 0.28.0 incluye POS e inventario reales, pagos divididos, cajas,
+La versión 0.29.0 incluye POS e inventario reales, pagos divididos, cajas,
 tickets en espera, cambios y devoluciones parciales con autorización de gerente,
-catálogo e importación de SICAR en modo de análisis seguro. La validación física
-de impresoras, etiquetas, cámara y lector continúa como compuerta del piloto.
+catálogo y un sincronizador transaccional de SICAR bloqueado a staging. La carga
+real espera corregir tres precios en cero y validar físicamente el código. La
+validación de impresoras, etiquetas, cámara y lector continúa como compuerta.
 
 ## Desarrollo local
 
@@ -44,6 +45,14 @@ pnpm dev:local
 `dev:local` inicia Supabase, obtiene sus credenciales locales sin escribirlas en
 el repositorio y arranca Next.js. Para trabajar sólo en la interfaz puede usarse
 `pnpm dev`.
+
+## Sincronización de SICAR
+
+`pnpm sicar:analyze` genera el reporte firmado por SHA-256 sin escribir datos.
+`pnpm sicar:sync` sólo acepta ese mismo archivo y reporte, exige una aprobación
+explícita y se niega a usar un proyecto distinto de staging. El modo catálogo no
+toca existencias ni desactiva productos ausentes. Producción y el modo de
+existencias permanecen bloqueados por el runbook.
 
 La instancia hospedada de Supabase no se modifica durante el desarrollo. Los
 cambios de esquema se crean siempre como migraciones versionadas:
