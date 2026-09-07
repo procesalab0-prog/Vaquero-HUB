@@ -704,6 +704,50 @@ Regla que sale de ahí: **antes de abrir, recorrer cada pantalla preguntando si
 lo que muestra viene de la base.** Cualquier botón que responda con un
 `notify()` sin tocar la base es una trampa del mismo tipo.
 
+### Revisión de M5 completo (devoluciones con dinero)
+
+Verificado ejecutando contra una base reconstruida: 57 migraciones aplican
+limpio y los controles del dinero aguantan.
+
+| Prueba                                              | Resultado medido                                           |
+| --------------------------------------------------- | ----------------------------------------------------------- |
+| Devolver sin PIN de gerente                         | `RETURN_AUTHORIZATION_REQUIRED`                              |
+| Reusar el token del gerente                         | Rechazado: se consume una sola vez                           |
+| Venta mitad efectivo, mitad tarjeta                 | Devolvió $499.50 a cada método; sólo la mitad salió del cajón |
+| Devolver una tercera pieza de dos vendidas          | `RETURN_EXCEEDS_SOLD`                                        |
+| Artículo dañado                                     | Entra con `RETURN` y sale con `ADJUSTMENT`/`DAMAGED_RETURN`: no vuelve a existencia vendible |
+| Fuera del plazo configurado                         | `RETURN_WINDOW_EXPIRED`                                      |
+
+Dos decisiones del diseño que conviene no deshacer: **la devolución se
+reparte entre los métodos de pago originales**, así que nadie convierte una
+compra con tarjeta en efectivo; y **el RPC anterior de cambio parejo quedó
+revocado** para `authenticated`, porque no pedía PIN y habría sido la puerta
+de atrás de la regla nueva.
+
+**Defecto encontrado y corregido: la devolución dejaba la caja en negativo.**
+
+Medido: con $100 en el cajón, una devolución de $999 en efectivo pasó y dejó
+el esperado en **-$899**. En el mostrador eso no puede ocurrir, porque la
+cajera no entrega dinero que no tiene. El sistema aceptaba una operación
+imposible y, peor, dejaba el corte comparando contra un esperado negativo,
+donde un faltante real ya no se distingue del descuadre.
+
+`record_cash_movement` ya rechazaba un retiro mayor al efectivo disponible;
+la devolución no usaba esa regla. Corregido en
+`20260907214500_m5_devolucion_no_deja_la_caja_en_negativo.sql`: si no alcanza,
+el supervisor decide entre devolver a la tarjeta o ingresar efectivo de la
+caja fuerte primero. Sólo afecta la parte en efectivo; un cambio con
+diferencia a cobrar y una devolución a tarjeta siguen igual. Queda la prueba
+de regresión en la suite de M5.
+
+### Pendiente de main: el tamaño de página del ticket
+
+`lib/printing.ts` y el `@page size: 80mm auto` de `thermal-receipt.tsx` viven
+en la rama de revisión pero **no están en main**. Sin esa línea el controlador
+usa su tamaño por omisión y cada venta puede alimentar una hoja completa de
+rollo. La documentación de las impresoras sí se integró; el arreglo de código
+no.
+
 ## 7. M5 — Devoluciones y cambios
 
 **Especificación:** [`specs/M5_DEVOLUCIONES_Y_CAMBIOS.md`](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)
