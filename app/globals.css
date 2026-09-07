@@ -3099,8 +3099,7 @@ code {
 .labels-selector {
   padding: 14px;
 }
-.desktop-print-notice,
-.demo-data-notice {
+.desktop-print-notice {
   margin: 0 0 14px;
   padding: 12px 14px;
   border: 1px solid #d7c6a3;
@@ -3112,8 +3111,7 @@ code {
   color: #5c491d;
   font-size: 13px;
 }
-.desktop-print-notice svg,
-.demo-data-notice svg {
+.desktop-print-notice svg {
   width: 22px;
   flex: none;
 }

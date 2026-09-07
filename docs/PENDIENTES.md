@@ -120,6 +120,16 @@ Opciones:
 
 Ambas reglas quedaron implementadas y probadas en staging en 0.22.0.
 
+## Impresoras: ya no hay que comprar nada
+
+BIXOLON para tickets, marca SICAR para etiquetas, las dos ya en el mostrador.
+Ver [`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md). Falta confirmar el
+modelo exacto de cada una, el ancho del rollo de tickets, la medida de la
+etiqueta y si el cajón de dinero está conectado a la BIXOLON.
+
+Antes de desinstalar SICAR: conseguir por separado el controlador de la
+impresora de etiquetas, que pudo haber llegado dentro de su instalador.
+
 ## Orden inmediato de implementación
 
 1. El lector de cámara quedó construido en 0.15.0. Probarlo dentro de la PWA

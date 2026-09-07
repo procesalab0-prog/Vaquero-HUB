@@ -70,7 +70,9 @@ export function ThermalReceipt({
   const receiptAddress = receiptLocation.address ?? "Dirección por configurar";
   const receiptPhone = receiptLocation.phone ?? "Teléfono por configurar";
   return (
-    <article
+    <>
+      <style media="print">{receiptPageStyle}</style>
+      <article
       className={`thermal-receipt print-receipt ${mode === "gift" ? "gift-receipt" : "sale-receipt"}`}
       aria-label={
         mode === "gift"
@@ -183,6 +185,7 @@ export function ThermalReceipt({
             </div>
           ) : null}
         </section>
+      ) : null}
 
       <footer className="thermal-footer">
         {mode === "sale" ? (
@@ -215,5 +218,6 @@ export function ThermalReceipt({
         )}
       </footer>
     </article>
+    </>
   );
 }

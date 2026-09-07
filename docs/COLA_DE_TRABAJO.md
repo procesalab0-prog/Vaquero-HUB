@@ -680,6 +680,30 @@ La decisión del dueño quedó asentada en `PENDIENTES.md`.
 conteo continuo y búsqueda en traspasos quedaron corregidos y documentados en
 [`AUDITORIA_ERGONOMIA.md`](AUDITORIA_ERGONOMIA.md).
 
+### Impresoras: definidas, no se compra nada
+
+La tienda usa una **BIXOLON** para tickets y una **marca SICAR** para
+etiquetas, y el sistema debe funcionar con ésas. Coincide con lo construido:
+ambas imprimen por el controlador del sistema operativo, que es lo que
+`window.print()` usa. Detalle, foto y lista de verificación física en
+[`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md).
+
+Consecuencia de diseño: un iPad no tiene controladores y ninguna es AirPrint,
+así que **el punto de venta que imprime corre en la computadora del
+mostrador**. El iPad se queda con catálogo, inventario, conteos y consulta.
+
+### Retirado del POS: el apartado que no apartaba
+
+El botón «Apartar» estaba conectado a una función de demostración que vaciaba
+el carrito, anunciaba «Apartado AP-000128 creado correctamente» con un folio
+inventado y no guardaba nada. Es un resto de la interfaz 0.6.x que sobrevivió
+cuando el POS se conectó de verdad. El botón queda inhabilitado como «Apartar
+· pendiente»; los apartados son M7 y no se improvisan.
+
+Regla que sale de ahí: **antes de abrir, recorrer cada pantalla preguntando si
+lo que muestra viene de la base.** Cualquier botón que responda con un
+`notify()` sin tocar la base es una trampa del mismo tipo.
+
 ## 7. M5 — Devoluciones y cambios
 
 **Especificación:** [`specs/M5_DEVOLUCIONES_Y_CAMBIOS.md`](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)
