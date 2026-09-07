@@ -18,13 +18,11 @@ test("genera una matriz de colores y tallas desde una sola captura en móvil", a
   await dialog.locator("label.size-option", { hasText: "Negro" }).click();
   await dialog.locator("label.size-option", { hasText: "Café" }).click();
 
-  const sizes = dialog.getByLabel(/^Talla /);
+  const sizes = dialog.locator('input[aria-label^="Talla "]');
   await expect(sizes).toHaveCount(10);
-  const sizeButtons = dialog.locator(
-    ".size-picker:not(.color-picker) label.size-option",
-  );
-  for (let index = 0; index < 8; index += 1)
-    await sizeButtons.nth(index).click();
+  await dialog.getByLabel("Talla inicial").selectOption({ label: "25" });
+  await dialog.getByLabel("Talla final").selectOption({ label: "28.5" });
+  await dialog.getByRole("button", { name: "Marcar rango" }).click();
 
   await expect(
     dialog.getByRole("button", { name: "Crear 16 variantes" }),
@@ -39,6 +37,30 @@ test("genera una matriz de colores y tallas desde una sola captura en móvil", a
   await expect(page.getByText("Bota de prueba M2").first()).toBeVisible();
   await expect(page.getByText("Se genera al guardar · 15")).toBeVisible();
   await expect(page.locator("html")).toHaveJSProperty("scrollWidth", 390);
+});
+
+test("permite marcar y limpiar todas las opciones con un toque", async ({
+  page,
+}) => {
+  await page.goto("/productos");
+  await page.getByRole("button", { name: "Nuevo producto" }).click();
+  const dialog = page.getByRole("dialog", { name: "Nuevo producto" });
+  await dialog.getByLabel("Categoría").selectOption({ label: "Botas" });
+  await dialog.getByRole("button", { name: "Marcar todos" }).click();
+  await dialog.getByRole("button", { name: "Marcar todas" }).click();
+  await expect(
+    dialog.locator('input[aria-label^="Color "]:checked'),
+  ).toHaveCount(3);
+  await expect(
+    dialog.locator('input[aria-label^="Talla "]:checked'),
+  ).toHaveCount(10);
+  await expect(
+    dialog.getByRole("button", { name: "Crear 30 variantes" }),
+  ).toBeEnabled();
+  await dialog.getByRole("button", { name: "Limpiar" }).last().click();
+  await expect(
+    dialog.locator('input[aria-label^="Talla "]:checked'),
+  ).toHaveCount(0);
 });
 
 test("agrega variantes y bloquea combinaciones que ya existen", async ({

@@ -133,11 +133,10 @@ Ambas reglas quedaron implementadas y probadas en staging en 0.22.0.
 4. M2.5 quedó implementado en 0.18.0: acciones en lote, precios auditados,
    plantillas persistentes e impresión de etiquetas desde computadora.
 5. M3 y M4 quedaron cerrados en software. La entrega 0.24.0 agrega la interfaz
-   del cambio parejo de M5 desde un ticket real. **Siguiente:** ejecutar M5.5,
-   la primera auditoría ergonómica formal.
-6. M5.5 debe comprobar alta continua de tallas y colores,
-   conteos consecutivos y recorridos frecuentes en teléfono, iPad y
-   computadora; no se pospone hasta el final del proyecto.
+   del cambio parejo de M5 desde un ticket real.
+6. M5.5 quedó terminada en 0.25.0: alta por rangos, conteos consecutivos y
+   traspasos buscables están documentados en `AUDITORIA_ERGONOMIA.md`.
+   **Siguiente:** construir el analizador repetible y la corrida en seco de M9.
 
 La validación física necesita dispositivos y una impresión real; las pruebas
 automatizadas no la sustituyen.

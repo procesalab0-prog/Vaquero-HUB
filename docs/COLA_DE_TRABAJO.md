@@ -6,7 +6,7 @@
 > Para entender el proyecto antes de tocarlo, empezar por
 > [`ESTADO_Y_CONTINUIDAD.md`](ESTADO_Y_CONTINUIDAD.md).
 >
-> Última actualización: 2026-09-05, al convertir ergonomía en compuerta de aceptación.
+> Última actualización: 2026-09-06, al completar la auditoría ergonómica M5.5.
 
 ## Cómo usar esta cola
 
@@ -676,8 +676,9 @@ La decisión del dueño quedó asentada en `PENDIENTES.md`.
 - Diferencias de precio, reembolsos, mercancía dañada, otra sucursal y venta sin
   ticket permanecen bloqueados hasta recibir las reglas del negocio.
 
-**Siguiente sin bloqueo:** ejecutar M5.5, la auditoría ergonómica intermedia,
-y corregir los hallazgos críticos antes de la siguiente entrega operativa.
+**M5.5 terminada en 0.25.0:** los hallazgos críticos de selección de variantes,
+conteo continuo y búsqueda en traspasos quedaron corregidos y documentados en
+[`AUDITORIA_ERGONOMIA.md`](AUDITORIA_ERGONOMIA.md).
 
 ## 7. M5 — Devoluciones y cambios
 
@@ -712,6 +713,10 @@ priorizados con responsable y fecha previa al piloto.
 **Aceptación:** una persona puede seleccionar tallas y colores de corrido y
 terminar un conteo continuo sin abrir un formulario por cada variante. El
 resultado y sus correcciones quedan en `docs/AUDITORIA_ERGONOMIA.md`.
+
+**Estado:** terminada en 0.25.0. Sigue pendiente la medición humana y el equipo
+físico antes del piloto; el siguiente trabajo de software sin bloqueo es M9 en
+modo analizador y corrida en seco.
 
 ## 8. M9 — Importador y sincronizador de SICAR
 
