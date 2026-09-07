@@ -195,6 +195,8 @@ export function ProductsWorkspace({
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [rangeStart, setRangeStart] = useState("");
+  const [rangeEnd, setRangeEnd] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
   const [excludedCombinations, setExcludedCombinations] = useState<string[]>(
     [],
@@ -335,6 +337,37 @@ export function ProductsWorkspace({
     );
   }
 
+  function selectAllColors() {
+    setSelectedColors(colors.map((color) => color.id));
+    setExcludedCombinations([]);
+  }
+
+  function clearColors() {
+    setSelectedColors([]);
+    setExcludedCombinations([]);
+  }
+
+  function selectAllSizes() {
+    setSelectedSizes(sizes.map((size) => size.id));
+    setExcludedCombinations([]);
+  }
+
+  function clearSizes() {
+    setSelectedSizes([]);
+    setExcludedCombinations([]);
+  }
+
+  function selectSizeRange() {
+    const start = sizes.findIndex((size) => size.id === rangeStart);
+    const end = sizes.findIndex((size) => size.id === rangeEnd);
+    if (start < 0 || end < 0) return;
+    const from = Math.min(start, end);
+    const to = Math.max(start, end);
+    const rangeIds = sizes.slice(from, to + 1).map((size) => size.id);
+    setSelectedSizes((current) => [...new Set([...current, ...rangeIds])]);
+    setExcludedCombinations([]);
+  }
+
   function toggleCombination(combination: string) {
     setExcludedCombinations((current) =>
       current.includes(combination)
@@ -346,6 +379,8 @@ export function ProductsWorkspace({
   function changeCategory(id: string) {
     setSelectedCategory(id);
     setSelectedSizes([]);
+    setRangeStart("");
+    setRangeEnd("");
     setExcludedCombinations([]);
   }
 
@@ -353,6 +388,8 @@ export function ProductsWorkspace({
     setSelectedSizes([]);
     setSelectedColors([]);
     setExcludedCombinations([]);
+    setRangeStart("");
+    setRangeEnd("");
   }
 
   function openCreateModal() {
@@ -896,6 +933,14 @@ export function ProductsWorkspace({
               </div>
               <div className="size-picker color-picker">
                 <span>1. Selecciona uno o varios colores</span>
+                <div className="picker-quick-actions">
+                  <button type="button" onClick={selectAllColors}>
+                    Marcar todos
+                  </button>
+                  <button type="button" onClick={clearColors}>
+                    Limpiar
+                  </button>
+                </div>
                 <div>
                   {colors.map((color) => (
                     <label
@@ -920,6 +965,53 @@ export function ProductsWorkspace({
               <div className="size-picker">
                 <span>2. Selecciona una o varias tallas</span>
                 <small>{category?.name ?? "Tallas"}</small>
+                {sizes.length ? (
+                  <div className="picker-quick-actions size-range-picker">
+                    <button type="button" onClick={selectAllSizes}>
+                      Marcar todas
+                    </button>
+                    <button type="button" onClick={clearSizes}>
+                      Limpiar
+                    </button>
+                    <label>
+                      <span>Desde</span>
+                      <select
+                        aria-label="Talla inicial"
+                        value={rangeStart}
+                        onChange={(event) => setRangeStart(event.target.value)}
+                      >
+                        <option value="">—</option>
+                        {sizes.map((size) => (
+                          <option key={size.id} value={size.id}>
+                            {size.value}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span>Hasta</span>
+                      <select
+                        aria-label="Talla final"
+                        value={rangeEnd}
+                        onChange={(event) => setRangeEnd(event.target.value)}
+                      >
+                        <option value="">—</option>
+                        {sizes.map((size) => (
+                          <option key={size.id} value={size.id}>
+                            {size.value}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={selectSizeRange}
+                      disabled={!rangeStart || !rangeEnd}
+                    >
+                      Marcar rango
+                    </button>
+                  </div>
+                ) : null}
                 <div>
                   {sizes.map((size) => (
                     <label

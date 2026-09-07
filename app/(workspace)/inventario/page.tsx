@@ -20,7 +20,7 @@ import {
   dispatchInventoryTransfer,
   prepareInventoryTransfer,
   receiveInventoryTransfer,
-  recordInventoryCountItem,
+  recordInventoryCountItemInline,
 } from "./actions";
 import { InventoryWorkspace } from "./inventory-workspace";
 
@@ -93,20 +93,24 @@ type TransferRow = {
 type Location = { id: string; name: string; code: string };
 
 function previewItems(): InventoryItem[] {
-  return mockVariants.map((item) => ({
-    variantId: item.id,
-    productId: item.productId ?? item.id,
-    productName: item.productName,
-    brand: item.brand,
-    sku: item.sku ?? item.legacyCode,
-    code: item.legacyCode,
-    attributes: { COLOR: item.color, TALLA: item.size },
-    quantity: item.stock,
-    reservedQuantity: 0,
-    availableQuantity: item.stock,
-    isActive: item.isActive !== false,
-    updatedAt: new Date().toISOString(),
-  }));
+  return Array.from({ length: 20 }, (_, index) => {
+    const item = mockVariants[index % mockVariants.length];
+    const cycle = Math.floor(index / mockVariants.length) + 1;
+    return {
+      variantId: `${item.id}-${cycle}`,
+      productId: item.productId ?? item.id,
+      productName: item.productName,
+      brand: item.brand,
+      sku: `${item.sku ?? item.legacyCode}-${cycle}`,
+      code: `${item.legacyCode}${cycle}`,
+      attributes: { COLOR: item.color, TALLA: `${item.size}-${cycle}` },
+      quantity: item.stock,
+      reservedQuantity: 0,
+      availableQuantity: item.stock,
+      isActive: item.isActive !== false,
+      updatedAt: new Date().toISOString(),
+    };
+  });
 }
 
 export default async function InventoryPage({
@@ -116,15 +120,30 @@ export default async function InventoryPage({
 }) {
   const params = await searchParams;
   if (!isSupabaseConfigured()) {
+    const items = previewItems();
     return (
       <InventoryWorkspace
-        items={previewItems()}
+        items={items}
         movements={[]}
-        counts={[]}
+        counts={[
+          {
+            id: "preview-count",
+            folio: 1,
+            status: "COUNTING",
+            createdAt: new Date().toISOString(),
+            closedAt: null,
+            items: [],
+          },
+        ]}
         transfers={[]}
         locations={[{ id: "preview", name: "La Piedad", code: "LP" }]}
-        transferLocations={[{ id: "preview", name: "La Piedad", code: "LP" }]}
+        transferLocations={[
+          { id: "preview", name: "La Piedad", code: "LP" },
+          { id: "preview-centro", name: "Centro", code: "CTR" },
+        ]}
         activeLocationId="preview"
+        canCount
+        canCreateTransfer
         status={params.status}
         preview
       />
@@ -336,7 +355,7 @@ export default async function InventoryPage({
       canReceiveTransfer={permissionSet.has("transfers.receive")}
       adjustmentAction={applyInventoryAdjustment}
       createCountAction={createInventoryCount}
-      recordCountAction={recordInventoryCountItem}
+      recordCountAction={recordInventoryCountItemInline}
       closeCountAction={closeInventoryCount}
       cancelCountAction={cancelInventoryCount}
       createTransferAction={createInventoryTransfer}

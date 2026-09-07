@@ -2378,3 +2378,18 @@ Entrega visible 0.24.0 — cambio parejo desde Tickets:
   movimientos de inventario se registran juntos, con auditoría e idempotencia.
 - Los casos con diferencia, reembolso, daño, otra sucursal o sin ticket siguen
   deshabilitados hasta definir sus reglas de negocio.
+
+Entrega visible 0.25.0 — auditoría ergonómica intermedia M5.5:
+
+- El alta de producto permite marcar todos los colores o tallas, limpiar la
+  selección y elegir un rango continuo Desde–Hasta sin tocar cada talla.
+- Los conteos físicos avanzan de forma continua: Enter guarda, conserva el
+  foco y prepara la siguiente variante sin recargar la pantalla. Incluyen
+  búsqueda por nombre, SKU o código y progreso visible.
+- Las solicitudes de traspaso permiten buscar mercancía aun con un catálogo
+  grande y conservan las cantidades elegidas al cambiar el filtro.
+- Los recorridos se verifican en teléfono vertical, iPad horizontal y
+  computadora. La evidencia, interacciones y pendientes físicos quedan en
+  `docs/AUDITORIA_ERGONOMIA.md`.
+- El siguiente trabajo de software sin bloqueo es M9: analizador repetible,
+  mapeo y corrida en seco de las exportaciones reales de SICAR.

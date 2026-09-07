@@ -54,6 +54,7 @@ saltando lo bloqueado.
 | **M3 (0.20.0)**          | Conteos formales y traspasos con aprobación, tránsito explícito, recepción parcial y auditoría           |
 | **M4 (0.23.0)**          | Ventas atómicas, pagos mixtos, cajas, corte ciego, tickets reales, cancelación y tickets en espera       |
 | **M5 (0.24.0)**          | Cambio parejo operable desde Tickets, libro inmutable, inventario atómico e idempotencia                 |
+| **M5.5 (0.25.0)**        | Alta por rangos, conteo continuo de 20 variantes y traspasos buscables, auditados en tres tamaños        |
 
 Cincuenta y dos migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
@@ -99,10 +100,10 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 Recorridos a después de octubre: M6 compras, M7 apartados y lealtad, M8
 reportes y cotizaciones.
 
-**Con M3, M4 y la primera entrega de M5 cerrados, sigue M5.5 y queda menos de una semana de
-construcción definida del alcance de octubre, además de SICAR, las decisiones
-pendientes y el piloto físico.** El detalle, y las advertencias que impiden leer ese número
-con optimismo, están en [`PENDIENTES.md`](PENDIENTES.md).
+**Con M3, M4, la primera entrega de M5 y M5.5 cerrados, el siguiente trabajo de
+software sin bloqueo es el analizador y la corrida en seco de SICAR M9.** Siguen
+separados las decisiones de negocio bloqueadas y el piloto físico. El detalle
+está en [`PENDIENTES.md`](PENDIENTES.md).
 
 ## 3. Por qué la fecha es octubre
 

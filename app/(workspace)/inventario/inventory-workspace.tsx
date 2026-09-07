@@ -12,7 +12,15 @@ import {
   ShieldCheck,
   X,
 } from "lucide-react";
-import { useDeferredValue, useMemo, useState } from "react";
+import {
+  type FormEvent,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 
 import type {
   InventoryCount,
@@ -184,6 +192,241 @@ const transferStatus: Record<InventoryTransfer["status"], string> = {
 };
 
 type ServerAction = (formData: FormData) => void | Promise<void>;
+type CountActionResult = {
+  ok: boolean;
+  status: string;
+  variantId?: string;
+  countedQuantity?: number;
+};
+type InlineCountAction = (formData: FormData) => Promise<CountActionResult>;
+
+function ContinuousCountCapture({
+  action,
+  count,
+  items,
+  locationId,
+  closeAction,
+  cancelAction,
+}: {
+  action?: InlineCountAction;
+  count: InventoryCount;
+  items: InventoryItem[];
+  locationId: string;
+  closeAction?: ServerAction;
+  cancelAction?: ServerAction;
+}) {
+  const initialCaptured = Object.fromEntries(
+    count.items.map((item) => [item.variantId, item.countedQuantity]),
+  );
+  const [captured, setCaptured] =
+    useState<Record<string, number>>(initialCaptured);
+  const firstPending =
+    items.find((item) => initialCaptured[item.variantId] === undefined) ??
+    items[0];
+  const [variantId, setVariantId] = useState(firstPending?.variantId ?? "");
+  const [quantity, setQuantity] = useState("");
+  const [query, setQuery] = useState("");
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const quantityRef = useRef<HTMLInputElement>(null);
+  const deferredQuery = useDeferredValue(query);
+  const visibleItems = useMemo(() => {
+    const term = deferredQuery.trim().toLocaleLowerCase("es-MX");
+    return items.filter(
+      (item) =>
+        !term ||
+        [
+          item.productName,
+          item.sku,
+          item.code,
+          ...Object.values(item.attributes),
+        ]
+          .join(" ")
+          .toLocaleLowerCase("es-MX")
+          .includes(term),
+    );
+  }, [deferredQuery, items]);
+  const capturedCount = Object.keys(captured).length;
+
+  useEffect(() => {
+    quantityRef.current?.focus();
+  }, [variantId]);
+
+  function nextVariant(currentVariantId: string, nextCaptured: Set<string>) {
+    const currentIndex = items.findIndex(
+      (item) => item.variantId === currentVariantId,
+    );
+    const ordered = [
+      ...items.slice(currentIndex + 1),
+      ...items.slice(0, currentIndex + 1),
+    ];
+    return ordered.find((item) => !nextCaptured.has(item.variantId));
+  }
+
+  function submitCapture(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (isPending) return;
+    const countedQuantity = Number(quantity);
+    if (
+      !variantId ||
+      quantity === "" ||
+      !Number.isSafeInteger(countedQuantity) ||
+      countedQuantity < 0
+    ) {
+      setFeedback("Escribe una cantidad entera mayor o igual a cero.");
+      return;
+    }
+    const formData = new FormData();
+    formData.set("count_id", count.id);
+    formData.set("location_id", locationId);
+    formData.set("variant_id", variantId);
+    formData.set("counted_quantity", String(countedQuantity));
+    startTransition(async () => {
+      const result = action
+        ? await action(formData)
+        : { ok: true, status: "conteo-capturado" };
+      if (!result.ok) {
+        setFeedback(
+          statusMessages[result.status]?.copy ??
+            "No fue posible guardar esta captura.",
+        );
+        return;
+      }
+      const nextValues = { ...captured, [variantId]: countedQuantity };
+      const next = nextVariant(variantId, new Set(Object.keys(nextValues)));
+      setCaptured(nextValues);
+      setQuantity("");
+      setFeedback(
+        next
+          ? "Guardado. Ya puedes capturar el siguiente renglón."
+          : "Conteo completo. Revisa y cierra para aplicar.",
+      );
+      if (next) setVariantId(next.variantId);
+    });
+  }
+
+  return (
+    <div className="continuous-count">
+      <div className="continuous-count-progress" role="status">
+        <strong>
+          {capturedCount} de {items.length} capturadas
+        </strong>
+        <span>Enter guarda y avanza automáticamente.</span>
+      </div>
+      <form className="inventory-count-capture" onSubmit={submitCapture}>
+        <label className="inventory-count-search">
+          <span>Buscar por nombre, SKU o código</span>
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => {
+              const value = event.target.value;
+              setQuery(value);
+              const term = value.trim().toLocaleLowerCase("es-MX");
+              const match = items.find((item) =>
+                [
+                  item.productName,
+                  item.sku,
+                  item.code,
+                  ...Object.values(item.attributes),
+                ]
+                  .join(" ")
+                  .toLocaleLowerCase("es-MX")
+                  .includes(term),
+              );
+              if (term && match) {
+                setVariantId(match.variantId);
+                const existing = captured[match.variantId];
+                setQuantity(existing === undefined ? "" : String(existing));
+              }
+            }}
+            placeholder="Escanea o escribe para filtrar"
+          />
+        </label>
+        <label>
+          <span>Producto</span>
+          <select
+            aria-label="Producto a contar"
+            value={variantId}
+            onChange={(event) => {
+              setVariantId(event.target.value);
+              const existing = captured[event.target.value];
+              setQuantity(existing === undefined ? "" : String(existing));
+            }}
+            required
+          >
+            {visibleItems.map((item) => (
+              <option value={item.variantId} key={item.variantId}>
+                {captured[item.variantId] !== undefined ? "✓ " : ""}
+                {item.productName} · {variantDescription(item)} · {item.sku}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>Cantidad física</span>
+          <input
+            ref={quantityRef}
+            aria-label="Cantidad física"
+            type="number"
+            min="0"
+            step="1"
+            inputMode="numeric"
+            value={quantity}
+            onChange={(event) => setQuantity(event.target.value)}
+            required
+          />
+        </label>
+        <button className="secondary-button" type="submit" disabled={isPending}>
+          {isPending ? "Guardando…" : "Guardar y siguiente"}
+        </button>
+      </form>
+      {feedback ? <p className="inventory-count-feedback">{feedback}</p> : null}
+      {capturedCount ? (
+        <div className="inventory-count-results">
+          {items
+            .filter((item) => captured[item.variantId] !== undefined)
+            .map((item) => (
+              <button
+                type="button"
+                key={item.variantId}
+                onClick={() => {
+                  setVariantId(item.variantId);
+                  setQuantity(String(captured[item.variantId]));
+                }}
+              >
+                <b>{item.productName}</b>
+                <small>
+                  {variantDescription(item)} · Contado:{" "}
+                  {captured[item.variantId]}
+                </small>
+              </button>
+            ))}
+        </div>
+      ) : null}
+      <div className="inventory-document-actions">
+        <form action={cancelAction}>
+          <input type="hidden" name="count_id" value={count.id} />
+          <input type="hidden" name="location_id" value={locationId} />
+          <button className="secondary-button" type="submit">
+            Cancelar
+          </button>
+        </form>
+        <form action={closeAction}>
+          <input type="hidden" name="count_id" value={count.id} />
+          <input type="hidden" name="location_id" value={locationId} />
+          <button
+            className="primary-button"
+            type="submit"
+            disabled={!capturedCount}
+          >
+            Cerrar y aplicar
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 function TransferItemForm({
   action,
@@ -265,6 +508,8 @@ function NewTransferForm({
   fromLocationId: string;
 }) {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
   const payload = items
     .filter((item) => (quantities[item.variantId] ?? 0) > 0)
     .map((item) => ({
@@ -274,6 +519,17 @@ function NewTransferForm({
   const destinations = locations.filter(
     (location) => location.id !== fromLocationId,
   );
+  const availableItems = items.filter((item) => item.availableQuantity > 0);
+  const filteredItems = availableItems.filter((item) => {
+    const term = deferredQuery.trim().toLocaleLowerCase("es-MX");
+    return (
+      !term ||
+      [item.productName, item.sku, item.code, ...Object.values(item.attributes)]
+        .join(" ")
+        .toLocaleLowerCase("es-MX")
+        .includes(term)
+    );
+  });
   return (
     <form
       action={action}
@@ -295,35 +551,49 @@ function NewTransferForm({
         </select>
       </label>
       <div className="inventory-transfer-picker">
-        <strong>Mercancía a enviar</strong>
-        {items
-          .filter((item) => item.availableQuantity > 0)
-          .map((item) => (
-            <label key={item.variantId}>
-              <span>
-                {item.productName}
-                <small>
-                  {variantDescription(item)} ·{" "}
-                  {formatQuantity(item.availableQuantity)} disponibles
-                </small>
-              </span>
-              <input
-                type="number"
-                min="0"
-                max={item.availableQuantity}
-                step="1"
-                inputMode="numeric"
-                value={quantities[item.variantId] ?? 0}
-                onChange={(event) =>
-                  setQuantities((current) => ({
-                    ...current,
-                    [item.variantId]: Number(event.target.value),
-                  }))
-                }
-                aria-label={`Cantidad de ${item.productName}`}
-              />
-            </label>
-          ))}
+        <div className="inventory-transfer-search">
+          <label>
+            <span>Buscar mercancía</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Nombre, talla, color, SKU o código"
+            />
+          </label>
+          <small>{payload.length} renglones seleccionados</small>
+        </div>
+        {filteredItems.map((item) => (
+          <label key={item.variantId}>
+            <span>
+              {item.productName}
+              <small>
+                {variantDescription(item)} ·{" "}
+                {formatQuantity(item.availableQuantity)} disponibles
+              </small>
+            </span>
+            <input
+              type="number"
+              min="0"
+              max={item.availableQuantity}
+              step="1"
+              inputMode="numeric"
+              value={quantities[item.variantId] ?? 0}
+              onChange={(event) =>
+                setQuantities((current) => ({
+                  ...current,
+                  [item.variantId]: Number(event.target.value),
+                }))
+              }
+              aria-label={`Cantidad de ${item.productName}`}
+            />
+          </label>
+        ))}
+        {!filteredItems.length ? (
+          <p className="inventory-preview-note">
+            No hay mercancía que coincida.
+          </p>
+        ) : null}
       </div>
       <label>
         <span>Nota opcional</span>
@@ -385,7 +655,7 @@ export function InventoryWorkspace({
   canReceiveTransfer?: boolean;
   adjustmentAction?: ServerAction;
   createCountAction?: ServerAction;
-  recordCountAction?: ServerAction;
+  recordCountAction?: InlineCountAction;
   closeCountAction?: ServerAction;
   cancelCountAction?: ServerAction;
   createTransferAction?: ServerAction;
@@ -858,9 +1128,6 @@ export function InventoryWorkspace({
               {counts.map((count) => {
                 const active =
                   count.status === "OPEN" || count.status === "COUNTING";
-                const captured = new Set(
-                  count.items.map((item) => item.variantId),
-                );
                 return (
                   <article className="inventory-document-card" key={count.id}>
                     <header>
@@ -878,50 +1145,16 @@ export function InventoryWorkspace({
                       </span>
                     </header>
                     {active ? (
-                      <form
+                      <ContinuousCountCapture
                         action={recordCountAction}
-                        className="inventory-count-capture"
-                      >
-                        <input type="hidden" name="count_id" value={count.id} />
-                        <input
-                          type="hidden"
-                          name="location_id"
-                          value={activeLocationId}
-                        />
-                        <label>
-                          <span>Producto</span>
-                          <select name="variant_id" required defaultValue="">
-                            <option value="" disabled>
-                              Selecciona una variante
-                            </option>
-                            {items.map((item) => (
-                              <option
-                                value={item.variantId}
-                                key={item.variantId}
-                              >
-                                {captured.has(item.variantId) ? "✓ " : ""}
-                                {item.productName} · {variantDescription(item)}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <label>
-                          <span>Cantidad física</span>
-                          <input
-                            name="counted_quantity"
-                            type="number"
-                            min="0"
-                            step="1"
-                            inputMode="numeric"
-                            required
-                          />
-                        </label>
-                        <button className="secondary-button" type="submit">
-                          Guardar captura
-                        </button>
-                      </form>
+                        count={count}
+                        items={items}
+                        locationId={activeLocationId}
+                        closeAction={closeCountAction}
+                        cancelAction={cancelCountAction}
+                      />
                     ) : null}
-                    {count.items.length ? (
+                    {!active && count.items.length ? (
                       <div className="inventory-count-results">
                         {count.items.map((item) => {
                           const catalog = items.find(
@@ -942,44 +1175,6 @@ export function InventoryWorkspace({
                             </span>
                           );
                         })}
-                      </div>
-                    ) : null}
-                    {active ? (
-                      <div className="inventory-document-actions">
-                        <form action={cancelCountAction}>
-                          <input
-                            type="hidden"
-                            name="count_id"
-                            value={count.id}
-                          />
-                          <input
-                            type="hidden"
-                            name="location_id"
-                            value={activeLocationId}
-                          />
-                          <button className="secondary-button" type="submit">
-                            Cancelar
-                          </button>
-                        </form>
-                        <form action={closeCountAction}>
-                          <input
-                            type="hidden"
-                            name="count_id"
-                            value={count.id}
-                          />
-                          <input
-                            type="hidden"
-                            name="location_id"
-                            value={activeLocationId}
-                          />
-                          <button
-                            className="primary-button"
-                            type="submit"
-                            disabled={!count.items.length}
-                          >
-                            Cerrar y aplicar
-                          </button>
-                        </form>
                       </div>
                     ) : null}
                   </article>
