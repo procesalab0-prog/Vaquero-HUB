@@ -685,10 +685,13 @@ conteo continuo y búsqueda en traspasos quedaron corregidos y documentados en
 **Especificación:** [`specs/M5_DEVOLUCIONES_Y_CAMBIOS.md`](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)
 **Depende de:** M4.
 
-**Primera entrega operativa terminada en 0.24.0.** Ya existen el libro
-inmutable, consulta de cantidades devueltas y la interfaz de cambio parejo con
-ticket, misma sucursal, inventario atómico e idempotencia. Continúan bloqueados por decisión del negocio los reembolsos,
-diferencias de precio, daño, devoluciones entre sucursales y sin ticket.
+**M5 cerrado en 0.27.0.** El flujo admite devolución parcial y cambio por
+producto de cualquier precio; cobra o devuelve la diferencia exacta, y los
+reembolsos conservan los mismos métodos del ticket original. Todo exige una
+capacidad de gerente por código y PIN, el plazo es configurable por sucursal,
+la mercancía dañada entra y se da de baja en dos movimientos auditables, y la
+venta original permanece intacta. El ticket imprime un CODE 128 real que puede
+buscarse con lector o cámara. Otra sucursal y sin ticket siguen fuera de V1.
 
 ## 7.5 Auditoría ergonómica intermedia
 

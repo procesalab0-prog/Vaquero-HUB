@@ -7,7 +7,7 @@
 > memoria del proyecto.** Todo lo que haga falta para continuar tiene que
 > estar aquí, no en un chat.
 >
-> Última actualización: 2026-09-06.
+> Última actualización: 2026-09-07.
 
 ## 1. Qué es esto
 
@@ -53,10 +53,10 @@ saltando lo bloqueado.
 | **M3.1 (0.19.0)**        | Saldos por sucursal, libro inmutable, ajustes auditados y pantalla de inventario con datos reales        |
 | **M3 (0.20.0)**          | Conteos formales y traspasos con aprobación, tránsito explícito, recepción parcial y auditoría           |
 | **M4 (0.23.0)**          | Ventas atómicas, pagos mixtos, cajas, corte ciego, tickets reales, cancelación y tickets en espera       |
-| **M5 (0.24.0)**          | Cambio parejo operable desde Tickets, libro inmutable, inventario atómico e idempotencia                 |
+| **M5 (0.27.0)**          | Devolución parcial, cambios con diferencia, reembolso por método original, daño, plazo y PIN de gerente  |
 | **M5.5 (0.25.0)**        | Alta por rangos, conteo continuo de 20 variantes y traspasos buscables, auditados en tres tamaños        |
 
-Cincuenta y dos migraciones versionadas del repositorio. El proyecto de Supabase
+Cincuenta y siete migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -94,13 +94,13 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 | **M2** — catálogo, variantes, códigos, etiquetas | **Terminado en software.** Sólo falta la validación física: imprimir una etiqueta real y escanearla, con cámara y lector |
 | **M3** — inventario, movimientos, traspasos      | **Terminado en software:** saldos, libro inmutable, ajustes, conteos, traspasos y mercancía en tránsito                  |
 | **M4** — POS, pagos mixtos, caja                 | **Terminado en software:** incluye carrito persistente y tickets en espera; falta validar iPad e impresora               |
-| **M5** — devoluciones, cambios, cancelaciones    | **Primera entrega 0.24.0 terminada:** cambio parejo visible; reembolsos y diferencias esperan reglas del negocio         |
+| **M5** — devoluciones, cambios, cancelaciones    | **Terminado en software en 0.27.0:** devolución parcial, diferencias, mismos métodos, daño, plazo y autorización         |
 | **M9** — importador y sincronizador de SICAR     | Analizador, mapeo y corrida en seco terminados en 0.26.0; sigue sincronizador idempotente de catálogo sólo en staging    |
 
 Recorridos a después de octubre: M6 compras, M7 apartados y lealtad, M8
 reportes y cotizaciones.
 
-**Con M3, M4, la primera entrega de M5 y M5.5 cerrados, M9 ya cuenta con
+**Con M3, M4, M5 y M5.5 cerrados, M9 ya cuenta con
 analizador y corrida en seco. El siguiente trabajo sin bloqueo es el
 sincronizador idempotente de catálogo exclusivamente en staging.** Siguen
 separados las decisiones de negocio bloqueadas y el piloto físico. El detalle

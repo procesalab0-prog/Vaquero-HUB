@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { WorkspaceLocation } from "@/lib/auth/types";
 import { BUSINESS_PROFILE, LA_PIEDAD_STORE } from "@/lib/business-profile";
+import { LabelBarcode } from "@/components/label-barcode";
 
 export type ReceiptLine = {
   name: string;
@@ -24,6 +25,7 @@ type ThermalReceiptProps = {
   reprintLabel?: string;
   cashierName?: string;
   location?: WorkspaceLocation | null;
+  returnWindowDays?: number;
 };
 
 const number = new Intl.NumberFormat("es-MX", {
@@ -63,6 +65,7 @@ export function ThermalReceipt({
   reprintLabel,
   cashierName = "Salomon",
   location,
+  returnWindowDays = 15,
 }: ThermalReceiptProps) {
   const receiptFolio = mode === "gift" ? saleFolioToGift(folio) : folio;
   const receiptLocation = location ?? LA_PIEDAD_STORE;
@@ -186,7 +189,7 @@ export function ThermalReceipt({
 
       <footer className="thermal-footer">
         {mode === "sale" ? (
-          <div className="receipt-barcode" aria-hidden="true" />
+          <LabelBarcode code={receiptFolio} />
         ) : (
           <div className="receipt-qr" aria-hidden="true" />
         )}
@@ -194,7 +197,8 @@ export function ThermalReceipt({
         {mode === "sale" ? (
           <>
             <p>
-              Cambios dentro de 15 días con este ticket
+              Cambios y devoluciones dentro de {returnWindowDays} días con este
+              ticket
               <br />y etiqueta original. No aplica en oferta.
             </p>
             <strong>¡Gracias por su compra!</strong>
@@ -203,9 +207,9 @@ export function ThermalReceipt({
         ) : (
           <>
             <p>
-              Presenta este ticket para cambio de talla o modelo dentro de 15
-              días. No incluye importes ni forma de pago. Sujeto a existencia en
-              la sucursal.
+              Presenta este ticket para cambio de talla o modelo dentro de{" "}
+              {returnWindowDays} días. No incluye importes ni forma de pago.
+              Sujeto a existencia en la sucursal.
             </p>
             <strong>
               {BUSINESS_PROFILE.name.toLocaleUpperCase("es-MX")} ·{" "}

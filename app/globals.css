@@ -2946,6 +2946,12 @@ code {
     repeating-linear-gradient(90deg, #111 0 1px, transparent 1px 7px),
     repeating-linear-gradient(90deg, #111 0 3px, transparent 3px 11px);
 }
+.thermal-footer .label-barcode-svg {
+  width: 100%;
+  max-width: 230px;
+  height: 48px;
+  color: #000;
+}
 .receipt-qr {
   width: 96px;
   height: 96px;
@@ -6678,6 +6684,90 @@ a:active {
   background: var(--surface);
 }
 
+.return-policy,
+.return-total {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.return-policy.good {
+  color: var(--success);
+  background: var(--success-soft);
+}
+.return-policy.blocked {
+  color: var(--error);
+  background: var(--error-soft);
+}
+.return-mode-switch {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.return-mode-switch button {
+  min-height: 54px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 800;
+}
+.return-mode-switch button.selected {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.return-item-options {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.return-item-options label,
+.refund-methods label {
+  display: grid;
+  gap: 6px;
+  font-weight: 700;
+}
+.return-item-options input,
+.return-item-options select,
+.refund-methods input {
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+.return-total {
+  align-items: center;
+  background: var(--surface-soft);
+}
+.return-total strong {
+  font-size: 22px;
+}
+.refund-methods {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+.refund-methods p {
+  margin: 0;
+}
+.refund-methods label {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
 @media (max-width: 640px) {
   .exchange-modal {
     width: 100%;
@@ -6709,5 +6799,16 @@ a:active {
   .exchange-item > span:last-child,
   .exchange-candidate > span:last-child {
     text-align: left;
+  }
+
+  .return-policy,
+  .return-mode-switch,
+  .return-item-options {
+    grid-template-columns: 1fr;
+  }
+
+  .return-policy {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

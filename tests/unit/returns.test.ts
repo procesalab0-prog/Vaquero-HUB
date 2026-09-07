@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { unitExchangeValue, type ReturnableSaleItem } from "../../lib/returns";
+import {
+  selectedReturnValue,
+  unitExchangeValue,
+  type ReturnableSaleItem,
+} from "../../lib/returns";
 
 function item(overrides: Partial<ReturnableSaleItem> = {}): ReturnableSaleItem {
   return {
@@ -28,5 +32,18 @@ describe("unitExchangeValue", () => {
         item({ remaining_quantity: 1, already_returned_cents: 499 }),
       ),
     ).toBe(500);
+  });
+});
+
+describe("selectedReturnValue", () => {
+  it("conserva todos los centavos al devolver el último remanente", () => {
+    const item = {
+      quantity: 3,
+      remaining_quantity: 2,
+      paid_line_cents: 10001,
+      already_returned_cents: 3333,
+    } as ReturnableSaleItem;
+    expect(selectedReturnValue(item, 1)).toBe(3333);
+    expect(selectedReturnValue(item, 2)).toBe(6668);
   });
 });
