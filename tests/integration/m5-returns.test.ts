@@ -517,6 +517,93 @@ describe.sequential("M5: base de devoluciones y cambio parejo", () => {
     ]);
   });
 
+  it("no deja la caja en negativo al devolver efectivo que no hay", async () => {
+    // La cajera no puede entregar dinero que no está en el cajón. Si el
+    // sistema lo acepta, el corte compara contra un esperado negativo y un
+    // faltante real deja de distinguirse.
+    const variant = await createVariant("CAJA-SIN-EFECTIVO", 99900, 5);
+    const sale = await createSale(variant, 1, 99900);
+    const disponible = await state
+      .server!.from("cash_movements")
+      .select("amount_cents")
+      .eq("session_id", state.sessionId);
+    const total = (disponible.data ?? []).reduce(
+      (sum, row) => sum + Number(row.amount_cents),
+      0,
+    );
+    const retiro = await state.admin!.rpc("record_cash_movement", {
+      p_session_id: state.sessionId,
+      p_type: "WITHDRAWAL",
+      p_amount_cents: total - 5000,
+      p_reason: "Deposito a la caja fuerte para la prueba",
+    });
+    expect(retiro.error).toBeNull();
+
+    const sinEfectivo = await state.admin!.rpc("create_return_exchange", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionId,
+      p_original_sale_id: sale.saleId,
+      p_items_in: [
+        {
+          sale_item_id: sale.saleItemId,
+          quantity: 1,
+          condition: "RESELLABLE",
+        },
+      ],
+      p_items_out: [],
+      p_charge_payments: [],
+      p_refund_references: [],
+      p_authorization_token: await authorizeReturn(),
+      p_reason: "No alcanza el efectivo en la caja",
+    });
+    expect(sinEfectivo.error?.message).toContain("INSUFFICIENT_CASH");
+
+    // Con efectivo suficiente la misma devolución procede.
+    const ingreso = await state.admin!.rpc("record_cash_movement", {
+      p_session_id: state.sessionId,
+      p_type: "DEPOSIT",
+      p_amount_cents: 150000,
+      p_reason: "Ingreso desde la caja fuerte",
+    });
+    expect(ingreso.error).toBeNull();
+    const conEfectivo = await state.admin!.rpc("create_return_exchange", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionId,
+      p_original_sale_id: sale.saleId,
+      p_items_in: [
+        {
+          sale_item_id: sale.saleItemId,
+          quantity: 1,
+          condition: "RESELLABLE",
+        },
+      ],
+      p_items_out: [],
+      p_charge_payments: [],
+      p_refund_references: [],
+      p_authorization_token: await authorizeReturn(),
+      p_reason: "Ahora si alcanza el efectivo",
+    });
+    expect(conEfectivo.error).toBeNull();
+    const final = await state
+      .server!.from("cash_movements")
+      .select("amount_cents")
+      .eq("session_id", state.sessionId);
+    const saldo = (final.data ?? []).reduce(
+      (sum, row) => sum + Number(row.amount_cents),
+      0,
+    );
+    expect(saldo).toBeGreaterThanOrEqual(0);
+
+    // Se repone lo retirado para no dejar sin efectivo a las pruebas que sigan.
+    const repone = await state.admin!.rpc("record_cash_movement", {
+      p_session_id: state.sessionId,
+      p_type: "DEPOSIT",
+      p_amount_cents: total - 5000,
+      p_reason: "Reposicion tras la prueba de caja sin efectivo",
+    });
+    expect(repone.error).toBeNull();
+  });
+
   it("aplica el plazo configurable desde la base", async () => {
     const policy = await state.admin!.rpc("update_return_policy", {
       p_location_id: state.locationId,

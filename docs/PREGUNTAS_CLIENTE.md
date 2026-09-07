@@ -35,7 +35,7 @@ usa**. Esta lista es el índice, no la fuente de verdad.
 | 1.5 | ¿Manejan el mismo modelo en varios anchos, o el ancho no aplica? | M2 | 🔴 |
 | 1.6 | ¿Quieren ver el margen en la pantalla de producto, o sólo el precio? | M2 | 🟡 |
 | 1.7 | La carga masiva, ¿parte del Excel exportado de SICAR o de una plantilla propia de Mi Tienda SM? | M2 | 🟡 |
-| 1.8 | ¿Qué impresora de etiquetas usan hoy (marca y modelo)? | M2 | 🟡 |
+| 1.8 | ¿Qué impresora de etiquetas usan hoy (marca y modelo)? **Contestado a medias:** es la de marca SICAR que vino con el sistema actual. Falta el modelo exacto de la etiqueta del equipo y la medida del rollo | M2 | 🟡 |
 | 1.9 | ¿Quieren el SKU impreso en la etiqueta además del código de barras? Ayuda a buscar a mano cuando el código no escanea | M2 | 🟡 |
 | 1.10 | ¿Hoy reetiquetan todo lo que llega, o aprovechan el código del fabricante cuando ya viene impreso? | M2, M6 | 🟡 |
 
@@ -112,7 +112,7 @@ queda detenido hasta tenerlas.
 
 | # | Pregunta | Bloquea | Urgencia |
 |---|---|---|---|
-| 9.1 | **¿Qué impresora térmica se va a comprar?** Debe ser de red y aceptar impresión por HTTP desde el navegador. Si no lo soporta, cambia la arquitectura del POS | M4 | 🔴 |
+| 9.1 | ~~¿Qué impresora térmica se va a comprar?~~ **Contestado: ninguna.** Se usa la BIXOLON que ya está en el mostrador, por controlador del sistema operativo. Ver `PLAN_CODEX.md` §9.1 | M4 | ✅ |
 | 9.2 | **El lector Bluetooth tiene que ser imager 2D, no láser lineal**, si la tarjeta de lealtad va a vivir en el teléfono. ¿Ya se compró alguno? | M1B, M4 | 🔴 |
 | 9.3 | ¿El cajón de dinero se conectará a la impresora? Es lo normal, pero define el modelo | M4 | 🟡 |
 | 9.4 | ¿Cuántas cajas por sucursal y cuántos iPads? | M1 | 🟡 |
@@ -136,5 +136,7 @@ en las próximas tres semanas:
 3. Qué simbología imprime SICAR y una foto de una etiqueta (1.1, 1.2).
 4. Escalas de talla de sombreros, texanas y cinturones (1.3, 1.4, 1.5).
 5. Quién autoriza un traspaso (2.1).
-6. Qué impresora y qué lector se van a comprar (9.1, 9.2).
+6. Qué lector de códigos se va a comprar (9.2). La impresora ya no se
+   compra: se usan las dos que la tienda tiene. Falta el modelo exacto de
+   cada una y la medida de sus rollos (9.1, 1.8).
 7. Lista de sucursales, cajas y empleados con su rol (10.1).

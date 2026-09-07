@@ -19,6 +19,50 @@ Por eso este documento tiene dos mitades: los **ensayos** (secciones 2 a
 4), que es donde realmente se resuelve el problema, y la **noche del
 corte** (sección 6), que sólo ejecuta lo ya probado.
 
+## 0.5 «¿Ya puedo desinstalar SICAR?»
+
+Pregunta del dueño, septiembre de 2026, a raíz de que las impresoras del
+mostrador sí funcionan sin SICAR. Son dos cosas distintas y conviene no
+mezclarlas.
+
+**Las impresoras: sí.** Son hardware con controlador del sistema operativo.
+SICAR es sólo un programa que les manda trabajos; cualquier otro programa con
+el controlador instalado imprime igual. Mi Tienda SM imprime por esa misma
+vía. Ver [`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md).
+
+**Con una advertencia que puede costar el día:** la impresora de etiquetas es
+marca SICAR, y su controlador pudo haber llegado dentro del instalador de
+SICAR. Desinstalar podría llevárselo. **Antes de desinstalar nada, conseguir
+el instalador del controlador por separado y probar que instala solo.** Si el
+único que lo tiene es el proveedor de SICAR, pedirlo mientras la relación
+sigue siendo buena, no después.
+
+**El sistema: todavía no, y las impresoras nunca fueron lo que lo impedía.**
+
+Lo que falta, en orden de qué tan grave es:
+
+| Falta                                                        | Qué pasa si se desinstala hoy                                    |
+| ------------------------------------------------------------ | ---------------------------------------------------------------- |
+| **M9, el importador**                                        | Productos, existencias, costos y clientes viven en SICAR. Sin migrarlos y cuadrarlos, se pierden |
+| **Cancelar una venta** (`cancel_sale`, ver la cola)          | Un ticket equivocado no tiene arreglo                             |
+| **M5: devoluciones y cambios**                               | Un cliente devuelve y no hay dónde registrarlo                    |
+| **M7: apartados**                                            | La tienda aparta a diario y hoy no existe                         |
+| **M6: compras y recepción de mercancía**                     | Llega mercancía del proveedor y se captura como ajuste            |
+| **M8: reportes**                                             | No hay corte de ventas por periodo ni valuación de inventario     |
+| Facturación CFDI                                             | Fuera del alcance V1. Si SICAR la hace hoy, hay que decidir con qué se factura |
+
+**El plan ya resuelve esto y no exige desinstalar nada:** la sucursal nueva
+abre en octubre operando en Mi Tienda SM —no tiene operación que
+interrumpir—, y la sucursal 1 sigue en SICAR hasta **enero**, después de la
+temporada alta, con el procedimiento de este runbook. Ver
+[`PLAN_OCTUBRE.md`](PLAN_OCTUBRE.md).
+
+**Y aun después del corte de enero, no se desinstala.** SICAR se deja
+funcionando en modo consulta, sin capturar nada nuevo, por lo menos una
+temporada completa. Es la única copia del historial: garantías, devoluciones
+de mercancía vendida antes del corte y aclaraciones de clientes se resuelven
+ahí. Desinstalarlo es la última decisión del proyecto, no la primera.
+
 ## 1. Qué se migra (la lista que se olvida)
 
 Migrar existencias es lo obvio y lo fácil. Lo que rompe una tienda al día

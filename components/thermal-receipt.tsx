@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { WorkspaceLocation } from "@/lib/auth/types";
 import { BUSINESS_PROFILE, LA_PIEDAD_STORE } from "@/lib/business-profile";
+import { receiptPageStyle } from "@/lib/printing";
 import { LabelBarcode } from "@/components/label-barcode";
 
 export type ReceiptLine = {
@@ -72,7 +73,9 @@ export function ThermalReceipt({
   const receiptAddress = receiptLocation.address ?? "Dirección por configurar";
   const receiptPhone = receiptLocation.phone ?? "Teléfono por configurar";
   return (
-    <article
+    <>
+      <style media="print">{receiptPageStyle}</style>
+      <article
       className={`thermal-receipt print-receipt ${mode === "gift" ? "gift-receipt" : "sale-receipt"}`}
       aria-label={
         mode === "gift"
@@ -219,5 +222,6 @@ export function ThermalReceipt({
         )}
       </footer>
     </article>
+    </>
   );
 }

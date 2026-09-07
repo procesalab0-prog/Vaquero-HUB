@@ -680,6 +680,115 @@ La decisión del dueño quedó asentada en `PENDIENTES.md`.
 conteo continuo y búsqueda en traspasos quedaron corregidos y documentados en
 [`AUDITORIA_ERGONOMIA.md`](AUDITORIA_ERGONOMIA.md).
 
+### Impresoras: definidas, no se compra nada
+
+La tienda usa una **BIXOLON** para tickets y una **marca SICAR** para
+etiquetas, y el sistema debe funcionar con ésas. Coincide con lo construido:
+ambas imprimen por el controlador del sistema operativo, que es lo que
+`window.print()` usa. Detalle, foto y lista de verificación física en
+[`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md).
+
+Consecuencia de diseño: un iPad no tiene controladores y ninguna es AirPrint,
+así que **el punto de venta que imprime corre en la computadora del
+mostrador**. El iPad se queda con catálogo, inventario, conteos y consulta.
+
+### Retirado del POS: el apartado que no apartaba
+
+El botón «Apartar» estaba conectado a una función de demostración que vaciaba
+el carrito, anunciaba «Apartado AP-000128 creado correctamente» con un folio
+inventado y no guardaba nada. Es un resto de la interfaz 0.6.x que sobrevivió
+cuando el POS se conectó de verdad. El botón queda inhabilitado como «Apartar
+· pendiente»; los apartados son M7 y no se improvisan.
+
+Regla que sale de ahí: **antes de abrir, recorrer cada pantalla preguntando si
+lo que muestra viene de la base.** Cualquier botón que responda con un
+`notify()` sin tocar la base es una trampa del mismo tipo.
+
+### Revisión de M5 completo (devoluciones con dinero)
+
+Verificado ejecutando contra una base reconstruida: 57 migraciones aplican
+limpio y los controles del dinero aguantan.
+
+| Prueba                                              | Resultado medido                                           |
+| --------------------------------------------------- | ----------------------------------------------------------- |
+| Devolver sin PIN de gerente                         | `RETURN_AUTHORIZATION_REQUIRED`                              |
+| Reusar el token del gerente                         | Rechazado: se consume una sola vez                           |
+| Venta mitad efectivo, mitad tarjeta                 | Devolvió $499.50 a cada método; sólo la mitad salió del cajón |
+| Devolver una tercera pieza de dos vendidas          | `RETURN_EXCEEDS_SOLD`                                        |
+| Artículo dañado                                     | Entra con `RETURN` y sale con `ADJUSTMENT`/`DAMAGED_RETURN`: no vuelve a existencia vendible |
+| Fuera del plazo configurado                         | `RETURN_WINDOW_EXPIRED`                                      |
+
+Dos decisiones del diseño que conviene no deshacer: **la devolución se
+reparte entre los métodos de pago originales**, así que nadie convierte una
+compra con tarjeta en efectivo; y **el RPC anterior de cambio parejo quedó
+revocado** para `authenticated`, porque no pedía PIN y habría sido la puerta
+de atrás de la regla nueva.
+
+**Defecto encontrado y corregido: la devolución dejaba la caja en negativo.**
+
+Medido: con $100 en el cajón, una devolución de $999 en efectivo pasó y dejó
+el esperado en **-$899**. En el mostrador eso no puede ocurrir, porque la
+cajera no entrega dinero que no tiene. El sistema aceptaba una operación
+imposible y, peor, dejaba el corte comparando contra un esperado negativo,
+donde un faltante real ya no se distingue del descuadre.
+
+`record_cash_movement` ya rechazaba un retiro mayor al efectivo disponible;
+la devolución no usaba esa regla. Corregido en
+`20260907214500_m5_devolucion_no_deja_la_caja_en_negativo.sql`: si no alcanza,
+el supervisor decide entre devolver a la tarjeta o ingresar efectivo de la
+caja fuerte primero. Sólo afecta la parte en efectivo; un cambio con
+diferencia a cobrar y una devolución a tarjeta siguen igual. Queda la prueba
+de regresión en la suite de M5.
+
+### Pendiente de main: el tamaño de página del ticket
+
+`lib/printing.ts` y el `@page size: 80mm auto` de `thermal-receipt.tsx` viven
+en la rama de revisión pero **no están en main**. Sin esa línea el controlador
+usa su tamaño por omisión y cada venta puede alimentar una hoja completa de
+rollo. La documentación de las impresoras sí se integró; el arreglo de código
+no.
+
+### Revisión de M9 etapa 1 y del piso de efectivo (0.28.x)
+
+Verificado ejecutando contra una base reconstruida: 60 migraciones aplican
+limpio.
+
+**El piso de efectivo quedó doble, y está bien así.** Codex resolvió el mismo
+defecto que yo, con un disparador sobre `cash_movements` que además toma
+`for update` sobre la sesión. El suyo es mejor: es estructural, cubre a
+cualquier función que escriba el movimiento, y **serializa**. Comprobado con
+dos devoluciones simultáneas y efectivo para una sola: pasó exactamente una y
+la caja nunca quedó negativa. Mi comprobación dentro de la función se queda
+como aviso temprano; **la regla que manda es el disparador**, y es la que no
+se debe quitar.
+
+**M9 nace bloqueado, que es la decisión correcta.** La infraestructura existe
+pero `environment_label` sólo admite `UNCONFIGURED` o `STAGING`: producción no
+puede habilitarla ni por error. Hay dos compuertas independientes y las dos se
+probaron:
+
+| Prueba                                              | Resultado medido                          |
+| --------------------------------------------------- | ------------------------------------------- |
+| Aplicar sin configurar el entorno                   | `SICAR_CATALOG_SYNC_DISABLED`               |
+| Un usuario autenticado llamando la RPC              | `permission denied`: es sólo de servidor    |
+| Habilitar con la frase equivocada                   | `SICAR_STAGING_CONFIRMATION_MISMATCH`       |
+| Habilitar apuntando a otro proyecto                 | Rechazado                                    |
+| El script apuntado a un host que no es staging      | `SICAR_SYNC_REFUSES_NON_STAGING_PROJECT`    |
+
+Y el comportamiento del importador:
+
+| Prueba                                              | Resultado medido                            |
+| --------------------------------------------------- | --------------------------------------------- |
+| Corrida con menos filas de las declaradas           | `SICAR_RUN_INCOMPLETE`                        |
+| Reaplicar la misma corrida                          | `already_applied`, sin duplicar               |
+| El mismo archivo como corrida nueva                 | Devuelve la corrida original: no reimporta    |
+| Código de SICAR que choca con uno **generado** por nosotros | `SICAR_RESERVED_BARCODE_CONFLICT`     |
+| SICAR manda costo 0 y nosotros tenemos costo real   | Conserva el nuestro y lo reporta como `zero_cost_preserved` |
+| Producto nuevo desde SICAR                          | SKU generado por `app.variant_serial_seq`, no el de SICAR |
+
+No toca inventario en esta etapa, y lo declara en el reporte de
+conciliación. No se encontraron defectos.
+
 ## 7. M5 — Devoluciones y cambios
 
 **Especificación:** [`specs/M5_DEVOLUCIONES_Y_CAMBIOS.md`](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)

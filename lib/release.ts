@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.29.0";
-export const APP_RELEASE = "Sincronizador seguro de catálogo SICAR";
+export const APP_VERSION = "0.29.1";
+export const APP_RELEASE = "Ticket a la medida del rollo";
