@@ -21,7 +21,10 @@ Antes de implementar cualquier módulo, consulta:
 
 ## Estado actual
 
-La primera base incluye un POS navegable con datos simulados, carrito, cobro de demostración, tickets de regalo, productos e inventario. La apariencia se ajustará al sistema visual aprobado en Claude Design.
+La versión 0.28.0 incluye POS e inventario reales, pagos divididos, cajas,
+tickets en espera, cambios y devoluciones parciales con autorización de gerente,
+catálogo e importación de SICAR en modo de análisis seguro. La validación física
+de impresoras, etiquetas, cámara y lector continúa como compuerta del piloto.
 
 ## Desarrollo local
 

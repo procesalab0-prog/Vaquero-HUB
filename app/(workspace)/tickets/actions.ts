@@ -53,6 +53,10 @@ function exchangeMessage(error: unknown) {
     ["RETURN_EXCEEDS_SOLD", "Ese artículo ya fue cambiado o devuelto."],
     ["INSUFFICIENT_STOCK", "La existencia cambió. Elige otro artículo."],
     [
+      "INSUFFICIENT_CASH",
+      "No hay suficiente efectivo en esta caja para devolverlo. Usa el método original disponible o solicita un ingreso autorizado.",
+    ],
+    [
       "EXCHANGE_PRICE_DIFFERENCE_UNSUPPORTED",
       "Por ahora el cambio debe ser por el mismo importe.",
     ],

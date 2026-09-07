@@ -685,13 +685,15 @@ conteo continuo y búsqueda en traspasos quedaron corregidos y documentados en
 **Especificación:** [`specs/M5_DEVOLUCIONES_Y_CAMBIOS.md`](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)
 **Depende de:** M4.
 
-**M5 cerrado en 0.27.0.** El flujo admite devolución parcial y cambio por
+**M5 cerrado en 0.28.0.** El flujo admite devolución parcial y cambio por
 producto de cualquier precio; cobra o devuelve la diferencia exacta, y los
 reembolsos conservan los mismos métodos del ticket original. Todo exige una
 capacidad de gerente por código y PIN, el plazo es configurable por sucursal,
 la mercancía dañada entra y se da de baja en dos movimientos auditables, y la
 venta original permanece intacta. El ticket imprime un CODE 128 real que puede
-buscarse con lector o cámara. Otra sucursal y sin ticket siguen fuera de V1.
+buscarse con lector o cámara. Venta ofrece un acceso directo al flujo y la caja
+rechaza cualquier devolución en efectivo que supere el dinero disponible. Otra
+sucursal y sin ticket siguen fuera de V1.
 
 ## 7.5 Auditoría ergonómica intermedia
 

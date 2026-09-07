@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.27.0";
-export const APP_RELEASE = "Devoluciones y cambios completos";
+export const APP_VERSION = "0.28.0";
+export const APP_RELEASE = "PIN seguro y devoluciones desde Venta";

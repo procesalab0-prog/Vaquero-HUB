@@ -1,6 +1,6 @@
 # M5 — Devoluciones, cambios y cancelaciones
 
-> Estado 0.27.0: M5 terminado en software. Incluye devolución parcial,
+> Estado 0.28.0: M5 terminado en software. Incluye devolución parcial,
 > cambios con diferencia, reembolso por los métodos originales, mercancía
 > dañada, plazo configurable y autorización obligatoria de gerente. Exige
 > ticket y misma sucursal; sin ticket y entre sucursales quedan fuera de V1.
