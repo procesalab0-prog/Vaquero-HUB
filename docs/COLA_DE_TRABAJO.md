@@ -748,6 +748,47 @@ usa su tamaño por omisión y cada venta puede alimentar una hoja completa de
 rollo. La documentación de las impresoras sí se integró; el arreglo de código
 no.
 
+### Revisión de M9 etapa 1 y del piso de efectivo (0.28.x)
+
+Verificado ejecutando contra una base reconstruida: 60 migraciones aplican
+limpio.
+
+**El piso de efectivo quedó doble, y está bien así.** Codex resolvió el mismo
+defecto que yo, con un disparador sobre `cash_movements` que además toma
+`for update` sobre la sesión. El suyo es mejor: es estructural, cubre a
+cualquier función que escriba el movimiento, y **serializa**. Comprobado con
+dos devoluciones simultáneas y efectivo para una sola: pasó exactamente una y
+la caja nunca quedó negativa. Mi comprobación dentro de la función se queda
+como aviso temprano; **la regla que manda es el disparador**, y es la que no
+se debe quitar.
+
+**M9 nace bloqueado, que es la decisión correcta.** La infraestructura existe
+pero `environment_label` sólo admite `UNCONFIGURED` o `STAGING`: producción no
+puede habilitarla ni por error. Hay dos compuertas independientes y las dos se
+probaron:
+
+| Prueba                                              | Resultado medido                          |
+| --------------------------------------------------- | ------------------------------------------- |
+| Aplicar sin configurar el entorno                   | `SICAR_CATALOG_SYNC_DISABLED`               |
+| Un usuario autenticado llamando la RPC              | `permission denied`: es sólo de servidor    |
+| Habilitar con la frase equivocada                   | `SICAR_STAGING_CONFIRMATION_MISMATCH`       |
+| Habilitar apuntando a otro proyecto                 | Rechazado                                    |
+| El script apuntado a un host que no es staging      | `SICAR_SYNC_REFUSES_NON_STAGING_PROJECT`    |
+
+Y el comportamiento del importador:
+
+| Prueba                                              | Resultado medido                            |
+| --------------------------------------------------- | --------------------------------------------- |
+| Corrida con menos filas de las declaradas           | `SICAR_RUN_INCOMPLETE`                        |
+| Reaplicar la misma corrida                          | `already_applied`, sin duplicar               |
+| El mismo archivo como corrida nueva                 | Devuelve la corrida original: no reimporta    |
+| Código de SICAR que choca con uno **generado** por nosotros | `SICAR_RESERVED_BARCODE_CONFLICT`     |
+| SICAR manda costo 0 y nosotros tenemos costo real   | Conserva el nuestro y lo reporta como `zero_cost_preserved` |
+| Producto nuevo desde SICAR                          | SKU generado por `app.variant_serial_seq`, no el de SICAR |
+
+No toca inventario en esta etapa, y lo declara en el reporte de
+conciliación. No se encontraron defectos.
+
 ## 7. M5 — Devoluciones y cambios
 
 **Especificación:** [`specs/M5_DEVOLUCIONES_Y_CAMBIOS.md`](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)
