@@ -267,10 +267,7 @@ export function PosWorkspace({
     string | null
   >(null);
   const [discountError, setDiscountError] = useState("");
-  const [extraDialog, setExtraDialog] = useState<"discount" | "layaway" | null>(
-    null,
-  );
-  const [layawayCustomer, setLayawayCustomer] = useState("");
+  const [extraDialog, setExtraDialog] = useState<"discount" | null>(null);
   const [selectedCustomer, setSelectedCustomer] =
     useState<CustomerSummary | null>(currentDraft?.customer ?? null);
   const [customerLookupOpen, setCustomerLookupOpen] = useState(false);
@@ -803,15 +800,6 @@ export function PosWorkspace({
     setDiscountPercent(value);
     setExtraDialog(null);
     notify(value ? `Descuento de ${value}% aplicado` : "Descuento eliminado");
-  }
-
-  function createLayaway() {
-    if (!layawayCustomer.trim() || cart.length === 0) return;
-    setExtraDialog(null);
-    setCart([]);
-    setDiscountPercent(0);
-    setLayawayCustomer("");
-    notify("Apartado AP-000128 creado correctamente");
   }
 
   async function printReceipt() {
@@ -1421,10 +1409,10 @@ export function PosWorkspace({
             </button>
             <button
               type="button"
-              disabled={cart.length === 0}
-              onClick={() => setExtraDialog("layaway")}
+              disabled
+              title="Los apartados se implementan en M7. Por ahora se registran con el proceso vigente fuera del sistema."
             >
-              Apartar
+              Apartar · pendiente
             </button>
           </div>
         </footer>
@@ -1812,49 +1800,6 @@ export function PosWorkspace({
                 onClick={() => void applyDiscount()}
               >
                 Autorizar y aplicar
-              </button>
-            </div>
-          </section>
-        </div>
-      ) : null}
-
-      {extraDialog === "layaway" ? (
-        <div className="modal-backdrop">
-          <section
-            className="checkout-modal compact-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="layaway-title"
-          >
-            <p className="eyebrow">Apartado</p>
-            <h2 id="layaway-title">Guardar apartado</h2>
-            <p>
-              Los artículos saldrán del carrito y quedarán asociados al cliente.
-            </p>
-            <div className="form-stack">
-              <label>
-                <span>Nombre del cliente</span>
-                <input
-                  value={layawayCustomer}
-                  onChange={(event) => setLayawayCustomer(event.target.value)}
-                  placeholder="Nombre completo"
-                />
-              </label>
-            </div>
-            <div className="modal-actions">
-              <button
-                className="secondary-button"
-                type="button"
-                onClick={() => setExtraDialog(null)}
-              >
-                Cancelar
-              </button>
-              <button
-                className="primary-button"
-                type="button"
-                onClick={createLayaway}
-              >
-                Crear apartado
               </button>
             </div>
           </section>

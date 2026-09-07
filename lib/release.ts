@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.25.0";
-export const APP_RELEASE = "Operación continua y más ágil";
+export const APP_VERSION = "0.26.0";
+export const APP_RELEASE = "SICAR analizado sin tocar tus datos";
