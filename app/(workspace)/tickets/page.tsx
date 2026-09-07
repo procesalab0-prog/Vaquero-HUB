@@ -4,7 +4,9 @@ import { requirePermission } from "@/lib/auth/authorization";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { cancelPosSale } from "../pos/actions";
 import {
-  createEqualExchange,
+  authorizeReturn,
+  createReturnExchange,
+  findTicketByCode,
   prepareEqualExchange,
   searchEqualExchangeVariants,
 } from "./actions";
@@ -61,8 +63,8 @@ export default async function TicketsPage({
     );
   const from = new Date(referenceTime);
   from.setDate(from.getDate() - 30);
-  const [ticketsResult, cancelPermission, returnPermission] = await Promise.all(
-    [
+  const [ticketsResult, cancelPermission, returnPermission, policyResult] =
+    await Promise.all([
       supabase.rpc("list_sale_tickets", {
         p_location_id: location.id,
         p_query: "",
@@ -82,13 +84,19 @@ export default async function TicketsPage({
         .eq("role_id", roleId)
         .eq("permission_code", "returns.create")
         .maybeSingle(),
-    ],
-  );
+      supabase.rpc("get_return_policy", { p_location_id: location.id }),
+    ]);
   return (
     <TicketsRealWorkspace
       tickets={(ticketsResult.data ?? []) as Ticket[]}
       status={ticketsResult.error?.message}
       periodStarts={periodStarts}
+      returnWindowDays={Number(
+        (policyResult.data as { window_days?: number } | null)?.window_days ??
+          15,
+      )}
+      locationId={location.id}
+      findTicketAction={findTicketByCode}
       cancelSaleAction={cancelPermission.data ? cancelPosSale : undefined}
       prepareExchangeAction={
         returnPermission.data ? prepareEqualExchange : undefined
@@ -96,8 +104,11 @@ export default async function TicketsPage({
       searchExchangeVariantsAction={
         returnPermission.data ? searchEqualExchangeVariants : undefined
       }
-      createExchangeAction={
-        returnPermission.data ? createEqualExchange : undefined
+      authorizeReturnAction={
+        returnPermission.data ? authorizeReturn : undefined
+      }
+      createReturnExchangeAction={
+        returnPermission.data ? createReturnExchange : undefined
       }
     />
   );
