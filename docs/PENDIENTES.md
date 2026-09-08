@@ -137,7 +137,18 @@ Opciones:
 
 Ambas reglas quedaron implementadas y probadas en staging en 0.22.0.
 
-## Impresoras: ya no hay que comprar nada
+## Impresoras: confirmadas con modelo
+
+**BIXOLON SRP-330II** para tickets (80 mm) y **SICAR EVA58** para etiquetas
+(58 mm, USB/RS232). Ninguna es de red, lo que confirma que el punto de venta
+que imprime corre en la computadora del mostrador. Ver
+[`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md).
+
+Falta: la medida de la etiqueta troquelada, confirmar el rollo de tickets y si
+el cajón de dinero está conectado a la BIXOLON.
+
+Antes de desinstalar SICAR: conseguir por separado el controlador de la EVA58,
+que pudo haber llegado dentro de su instalador.
 
 BIXOLON para tickets, marca SICAR para etiquetas, las dos ya en el mostrador.
 Ver [`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md). Falta confirmar el

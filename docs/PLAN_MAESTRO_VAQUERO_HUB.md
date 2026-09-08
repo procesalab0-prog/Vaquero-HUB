@@ -2538,3 +2538,14 @@ Corrección visible 0.31.1 — desplazamiento táctil aislado en ventanas:
   desplazamiento se escape al fondo.
 - Una prueba automática abre Registrar proveedor, desplaza desde dentro de la
   ventana y comprueba simultáneamente que el cuadro avanza y el fondo no cambia.
+
+Entrega visible 0.31.2–0.31.3 — hardware confirmado y prueba sin venta:
+
+- Se documentaron los modelos físicos existentes: BIXOLON SRP-330II para
+  tickets térmicos de 80 mm y SICAR EVA58 para etiquetas de hasta 58 mm.
+- Se retiró una regla CSS de tamaño de página que los navegadores descartaban;
+  el largo continuo del rollo se configura en el controlador de la BIXOLON.
+- Más módulos incluye una prueba de impresión con ticket normal y de regalo.
+  La muestra no crea ventas, no consume folios y no modifica caja ni inventario.
+- La guía de primera impresión registra márgenes, escala, corte y lectura del
+  código para cerrar la validación física antes del piloto.
