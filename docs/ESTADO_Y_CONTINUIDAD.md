@@ -58,6 +58,8 @@ saltando lo bloqueado.
 | **M9 (0.29.0)**          | Sincronizador idempotente de catálogo restringido a staging; conserva SHA, aprobación y conciliación     |
 | **Calidad 0.31.0**       | Proveedor y cliente con scroll táctil; carrito de Venta como cajón en teléfono e iPad                    |
 | **Corrección 0.31.1**    | Al abrir una ventana móvil se bloquea el fondo y sólo el cuadro recibe el gesto vertical                 |
+| **Hardware 0.31.2**      | Modelos reales documentados: BIXOLON SRP-330II para tickets y SICAR EVA58 para etiquetas               |
+| **Hardware 0.31.3**      | Prueba de ticket térmico sin registrar venta, mover inventario, caja ni folios                           |
 
 Sesenta y tres migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
@@ -102,6 +104,7 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 | **M4** — POS, pagos mixtos, caja                 | **Terminado en software:** incluye carrito persistente y tickets en espera; falta validar iPad e impresora                |
 | **M5** — devoluciones, cambios, cancelaciones    | **Terminado en software en 0.28.0:** acceso desde Venta, PIN propio, mismos métodos y efectivo limitado al cajón          |
 | **M6** — compras, proveedores y recepción        | **Ampliado en 0.31.0:** alta rápida multivariante, foto opcional y lote exacto de etiquetas al recibir                    |
+| **Hardware físico** — tickets y etiquetas        | **Preparado en 0.31.3:** guía y muestra imprimible; falta ejecutar la validación con ambas impresoras reales             |
 | **M9** — importador y sincronizador de SICAR     | Sincronizador de catálogo listo en staging en 0.29.0; falta primer ensayo real tras limpiar tres precios y validar código |
 
 Recorridos a después de octubre: M7 apartados y lealtad, M8 reportes y

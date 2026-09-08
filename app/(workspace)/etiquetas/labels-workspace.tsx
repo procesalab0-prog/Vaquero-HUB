@@ -17,6 +17,7 @@ import {
 
 import { LabelBarcode } from "@/components/label-barcode";
 import type { LabelTemplate, ProductVariant } from "@/lib/domain";
+import { LABEL_MAX_WIDTH_MM } from "@/lib/printing";
 
 const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
@@ -429,6 +430,12 @@ export function LabelsWorkspace({
                 defaultValue={activeTemplate.widthMm}
                 required
               />
+              {activeTemplate.widthMm > LABEL_MAX_WIDTH_MM ? (
+                <small className="field-warning">
+                  La impresora de la tienda usa rollo de {LABEL_MAX_WIDTH_MM}{" "}
+                  mm: una etiqueta más ancha sale cortada.
+                </small>
+              ) : null}
             </label>
             <label>
               <span>Alto (mm)</span>
