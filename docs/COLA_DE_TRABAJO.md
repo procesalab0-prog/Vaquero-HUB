@@ -932,6 +932,44 @@ encabezados se guardan por equipo y por perfil de Chrome. Si se cambia de
 computadora o de perfil, se vuelve a calibrar. Vale documentarlo en el runbook
 de apertura de la sucursal nueva, no resolverlo en código.
 
+### Corregido: dar de alta una sucursal
+
+Lo reportó el dueño: «no se están guardando las sucursales, sólo me está
+dejando ponerla pero no se guarda». Eran dos problemas encimados.
+
+**El formulario de Ajustes era falso.** `saveBranch` sólo hacía `setBranches`
+con un id inventado (`Date.now()`); nada llegaba a la base y la sucursal
+desaparecía al recargar. Es el mismo patrón del apartado que no apartaba: un
+botón que dice «Guardar» y no guarda. Se retiró el formulario; Ajustes ahora
+muestra la sucursal activa y manda a Administración, que es donde vive el
+alta de verdad.
+
+**Y el alta buena dejaba la sucursal a medias.** Administración sí insertaba
+la fila, pero nada más: sin renglón en `user_locations` nadie puede recibir
+mercancía ahí, porque `can_access_location` es falso para todos, y sin caja
+nadie puede abrir turno ni cobrar. La sucursal aparecía en la lista de
+traspasos y no servía para nada, que es la peor forma de fallar: se ve bien.
+
+`upsert_location` hace los tres pasos en una sola transacción: crea la
+sucursal, **le da acceso a quien la dio de alta** y **le abre su primera
+caja**. La escritura directa a `locations` quedó revocada para `authenticated`,
+así que ya no hay forma de crear una sucursal a medias.
+
+| Prueba                                              | Resultado medido                   |
+| --------------------------------------------------- | ------------------------------------ |
+| El gerente intenta crear una sucursal               | `NOT_AUTHORIZED` (es de ADMIN)      |
+| El ADMIN crea una sucursal                          | Nace con acceso y con Caja 01        |
+| ¿Aparece en traspasos?                              | Sí, de inmediato                     |
+| Clave repetida                                      | `LOCATION_CODE_TAKEN`                |
+| Cambiarle la clave a una sucursal existente         | `LOCATION_CODE_IMMUTABLE`            |
+| Editar nombre, dirección y teléfono                 | Permitido                            |
+| Tocar la ubicación de tránsito                      | `TRANSIT_LOCATION_IS_NOT_EDITABLE`   |
+| Insertar en `locations` a mano                      | `permission denied`                  |
+
+**Por qué la clave no se puede cambiar:** viaja dentro del folio de cada venta
+(`SUC1-V-000001`). Cambiarla dejaría el historial de esa sucursal partido en
+dos nomenclaturas.
+
 ## 8. M9 — Importador y sincronizador de SICAR
 
 **Especificación:** [`PLAN_CODEX.md`](PLAN_CODEX.md) §5, milestone M9
