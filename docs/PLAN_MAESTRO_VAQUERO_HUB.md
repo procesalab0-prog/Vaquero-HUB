@@ -2476,3 +2476,55 @@ Entrega visible 0.29.0 — sincronizador seguro de catálogo SICAR:
 - La pantalla de cambios ahora interpreta los objetos de error de Supabase y
   muestra causas útiles en vez del mensaje genérico; el servidor registra el
   código técnico sin guardar PIN ni contenido del ticket.
+
+Entrega visible 0.30.0 — compras, proveedores y recepción:
+
+- Compras permite registrar proveedores, crear órdenes por sucursal y capturar
+  productos, cantidades y costo por pieza en una lista continua.
+- La orden no mueve inventario. Sólo confirmar una recepción crea movimientos
+  `PURCHASE`; una recepción parcial deja visible cuánto falta.
+- La operación es atómica e idempotente. La orden se bloquea antes de revisar
+  pendientes para impedir que dos recepciones simultáneas ingresen más de lo
+  pedido.
+- Cada recepción conserva responsable, fecha, sucursal, costo documental y
+  detalle. Las tablas de órdenes y recepciones no admiten cambios o borrado
+  directo y el cajero no puede consultarlas.
+- Desde el historial se preparan etiquetas por la cantidad exacta recibida.
+- El costo vigente del producto no se modifica todavía: se conserva el costo
+  de compra y se espera la decisión entre promedio ponderado o último costo.
+
+Corrección visible 0.30.1 — ventanas táctiles y avisos accesibles:
+
+- Todas las ventanas operativas comparten un límite basado en la altura visible
+  del dispositivo y desplazamiento táctil interno, incluso en teléfonos de poca
+  altura y con la PWA instalada.
+- Campos, selectores y botones respetan el ancho disponible; las filas de
+  acciones pueden reorganizarse sin encimarse ni salir de la pantalla.
+- Los avisos de venta, errores de cobro, caja y compras se muestran en la parte
+  superior y por encima de cualquier ventana abierta. Ya no es necesario cerrar
+  el flujo para conocer el resultado de una operación.
+- La verificación automática recorre Producto, Conteos, Proveedores, Caja y el
+  cobro dividido en teléfono compacto, iPad vertical y computadora; comprueba
+  alcance del contenido inferior, ausencia de controles encimados y orden
+  correcto de capas.
+
+Entrega visible 0.31.0 — alta rápida, fotos y etiquetas desde Compras:
+
+- Nueva orden permite crear un producto faltante sin abandonar la captura. La
+  misma alta genera en PostgreSQL sus SKU y códigos protegidos, y devuelve todas
+  las tallas y colores seleccionados a la orden con cantidades editables.
+- El alta de productos admite una fotografía comercial opcional JPG, PNG o
+  WebP de hasta 4 MB. Supabase Storage limita tipo y tamaño; RLS exige permisos
+  de catálogo y la base conserva únicamente la ruta del entorno correspondiente.
+- Las fotografías aparecen en Productos y en Venta; si la carga falla, el
+  producto y sus variantes permanecen creados y el sistema informa que la foto
+  quedó pendiente.
+- Confirmar una recepción abre Etiquetas con la cantidad exacta de cada variante
+  ya preparada. No se recortan silenciosamente lotes mayores de 99; imprimir
+  todavía requiere confirmación humana para evitar desperdicio de material.
+- La orden continúa sin mover existencia. Sólo la recepción confirmada crea los
+  movimientos `PURCHASE`; esta mejora no debilita inventario ni códigos SICAR.
+- La revisión responsive cubre también los flujos reales reportados: Registrar
+  proveedor y Agregar cliente desplazan su propio contenido en teléfono, y en
+  iPad el carrito de Venta abre como cajón sobre el catálogo en vez de apilarse
+  debajo de él. Las pruebas verifican que los controles finales sean alcanzables.

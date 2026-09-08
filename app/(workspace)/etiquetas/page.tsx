@@ -72,7 +72,7 @@ export default async function LabelsPage({
         variants={mockVariants}
         templates={[previewTemplate]}
         preview
-        fromProducts={params.desde === "productos"}
+        fromProducts={params.desde === "productos" || params.desde === "recepcion"}
       />
     );
   }
@@ -161,7 +161,7 @@ export default async function LabelsPage({
       canManageTemplates={(permissionsResult.data ?? []).length > 0}
       saveTemplateAction={saveLabelTemplate}
       status={params.status}
-      fromProducts={params.desde === "productos"}
+      fromProducts={params.desde === "productos" || params.desde === "recepcion"}
     />
   );
 }

@@ -3,6 +3,7 @@ import { mockVariants } from "@/lib/mock-data";
 import { requirePermission } from "@/lib/auth/authorization";
 import { initialCatalogImportState } from "@/lib/catalog-import-shared";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { productImageUrl } from "@/lib/product-images";
 import {
   addCatalogVariants,
   bulkUpdateVariantPrices,
@@ -52,6 +53,7 @@ type ProductRow = {
   category_id: string;
   description: string | null;
   is_active: boolean;
+  image_path: string | null;
 };
 
 export default async function ProductsPage({
@@ -89,7 +91,9 @@ export default async function ProductsPage({
       .from("attribute_values")
       .select("id, type_code, scale_code, value, display_order")
       .order("display_order"),
-    supabase.from("products").select("id, category_id, description, is_active"),
+    supabase
+      .from("products")
+      .select("id, category_id, description, is_active, image_path"),
     supabase
       .from("role_permissions")
       .select("permission_code")
@@ -162,6 +166,7 @@ export default async function ProductsPage({
     cost: row.cost_cents === null ? undefined : row.cost_cents / 100,
     isActive: row.is_active,
     stock: 0,
+    image: productImageUrl(supabase, products.get(row.product_id)?.image_path),
   }));
 
   return (

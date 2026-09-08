@@ -56,8 +56,9 @@ saltando lo bloqueado.
 | **M5 (0.28.0)**          | Devolución parcial, reembolso por método original, caja nunca negativa, plazo y PIN de gerente           |
 | **M5.5 (0.25.0)**        | Alta por rangos, conteo continuo de 20 variantes y traspasos buscables, auditados en tres tamaños        |
 | **M9 (0.29.0)**          | Sincronizador idempotente de catálogo restringido a staging; conserva SHA, aprobación y conciliación     |
+| **Calidad 0.31.0**       | Proveedor y cliente con scroll táctil; carrito de Venta como cajón en teléfono e iPad                    |
 
-Sesenta y una migraciones versionadas del repositorio. El proyecto de Supabase
+Sesenta y tres migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -93,16 +94,17 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Falta para el alcance de octubre
 
-| Milestone                                        | Estado de la especificación                                                                                              |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| **M2** — catálogo, variantes, códigos, etiquetas | **Terminado en software.** Sólo falta la validación física: imprimir una etiqueta real y escanearla, con cámara y lector |
-| **M3** — inventario, movimientos, traspasos      | **Terminado en software:** saldos, libro inmutable, ajustes, conteos, traspasos y mercancía en tránsito                  |
-| **M4** — POS, pagos mixtos, caja                 | **Terminado en software:** incluye carrito persistente y tickets en espera; falta validar iPad e impresora               |
-| **M5** — devoluciones, cambios, cancelaciones    | **Terminado en software en 0.28.0:** acceso desde Venta, PIN propio, mismos métodos y efectivo limitado al cajón         |
+| Milestone                                        | Estado de la especificación                                                                                               |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| **M2** — catálogo, variantes, códigos, etiquetas | **Terminado en software.** Sólo falta la validación física: imprimir una etiqueta real y escanearla, con cámara y lector  |
+| **M3** — inventario, movimientos, traspasos      | **Terminado en software:** saldos, libro inmutable, ajustes, conteos, traspasos y mercancía en tránsito                   |
+| **M4** — POS, pagos mixtos, caja                 | **Terminado en software:** incluye carrito persistente y tickets en espera; falta validar iPad e impresora                |
+| **M5** — devoluciones, cambios, cancelaciones    | **Terminado en software en 0.28.0:** acceso desde Venta, PIN propio, mismos métodos y efectivo limitado al cajón          |
+| **M6** — compras, proveedores y recepción        | **Ampliado en 0.31.0:** alta rápida multivariante, foto opcional y lote exacto de etiquetas al recibir                    |
 | **M9** — importador y sincronizador de SICAR     | Sincronizador de catálogo listo en staging en 0.29.0; falta primer ensayo real tras limpiar tres precios y validar código |
 
-Recorridos a después de octubre: M6 compras, M7 apartados y lealtad, M8
-reportes y cotizaciones.
+Recorridos a después de octubre: M7 apartados y lealtad, M8 reportes y
+cotizaciones.
 
 **Con M3, M4, M5 y M5.5 cerrados, M9 ya cuenta con analizador y sincronizador
 de catálogo en staging.** El primer ensayo con los 16,009 productos permanece

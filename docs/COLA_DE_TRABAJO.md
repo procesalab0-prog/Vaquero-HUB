@@ -6,7 +6,7 @@
 > Para entender el proyecto antes de tocarlo, empezar por
 > [`ESTADO_Y_CONTINUIDAD.md`](ESTADO_Y_CONTINUIDAD.md).
 >
-> Última actualización: 2026-09-06, al completar la auditoría ergonómica M5.5.
+> Última actualización: 2026-09-07, al completar la ampliación M6.1.
 
 ## Cómo usar esta cola
 
@@ -152,6 +152,16 @@ ese número, meses después, sin relación aparente con la migración que la
 causó. Aplica igual a cualquier guion de respaldo o reparación.
 
 ## Integrado en esta entrega
+
+- M6 quedó terminado en 0.30.0: proveedores, órdenes que no alteran stock,
+  recepciones parciales idempotentes, historial inmutable y etiquetas por las
+  cantidades realmente recibidas. Sigue bloqueada únicamente la actualización
+  automática del costo hasta decidir promedio ponderado o último costo.
+
+- M6.1 quedó terminado en 0.31.0: desde una orden se crea el producto faltante
+  con tallas y colores en lote, fotografía opcional protegida y regreso directo
+  a la captura. Confirmar recepción abre el lote exacto en Etiquetas. Apartados
+  sigue siendo M7 y no se simula antes de definir sus reglas.
 
 - Acceso del cliente sin adivinar el destino. Ya se configuró
   `CUSTOMER_APP_URL=https://vaquero-hub.vercel.app/mi` en producción.
@@ -709,14 +719,14 @@ lo que muestra viene de la base.** Cualquier botón que responda con un
 Verificado ejecutando contra una base reconstruida: 57 migraciones aplican
 limpio y los controles del dinero aguantan.
 
-| Prueba                                              | Resultado medido                                           |
-| --------------------------------------------------- | ----------------------------------------------------------- |
-| Devolver sin PIN de gerente                         | `RETURN_AUTHORIZATION_REQUIRED`                              |
-| Reusar el token del gerente                         | Rechazado: se consume una sola vez                           |
-| Venta mitad efectivo, mitad tarjeta                 | Devolvió $499.50 a cada método; sólo la mitad salió del cajón |
-| Devolver una tercera pieza de dos vendidas          | `RETURN_EXCEEDS_SOLD`                                        |
-| Artículo dañado                                     | Entra con `RETURN` y sale con `ADJUSTMENT`/`DAMAGED_RETURN`: no vuelve a existencia vendible |
-| Fuera del plazo configurado                         | `RETURN_WINDOW_EXPIRED`                                      |
+| Prueba                                     | Resultado medido                                                                             |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| Devolver sin PIN de gerente                | `RETURN_AUTHORIZATION_REQUIRED`                                                              |
+| Reusar el token del gerente                | Rechazado: se consume una sola vez                                                           |
+| Venta mitad efectivo, mitad tarjeta        | Devolvió $499.50 a cada método; sólo la mitad salió del cajón                                |
+| Devolver una tercera pieza de dos vendidas | `RETURN_EXCEEDS_SOLD`                                                                        |
+| Artículo dañado                            | Entra con `RETURN` y sale con `ADJUSTMENT`/`DAMAGED_RETURN`: no vuelve a existencia vendible |
+| Fuera del plazo configurado                | `RETURN_WINDOW_EXPIRED`                                                                      |
 
 Dos decisiones del diseño que conviene no deshacer: **la devolución se
 reparte entre los métodos de pago originales**, así que nadie convierte una
@@ -767,24 +777,24 @@ pero `environment_label` sólo admite `UNCONFIGURED` o `STAGING`: producción no
 puede habilitarla ni por error. Hay dos compuertas independientes y las dos se
 probaron:
 
-| Prueba                                              | Resultado medido                          |
-| --------------------------------------------------- | ------------------------------------------- |
-| Aplicar sin configurar el entorno                   | `SICAR_CATALOG_SYNC_DISABLED`               |
-| Un usuario autenticado llamando la RPC              | `permission denied`: es sólo de servidor    |
-| Habilitar con la frase equivocada                   | `SICAR_STAGING_CONFIRMATION_MISMATCH`       |
-| Habilitar apuntando a otro proyecto                 | Rechazado                                    |
-| El script apuntado a un host que no es staging      | `SICAR_SYNC_REFUSES_NON_STAGING_PROJECT`    |
+| Prueba                                         | Resultado medido                         |
+| ---------------------------------------------- | ---------------------------------------- |
+| Aplicar sin configurar el entorno              | `SICAR_CATALOG_SYNC_DISABLED`            |
+| Un usuario autenticado llamando la RPC         | `permission denied`: es sólo de servidor |
+| Habilitar con la frase equivocada              | `SICAR_STAGING_CONFIRMATION_MISMATCH`    |
+| Habilitar apuntando a otro proyecto            | Rechazado                                |
+| El script apuntado a un host que no es staging | `SICAR_SYNC_REFUSES_NON_STAGING_PROJECT` |
 
 Y el comportamiento del importador:
 
-| Prueba                                              | Resultado medido                            |
-| --------------------------------------------------- | --------------------------------------------- |
-| Corrida con menos filas de las declaradas           | `SICAR_RUN_INCOMPLETE`                        |
-| Reaplicar la misma corrida                          | `already_applied`, sin duplicar               |
-| El mismo archivo como corrida nueva                 | Devuelve la corrida original: no reimporta    |
-| Código de SICAR que choca con uno **generado** por nosotros | `SICAR_RESERVED_BARCODE_CONFLICT`     |
-| SICAR manda costo 0 y nosotros tenemos costo real   | Conserva el nuestro y lo reporta como `zero_cost_preserved` |
-| Producto nuevo desde SICAR                          | SKU generado por `app.variant_serial_seq`, no el de SICAR |
+| Prueba                                                      | Resultado medido                                            |
+| ----------------------------------------------------------- | ----------------------------------------------------------- |
+| Corrida con menos filas de las declaradas                   | `SICAR_RUN_INCOMPLETE`                                      |
+| Reaplicar la misma corrida                                  | `already_applied`, sin duplicar                             |
+| El mismo archivo como corrida nueva                         | Devuelve la corrida original: no reimporta                  |
+| Código de SICAR que choca con uno **generado** por nosotros | `SICAR_RESERVED_BARCODE_CONFLICT`                           |
+| SICAR manda costo 0 y nosotros tenemos costo real           | Conserva el nuestro y lo reporta como `zero_cost_preserved` |
+| Producto nuevo desde SICAR                                  | SKU generado por `app.variant_serial_seq`, no el de SICAR   |
 
 No toca inventario en esta etapa, y lo declara en el reporte de
 conciliación. No se encontraron defectos.

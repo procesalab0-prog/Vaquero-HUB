@@ -135,6 +135,22 @@ export function LabelsWorkspace({
               .map((id) => [id, 1]),
           ),
         );
+      } else if (ids && typeof ids === "object") {
+        const available = new Set(variants.map((variant) => variant.id));
+        setSelected(
+          Object.fromEntries(
+            Object.entries(ids as Record<string, unknown>)
+              .filter(
+                ([id, count]) =>
+                  available.has(id) &&
+                  Number.isSafeInteger(Number(count)) &&
+                  Number(count) > 0,
+              )
+              // Una recepción ya fue validada por inventario: no recortamos
+              // silenciosamente 120 piezas a 99 etiquetas.
+              .map(([id, count]) => [id, Number(count)]),
+          ),
+        );
       }
       window.sessionStorage.removeItem("mi-tienda-label-selection");
     } catch {
@@ -175,7 +191,7 @@ export function LabelsWorkspace({
   function changeCount(id: string, delta: number) {
     if (delta > 0 && totalLabels >= 500) return;
     setSelected((current) => {
-      const next = Math.min(99, Math.max(0, (current[id] ?? 0) + delta));
+      const next = Math.min(500, Math.max(0, (current[id] ?? 0) + delta));
       if (next === 0) {
         const { [id]: removed, ...rest } = current;
         void removed;
@@ -303,7 +319,7 @@ export function LabelsWorkspace({
                     <strong>{count}</strong>
                     <button
                       type="button"
-                      disabled={count >= 99 || totalLabels >= 500}
+                      disabled={count >= 500 || totalLabels >= 500}
                       aria-label={`Agregar etiqueta de ${item.productName}`}
                       onClick={() => changeCount(item.id, 1)}
                     >

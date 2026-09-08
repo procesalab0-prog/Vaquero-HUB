@@ -12,6 +12,7 @@ import {
 } from "@/lib/catalog-import-shared";
 import type { ProductVariant } from "@/lib/domain";
 import type { BatchActionResult } from "@/lib/domain";
+import { uploadProductImage } from "@/lib/product-images";
 
 const productsPath = "/productos";
 
@@ -414,14 +415,30 @@ export async function createCatalogProduct(formData: FormData) {
     if (!productName || !categoryId) {
       status = "producto-datos-invalidos";
     } else {
-      const { error } = await supabase.rpc("create_catalog_product", {
+      const { data, error } = await supabase.rpc("create_catalog_product", {
         p_name: productName,
         p_category_id: categoryId,
         p_variants: variants,
         p_brand_name: brandName || null,
       });
       if (error) throw error;
-      status = "producto-creado";
+      const productId = String(
+        (data as { product_id?: string } | null)?.product_id ?? "",
+      );
+      try {
+        await uploadProductImage({
+          supabase,
+          productId,
+          image: formData.get("product_image"),
+        });
+        status = "producto-creado";
+      } catch (imageError) {
+        status = "producto-creado-imagen-pendiente";
+        console.error("[productos/createCatalogProduct] image failed", {
+          message:
+            imageError instanceof Error ? imageError.message : "UNKNOWN_ERROR",
+        });
+      }
     }
   } catch (error) {
     status = catalogErrorStatus(error);

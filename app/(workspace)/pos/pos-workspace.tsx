@@ -1530,7 +1530,7 @@ export function PosWorkspace({
         </div>
       ) : null}
       {status || saleError ? (
-        <div className="inline-error" role="alert">
+        <div className="inline-error operation-feedback" role="alert">
           {saleError ||
             "No fue posible cargar el punto de venta. Intenta de nuevo."}
         </div>
