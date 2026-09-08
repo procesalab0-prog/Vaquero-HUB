@@ -233,7 +233,7 @@ export function PurchasesWorkspace({
         </p>
       )}
       {notice && (
-        <p className="notice-banner" role="status">
+        <p className="notice-banner operation-feedback" role="status">
           {notice}
         </p>
       )}

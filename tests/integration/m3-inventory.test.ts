@@ -6,6 +6,7 @@ const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
 const secretKey = process.env.SUPABASE_SECRET_KEY!;
 const password = "Pruebas-M3-2026!";
 const runCode = Date.now().toString().slice(-8);
+const productName = `Producto inventario ${runCode}`;
 
 type Fixture = { id: string; client: SupabaseClient };
 
@@ -113,14 +114,14 @@ describe.sequential("M3.1: libro y saldos de inventario", () => {
     const created = await state.warehouse!.client.rpc(
       "create_catalog_product",
       {
-        p_name: `Producto inventario ${runCode}`,
+        p_name: productName,
         p_category_id: category!.id,
         p_variants: [{ cost_cents: 10000, price_cents: 20000, attributes: {} }],
       },
     );
     expect(created.error).toBeNull();
     const catalog = await state.admin!.client.rpc("search_catalog", {
-      p_query: `Producto inventario ${runCode}`,
+      p_query: productName,
       p_limit: 5,
     });
     expect(catalog.error).toBeNull();
@@ -130,7 +131,7 @@ describe.sequential("M3.1: libro y saldos de inventario", () => {
   it("inicia una variante nueva en cero sin inventar existencias", async () => {
     const { data, error } = await state.manager!.client.rpc(
       "get_inventory_snapshot",
-      { p_location_id: state.locationId, p_query: runCode, p_limit: 10 },
+      { p_location_id: state.locationId, p_query: productName, p_limit: 10 },
     );
     expect(error).toBeNull();
     expect(data).toHaveLength(1);
@@ -153,7 +154,7 @@ describe.sequential("M3.1: libro y saldos de inventario", () => {
   it("un cajero puede consultar pero no ajustar", async () => {
     const read = await state.cashier!.client.rpc("get_inventory_snapshot", {
       p_location_id: state.locationId,
-      p_query: runCode,
+      p_query: productName,
       p_limit: 10,
     });
     expect(read.error).toBeNull();
@@ -259,7 +260,7 @@ describe.sequential("M3.1: libro y saldos de inventario", () => {
 
     const snapshot = await state.manager!.client.rpc("get_inventory_snapshot", {
       p_location_id: state.locationId,
-      p_query: runCode,
+      p_query: productName,
       p_limit: 10,
     });
     expect([5, 6]).toContain(Number(snapshot.data[0].qty));
@@ -300,7 +301,7 @@ describe.sequential("M3.1: libro y saldos de inventario", () => {
   it("cierra un conteo contra el saldo vigente y señala movimientos posteriores", async () => {
     const snapshot = await state.manager!.client.rpc("get_inventory_snapshot", {
       p_location_id: state.locationId,
-      p_query: runCode,
+      p_query: productName,
       p_limit: 10,
     });
     const initial = Number(snapshot.data[0].qty);
@@ -362,7 +363,7 @@ describe.sequential("M3.1: libro y saldos de inventario", () => {
   it("serializa el cierre de conteo contra otro ajuste de la misma variante", async () => {
     const snapshot = await state.manager!.client.rpc("get_inventory_snapshot", {
       p_location_id: state.locationId,
-      p_query: runCode,
+      p_query: productName,
       p_limit: 10,
     });
     const initial = Number(snapshot.data[0].qty);
@@ -405,7 +406,7 @@ describe.sequential("M3.1: libro y saldos de inventario", () => {
   it("mantiene el total global y la mercancía fuera de ambos extremos durante el tránsito", async () => {
     const current = await state.manager!.client.rpc("get_inventory_snapshot", {
       p_location_id: state.locationId,
-      p_query: runCode,
+      p_query: productName,
       p_limit: 10,
     });
     const sourceBeforeLoad = Number(current.data[0].qty);
@@ -423,7 +424,7 @@ describe.sequential("M3.1: libro y saldos de inventario", () => {
       "get_inventory_snapshot",
       {
         p_location_id: state.otherLocationId,
-        p_query: runCode,
+        p_query: productName,
         p_limit: 10,
       },
     );
@@ -456,7 +457,7 @@ describe.sequential("M3.1: libro y saldos de inventario", () => {
           to_location_name: "M3 Sucursal B",
           variant_id: state.variantId,
           sku: expect.any(String),
-          product_name: `Producto inventario ${runCode}`,
+          product_name: productName,
         }),
       ]),
     );
@@ -488,12 +489,12 @@ describe.sequential("M3.1: libro y saldos de inventario", () => {
       await Promise.all([
         state.manager!.client.rpc("get_inventory_snapshot", {
           p_location_id: state.locationId,
-          p_query: runCode,
+          p_query: productName,
           p_limit: 10,
         }),
         state.admin!.client.rpc("get_inventory_snapshot", {
           p_location_id: state.otherLocationId,
-          p_query: runCode,
+          p_query: productName,
           p_limit: 10,
         }),
         state
@@ -550,7 +551,7 @@ describe.sequential("M3.1: libro y saldos de inventario", () => {
     const [destinationAfter, transitAfter] = await Promise.all([
       state.admin!.client.rpc("get_inventory_snapshot", {
         p_location_id: state.otherLocationId,
-        p_query: runCode,
+        p_query: productName,
         p_limit: 10,
       }),
       state

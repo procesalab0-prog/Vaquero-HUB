@@ -2492,3 +2492,18 @@ Entrega visible 0.30.0 — compras, proveedores y recepción:
 - Desde el historial se preparan etiquetas por la cantidad exacta recibida.
 - El costo vigente del producto no se modifica todavía: se conserva el costo
   de compra y se espera la decisión entre promedio ponderado o último costo.
+
+Corrección visible 0.30.1 — ventanas táctiles y avisos accesibles:
+
+- Todas las ventanas operativas comparten un límite basado en la altura visible
+  del dispositivo y desplazamiento táctil interno, incluso en teléfonos de poca
+  altura y con la PWA instalada.
+- Campos, selectores y botones respetan el ancho disponible; las filas de
+  acciones pueden reorganizarse sin encimarse ni salir de la pantalla.
+- Los avisos de venta, errores de cobro, caja y compras se muestran en la parte
+  superior y por encima de cualquier ventana abierta. Ya no es necesario cerrar
+  el flujo para conocer el resultado de una operación.
+- La verificación automática recorre Producto, Conteos, Proveedores, Caja y el
+  cobro dividido en teléfono compacto, iPad vertical y computadora; comprueba
+  alcance del contenido inferior, ausencia de controles encimados y orden
+  correcto de capas.
