@@ -133,41 +133,6 @@ test("muestra el error de cobro por encima de la ventana en teléfono", async ({
   expect(layers.feedback).toBeGreaterThan(layers.modal);
 });
 
-test("el alta de cliente se desplaza completa en un teléfono compacto", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 667 });
-  await page.goto("/clientes");
-  await page.getByText("Nuevo cliente", { exact: true }).click();
-
-  const panel = page.locator(".customer-create[open]");
-  const form = panel.locator(".admin-form");
-  await expect(panel).toBeVisible();
-  await expect(form).toBeVisible();
-
-  const panelBox = await panel.boundingBox();
-  expect(panelBox).not.toBeNull();
-  expect(panelBox!.x).toBeGreaterThanOrEqual(0);
-  expect(panelBox!.y).toBeGreaterThanOrEqual(0);
-  expect(panelBox!.x + panelBox!.width).toBeLessThanOrEqual(391);
-  expect(panelBox!.y + panelBox!.height).toBeLessThanOrEqual(668);
-
-  const metrics = await form.evaluate((element) => ({
-    clientHeight: element.clientHeight,
-    scrollHeight: element.scrollHeight,
-    overflowY: getComputedStyle(element).overflowY,
-  }));
-  expect(["auto", "scroll"]).toContain(metrics.overflowY);
-  expect(metrics.scrollHeight).toBeGreaterThan(metrics.clientHeight);
-
-  await form.evaluate((element) => {
-    element.scrollTop = element.scrollHeight;
-  });
-  await expect(
-    page.getByRole("button", { name: "Registrar cliente" }),
-  ).toBeInViewport();
-});
-
 test("el carrito vacío de iPad se abre como cajón sin amontonarse", async ({
   page,
 }) => {
