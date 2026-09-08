@@ -135,6 +135,17 @@ export function LabelsWorkspace({
               .map((id) => [id, 1]),
           ),
         );
+      } else if (ids && typeof ids === "object") {
+        const available = new Set(variants.map((variant) => variant.id));
+        setSelected(
+          Object.fromEntries(
+            Object.entries(ids as Record<string, unknown>)
+              .filter(([id, count]) =>
+                available.has(id) && Number.isSafeInteger(Number(count)) && Number(count) > 0,
+              )
+              .map(([id, count]) => [id, Math.min(99, Number(count))]),
+          ),
+        );
       }
       window.sessionStorage.removeItem("mi-tienda-label-selection");
     } catch {

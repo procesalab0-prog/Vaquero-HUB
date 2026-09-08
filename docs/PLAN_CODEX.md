@@ -38,6 +38,7 @@
   - [`specs/M3_INVENTARIO.md`](specs/M3_INVENTARIO.md)
   - [`specs/M4_POS_Y_CAJA.md`](specs/M4_POS_Y_CAJA.md)
   - [`specs/M5_DEVOLUCIONES_Y_CAMBIOS.md`](specs/M5_DEVOLUCIONES_Y_CAMBIOS.md)
+  - [`specs/M6_COMPRAS_Y_RECEPCION.md`](specs/M6_COMPRAS_Y_RECEPCION.md)
   - [`specs/CODIGOS_Y_SKU.md`](specs/CODIGOS_Y_SKU.md) — transversal, generación en M2
   - [`specs/ESCANEO.md`](specs/ESCANEO.md) — transversal, se introduce en M2
 - Cada milestone se entrega en uno o más PRs pequeños y revisables.
@@ -423,6 +424,9 @@ frecuentes o bloqueantes sin corregir.
 `docs/AUDITORIA_ERGONOMIA.md`.
 
 ### M6 — Compras, proveedores y recepción _(semana 7)_
+
+**Estado:** terminado en software en 0.30.0. El costo documental se conserva,
+pero no cambia el costo vigente hasta resolver la pregunta 4.1.
 
 - Tablas: `suppliers`, `purchase_orders`, `purchase_items`, `receipts`,
   `receipt_items`.

@@ -2476,3 +2476,19 @@ Entrega visible 0.29.0 — sincronizador seguro de catálogo SICAR:
 - La pantalla de cambios ahora interpreta los objetos de error de Supabase y
   muestra causas útiles en vez del mensaje genérico; el servidor registra el
   código técnico sin guardar PIN ni contenido del ticket.
+
+Entrega visible 0.30.0 — compras, proveedores y recepción:
+
+- Compras permite registrar proveedores, crear órdenes por sucursal y capturar
+  productos, cantidades y costo por pieza en una lista continua.
+- La orden no mueve inventario. Sólo confirmar una recepción crea movimientos
+  `PURCHASE`; una recepción parcial deja visible cuánto falta.
+- La operación es atómica e idempotente. La orden se bloquea antes de revisar
+  pendientes para impedir que dos recepciones simultáneas ingresen más de lo
+  pedido.
+- Cada recepción conserva responsable, fecha, sucursal, costo documental y
+  detalle. Las tablas de órdenes y recepciones no admiten cambios o borrado
+  directo y el cajero no puede consultarlas.
+- Desde el historial se preparan etiquetas por la cantidad exacta recibida.
+- El costo vigente del producto no se modifica todavía: se conserva el costo
+  de compra y se espera la decisión entre promedio ponderado o último costo.

@@ -99,10 +99,11 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 | **M3** — inventario, movimientos, traspasos      | **Terminado en software:** saldos, libro inmutable, ajustes, conteos, traspasos y mercancía en tránsito                  |
 | **M4** — POS, pagos mixtos, caja                 | **Terminado en software:** incluye carrito persistente y tickets en espera; falta validar iPad e impresora               |
 | **M5** — devoluciones, cambios, cancelaciones    | **Terminado en software en 0.28.0:** acceso desde Venta, PIN propio, mismos métodos y efectivo limitado al cajón         |
+| **M6** — compras, proveedores y recepción       | **Terminado en software en 0.30.0:** órdenes sin stock, recepción parcial auditable y etiquetas desde lo recibido       |
 | **M9** — importador y sincronizador de SICAR     | Sincronizador de catálogo listo en staging en 0.29.0; falta primer ensayo real tras limpiar tres precios y validar código |
 
-Recorridos a después de octubre: M6 compras, M7 apartados y lealtad, M8
-reportes y cotizaciones.
+Recorridos a después de octubre: M7 apartados y lealtad, M8 reportes y
+cotizaciones.
 
 **Con M3, M4, M5 y M5.5 cerrados, M9 ya cuenta con analizador y sincronizador
 de catálogo en staging.** El primer ensayo con los 16,009 productos permanece
