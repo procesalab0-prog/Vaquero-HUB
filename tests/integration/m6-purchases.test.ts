@@ -14,6 +14,7 @@ const state = {
   cashier: null as Fixture | null,
   warehouse: null as Fixture | null,
   locationId: "",
+  productId: "",
   variantId: "",
   supplierId: "",
   orderId: "",
@@ -94,6 +95,7 @@ describe.sequential("M6: compras, proveedores y recepción", () => {
       },
     );
     expect(created.error).toBeNull();
+    state.productId = created.data.product_id;
     const catalog = await state.manager!.client.rpc("search_catalog", {
       p_query: `Producto compra ${runCode}`,
       p_limit: 5,
@@ -198,6 +200,34 @@ describe.sequential("M6: compras, proveedores y recepción", () => {
       p_notes: null,
     });
     expect(result.error?.message).toContain("NOT_AUTHORIZED");
+  });
+
+  it("guarda una foto comercial sólo mediante Storage y permiso de catálogo", async () => {
+    const path = `${state.productId}/${crypto.randomUUID()}.png`;
+    const image = new Blob([new Uint8Array([137, 80, 78, 71])], {
+      type: "image/png",
+    });
+    const uploaded = await state
+      .warehouse!.client.storage.from("product-images")
+      .upload(path, image, { contentType: "image/png" });
+    expect(uploaded.error).toBeNull();
+    const linked = await state.warehouse!.client.rpc("set_product_image", {
+      p_product_id: state.productId,
+      p_storage_path: path,
+    });
+    expect(linked.error).toBeNull();
+    const { data: product } = await state
+      .server!.from("products")
+      .select("image_path")
+      .eq("id", state.productId)
+      .single();
+    expect(product!.image_path).toBe(path);
+
+    const forbidden = await state.cashier!.client.rpc("set_product_image", {
+      p_product_id: state.productId,
+      p_storage_path: path,
+    });
+    expect(forbidden.error?.message).toContain("NOT_AUTHORIZED");
   });
 
   it("el historial es inmutable incluso para service_role", async () => {

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requirePermission } from "@/lib/auth/authorization";
+import { uploadProductImage } from "@/lib/product-images";
 
 type ActionResult = {
   ok: boolean;
@@ -44,6 +45,94 @@ function failure(error: unknown, fallback: string): ActionResult {
     return { ok: false, message: "Revisa los datos capturados." };
   console.error("[compras] action failed", { message });
   return { ok: false, message: fallback };
+}
+
+export async function createPurchaseProduct(
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    await requirePermission("purchases.manage");
+    const { supabase } = await requirePermission("products.create");
+    const name = clean(formData.get("product_name"));
+    const categoryId = clean(formData.get("category_id"));
+    const brandName = clean(formData.get("brand_name"));
+    const cost = Number(formData.get("cost"));
+    const price = Number(formData.get("price"));
+    const combinations = [
+      ...new Set(formData.getAll("variant_combo").map(clean).filter(Boolean)),
+    ];
+    if (
+      !name ||
+      !categoryId ||
+      !Number.isFinite(cost) ||
+      cost < 0 ||
+      !Number.isFinite(price) ||
+      price < 0 ||
+      combinations.length < 1 ||
+      combinations.length > 200
+    ) {
+      return { ok: false, message: "Completa el producto y sus variantes." };
+    }
+    const variants = combinations.map((combination) => {
+      const [colorId, sizeId, unexpected] = combination.split(":");
+      if (!colorId || !sizeId || unexpected)
+        throw new Error("INVALID_VARIANT_COMBINATION");
+      return {
+        cost_cents: Math.round(cost * 100),
+        price_cents: Math.round(price * 100),
+        attributes: { COLOR: colorId, TALLA: sizeId },
+      };
+    });
+    const { data, error } = await supabase.rpc("create_catalog_product", {
+      p_name: name,
+      p_category_id: categoryId,
+      p_variants: variants,
+      p_brand_name: brandName || null,
+    });
+    if (error) throw error;
+    const productId = String(
+      (data as { product_id?: string } | null)?.product_id ?? "",
+    );
+    let imageWarning = "";
+    try {
+      await uploadProductImage({
+        supabase,
+        productId,
+        image: formData.get("product_image"),
+      });
+    } catch (imageError) {
+      imageWarning = " La foto quedó pendiente, pero el producto sí se guardó.";
+      console.error("[compras/createPurchaseProduct] image failed", {
+        message:
+          imageError instanceof Error ? imageError.message : "UNKNOWN_ERROR",
+      });
+    }
+    const { data: created, error: searchError } = await supabase.rpc(
+      "search_catalog",
+      { p_query: name, p_limit: 200 },
+    );
+    if (searchError) throw searchError;
+    const createdVariants = (created ?? [])
+      .filter((row: Record<string, unknown>) => row.product_id === productId)
+      .map((row: Record<string, unknown>) => ({
+        id: String(row.variant_id),
+        name: String(row.product_name),
+        sku: String(row.sku),
+        attributes: Object.values(
+          (row.attributes ?? {}) as Record<string, string>,
+        ).join(" · "),
+        costCents: Number(row.cost_cents ?? Math.round(cost * 100)),
+      }));
+    revalidatePath("/productos");
+    revalidatePath("/compras");
+    return {
+      ok: true,
+      message: `${createdVariants.length} variantes creadas y agregadas a la orden.${imageWarning}`,
+      data: { productId, variants: createdVariants },
+    };
+  } catch (error) {
+    return failure(error, "No fue posible crear el producto desde la orden.");
+  }
 }
 
 export async function saveSupplier(input: {

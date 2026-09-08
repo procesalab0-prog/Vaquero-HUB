@@ -3,6 +3,7 @@ import { PosWorkspace } from "./pos-workspace";
 import { mockVariants } from "@/lib/mock-data";
 import { requirePermission } from "@/lib/auth/authorization";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { productImageUrl } from "@/lib/product-images";
 import {
   authorizeSaleDiscount,
   cancelPosSale,
@@ -19,6 +20,7 @@ export const metadata: Metadata = { title: "Punto de venta" };
 
 type CatalogRow = {
   variant_id: string;
+  product_id: string;
   product_name: string;
   brand_name: string;
   primary_barcode: string | null;
@@ -57,22 +59,30 @@ export default async function PosPage({
       />
     );
   }
-  const [catalogResult, inventoryResult, draftsResult] = await Promise.all([
-    supabase.rpc("search_catalog", { p_query: "", p_limit: 500 }),
-    supabase.rpc("get_inventory_snapshot", {
-      p_location_id: cashSession.location_id,
-      p_query: "",
-      p_limit: 500,
-    }),
-    supabase.rpc("list_my_pos_drafts", {
-      p_cash_session_id: cashSession.id,
-    }),
-  ]);
-  if (catalogResult.error || inventoryResult.error || draftsResult.error) {
+  const [catalogResult, inventoryResult, draftsResult, productsResult] =
+    await Promise.all([
+      supabase.rpc("search_catalog", { p_query: "", p_limit: 500 }),
+      supabase.rpc("get_inventory_snapshot", {
+        p_location_id: cashSession.location_id,
+        p_query: "",
+        p_limit: 500,
+      }),
+      supabase.rpc("list_my_pos_drafts", {
+        p_cash_session_id: cashSession.id,
+      }),
+      supabase.from("products").select("id,image_path"),
+    ]);
+  if (
+    catalogResult.error ||
+    inventoryResult.error ||
+    draftsResult.error ||
+    productsResult.error
+  ) {
     console.error("[pos] data unavailable", {
       catalog: catalogResult.error?.message,
       inventory: inventoryResult.error?.message,
       drafts: draftsResult.error?.message,
+      products: productsResult.error?.message,
     });
     return (
       <PosWorkspace
@@ -94,6 +104,12 @@ export default async function PosPage({
       Number(row.available_qty),
     ]),
   );
+  const images = new Map(
+    (productsResult.data ?? []).map((product) => [
+      product.id,
+      productImageUrl(supabase, product.image_path),
+    ]),
+  );
   const variants = ((catalogResult.data ?? []) as CatalogRow[])
     .filter((row) => row.is_active)
     .map((row) => ({
@@ -107,6 +123,7 @@ export default async function PosPage({
       price: Number(row.price_cents) / 100,
       isActive: row.is_active,
       stock: stocks.get(row.variant_id) ?? 0,
+      image: images.get(row.product_id),
     }));
   return (
     <PosWorkspace

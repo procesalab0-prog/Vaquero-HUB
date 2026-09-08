@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Check,
   ClipboardList,
@@ -12,6 +13,11 @@ import {
   Truck,
   X,
 } from "lucide-react";
+import {
+  QuickProductForm,
+  type PurchaseAttributeValue,
+  type PurchaseCategory,
+} from "./quick-product-form";
 
 export type SupplierView = {
   id: string;
@@ -99,6 +105,10 @@ export function PurchasesWorkspace({
   createPurchaseOrderAction,
   receivePurchaseOrderAction,
   cancelPurchaseOrderAction,
+  createPurchaseProductAction,
+  categories,
+  attributeValues,
+  canCreateProducts,
 }: {
   suppliers: SupplierView[];
   orders: PurchaseOrderView[];
@@ -114,7 +124,12 @@ export function PurchasesWorkspace({
   createPurchaseOrderAction: typeof import("./actions").createPurchaseOrder;
   receivePurchaseOrderAction: typeof import("./actions").receivePurchaseOrder;
   cancelPurchaseOrderAction: typeof import("./actions").cancelPurchaseOrder;
+  createPurchaseProductAction: typeof import("./actions").createPurchaseProduct;
+  categories: PurchaseCategory[];
+  attributeValues: PurchaseAttributeValue[];
+  canCreateProducts: boolean;
 }) {
+  const router = useRouter();
   const validTab = (
     ["ordenes", "recibir", "proveedores", "recepciones"] as Tab[]
   ).includes(initialTab as Tab)
@@ -125,6 +140,12 @@ export function PurchasesWorkspace({
   const [isPending, startTransition] = useTransition();
   const [orderOpen, setOrderOpen] = useState(false);
   const [supplierOpen, setSupplierOpen] = useState(false);
+  const [quickProductOpen, setQuickProductOpen] = useState(false);
+  const [orderDetails, setOrderDetails] = useState({
+    supplierId: "",
+    expectedAt: "",
+    notes: "",
+  });
   const [query, setQuery] = useState("");
   const [orderLines, setOrderLines] = useState<
     Array<{ variant: VariantView; qty: number; cost: string }>
@@ -156,13 +177,17 @@ export function PurchasesWorkspace({
       message: string;
       data?: Record<string, unknown>;
     }>,
-    done?: () => void,
+    done?: (result: {
+      ok: boolean;
+      message: string;
+      data?: Record<string, unknown>;
+    }) => void,
   ) {
     setNotice("");
     startTransition(async () => {
       const result = await task();
       setNotice(result.message);
-      if (result.ok) done?.();
+      if (result.ok) done?.(result);
     });
   }
   function addVariant(variant: VariantView) {
@@ -181,6 +206,28 @@ export function PurchasesWorkspace({
           ],
     );
     setQuery("");
+  }
+  async function createPreviewPurchaseProduct(formData: FormData) {
+    const name = String(formData.get("product_name") ?? "").trim();
+    const costCents = Math.round(Number(formData.get("cost")) * 100);
+    const combos = formData.getAll("variant_combo").map(String);
+    const created = combos.map((combo, index) => {
+      const [colorId, sizeId] = combo.split(":");
+      const color = attributeValues.find((item) => item.id === colorId)?.value;
+      const size = attributeValues.find((item) => item.id === sizeId)?.value;
+      return {
+        id: `preview-purchase-${Date.now()}-${index}`,
+        name,
+        sku: `Se genera-${index + 1}`,
+        attributes: `${color ?? "Sin color"} · ${size ?? "Única"}`,
+        costCents,
+      };
+    });
+    return {
+      ok: true,
+      message: `${created.length} variantes agregadas a la orden en esta demostración.`,
+      data: { variants: created },
+    };
   }
   function openReceive(order: PurchaseOrderView) {
     setReceivingOrder(order);
@@ -405,6 +452,7 @@ export function PurchasesWorkspace({
                     );
                     setReceivingOrder(null);
                     setReceiveQty({});
+                    router.push("/etiquetas?desde=recepcion");
                   },
                 );
               }}
@@ -561,7 +609,7 @@ export function PurchasesWorkspace({
         </div>
       )}
 
-      {orderOpen && (
+      {orderOpen && !quickProductOpen && (
         <div className="modal-backdrop">
           <div
             className="purchase-modal"
@@ -581,14 +629,13 @@ export function PurchasesWorkspace({
             <form
               onSubmit={(event) => {
                 event.preventDefault();
-                const form = new FormData(event.currentTarget);
                 run(
                   () =>
                     createPurchaseOrderAction({
-                      supplierId: String(form.get("supplier")),
+                      supplierId: orderDetails.supplierId,
                       locationId: activeLocationId,
-                      expectedAt: String(form.get("expectedAt")),
-                      notes: String(form.get("notes")),
+                      expectedAt: orderDetails.expectedAt,
+                      notes: orderDetails.notes,
                       items: orderLines.map((line) => ({
                         variantId: line.variant.id,
                         qty: line.qty,
@@ -598,6 +645,11 @@ export function PurchasesWorkspace({
                   () => {
                     setOrderOpen(false);
                     setOrderLines([]);
+                    setOrderDetails({
+                      supplierId: "",
+                      expectedAt: "",
+                      notes: "",
+                    });
                   },
                 );
               }}
@@ -605,7 +657,17 @@ export function PurchasesWorkspace({
               <div className="form-grid">
                 <label>
                   Proveedor
-                  <select name="supplier" required>
+                  <select
+                    name="supplier"
+                    value={orderDetails.supplierId}
+                    onChange={(event) =>
+                      setOrderDetails((current) => ({
+                        ...current,
+                        supplierId: event.target.value,
+                      }))
+                    }
+                    required
+                  >
                     <option value="">Selecciona</option>
                     {activeSuppliers.map((supplier) => (
                       <option value={supplier.id} key={supplier.id}>
@@ -616,7 +678,17 @@ export function PurchasesWorkspace({
                 </label>
                 <label>
                   Fecha estimada
-                  <input type="date" name="expectedAt" />
+                  <input
+                    type="date"
+                    name="expectedAt"
+                    value={orderDetails.expectedAt}
+                    onChange={(event) =>
+                      setOrderDetails((current) => ({
+                        ...current,
+                        expectedAt: event.target.value,
+                      }))
+                    }
+                  />
                 </label>
               </div>
               <label>
@@ -649,6 +721,16 @@ export function PurchasesWorkspace({
                   ))}
                 </div>
               )}
+              {canCreateProducts ? (
+                <button
+                  className="quick-create-product"
+                  type="button"
+                  onClick={() => setQuickProductOpen(true)}
+                >
+                  <Plus />
+                  ¿No aparece? Crear producto nuevo sin salir de la orden
+                </button>
+              ) : null}
               <div className="order-lines">
                 {orderLines.map((line, index) => (
                   <div className="order-line" key={line.variant.id}>
@@ -715,7 +797,17 @@ export function PurchasesWorkspace({
               </div>
               <label>
                 Notas
-                <textarea name="notes" rows={2} />
+                <textarea
+                  name="notes"
+                  rows={2}
+                  value={orderDetails.notes}
+                  onChange={(event) =>
+                    setOrderDetails((current) => ({
+                      ...current,
+                      notes: event.target.value,
+                    }))
+                  }
+                />
               </label>
               <button
                 className="primary-button receive-submit"
@@ -809,6 +901,34 @@ export function PurchasesWorkspace({
           </div>
         </div>
       )}
+
+      {quickProductOpen ? (
+        <QuickProductForm
+          categories={categories}
+          attributeValues={attributeValues}
+          action={
+            preview ? createPreviewPurchaseProduct : createPurchaseProductAction
+          }
+          onCancel={() => setQuickProductOpen(false)}
+          onCreated={(created, message) => {
+            setOrderLines((current) => {
+              const known = new Set(current.map((line) => line.variant.id));
+              return [
+                ...current,
+                ...created
+                  .filter((variant) => !known.has(variant.id))
+                  .map((variant) => ({
+                    variant,
+                    qty: 1,
+                    cost: (variant.costCents / 100).toFixed(2),
+                  })),
+              ];
+            });
+            setNotice(message);
+            setQuickProductOpen(false);
+          }}
+        />
+      ) : null}
     </section>
   );
 }
