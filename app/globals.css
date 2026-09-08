@@ -6725,6 +6725,13 @@ a:active {
   touch-action: pan-y;
 }
 
+.field-warning {
+  display: block;
+  margin-top: 4px;
+  color: #8a6100;
+  font-size: 12px;
+  line-height: 1.35;
+}
 .field-error {
   margin: 0;
   color: #9b2d20;
