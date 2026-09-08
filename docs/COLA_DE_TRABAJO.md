@@ -153,6 +153,11 @@ causó. Aplica igual a cualquier guion de respaldo o reparación.
 
 ## Integrado en esta entrega
 
+- M6 quedó terminado en 0.30.0: proveedores, órdenes que no alteran stock,
+  recepciones parciales idempotentes, historial inmutable y etiquetas por las
+  cantidades realmente recibidas. Sigue bloqueada únicamente la actualización
+  automática del costo hasta decidir promedio ponderado o último costo.
+
 - Acceso del cliente sin adivinar el destino. Ya se configuró
   `CUSTOMER_APP_URL=https://vaquero-hub.vercel.app/mi` en producción.
 - Cierre de seguridad de M1B: anonimización y límite de acceso por origen.

@@ -225,6 +225,13 @@ Más conservan contenido de navegación o demostración.
 El calendario completo y la estrategia para la segunda sucursal viven en
 [`PLAN_OCTUBRE.md`](PLAN_OCTUBRE.md).
 
+## Decisión pendiente de M6: costo de compra
+
+M6 conserva el costo unitario de cada orden y recepción para no perder datos,
+pero deliberadamente no modifica `variants.cost_cents`. Cuando el dueño decida
+entre promedio ponderado y último costo (pregunta 4.1), se añadirá una migración
+compensatoria y pruebas contables; no se reinterpretará el historial.
+
 ## Asuntos todavía bloqueados
 
 - Confirmar físicamente si `clave1` de la exportación SICAR es el código que

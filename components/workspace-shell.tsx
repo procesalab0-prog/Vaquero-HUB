@@ -45,6 +45,7 @@ function moduleTitle(pathname: string) {
   if (pathname.startsWith("/inicio")) return "Inicio";
   if (pathname.startsWith("/productos")) return "Productos";
   if (pathname.startsWith("/inventario")) return "Inventario";
+  if (pathname.startsWith("/compras")) return "Compras";
   if (pathname.startsWith("/caja")) return "Caja";
   if (pathname.startsWith("/tickets")) return "Tickets";
   if (pathname.startsWith("/etiquetas")) return "Etiquetas";
