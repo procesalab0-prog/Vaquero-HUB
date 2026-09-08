@@ -128,7 +128,11 @@ describe.sequential("M8: reportes de ventas e inventario", () => {
       p_items: [{ variant_id: state.variantId, quantity: 1 }],
       p_payments: [
         { method_code: "CASH", amount_cents: 10000, tendered_cents: 10000 },
-        { method_code: "CARD", amount_cents: 10000 },
+        {
+          method_code: "CARD",
+          amount_cents: 10000,
+          reference: "M8-CARD",
+        },
       ],
       p_customer_id: null,
       p_discounts: [],
