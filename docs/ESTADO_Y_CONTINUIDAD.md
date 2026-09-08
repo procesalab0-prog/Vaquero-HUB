@@ -56,6 +56,7 @@ saltando lo bloqueado.
 | **M5 (0.28.0)**          | Devolución parcial, reembolso por método original, caja nunca negativa, plazo y PIN de gerente           |
 | **M5.5 (0.25.0)**        | Alta por rangos, conteo continuo de 20 variantes y traspasos buscables, auditados en tres tamaños        |
 | **M9 (0.29.0)**          | Sincronizador idempotente de catálogo restringido a staging; conserva SHA, aprobación y conciliación     |
+| **Calidad 0.30.1**       | Ventanas con scroll táctil uniforme, controles sin encimarse y avisos visibles sobre cualquier ventana   |
 
 Sesenta y una migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
