@@ -842,6 +842,55 @@ resultado y sus correcciones quedan en `docs/AUDITORIA_ERGONOMIA.md`.
 físico antes del piloto; el siguiente trabajo de software sin bloqueo es M9 en
 modo analizador y corrida en seco.
 
+### Revisión de M6 (compras, proveedores y recepción)
+
+Verificado ejecutando contra una base reconstruida: 63 migraciones aplican
+limpio. **No se encontraron defectos.**
+
+| Prueba                                              | Resultado medido                          |
+| --------------------------------------------------- | ------------------------------------------- |
+| La cajera intenta recibir mercancía                 | `NOT_AUTHORIZED`                            |
+| Recibir 12 de una orden de 10                       | `RECEIPT_EXCEEDS_ORDER`                     |
+| Doble toque con la misma llave                      | `replayed: true`; la existencia no se movió |
+| Recepción parcial y luego el resto                  | 6 + 4 = 10, estado pasa a `RECEIVED`        |
+| Recibir de más de forma acumulada                   | Rechazado                                    |
+| **Dos recepciones simultáneas de 7 sobre una orden de 10** | Pasó una sola; la existencia subió 7, no 14 |
+| Cancelar una orden ya recibida parcialmente         | `PURCHASE_NOT_CANCELLABLE`                  |
+
+La recepción entra por `app.apply_movement`, así que queda en el libro y el
+invariante siguió cuadrando después de cada prueba.
+
+**Una decisión que conviene dejar explícita:** recibir mercancía **no cambia
+el costo del catálogo**. El costo pactado se guarda en el renglón de la
+recepción, pero la variante conserva el suyo. Es lo correcto mientras no se
+conteste la pregunta 4.1 del cliente (promedio ponderado o último costo);
+cuando se conteste, ahí está el dato para calcularlo sin haber ensuciado el
+catálogo mientras tanto.
+
+### Fotos de producto: la superficie nueva
+
+Es lo primero del proyecto que acepta archivos, así que se revisó aparte.
+
+- El bucket es público (son fotos comerciales), con tope de 4 MB y sólo
+  `image/jpeg`, `image/png` y `image/webp`.
+- La ruta está atada por restricción a `<id del producto>/<uuid>.(jpg|png|webp)`,
+  así que una foto no puede apuntar a la carpeta de otro producto.
+- Permiso escalonado: con `products.update` se administra cualquier foto; con
+  sólo `products.create` se puede poner la primera foto **de un producto que
+  uno mismo creó**. Almacén puede fotografiar lo que da de alta sin poder
+  reemplazar lo ajeno.
+
+| Prueba                                              | Resultado medido                |
+| --------------------------------------------------- | --------------------------------- |
+| La cajera asocia una foto                           | `NOT_AUTHORIZED`                  |
+| Apuntar la foto del producto A a la carpeta de B    | `INVALID_PRODUCT_IMAGE_PATH`      |
+| Ruta con salto de directorio (`../`)                | `INVALID_PRODUCT_IMAGE_PATH`      |
+| Archivo que no existe en el bucket                  | `PRODUCT_IMAGE_NOT_FOUND`         |
+| Escribir `image_path` a mano, saltándose la RPC     | `permission denied`               |
+
+Y el alta rápida desde Compras pasa por `create_catalog_product`, así que los
+productos nuevos nacen con SKU y código propios, no con los del proveedor.
+
 ## 8. M9 — Importador y sincronizador de SICAR
 
 **Especificación:** [`PLAN_CODEX.md`](PLAN_CODEX.md) §5, milestone M9
