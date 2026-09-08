@@ -94,6 +94,19 @@
 .order-line { padding: 10px; border: 1px solid var(--border); border-radius: 12px; display: grid; grid-template-columns: minmax(190px, 1.5fr) 95px 140px 44px; gap: 10px; align-items: end; }
 .order-line > button { width: 44px; height: 44px; border: 0; background: var(--error-soft); color: var(--error); border-radius: 9px; }
 .text-danger { color: var(--error) !important; }
+.quick-create-product { width: 100%; min-height: 50px; margin-top: 10px; padding: 10px 14px; border: 1px dashed var(--accent); border-radius: 11px; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--accent-soft); color: var(--accent); font-weight: 900; }
+.quick-create-product svg { width: 20px; }
+.quick-product-backdrop { z-index: 80; }
+.quick-product-modal { width: min(760px, calc(100vw - 28px)); }
+.quick-options { min-width: 0; margin: 16px 0; padding: 14px; border: 1px solid var(--border); border-radius: 13px; }
+.quick-options legend { padding: 0 6px; font-weight: 900; }
+.quick-option-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.quick-option-list label { min-width: 54px; min-height: 46px; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 7px; background: var(--surface); font-weight: 800; }
+.quick-option-list label.selected { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.quick-image-input { min-width: 0; display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: center; gap: 8px; }
+.quick-image-input input { min-width: 0; width: 100%; }
+.quick-product-actions { position: sticky; bottom: -1px; padding-top: 12px; background: var(--surface); }
+.product-image-field small, .quick-product-modal label > small { color: var(--muted); font-weight: 500; }
 
 @media (max-width: 720px) {
   .purchase-tabs { position: sticky; top: 0; z-index: 4; grid-template-columns: repeat(4, 1fr); margin-inline: -8px; }
@@ -110,6 +123,7 @@
   .form-grid, .order-line { grid-template-columns: 1fr; }
   .order-line > button { width: 100%; }
   .purchase-modal { width: 100%; max-height: calc(100dvh - env(safe-area-inset-top)); border-radius: 18px 18px 0 0; padding-bottom: max(22px, env(safe-area-inset-bottom)); }
+  .quick-product-actions { display: grid; grid-template-columns: 1fr; }
 }
 
 * {
@@ -1131,13 +1145,14 @@ code {
 .modal-backdrop {
   position: fixed;
   inset: 0;
+  height: 100dvh;
   z-index: 90;
   padding: 20px;
   display: grid;
   place-items: center;
   background: rgba(28, 25, 23, 0.58);
   backdrop-filter: blur(4px);
-  overflow-y: auto;
+  overflow: hidden;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
@@ -1156,7 +1171,9 @@ code {
 
 .modal-backdrop > :where(.checkout-modal, .purchase-modal, .receipt-modal) {
   min-width: 0;
+  min-height: 0;
   max-width: 100%;
+  max-height: calc(100dvh - 40px);
 }
 
 :where(.checkout-modal, .purchase-modal, .receipt-modal, .exchange-modal)
@@ -5398,6 +5415,102 @@ a:active {
   }
 }
 
+/* En iPad el carrito funciona como cajón táctil, no como una segunda página
+   debajo del catálogo. Así conserva siempre visibles el catálogo y la barra. */
+@media (min-width: 601px) and (max-width: 820px) {
+  .sale-panel {
+    position: fixed;
+    z-index: 82;
+    left: 14px;
+    right: 14px;
+    bottom: calc(
+      var(--mobile-nav-height) + var(--mobile-nav-gap) +
+        env(safe-area-inset-bottom)
+    );
+    max-height: calc(
+      100dvh - var(--mobile-nav-height) - var(--mobile-nav-gap) -
+        env(safe-area-inset-bottom) - 22px
+    );
+    min-height: 0;
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    box-shadow: var(--shadow-3);
+    overscroll-behavior: contain;
+    transform: translateY(
+      calc(100% + var(--mobile-nav-height) + var(--mobile-nav-gap))
+    );
+    transition: transform 180ms ease-out;
+  }
+  .sale-panel.mobile-open {
+    transform: translateY(0);
+  }
+  .mobile-cart-backdrop {
+    position: fixed;
+    z-index: 81;
+    inset: 0 0 calc(var(--mobile-nav-height) + env(safe-area-inset-bottom));
+    border: 0;
+    display: block;
+    background: rgba(28, 25, 23, 0.5);
+  }
+  .mobile-cart-close {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: var(--surface-soft);
+  }
+  .sale-panel-header code {
+    margin-left: auto;
+    margin-right: 6px;
+  }
+  .mobile-cart-toggle {
+    position: fixed;
+    z-index: 68;
+    left: 14px;
+    right: 14px;
+    bottom: calc(var(--mobile-nav-height) + 10px + env(safe-area-inset-bottom));
+    min-height: 62px;
+    padding: 0 17px;
+    border: 0;
+    border-radius: 15px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    align-items: center;
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 10px 26px rgba(80, 25, 17, 0.3);
+  }
+  .mobile-cart-toggle > span {
+    position: relative;
+    display: grid;
+    place-items: center;
+  }
+  .mobile-cart-toggle svg {
+    width: 23px;
+  }
+  .mobile-cart-toggle > span b {
+    position: absolute;
+    top: -11px;
+    right: -11px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 4px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: var(--gold);
+    color: var(--brand);
+    font-size: 10px;
+  }
+  .mobile-cart-toggle > strong {
+    text-align: left;
+  }
+}
+
 @media (max-width: 600px) {
   .app-topbar {
     padding: env(safe-area-inset-top) 10px 0;
@@ -5771,6 +5884,41 @@ a:active {
   .customer-meta {
     flex-wrap: wrap;
     gap: 8px;
+  }
+  .customer-create[open] {
+    position: fixed;
+    z-index: 90;
+    right: max(8px, env(safe-area-inset-right));
+    bottom: calc(
+      var(--mobile-nav-height) + env(safe-area-inset-bottom) + 8px
+    );
+    left: max(8px, env(safe-area-inset-left));
+    max-height: calc(
+      100dvh - var(--mobile-nav-height) - env(safe-area-inset-top) -
+        env(safe-area-inset-bottom) - 24px
+    );
+    margin: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+    border-style: solid;
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: var(--shadow-3);
+  }
+  .customer-create[open] > summary {
+    min-height: 58px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-soft);
+  }
+  .customer-create[open] .admin-form {
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
   }
   .modal-backdrop {
     padding: max(8px, env(safe-area-inset-top))

@@ -102,6 +102,8 @@ const previewValues: AttributeValue[] = [
 
 const statusMessages: Record<string, string> = {
   "producto-creado": "Producto y variantes guardados correctamente.",
+  "producto-creado-imagen-pendiente":
+    "Producto y variantes guardados. La foto no pudo subirse; puedes agregarla después.",
   "variantes-agregadas":
     "Las nuevas variantes se agregaron sin cambiar los SKU ni códigos existentes.",
   "codigo-registrado":
@@ -654,6 +656,7 @@ export function ProductsWorkspace({
           className={
             [
               "producto-creado",
+              "producto-creado-imagen-pendiente",
               "variantes-agregadas",
               "codigo-registrado",
               "producto-actualizado",
@@ -891,6 +894,18 @@ export function ProductsWorkspace({
                           </option>
                         ))}
                       </select>
+                    </label>
+                    <label className="wide-field product-image-field">
+                      <span>Foto del producto</span>
+                      <input
+                        type="file"
+                        name="product_image"
+                        accept="image/jpeg,image/png,image/webp"
+                      />
+                      <small>
+                        Opcional · JPG, PNG o WebP · máximo 4 MB. Se usará en
+                        Productos y Venta.
+                      </small>
                     </label>
                   </>
                 ) : (

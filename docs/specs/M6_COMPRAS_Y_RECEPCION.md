@@ -19,6 +19,12 @@ teléfono, iPad y computadora.
 7. RLS y las funciones validan permiso y sucursal. Un cajero no ve compras.
 8. El costo se guarda en el documento de compra. No actualiza el costo vigente
    de la variante hasta decidir entre promedio ponderado y último costo.
+9. Dar de alta un producto desde una orden exige simultáneamente permisos de
+   compras y catálogo; reutiliza el generador protegido de SKU/código y nunca
+   recibe campos de SICAR o WooCommerce.
+10. Las fotos son opcionales, públicas por tratarse de contenido comercial y
+    se validan por tipo y tamaño. Subir un archivo no concede permiso para
+    cambiar otro producto ni expone una llave privilegiada.
 
 ## Flujo humano
 
@@ -27,6 +33,11 @@ teléfono, iPad y computadora.
 - “Recibir todo pendiente” llena todas las líneas y permite corregir excepciones.
 - Confirmar actualiza inventario una sola vez y deja visible la diferencia.
 - Desde el historial se mandan a Etiquetas las cantidades exactas recibidas.
+- Si el producto no existe, Compras abre el alta rápida sin perder la orden:
+  una captura de datos, foto opcional y matriz continua de tallas y colores.
+- Después de confirmar una recepción, Etiquetas se abre con cada cantidad
+  recibida ya seleccionada. El empleado revisa y confirma la impresión para no
+  desperdiciar rollo.
 
 ## Aceptación
 
@@ -37,6 +48,9 @@ teléfono, iPad y computadora.
 - [x] Cada entrada tiene usuario, sucursal, costo documental y movimiento.
 - [x] Historial inmutable y cajero sin lectura ni escritura.
 - [x] Etiquetas reciben la cantidad real de cada variante.
+- [x] Un producto faltante se crea y vuelve a la orden con todas sus variantes.
+- [x] La foto opcional se guarda con permisos y aparece en Productos y Venta.
+- [x] Confirmar recepción prepara automáticamente el lote exacto de etiquetas.
 
 La impresión y el escaneo físicos siguen siendo una compuerta externa: ninguna
 prueba automatizada sustituye la impresora, el lector y la PWA reales.

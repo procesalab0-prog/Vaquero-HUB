@@ -132,3 +132,31 @@ test("muestra el error de cobro por encima de la ventana en teléfono", async ({
   }));
   expect(layers.feedback).toBeGreaterThan(layers.modal);
 });
+
+test("el carrito vacío de iPad se abre como cajón sin amontonarse", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 768, height: 1024 });
+  await page.goto("/pos");
+
+  const toggle = page.locator(".mobile-cart-toggle");
+  const cart = page.getByRole("complementary", { name: "Carrito de venta" });
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toContainText("Ver carrito");
+  await toggle.click();
+  await expect(cart).toHaveClass(/mobile-open/);
+  await expect(cart.getByText("Carrito vacío", { exact: true })).toBeVisible();
+
+  await expect
+    .poll(async () => {
+      const cartBox = await cart.boundingBox();
+      return cartBox ? cartBox.y + cartBox.height : Number.POSITIVE_INFINITY;
+    })
+    .toBeLessThan(940);
+
+  const cartBox = await cart.boundingBox();
+  expect(cartBox).not.toBeNull();
+  expect(cartBox!.x).toBeGreaterThanOrEqual(0);
+  expect(cartBox!.y).toBeGreaterThanOrEqual(0);
+  expect(cartBox!.x + cartBox!.width).toBeLessThanOrEqual(769);
+});

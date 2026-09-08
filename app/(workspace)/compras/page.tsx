@@ -5,6 +5,7 @@ import { mockVariants } from "@/lib/mock-data";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   cancelPurchaseOrder,
+  createPurchaseProduct,
   createPurchaseOrder,
   receivePurchaseOrder,
   saveSupplier,
@@ -16,8 +17,32 @@ import {
   type SupplierView,
   type VariantView,
 } from "./purchases-workspace";
+import type {
+  PurchaseAttributeValue,
+  PurchaseCategory,
+} from "./quick-product-form";
 
 export const metadata: Metadata = { title: "Compras" };
+
+const previewCategories: PurchaseCategory[] = [
+  { id: "preview-botas", name: "Botas", default_size_scale_code: "CALZADO_MX" },
+];
+const previewAttributeValues: PurchaseAttributeValue[] = [
+  ...["25", "25.5", "26", "26.5", "27", "27.5", "28"].map((value, index) => ({
+    id: `preview-size-${index}`,
+    type_code: "TALLA",
+    scale_code: "CALZADO_MX",
+    value,
+    display_order: index,
+  })),
+  ...["Negro", "Café", "Miel"].map((value, index) => ({
+    id: `preview-color-${index}`,
+    type_code: "COLOR",
+    scale_code: null,
+    value,
+    display_order: index,
+  })),
+];
 
 type Location = { id: string; name: string; code: string };
 
@@ -41,6 +66,7 @@ export default async function PurchasesPage({
         createPurchaseOrderAction={createPurchaseOrder}
         receivePurchaseOrderAction={receivePurchaseOrder}
         cancelPurchaseOrderAction={cancelPurchaseOrder}
+        createPurchaseProductAction={createPurchaseProduct}
         suppliers={[
           {
             id: "demo-provider",
@@ -61,6 +87,9 @@ export default async function PurchasesPage({
         activeLocationId="preview"
         canManage
         canReceive
+        canCreateProducts
+        categories={previewCategories}
+        attributeValues={previewAttributeValues}
         initialTab={params.tab}
         preview
       />
@@ -71,24 +100,52 @@ export default async function PurchasesPage({
   if (!session?.userId || !session.profile?.is_active)
     throw new Error("NOT_AUTHORIZED");
   const { supabase, userId, profile } = session;
-  const [locationsResult, permissionsResult, suppliersResult] =
-    await Promise.all([
-      supabase
-        .from("user_locations")
-        .select("locations(id,name,code,type,is_active)")
-        .eq("user_id", userId),
-      supabase
-        .from("role_permissions")
-        .select("permission_code")
-        .eq("role_id", profile.role_id)
-        .in("permission_code", ["purchases.manage", "purchases.receive"]),
-      supabase
-        .from("suppliers")
-        .select("id,code,name,contact_name,phone,email,tax_id,notes,is_active")
-        .order("name"),
-    ]);
-  if (locationsResult.error || suppliersResult.error)
-    throw locationsResult.error ?? suppliersResult.error;
+  const [
+    locationsResult,
+    permissionsResult,
+    suppliersResult,
+    categoriesResult,
+    attributeValuesResult,
+  ] = await Promise.all([
+    supabase
+      .from("user_locations")
+      .select("locations(id,name,code,type,is_active)")
+      .eq("user_id", userId),
+    supabase
+      .from("role_permissions")
+      .select("permission_code")
+      .eq("role_id", profile.role_id)
+      .in("permission_code", [
+        "purchases.manage",
+        "purchases.receive",
+        "products.create",
+      ]),
+    supabase
+      .from("suppliers")
+      .select("id,code,name,contact_name,phone,email,tax_id,notes,is_active")
+      .order("name"),
+    supabase
+      .from("categories")
+      .select("id,name,default_size_scale_code")
+      .eq("is_active", true)
+      .order("name"),
+    supabase
+      .from("attribute_values")
+      .select("id,type_code,scale_code,value,display_order")
+      .order("display_order"),
+  ]);
+  if (
+    locationsResult.error ||
+    suppliersResult.error ||
+    categoriesResult.error ||
+    attributeValuesResult.error
+  )
+    throw (
+      locationsResult.error ??
+      suppliersResult.error ??
+      categoriesResult.error ??
+      attributeValuesResult.error
+    );
   const permissionSet = new Set(
     (permissionsResult.data ?? []).map((row) => row.permission_code),
   );
@@ -114,6 +171,7 @@ export default async function PurchasesPage({
         createPurchaseOrderAction={createPurchaseOrder}
         receivePurchaseOrderAction={receivePurchaseOrder}
         cancelPurchaseOrderAction={cancelPurchaseOrder}
+        createPurchaseProductAction={createPurchaseProduct}
         suppliers={[]}
         orders={[]}
         receipts={[]}
@@ -122,6 +180,11 @@ export default async function PurchasesPage({
         activeLocationId=""
         canManage={permissionSet.has("purchases.manage")}
         canReceive={permissionSet.has("purchases.receive")}
+        canCreateProducts={permissionSet.has("products.create")}
+        categories={(categoriesResult.data ?? []) as PurchaseCategory[]}
+        attributeValues={
+          (attributeValuesResult.data ?? []) as PurchaseAttributeValue[]
+        }
         initialTab={params.tab}
       />
     );
@@ -204,6 +267,7 @@ export default async function PurchasesPage({
       createPurchaseOrderAction={createPurchaseOrder}
       receivePurchaseOrderAction={receivePurchaseOrder}
       cancelPurchaseOrderAction={cancelPurchaseOrder}
+      createPurchaseProductAction={createPurchaseProduct}
       suppliers={suppliers}
       orders={orders}
       receipts={receipts}
@@ -212,6 +276,11 @@ export default async function PurchasesPage({
       activeLocationId={activeLocation.id}
       canManage={permissionSet.has("purchases.manage")}
       canReceive={permissionSet.has("purchases.receive")}
+      canCreateProducts={permissionSet.has("products.create")}
+      categories={(categoriesResult.data ?? []) as PurchaseCategory[]}
+      attributeValues={
+        (attributeValuesResult.data ?? []) as PurchaseAttributeValue[]
+      }
       initialTab={params.tab}
     />
   );

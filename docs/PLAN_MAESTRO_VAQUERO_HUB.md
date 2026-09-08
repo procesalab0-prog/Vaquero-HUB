@@ -2507,3 +2507,24 @@ Corrección visible 0.30.1 — ventanas táctiles y avisos accesibles:
   cobro dividido en teléfono compacto, iPad vertical y computadora; comprueba
   alcance del contenido inferior, ausencia de controles encimados y orden
   correcto de capas.
+
+Entrega visible 0.31.0 — alta rápida, fotos y etiquetas desde Compras:
+
+- Nueva orden permite crear un producto faltante sin abandonar la captura. La
+  misma alta genera en PostgreSQL sus SKU y códigos protegidos, y devuelve todas
+  las tallas y colores seleccionados a la orden con cantidades editables.
+- El alta de productos admite una fotografía comercial opcional JPG, PNG o
+  WebP de hasta 4 MB. Supabase Storage limita tipo y tamaño; RLS exige permisos
+  de catálogo y la base conserva únicamente la ruta del entorno correspondiente.
+- Las fotografías aparecen en Productos y en Venta; si la carga falla, el
+  producto y sus variantes permanecen creados y el sistema informa que la foto
+  quedó pendiente.
+- Confirmar una recepción abre Etiquetas con la cantidad exacta de cada variante
+  ya preparada. No se recortan silenciosamente lotes mayores de 99; imprimir
+  todavía requiere confirmación humana para evitar desperdicio de material.
+- La orden continúa sin mover existencia. Sólo la recepción confirmada crea los
+  movimientos `PURCHASE`; esta mejora no debilita inventario ni códigos SICAR.
+- La revisión responsive cubre también los flujos reales reportados: Registrar
+  proveedor y Agregar cliente desplazan su propio contenido en teléfono, y en
+  iPad el carrito de Venta abre como cajón sobre el catálogo en vez de apilarse
+  debajo de él. Las pruebas verifican que los controles finales sean alcanzables.
