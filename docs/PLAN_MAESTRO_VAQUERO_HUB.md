@@ -2528,3 +2528,24 @@ Entrega visible 0.31.0 — alta rápida, fotos y etiquetas desde Compras:
   proveedor y Agregar cliente desplazan su propio contenido en teléfono, y en
   iPad el carrito de Venta abre como cajón sobre el catálogo en vez de apilarse
   debajo de él. Las pruebas verifican que los controles finales sean alcanzables.
+
+Corrección visible 0.31.1 — desplazamiento táctil aislado en ventanas:
+
+- Mientras una ventana emergente está abierta, la pantalla de atrás queda
+  inmóvil y el gesto vertical se entrega únicamente al contenido de la ventana.
+- En teléfono, las ventanas usan una altura táctil definida con respeto por las
+  áreas seguras de la PWA; el contenido inferior puede alcanzarse sin que el
+  desplazamiento se escape al fondo.
+- Una prueba automática abre Registrar proveedor, desplaza desde dentro de la
+  ventana y comprueba simultáneamente que el cuadro avanza y el fondo no cambia.
+
+Entrega visible 0.31.2–0.31.3 — hardware confirmado y prueba sin venta:
+
+- Se documentaron los modelos físicos existentes: BIXOLON SRP-330II para
+  tickets térmicos de 80 mm y SICAR EVA58 para etiquetas de hasta 58 mm.
+- Se retiró una regla CSS de tamaño de página que los navegadores descartaban;
+  el largo continuo del rollo se configura en el controlador de la BIXOLON.
+- Más módulos incluye una prueba de impresión con ticket normal y de regalo.
+  La muestra no crea ventas, no consume folios y no modifica caja ni inventario.
+- La guía de primera impresión registra márgenes, escala, corte y lectura del
+  código para cerrar la validación física antes del piloto.

@@ -133,6 +133,33 @@ test("muestra el error de cobro por encima de la ventana en teléfono", async ({
   expect(layers.feedback).toBeGreaterThan(layers.modal);
 });
 
+test("el gesto vertical desplaza la ventana y no la pantalla de atrás", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 667 });
+  await page.goto("/compras?tab=proveedores");
+
+  const workspace = page.locator(".workspace-main");
+  await workspace.evaluate((element) => element.scrollTo(0, 60));
+  await page.getByRole("button", { name: /Agregar proveedor/ }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Nuevo proveedor" });
+  const backgroundBefore = await workspace.evaluate(
+    (element) => element.scrollTop,
+  );
+
+  await dialog.hover();
+  await page.mouse.wheel(0, 420);
+
+  await expect
+    .poll(() => dialog.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0);
+  await expect
+    .poll(() => workspace.evaluate((element) => element.scrollTop))
+    .toBe(backgroundBefore);
+  await expect(workspace).toHaveCSS("overflow-y", "hidden");
+});
+
 test("el carrito vacío de iPad se abre como cajón sin amontonarse", async ({
   page,
 }) => {
