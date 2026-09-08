@@ -228,6 +228,13 @@ describe.sequential("M6: compras, proveedores y recepción", () => {
       p_storage_path: path,
     });
     expect(forbidden.error?.message).toContain("NOT_AUTHORIZED");
+
+    const forbiddenUpload = await state
+      .cashier!.client.storage.from("product-images")
+      .upload(`${state.productId}/${crypto.randomUUID()}.png`, image, {
+        contentType: "image/png",
+      });
+    expect(forbiddenUpload.error).not.toBeNull();
   });
 
   it("el historial es inmutable incluso para service_role", async () => {

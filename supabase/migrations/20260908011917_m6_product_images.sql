@@ -26,42 +26,62 @@ set public = excluded.public,
     file_size_limit = excluded.file_size_limit,
     allowed_mime_types = excluded.allowed_mime_types;
 
-create policy product_images_insert
-on storage.objects for insert to authenticated
-with check (
-  bucket_id = 'product-images'
-  and exists (
+-- Storage evalua sus politicas desde su propio esquema. Encapsular la
+-- autorizacion evita que el RLS de products oculte la fila que precisamente
+-- necesitamos comprobar, sin conceder escritura directa sobre el catalogo.
+create or replace function app.can_manage_product_image(p_storage_path text)
+returns boolean
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_actor uuid := (select app.current_user_id());
+  v_product_id uuid;
+begin
+  if v_actor is null
+     or p_storage_path is null
+     or p_storage_path !~ '^[0-9a-f-]{36}/[0-9a-f-]+\.(jpg|png|webp)$' then
+    return false;
+  end if;
+  v_product_id := split_part(p_storage_path, '/', 1)::uuid;
+  return exists (
     select 1
     from public.products p
-    where p.id::text = (storage.foldername(name))[1]
+    where p.id = v_product_id
       and (
         (select app.has_perm('products.update'))
         or (
           (select app.has_perm('products.create'))
-          and p.created_by = (select app.current_user_id())
+          and p.created_by = v_actor
           and p.image_path is null
         )
       )
-  )
+  );
+exception
+  when invalid_text_representation then
+    return false;
+end;
+$$;
+
+revoke execute on function app.can_manage_product_image(text)
+  from public, anon;
+grant execute on function app.can_manage_product_image(text)
+  to authenticated;
+
+create policy product_images_insert
+on storage.objects for insert to authenticated
+with check (
+  bucket_id = 'product-images'
+  and (select app.can_manage_product_image(name))
 );
 
 create policy product_images_delete
 on storage.objects for delete to authenticated
 using (
   bucket_id = 'product-images'
-  and exists (
-    select 1
-    from public.products p
-    where p.id::text = (storage.foldername(name))[1]
-      and (
-        (select app.has_perm('products.update'))
-        or (
-          (select app.has_perm('products.create'))
-          and p.created_by = (select app.current_user_id())
-          and p.image_path is null
-        )
-      )
-  )
+  and (select app.can_manage_product_image(name))
 );
 
 create or replace function public.set_product_image(
