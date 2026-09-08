@@ -891,6 +891,47 @@ Es lo primero del proyecto que acepta archivos, así que se revisó aparte.
 Y el alta rápida desde Compras pasa por `create_catalog_product`, así que los
 productos nuevos nacen con SKU y código propios, no con los del proveedor.
 
+### Puesta a punto del mostrador: lo preparado y lo que falta
+
+La guía de la visita está en
+[`hardware/PRIMERA_IMPRESION.md`](hardware/PRIMERA_IMPRESION.md) y el equipo
+confirmado en [`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md).
+
+**Ya preparado:** una pantalla *Prueba de impresión* (*Más* → *Prueba de
+impresión*) que imprime un ticket de muestra **sin registrar venta**: no toca
+inventario, ni caja, ni folios. Antes, calibrar la impresora obligaba a cobrar
+de verdad y luego cancelar. El ticket de muestra trae nombres largos y un
+acento a propósito, que es donde se nota si el ancho quedó mal.
+
+Lo que sigue sin resolver, en orden de lo que más va a estorbar el día a día:
+
+**1. Cada impresión abre el diálogo de Chrome.** En una prueba no importa; en
+una venta tras otra es fricción real. La salida conocida es la impresión
+directa de Chrome (`--kiosk-printing`), que manda a la impresora
+predeterminada sin diálogo. El detalle es que **entonces todo iría a la
+predeterminada**, y son dos impresoras distintas. Propuesta: acceso directo con
+impresión directa y la BIXOLON predeterminada para el mostrador, y las
+etiquetas desde una ventana normal, porque se imprimen en lote desde trastienda
+y ahí el clic extra no estorba. Documentar el acceso directo, no programarlo.
+
+**2. No hay diagnóstico previo.** Hoy uno se entera de que falta la caja, o de
+que la sucursal no tiene dirección, ya estando frente al mostrador. Una
+pantalla de diagnóstico que conteste desde el celular «¿tengo sucursal, caja,
+permisos, productos con código?» convertiría la visita en algo verificable
+antes de salir. Es la tarea con mejor relación entre esfuerzo y viajes
+ahorrados.
+
+**3. Sin internet no se vende.** El mostrador no tiene modo desconectado: sólo
+la PWA de clientes tiene service worker. Para la prueba de impresión da igual,
+pero **es el riesgo operativo más grande de octubre** y no es una tarea de
+software chica. Antes de decidir construir algo, hay que saber cómo es la
+conexión real en la tienda; está anotado en `PENDIENTES.md`.
+
+**4. La configuración de impresión vive en el navegador.** Márgenes, escala y
+encabezados se guardan por equipo y por perfil de Chrome. Si se cambia de
+computadora o de perfil, se vuelve a calibrar. Vale documentarlo en el runbook
+de apertura de la sucursal nueva, no resolverlo en código.
+
 ## 8. M9 — Importador y sincronizador de SICAR
 
 **Especificación:** [`PLAN_CODEX.md`](PLAN_CODEX.md) §5, milestone M9
