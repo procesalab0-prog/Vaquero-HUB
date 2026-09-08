@@ -52,6 +52,7 @@ function moduleTitle(pathname: string) {
   if (pathname.startsWith("/ajustes")) return "Ajustes";
   if (pathname.startsWith("/administracion")) return "Administración";
   if (pathname.startsWith("/clientes")) return "Clientes";
+  if (pathname.startsWith("/reportes")) return "Reportes";
   if (pathname.startsWith("/mas")) return "Más módulos";
   return "Punto de venta";
 }

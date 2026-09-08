@@ -6,7 +6,7 @@
 > Para entender el proyecto antes de tocarlo, empezar por
 > [`ESTADO_Y_CONTINUIDAD.md`](ESTADO_Y_CONTINUIDAD.md).
 >
-> Última actualización: 2026-09-07, al completar la ampliación M6.1.
+> Última actualización: 2026-09-08, al iniciar M8.1.
 
 ## Cómo usar esta cola
 
@@ -1035,3 +1035,13 @@ entrega junto con la versión visible.
 Y una pregunta encima de todo, porque tres hallazgos de la auditoría
 fueron exactamente de ese tipo: **¿este control de verdad hace lo que
 dice?** Que el código exista no significa que funcione.
+## Avance M8.1 — reportes operativos
+
+- [x] Reporte real de ventas por día, semana, mes o año.
+- [x] Búsqueda por producto, SKU, talla o color con fecha, hora y cajero.
+- [x] Conciliación de venta neta contra métodos de pago cuando se consulta el
+  ticket completo.
+- [x] Reporte de inventario con existencia, reservado, disponible y valores.
+- [ ] M8.2: cotizaciones que no mueven inventario ni caja.
+- [ ] M8.3: enlace digital opaco, compartir nativo y WhatsApp.
+- [ ] M7: apartados y lealtad, bloqueados hasta recibir reglas de negocio.

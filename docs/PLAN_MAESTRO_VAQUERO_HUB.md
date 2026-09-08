@@ -2549,3 +2549,19 @@ Entrega visible 0.31.2–0.31.3 — hardware confirmado y prueba sin venta:
   La muestra no crea ventas, no consume folios y no modifica caja ni inventario.
 - La guía de primera impresión registra márgenes, escala, corte y lectura del
   código para cerrar la validación física antes del piloto.
+
+Entrega visible 0.32.0 — M8.1, reportes operativos reales:
+
+- Reporte de ventas por día, semana, mes o año, filtrable por sucursal,
+  producto, SKU, talla o color. Cada renglón conserva ticket, día, hora y
+  cajero para responder consultas concretas de la operación.
+- Sin búsqueda de producto, la venta neta debe cuadrar contra la suma de los
+  métodos cobrados. Con búsqueda, el sistema muestra sólo el valor de los
+  renglones coincidentes y evita atribuirles pagos mixtos de otros artículos.
+- Reporte de inventario con existencia, reservado, disponible, faltantes,
+  variantes bajas y valor a costo/menudeo para usuarios autorizados.
+- Las vistas auxiliares permanecen en el esquema privado y sin permisos
+  directos. Las funciones validan identidad, permiso, sucursal, rango máximo de
+  366 días y longitud de búsqueda en el servidor.
+- M8 continúa después con cotizaciones y enlace digital seguro para compartir
+  el ticket. M7 permanece bloqueado hasta definir las reglas de apartados.
