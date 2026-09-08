@@ -57,15 +57,13 @@ describe.sequential("M6: compras, proveedores y recepción", () => {
       const id = authData.user!.id;
       expect(
         (
-          await server
-            .from("app_users")
-            .insert({
-              id,
-              employee_code: `M6${definition.key.toUpperCase()}${runCode}`,
-              full_name: `M6 ${definition.key}`,
-              email,
-              role_id: roleIds[definition.role],
-            })
+          await server.from("app_users").insert({
+            id,
+            employee_code: `M6${definition.key.toUpperCase()}${runCode}`,
+            full_name: `M6 ${definition.key}`,
+            email,
+            role_id: roleIds[definition.role],
+          })
         ).error,
       ).toBeNull();
       expect(
