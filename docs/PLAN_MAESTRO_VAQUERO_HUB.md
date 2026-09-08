@@ -2528,3 +2528,13 @@ Entrega visible 0.31.0 — alta rápida, fotos y etiquetas desde Compras:
   proveedor y Agregar cliente desplazan su propio contenido en teléfono, y en
   iPad el carrito de Venta abre como cajón sobre el catálogo en vez de apilarse
   debajo de él. Las pruebas verifican que los controles finales sean alcanzables.
+
+Corrección visible 0.31.1 — desplazamiento táctil aislado en ventanas:
+
+- Mientras una ventana emergente está abierta, la pantalla de atrás queda
+  inmóvil y el gesto vertical se entrega únicamente al contenido de la ventana.
+- En teléfono, las ventanas usan una altura táctil definida con respeto por las
+  áreas seguras de la PWA; el contenido inferior puede alcanzarse sin que el
+  desplazamiento se escape al fondo.
+- Una prueba automática abre Registrar proveedor, desplaza desde dentro de la
+  ventana y comprueba simultáneamente que el cuadro avanza y el fondo no cambia.

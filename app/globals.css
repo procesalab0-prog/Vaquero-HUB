@@ -188,6 +188,18 @@ code {
   scrollbar-gutter: stable;
 }
 
+/*
+ * Mientras una ventana está abierta sólo ella debe recibir el gesto vertical.
+ * iOS puede entregar el paneo al ancestro desplazable cuando un modal fijo vive
+ * dentro de él, aunque el modal tenga overflow-y: auto.
+ */
+.workspace-main:has(.modal-backdrop),
+.workspace-main:has(.customer-create[open]) {
+  overflow-y: hidden;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
+}
+
 .workspace-loading {
   min-height: 240px;
   padding: 32px;
@@ -7108,12 +7120,19 @@ a:active {
 @media (max-width: 600px) {
   .modal-backdrop
     > :where(.checkout-modal, .purchase-modal, .receipt-modal, .exchange-modal) {
+    height: calc(
+      100dvh - max(
+          16px,
+          calc(env(safe-area-inset-top) + env(safe-area-inset-bottom))
+        )
+    );
     max-height: calc(
       100dvh - max(
           16px,
           calc(env(safe-area-inset-top) + env(safe-area-inset-bottom))
         )
     );
+    overflow-y: scroll;
   }
 
   :where(.module-page, .pos-screen):has(> .modal-backdrop)

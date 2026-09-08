@@ -57,6 +57,7 @@ saltando lo bloqueado.
 | **M5.5 (0.25.0)**        | Alta por rangos, conteo continuo de 20 variantes y traspasos buscables, auditados en tres tamaños        |
 | **M9 (0.29.0)**          | Sincronizador idempotente de catálogo restringido a staging; conserva SHA, aprobación y conciliación     |
 | **Calidad 0.31.0**       | Proveedor y cliente con scroll táctil; carrito de Venta como cajón en teléfono e iPad                    |
+| **Corrección 0.31.1**    | Al abrir una ventana móvil se bloquea el fondo y sólo el cuadro recibe el gesto vertical                 |
 
 Sesenta y tres migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
