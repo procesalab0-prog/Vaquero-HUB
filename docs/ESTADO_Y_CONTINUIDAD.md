@@ -61,8 +61,9 @@ saltando lo bloqueado.
 | **Hardware 0.31.2**      | Modelos reales documentados: BIXOLON SRP-330II para tickets y SICAR EVA58 para etiquetas               |
 | **Hardware 0.31.3**      | Prueba de ticket térmico sin registrar venta, mover inventario, caja ni folios                           |
 | **M8.1 (0.32.0)**        | Reportes reales de ventas e inventario con periodo, producto, variante, cajero y conciliación de cobros |
+| **Corrección 0.32.1**    | Traspasos visibles y alta atómica de sucursal con acceso administrativo y primera caja                 |
 
-Sesenta y cuatro migraciones versionadas del repositorio. El proyecto de Supabase
+Sesenta y cinco migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -75,6 +76,9 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
   posterior encontró cero descuadres entre libro y saldo, y Vercel confirmó la
   publicación del merge en `main`. M4 0.21.1 también quedó aplicado después de
   CI verde, incluidas las pruebas concurrentes de venta e idempotencia.
+  M8.1 0.32.0 también quedó promovido: las funciones de reportes conservan
+  `search_path` vacío, rechazan ejecución anónima y vuelven a validar permiso y
+  sucursal antes de consultar ventas o inventario.
 - **Pruebas:** la rama Supabase `staging`, referencia
   `zsezjtswqeijboezvado`, se reserva para Vercel Preview y validaciones previas
   a producción. M4 0.21.3 conserva esa validación, corrige la lectura segura
@@ -90,6 +94,9 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
   M8.1 0.32.0 agregó en staging las vistas privadas y RPC de reportes; se
   comprobó respuesta real para un administrador y rechazo al retirar los
   permisos de ventas e inventario dentro de una transacción reversible.
+  La corrección 0.32.1 también se probó aquí de forma reversible: una sucursal
+  nueva nació con acceso para su creador, Caja 01 y disponibilidad inmediata
+  como destino de traspaso; la escritura directa quedó revocada.
 - Los dos entornos usan credenciales distintas. Las claves viven únicamente en
   variables protegidas de Vercel; nunca se copian al repositorio.
 - La clave secreta de staging se rotó después de separar los ambientes. Las

@@ -191,21 +191,18 @@ export async function saveLocation(formData: FormData) {
     if (!code || !name || !["STORE", "WAREHOUSE"].includes(type))
       throw new Error("INVALID_INPUT");
 
-    const payload = {
-      code,
-      name,
-      type,
-      address,
-      phone,
-      is_active: formData.get("is_active") === "on",
-    };
-    const result = id
-      ? await supabase
-          .from("locations")
-          .update(payload)
-          .eq("id", id)
-          .neq("type", "TRANSIT")
-      : await supabase.from("locations").insert(payload);
+    // La función deja la sucursal usable de una sola vez: la crea, le da acceso
+    // a quien la dio de alta y le abre su primera caja. Insertar la fila a mano
+    // dejaba una sucursal que se veía en la lista y no servía para nada.
+    const result = await supabase.rpc("upsert_location", {
+      p_id: id || null,
+      p_code: code,
+      p_name: name,
+      p_type: type,
+      p_address: address,
+      p_phone: phone,
+      p_is_active: formData.get("is_active") === "on",
+    });
     if (result.error) throw result.error;
     status = id ? "sucursal-actualizada" : "sucursal-creada";
   } catch {

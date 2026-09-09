@@ -7,7 +7,6 @@ import {
   Check,
   ChevronRight,
   MonitorCog,
-  Plus,
   ReceiptText,
   Save,
   Store,
@@ -95,19 +94,14 @@ export function SettingsWorkspace({
   const { activeLocation } = useWorkspace();
   const currentLocation = activeLocation ?? LA_PIEDAD_STORE;
   const [section, setSection] = useState<Section>("business");
-  const [branches, setBranches] = useState<Branch[]>([
+  const branches: Branch[] = [
     {
       id: currentLocation.id,
       name: currentLocation.name,
       address: currentLocation.address ?? "Dirección por configurar",
       register: "Caja 01",
     },
-  ]);
-  const [addingBranch, setAddingBranch] = useState(false);
-  const [editingBranchId, setEditingBranchId] = useState<
-    number | string | null
-  >(null);
-  const [branchName, setBranchName] = useState("");
+  ];
   const [saved, setSaved] = useState(false);
   const [accent, setAccent] = useState("vino");
   const [preferences, setPreferences] = useState<
@@ -136,30 +130,6 @@ export function SettingsWorkspace({
       JSON.stringify(payload),
     );
     setSaved(true);
-  }
-
-  function saveBranch() {
-    if (!branchName.trim()) return;
-    setBranches((current) =>
-      editingBranchId
-        ? current.map((branch) =>
-            branch.id === editingBranchId
-              ? { ...branch, name: branchName.trim() }
-              : branch,
-          )
-        : [
-            ...current,
-            {
-              id: Date.now(),
-              name: branchName.trim(),
-              address: "Dirección por configurar",
-              register: "Sin cajas",
-            },
-          ],
-    );
-    setBranchName("");
-    setAddingBranch(false);
-    setEditingBranchId(null);
   }
 
   function capturePreference(event: React.ChangeEvent<HTMLDivElement>) {
@@ -278,66 +248,22 @@ export function SettingsWorkspace({
                           : "Por configurar"}
                       </small>
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingBranchId(branch.id);
-                        setBranchName(branch.name);
-                        setAddingBranch(true);
-                      }}
-                    >
-                      Editar
-                    </button>
                   </article>
                 ))}
               </div>
-              {addingBranch ? (
-                <div className="add-branch">
-                  <label>
-                    <span>Nombre de la sucursal</span>
-                    <input
-                      value={branchName}
-                      onChange={(event) => setBranchName(event.target.value)}
-                      placeholder="Ej. Zamora Centro"
-                    />
-                  </label>
-                  <div>
-                    <button
-                      className="secondary-button"
-                      type="button"
-                      onClick={() => {
-                        setAddingBranch(false);
-                        setEditingBranchId(null);
-                        setBranchName("");
-                      }}
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      className="primary-button"
-                      type="button"
-                      onClick={saveBranch}
-                    >
-                      {editingBranchId
-                        ? "Guardar sucursal"
-                        : "Agregar sucursal"}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  className="dashed-button"
-                  type="button"
-                  onClick={() => {
-                    setEditingBranchId(null);
-                    setBranchName("");
-                    setAddingBranch(true);
-                  }}
-                >
-                  <Plus aria-hidden="true" />
-                  Agregar otra tienda
-                </button>
-              )}
+              <div className="demo-data-notice">
+                <Store aria-hidden="true" />
+                <span>
+                  <strong>Las sucursales se dan de alta en Administración.</strong>{" "}
+                  Ahí se captura nombre, clave, dirección y teléfono, y la
+                  sucursal nace con acceso y con su primera caja. La dirección y
+                  el teléfono salen impresos en el ticket, así que conviene
+                  capturarlos completos.
+                </span>
+              </div>
+              <Link className="secondary-button" href="/administracion?tab=sucursales">
+                Administrar sucursales
+              </Link>
             </SettingsSection>
           </div>
           <div hidden={section !== "pos"}>

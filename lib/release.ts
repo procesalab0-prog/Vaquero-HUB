@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.32.0";
-export const APP_RELEASE = "Reportes reales de ventas e inventario";
+export const APP_VERSION = "0.32.1";
+export const APP_RELEASE = "Traspasos y sucursales operables";
