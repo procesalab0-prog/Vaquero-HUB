@@ -86,6 +86,10 @@ Ninguna de éstas frena el arranque: la tarjeta identifica al cliente desde
 M1B sin necesidad de que los puntos existan. Pero todo el motor de puntos
 queda detenido hasta tenerlas.
 
+**Decisión del 9 de septiembre de 2026:** lealtad, puntos, niveles y beneficios
+de cumpleaños se realizarán después de apartados y crédito. No bloquean el
+cierre de la primera entrega de M7.
+
 | # | Pregunta | Bloquea | Urgencia |
 |---|---|---|---|
 | 6.1 | **¿Cuántos puntos se ganan por peso gastado, y cuánto vale un punto al redimir?** | M7 | ⚪ |
