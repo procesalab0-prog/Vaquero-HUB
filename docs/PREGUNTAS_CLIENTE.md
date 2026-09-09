@@ -70,9 +70,13 @@ usa**. Esta lista es el índice, no la fuente de verdad.
 
 | # | Pregunta | Bloquea | Urgencia |
 |---|---|---|---|
-| 5.1 | **Apartados: ¿plazo máximo, enganche mínimo, y qué pasa cuando vence?** | M7 | 🟡 |
+| 5.1 | **Mayormente contestada:** reglas de apartados confirmadas el 9 de septiembre de 2026 y documentadas en [`specs/M7_APARTADOS.md`](specs/M7_APARTADOS.md). Quedan las decisiones puntuales de su sección 6 | M7 | 🟡 |
 | 5.2 | **Crédito a clientes: ¿ya lo operan en SICAR o sería nuevo? ¿Quién autoriza el límite? ¿Hay recargos?** | M7 | 🟡 |
 | 5.3 | ¿Cuántos apartados abiertos suelen tener a la vez? Importa para el día del cambio de sistema | Migración | 🟡 |
+| 5.4 | Sin enganche mínimo, ¿se permite confirmar un apartado con $0 abonados? | M7 | 🟡 |
+| 5.5 | ¿Cuántos días antes del vencimiento comienza el aviso amarillo? | M7 | 🟡 |
+| 5.6 | Si un cambio de producto o precio deja dinero abonado de más, ¿se devuelve o queda como saldo a favor? | M7 | 🟡 |
+| 5.7 | ¿Qué excepciones permiten devolver abonos y quién puede autorizarlas? | M7 | 🟡 |
 
 ## 6. Programa de lealtad
 
