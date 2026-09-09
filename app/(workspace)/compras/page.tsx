@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { resolveActiveLocation } from "@/lib/auth/active-location";
 import { getWorkspaceSession } from "@/lib/auth/workspace-session";
 import { mockVariants } from "@/lib/mock-data";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -161,9 +162,10 @@ export default async function PurchasesPage({
         Boolean(location?.is_active && location.type !== "TRANSIT"),
     )
     .map(({ id, name, code }) => ({ id, name, code }));
-  const activeLocation =
-    locations.find((location) => location.id === params.ubicacion) ??
-    locations[0];
+  const activeLocation = await resolveActiveLocation(
+    locations,
+    params.ubicacion,
+  );
   if (!activeLocation)
     return (
       <PurchasesWorkspace

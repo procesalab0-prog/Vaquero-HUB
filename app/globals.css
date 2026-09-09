@@ -352,6 +352,12 @@ code {
   color: var(--border-strong);
   font-style: normal;
 }
+.location-pill .location-name,
+.location-pill .cash-name {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .online-pill {
   background: var(--success-soft);
   color: #14603a;
@@ -4649,6 +4655,46 @@ a:active {
 .admin-form .wide-field {
   grid-column: 1 / -1;
 }
+.admin-location-access {
+  margin: 0;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: #fff;
+}
+.admin-location-access legend {
+  padding: 0 5px;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 700;
+}
+.admin-location-access > small {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.admin-location-access > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+.admin-location-access > div > label {
+  min-height: 46px;
+  padding: 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--surface-raised);
+}
+.admin-location-access input {
+  width: 20px;
+  min-height: 20px;
+  flex: none;
+  accent-color: var(--accent);
+}
 .admin-form > button {
   justify-self: start;
   min-height: 48px;
@@ -5386,8 +5432,8 @@ a:active {
   .app-topbar h1 {
     font-size: 17px;
   }
-  .location-pill span,
-  .location-pill i {
+  .location-pill i,
+  .location-pill .cash-name {
     display: none;
   }
   .online-pill {

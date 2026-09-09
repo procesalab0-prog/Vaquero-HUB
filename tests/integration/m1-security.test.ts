@@ -21,6 +21,7 @@ const state = {
   lockSupervisor: null as FixtureUser | null,
   manager: null as FixtureUser | null,
   pendingAuthUserId: "",
+  primaryLocationId: "",
   roles: {} as Record<string, string>,
   secondLocationId: "",
   supervisor: null as FixtureUser | null,
@@ -66,6 +67,7 @@ describe.sequential("M1: matriz de identidad, permisos y RLS", () => {
       .select("id, code");
     expect(locationsError).toBeNull();
     const firstLocationId = locations?.[0]?.id;
+    state.primaryLocationId = firstLocationId ?? "";
     state.secondLocationId = locations?.[1]?.id ?? "";
     expect(firstLocationId).toBeTruthy();
     expect(state.secondLocationId).toBeTruthy();
@@ -220,6 +222,39 @@ describe.sequential("M1: matriz de identidad, permisos y RLS", () => {
       type: "STORE",
     });
     expect(directa.error).not.toBeNull();
+  });
+
+  it("ADMIN asigna varias sucursales a otro empleado en una sola operación", async () => {
+    const assigned = await state.admin!.client.rpc("set_employee_locations", {
+      p_user_id: state.cashier!.id,
+      p_location_ids: [state.primaryLocationId, state.secondLocationId],
+    });
+    expect(assigned.error).toBeNull();
+    expect(assigned.data.location_count).toBe(2);
+
+    const visible = await state
+      .cashier!.client.from("locations")
+      .select("id")
+      .in("id", [state.primaryLocationId, state.secondLocationId]);
+    expect(visible.error).toBeNull();
+    expect(visible.data).toHaveLength(2);
+
+    const selfChange = await state.admin!.client.rpc("set_employee_locations", {
+      p_user_id: state.admin!.id,
+      p_location_ids: [state.primaryLocationId],
+    });
+    expect(selfChange.error?.message).toContain(
+      "SELF_LOCATION_CHANGE_FORBIDDEN",
+    );
+
+    const unauthorized = await state.cashier!.client.rpc(
+      "set_employee_locations",
+      {
+        p_user_id: state.supervisor!.id,
+        p_location_ids: [state.primaryLocationId],
+      },
+    );
+    expect(unauthorized.error?.message).toContain("NOT_AUTHORIZED");
   });
 
   it("13. MANAGER no puede crear empleados", async () => {

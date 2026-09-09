@@ -13,6 +13,7 @@ import {
   Truck,
   X,
 } from "lucide-react";
+import { saveActiveLocationPreference } from "@/lib/location-preference";
 import {
   QuickProductForm,
   type PurchaseAttributeValue,
@@ -264,6 +265,7 @@ export function PurchasesWorkspace({
           aria-label="Sucursal"
           value={activeLocationId}
           onChange={(event) => {
+            saveActiveLocationPreference(event.target.value);
             location.href = `/compras?ubicacion=${event.target.value}&tab=${tab}`;
           }}
         >

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PosWorkspace } from "./pos-workspace";
 import { mockVariants } from "@/lib/mock-data";
+import { resolveActiveLocation } from "@/lib/auth/active-location";
 import { requirePermission } from "@/lib/auth/authorization";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { productImageUrl } from "@/lib/product-images";
@@ -39,8 +40,19 @@ export default async function PosPage({
 }) {
   if (!isSupabaseConfigured())
     return <PosWorkspace variants={mockVariants} preview />;
-  const { supabase } = await requirePermission("pos.sell");
+  const { supabase, profile } = await requirePermission("pos.sell");
   const params = await searchParams;
+  const locations = (profile?.user_locations ?? []).flatMap((entry) =>
+    Array.isArray(entry.locations)
+      ? entry.locations
+      : entry.locations
+        ? [entry.locations]
+        : [],
+  );
+  const activeLocation = await resolveActiveLocation(
+    locations,
+    params.ubicacion,
+  );
   const { data: session } = await supabase.rpc("get_my_cash_session");
   const cashSession = session as {
     id?: string;
@@ -50,7 +62,7 @@ export default async function PosPage({
   if (!cashSession?.id || !cashSession.location_id) {
     return <PosWorkspace variants={[]} cashSession={null} />;
   }
-  if (params.ubicacion && params.ubicacion !== cashSession.location_id) {
+  if (activeLocation?.id && activeLocation.id !== cashSession.location_id) {
     return (
       <PosWorkspace
         variants={[]}

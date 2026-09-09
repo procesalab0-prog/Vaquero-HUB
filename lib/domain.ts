@@ -137,5 +137,7 @@ export type InventoryTransfer = {
     | "CANCELLED";
   note: string | null;
   requestedAt: string;
+  approvedById?: string | null;
+  sentById?: string | null;
   items: InventoryTransferItem[];
 };

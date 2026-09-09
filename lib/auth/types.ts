@@ -13,4 +13,8 @@ export type WorkspaceIdentity = {
   role: string;
   roleCode: string;
   locations: WorkspaceLocation[];
+  openCashSession: {
+    locationId: string;
+    registerName: string;
+  } | null;
 };

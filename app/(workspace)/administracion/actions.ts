@@ -1,11 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { requirePermission } from "@/lib/auth/authorization";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/config";
+import { ACTIVE_LOCATION_COOKIE } from "@/lib/location-preference";
 
 const adminPath = "/administracion";
 
@@ -149,12 +151,31 @@ export async function updateEmployee(formData: FormData) {
       status = "empleado-pin-actualizado";
     } else {
       if (!fullName || !roleId) throw new Error("INVALID_INPUT");
+      const locationIds = formData
+        .getAll("location_ids")
+        .map((value) => String(value).trim())
+        .filter(Boolean);
+      if (!locationIds.length) {
+        status = "empleado-sucursales-vacias";
+        throw new Error("LOCATION_REQUIRED");
+      }
 
       const { error } = await supabase
         .from("app_users")
         .update({ full_name: fullName, role_id: roleId, is_active: isActive })
         .eq("id", id);
       if (error) throw error;
+      const { error: locationError } = await supabase.rpc(
+        "set_employee_locations",
+        {
+          p_user_id: id,
+          p_location_ids: locationIds,
+        },
+      );
+      if (locationError) {
+        status = "empleado-sucursales-error";
+        throw locationError;
+      }
       if (supervisorPin) {
         const { error: pinError } = await supabase.rpc(
           "reset_employee_supervisor_pin",
@@ -168,7 +189,11 @@ export async function updateEmployee(formData: FormData) {
       status = "empleado-actualizado";
     }
   } catch (error) {
-    if (!status.startsWith("empleado-pin-")) status = "empleado-error";
+    if (
+      !status.startsWith("empleado-pin-") &&
+      !status.startsWith("empleado-sucursales-")
+    )
+      status = "empleado-error";
     console.error("[administracion/updateEmployee] failed", {
       status,
       message: error instanceof Error ? error.message : "UNKNOWN_ERROR",
@@ -204,6 +229,19 @@ export async function saveLocation(formData: FormData) {
       p_is_active: formData.get("is_active") === "on",
     });
     if (result.error) throw result.error;
+    if (!id && typeof result.data === "object" && result.data) {
+      const locationId = String((result.data as { id?: unknown }).id ?? "");
+      if (locationId) {
+        const cookieStore = await cookies();
+        cookieStore.set(ACTIVE_LOCATION_COOKIE, locationId, {
+          httpOnly: false,
+          sameSite: "lax",
+          maxAge: 60 * 60 * 24 * 365,
+          path: "/",
+          secure: process.env.NODE_ENV === "production",
+        });
+      }
+    }
     status = id ? "sucursal-actualizada" : "sucursal-creada";
   } catch {
     status = "sucursal-error";

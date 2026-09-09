@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { resolveActiveLocation } from "@/lib/auth/active-location";
 import { requirePermission } from "@/lib/auth/authorization";
 import {
   isReportGrouping,
@@ -197,9 +198,10 @@ export default async function ReportsPage({
         ? [entry.locations]
         : [],
   ) as Location[];
-  const activeLocation =
-    locations.find((location) => location.id === params.ubicacion) ??
-    locations[0];
+  const activeLocation = await resolveActiveLocation(
+    locations,
+    params.ubicacion,
+  );
 
   if (!activeLocation) {
     return (
