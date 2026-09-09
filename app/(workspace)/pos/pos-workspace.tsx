@@ -1009,6 +1009,7 @@ export function PosWorkspace({
                         : 0
                   }
                   cashierName={storedReceipt?.cashier_name ?? identity.name}
+                  registerName={cashSession?.register_name ?? "Caja 01"}
                   location={officialLocation}
                 />
               </div>

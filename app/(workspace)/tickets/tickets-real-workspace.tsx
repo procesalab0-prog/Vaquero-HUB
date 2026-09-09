@@ -410,6 +410,7 @@ export function TicketsRealWorkspace({
                   change={change}
                   reprintLabel={reprintDate}
                   cashierName={selected.cashier_name}
+                  registerName={selected.register_name}
                   location={selected.location}
                   returnWindowDays={returnWindowDays}
                 />

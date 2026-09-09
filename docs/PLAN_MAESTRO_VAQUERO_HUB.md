@@ -2580,3 +2580,26 @@ Corrección visible 0.32.1 — traspasos y sucursales operables:
   inmediato en traspasos y que un gerente sin el permiso no puede crearla.
 - La migración se promovió a producción con autorización explícita y repitió la
   prueba reversible sin dejar sucursales de prueba ni cambios residuales.
+
+Corrección visible 0.32.2 — sucursal activa y recepción clara:
+
+- La sucursal elegida se conserva durante la navegación y se resuelve siempre
+  contra las ubicaciones realmente asignadas al empleado. Venta, Caja,
+  Inventario, Compras, Tickets y Reportes comparten la misma selección.
+- Crear una tienda la convierte en la sucursal activa del administrador. La
+  operación sigue naciendo completa: acceso para quien la crea y Caja 01 propia.
+- Administración permite asignar una o varias sucursales a cada empleado. El
+  reemplazo es transaccional, exige `users.manage`, conserva al menos una
+  ubicación activa y no permite que el administrador cambie su propio acceso.
+- La cabecera distingue la sucursal seleccionada de la caja realmente abierta;
+  dejó de afirmar siempre “Caja 01”. Los tickets imprimen el nombre real de la
+  caja que registró la venta.
+- Si una caja está abierta en otra sucursal, Venta lo detecta también cuando la
+  ubicación proviene de la preferencia guardada y no sólo de la URL.
+- La recepción de traspasos mantiene separación de funciones: quien aprobó o
+  envió no puede recibir. La interfaz lo explica antes del intento y los errores
+  de Supabase ya no se degradan al mensaje genérico “guardar el ajuste”.
+- El traspaso real #1 quedó en tránsito hacia La Piedad Prueba: Emmanuel lo
+  solicitó, aprobó y envió, por lo que debe recibirlo otro empleado autorizado
+  en el destino. No se alteró el documento ni el inventario para evadir el
+  control.

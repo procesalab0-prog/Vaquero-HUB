@@ -1088,3 +1088,18 @@ dice?** Que el código exista no significa que funcione.
 - [ ] M8.2: cotizaciones que no mueven inventario ni caja.
 - [ ] M8.3: enlace digital opaco, compartir nativo y WhatsApp.
 - [ ] M7: apartados y lealtad, bloqueados hasta recibir reglas de negocio.
+
+## Corrección operativa 0.32.2 — sucursal activa
+
+- [x] Conservar la sucursal elegida al navegar entre módulos y validar siempre
+      que pertenezca al empleado.
+- [x] Hacer activa la tienda recién creada y mantener su Caja 01 propia.
+- [x] Permitir a Administración asignar varias sucursales a otro empleado de
+      forma atómica y auditable.
+- [x] Mostrar la caja realmente abierta en cabecera y tickets.
+- [x] Explicar antes de confirmar que quien aprobó o envió un traspaso no puede
+      recibirlo; conservar la regla dura en PostgreSQL.
+- [ ] Para terminar el traspaso #1 de producción, otro empleado con
+      `transfers.receive` y acceso a La Piedad Prueba debe confirmar las cinco
+      piezas. No se debe relajar la separación de funciones para cerrar una
+      prueba.

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { resolveActiveLocation } from "@/lib/auth/active-location";
 import { requirePermission } from "@/lib/auth/authorization";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { cancelPosSale } from "../pos/actions";
@@ -44,8 +45,7 @@ export default async function TicketsPage({
         ? [entry.locations]
         : [],
   );
-  const location =
-    locations.find((entry) => entry.id === params.ubicacion) ?? locations[0];
+  const location = await resolveActiveLocation(locations, params.ubicacion);
   const referenceTime = new Date().toISOString();
   const todayStart = storeDayStart(new Date(referenceTime));
   const periodStarts = {

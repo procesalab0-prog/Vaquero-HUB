@@ -35,6 +35,19 @@ export async function getWorkspaceIdentity(): Promise<WorkspaceIdentity | null> 
       } => Boolean(location),
     );
 
+  const { data: cashSession, error: cashSessionError } = await supabase.rpc(
+    "get_my_cash_session",
+  );
+  if (cashSessionError) {
+    console.error("[auth/getWorkspaceIdentity] cash session unavailable", {
+      message: cashSessionError.message,
+    });
+  }
+  const openCashSession = cashSession as {
+    location_id?: string;
+    register_name?: string;
+  } | null;
+
   return {
     id: profile.id,
     name: profile.full_name,
@@ -42,5 +55,12 @@ export async function getWorkspaceIdentity(): Promise<WorkspaceIdentity | null> 
     role: role?.name ?? "Empleado",
     roleCode: role?.code ?? "EMPLOYEE",
     locations,
+    openCashSession:
+      openCashSession?.location_id && openCashSession.register_name
+        ? {
+            locationId: openCashSession.location_id,
+            registerName: openCashSession.register_name,
+          }
+        : null,
   };
 }
