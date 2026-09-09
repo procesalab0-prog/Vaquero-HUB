@@ -1314,6 +1314,12 @@ y posteriormente permitir conciliación si existe integración.
 
 Puede agregarse posteriormente.
 
+Las reglas confirmadas de apartados y crédito viven respectivamente en
+[`specs/M7_APARTADOS.md`](specs/M7_APARTADOS.md) y
+[`specs/M7_CREDITO.md`](specs/M7_CREDITO.md). Puntos, recompensas y niveles
+se realizarán en una etapa posterior por decisión del negocio y no bloquean la
+entrega de apartados y crédito.
+
 Posible módulo:
 
 customers

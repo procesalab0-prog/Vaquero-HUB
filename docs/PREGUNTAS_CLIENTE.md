@@ -71,18 +71,24 @@ usa**. Esta lista es el índice, no la fuente de verdad.
 | # | Pregunta | Bloquea | Urgencia |
 |---|---|---|---|
 | 5.1 | **Mayormente contestada:** reglas de apartados confirmadas el 9 de septiembre de 2026 y documentadas en [`specs/M7_APARTADOS.md`](specs/M7_APARTADOS.md). Quedan las decisiones puntuales de su sección 6 | M7 | 🟡 |
-| 5.2 | **Crédito a clientes: ¿ya lo operan en SICAR o sería nuevo? ¿Quién autoriza el límite? ¿Hay recargos?** | M7 | 🟡 |
+| 5.2 | **Mayormente contestada:** reglas de crédito confirmadas el 9 de septiembre de 2026 y documentadas en [`specs/M7_CREDITO.md`](specs/M7_CREDITO.md). Quedan devoluciones y migración de saldos | M7 | 🟡 |
 | 5.3 | ¿Cuántos apartados abiertos suelen tener a la vez? Importa para el día del cambio de sistema | Migración | 🟡 |
 | 5.4 | Sin enganche mínimo, ¿se permite confirmar un apartado con $0 abonados? | M7 | 🟡 |
 | 5.5 | ¿Cuántos días antes del vencimiento comienza el aviso amarillo? | M7 | 🟡 |
 | 5.6 | Si un cambio de producto o precio deja dinero abonado de más, ¿se devuelve o queda como saldo a favor? | M7 | 🟡 |
 | 5.7 | ¿Qué excepciones permiten devolver abonos y quién puede autorizarlas? | M7 | 🟡 |
+| 5.8 | En una devolución o cancelación de una venta a crédito, ¿primero se reduce la deuda y qué ocurre si ya fue pagada? | M7 | 🟡 |
+| 5.9 | ¿Existen saldos de crédito actuales en SICAR que deban migrarse? | M7, migración | 🟡 |
 
 ## 6. Programa de lealtad
 
 Ninguna de éstas frena el arranque: la tarjeta identifica al cliente desde
 M1B sin necesidad de que los puntos existan. Pero todo el motor de puntos
 queda detenido hasta tenerlas.
+
+**Decisión del 9 de septiembre de 2026:** lealtad, puntos, niveles y beneficios
+de cumpleaños se realizarán después de apartados y crédito. No bloquean el
+cierre de la primera entrega de M7.
 
 | # | Pregunta | Bloquea | Urgencia |
 |---|---|---|---|

@@ -438,20 +438,23 @@ pero no cambia el costo vigente hasta resolver la pregunta 4.1.
 **Aceptación:** una orden de compra no mueve inventario; una recepción
 parcial mueve exactamente lo recibido y deja el resto pendiente.
 
-### M7 — Clientes, apartados, crédito y lealtad _(semana 8)_
+### M7 — Clientes, apartados y crédito _(semana 8)_
 
 La identidad del cliente y su tarjeta ya se construyeron en M1B. Aquí se
 agrega lo que depende de que existan ventas y de que el negocio defina sus
 reglas. Las reglas de apartados confirmadas viven en
-[`specs/M7_APARTADOS.md`](specs/M7_APARTADOS.md).
+[`specs/M7_APARTADOS.md`](specs/M7_APARTADOS.md) y las de crédito en
+[`specs/M7_CREDITO.md`](specs/M7_CREDITO.md).
 
 - `layaways`, `layaway_items`, `layaway_payments` con estados `OPEN`,
   `PARTIALLY_PAID`, `PAID`, `COMPLETED` y `CANCELLED`. Vencido es una
   condición visual calculada y no cierra el documento automáticamente.
 - Historial de compras del cliente, visible también en su PWA.
-- **Bloqueados hasta tener reglas de negocio** (sección 8): motor de
-  puntos, redención, crédito a clientes, descuento de cumpleaños y
-  niveles. Se deja el modelo de datos preparado, no la regla.
+- Crédito ya tiene sus reglas principales; faltan devoluciones y migración de
+  saldos.
+- Lealtad, puntos, redención, descuento de cumpleaños y niveles se posponen por
+  decisión del negocio. No bloquean apartados ni crédito y tendrán una entrega
+  posterior cuando existan sus reglas.
 - Recordatorio: un cliente sólo es usuario de Supabase Auth si de verdad
   inicia sesión en su PWA, y aun así no obtiene ningún permiso interno
   (sección 26 del contexto maestro y `specs/IDENTIDAD_CLIENTE.md`).
