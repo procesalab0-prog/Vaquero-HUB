@@ -10,7 +10,7 @@ import {
   ShoppingBag,
   Tags,
 } from "lucide-react";
-import { saveActiveLocationPreference } from "@/lib/location-preference";
+import { LocationPreferenceSelect } from "@/components/location-preference-select";
 
 import type { ReportGrouping } from "@/lib/reports";
 
@@ -166,22 +166,13 @@ export function ReportsWorkspace({
 
       <form className="toolbar-card report-filters" method="get">
         <input type="hidden" name="tab" value={tab} />
-        <label className="toolbar-select">
+        <div className="toolbar-select">
           <span>Sucursal</span>
-          <select
-            name="ubicacion"
+          <LocationPreferenceSelect
+            locations={locations}
             defaultValue={activeLocationId}
-            onChange={(event) =>
-              saveActiveLocationPreference(event.target.value)
-            }
-          >
-            {locations.map((location) => (
-              <option value={location.id} key={location.id}>
-                {location.name}
-              </option>
-            ))}
-          </select>
-        </label>
+          />
+        </div>
         {tab === "ventas" ? (
           <>
             <label className="toolbar-select">
