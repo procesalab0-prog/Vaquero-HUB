@@ -24,7 +24,7 @@ const modules = [
   { href: "/ajustes", title: "Ajustes", description: "Sucursales, apariencia, POS, tickets y preferencias.", icon: Settings, ready: true },
   { href: "/compras", title: "Compras", description: "Órdenes, recepción y diferencias de mercancía.", icon: PackageCheck, ready: true },
   { href: "/compras?tab=proveedores", title: "Proveedores", description: "Contactos y datos de tus proveedores.", icon: Truck, ready: true },
-  { href: "#", title: "Transferencias", description: "Movimientos controlados entre sucursales.", icon: Boxes, ready: false },
+  { href: "/inventario", title: "Traspasos entre sucursales", description: "Solicita, aprueba, despacha y recibe mercancía en tránsito.", icon: Boxes, ready: true },
   { href: "/administracion", title: "Usuarios y permisos", description: "Empleados, sucursales, roles y bitácora protegidos.", icon: Users, ready: true },
   { href: "/clientes", title: "Clientes", description: "Alta, búsqueda y número de socio; lealtad se activará al definir sus reglas.", icon: Gift, ready: true },
 ];

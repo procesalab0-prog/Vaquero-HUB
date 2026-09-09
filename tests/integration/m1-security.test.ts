@@ -171,6 +171,57 @@ describe.sequential("M1: matriz de identidad, permisos y RLS", () => {
     expect(data).toEqual([]);
   });
 
+  it("una sucursal nueva nace usable: con acceso y con su primera caja", async () => {
+    // Insertar la fila a mano dejaba una sucursal que se veía en la lista de
+    // traspasos y donde nadie podía recibir mercancía ni abrir caja.
+    const code = `Z${runCode}`.slice(0, 10).toUpperCase();
+    const creada = await state.admin!.client.rpc("upsert_location", {
+      p_id: null,
+      p_code: code,
+      p_name: `Sucursal ${runCode}`,
+      p_type: "STORE",
+      p_address: "Av. de prueba 100",
+      p_phone: "3521234567",
+      p_is_active: true,
+    });
+    expect(creada.error).toBeNull();
+    expect(creada.data.created).toBe(true);
+    expect(creada.data.register_created).toBe(true);
+    const locationId = creada.data.id as string;
+
+    const serverApi = createClient(url, secretKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const acceso = await serverApi
+      .from("user_locations")
+      .select("user_id")
+      .eq("location_id", locationId);
+    expect((acceso.data ?? []).length).toBeGreaterThan(0);
+
+    const cajas = await serverApi
+      .from("cash_registers")
+      .select("code")
+      .eq("location_id", locationId);
+    expect((cajas.data ?? []).length).toBe(1);
+
+    // La clave viaja dentro del folio de cada venta, así que no se puede mover.
+    const reCode = await state.admin!.client.rpc("upsert_location", {
+      p_id: locationId,
+      p_code: `${code}X`,
+      p_name: `Sucursal ${runCode}`,
+      p_type: "STORE",
+    });
+    expect(reCode.error?.message).toContain("LOCATION_CODE_IMMUTABLE");
+
+    // Y la escritura directa a la tabla quedó cerrada.
+    const directa = await state.admin!.client.from("locations").insert({
+      code: `D${runCode}`.slice(0, 10),
+      name: "Directa",
+      type: "STORE",
+    });
+    expect(directa.error).not.toBeNull();
+  });
+
   it("13. MANAGER no puede crear empleados", async () => {
     const { error } = await state.manager!.client.from("app_users").insert({
       id: state.pendingAuthUserId,

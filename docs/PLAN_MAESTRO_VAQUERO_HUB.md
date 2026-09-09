@@ -2565,3 +2565,18 @@ Entrega visible 0.32.0 — M8.1, reportes operativos reales:
   366 días y longitud de búsqueda en el servidor.
 - M8 continúa después con cotizaciones y enlace digital seguro para compartir
   el ticket. M7 permanece bloqueado hasta definir las reglas de apartados.
+
+Corrección visible 0.32.1 — traspasos y sucursales operables:
+
+- Más módulos deja de anunciar los traspasos como pendientes y enlaza al flujo
+  real de Inventario: solicitud, aprobación, preparación, despacho y recepción.
+- El alta de una sucursal se vuelve atómica. Además de guardar sus datos, asigna
+  acceso al administrador que la crea y abre Caja 01 cuando es una tienda.
+- La clave de la sucursal queda inmutable porque forma parte de los folios
+  históricos. La ubicación técnica de tránsito tampoco puede editarse.
+- La escritura directa de sucursales se revoca para empleados; el único camino
+  expuesto valida `locations.manage`, registra auditoría y evita altas a medias.
+- La comprobación reversible en staging confirmó que la sucursal aparece de
+  inmediato en traspasos y que un gerente sin el permiso no puede crearla.
+- La migración se promovió a producción con autorización explícita y repitió la
+  prueba reversible sin dejar sucursales de prueba ni cambios residuales.
