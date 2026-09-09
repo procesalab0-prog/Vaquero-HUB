@@ -8,7 +8,7 @@
 > conversación, y cada pregunta indica **qué bloquea** y **para cuándo se
 > necesita**.
 >
-> Última actualización: 2026-09-01.
+> Última actualización: 2026-09-09.
 
 ## Cómo usar esta lista
 
@@ -93,9 +93,24 @@ queda detenido hasta tenerlas.
 
 ## 7. Datos personales
 
+Decisiones confirmadas el 9 de septiembre de 2026:
+
+- El cliente se dará de alta por sí mismo desde la aplicación o la web.
+- El primer canal para recordatorios será WhatsApp, inicialmente mediante un
+  enlace o acción iniciada por la persona, sin contratar un proveedor. La
+  automatización por API se evaluará aparte porque no se debe asumir que es
+  gratuita.
+- Los avisos de vencimiento se enviarán con siete días de anticipación.
+- ProcesaLab preparará el aviso de privacidad y lo enviará a Vaqueros SM para
+  revisión y aprobación antes de publicarlo.
+- El alta de una cuenta no se interpretará como consentimiento de marketing.
+  Sigue pendiente confirmar si las promociones usarán una casilla opcional y
+  separada; los avisos operativos y las promociones conservarán finalidades
+  distintas.
+
 | # | Pregunta | Bloquea | Urgencia |
 |---|---|---|---|
-| 7.1 | **¿Quién redacta el aviso de privacidad y qué dice?** Guardar nombre, teléfono, cumpleaños e historial de compras es tratamiento de datos personales | M1B | 🟡 |
+| 7.1 | **Parcialmente contestada:** ProcesaLab redactará y enviará el aviso; falta aprobar el texto definitivo antes de publicarlo | M1B | 🟡 |
 | 7.2 | **¿Las promociones y el descuento de cumpleaños se mandan sólo a quien dio consentimiento de marketing?** Recomendación: que sea explícito y separado del consentimiento de lealtad | M1B | 🟡 |
 
 ## 8. Migración de SICAR
