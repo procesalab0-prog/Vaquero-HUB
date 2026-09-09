@@ -442,10 +442,12 @@ parcial mueve exactamente lo recibido y deja el resto pendiente.
 
 La identidad del cliente y su tarjeta ya se construyeron en M1B. Aquí se
 agrega lo que depende de que existan ventas y de que el negocio defina sus
-reglas.
+reglas. Las reglas de apartados confirmadas viven en
+[`specs/M7_APARTADOS.md`](specs/M7_APARTADOS.md).
 
 - `layaways`, `layaway_items`, `layaway_payments` con estados `OPEN`,
-  `PARTIALLY_PAID`, `PAID`, `CANCELLED`, `EXPIRED`.
+  `PARTIALLY_PAID`, `PAID`, `COMPLETED` y `CANCELLED`. Vencido es una
+  condición visual calculada y no cierra el documento automáticamente.
 - Historial de compras del cliente, visible también en su PWA.
 - **Bloqueados hasta tener reglas de negocio** (sección 8): motor de
   puntos, redención, crédito a clientes, descuento de cumpleaños y
