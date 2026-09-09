@@ -60,8 +60,9 @@ saltando lo bloqueado.
 | **Corrección 0.31.1**    | Al abrir una ventana móvil se bloquea el fondo y sólo el cuadro recibe el gesto vertical                 |
 | **Hardware 0.31.2**      | Modelos reales documentados: BIXOLON SRP-330II para tickets y SICAR EVA58 para etiquetas               |
 | **Hardware 0.31.3**      | Prueba de ticket térmico sin registrar venta, mover inventario, caja ni folios                           |
+| **M8.1 (0.32.0)**        | Reportes reales de ventas e inventario con periodo, producto, variante, cajero y conciliación de cobros |
 
-Sesenta y tres migraciones versionadas del repositorio. El proyecto de Supabase
+Sesenta y cuatro migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -86,6 +87,9 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
   en staging el área privada de preparación y el sincronizador de catálogo. Las
   pruebas reversibles confirmaron idempotencia, costo cero protegido, ausencias
   conservadas, cero cambios de inventario y rollback total ante conflictos.
+  M8.1 0.32.0 agregó en staging las vistas privadas y RPC de reportes; se
+  comprobó respuesta real para un administrador y rechazo al retirar los
+  permisos de ventas e inventario dentro de una transacción reversible.
 - Los dos entornos usan credenciales distintas. Las claves viven únicamente en
   variables protegidas de Vercel; nunca se copian al repositorio.
 - La clave secreta de staging se rotó después de separar los ambientes. Las
@@ -105,10 +109,11 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 | **M5** — devoluciones, cambios, cancelaciones    | **Terminado en software en 0.28.0:** acceso desde Venta, PIN propio, mismos métodos y efectivo limitado al cajón          |
 | **M6** — compras, proveedores y recepción        | **Ampliado en 0.31.0:** alta rápida multivariante, foto opcional y lote exacto de etiquetas al recibir                    |
 | **Hardware físico** — tickets y etiquetas        | **Preparado en 0.31.3:** guía y muestra imprimible; falta ejecutar la validación con ambas impresoras reales             |
+| **M8** — reportes, cotizaciones y ticket digital | **Iniciado en 0.32.0:** ventas e inventario reales; faltan cotizaciones y enlace digital seguro                          |
 | **M9** — importador y sincronizador de SICAR     | Sincronizador de catálogo listo en staging en 0.29.0; falta primer ensayo real tras limpiar tres precios y validar código |
 
-Recorridos a después de octubre: M7 apartados y lealtad, M8 reportes y
-cotizaciones.
+M7 apartados y lealtad sigue bloqueado por reglas de negocio. M8 se adelantó
+porque sus reportes básicos son necesarios para el piloto de octubre.
 
 **Con M3, M4, M5 y M5.5 cerrados, M9 ya cuenta con analizador y sincronizador
 de catálogo en staging.** El primer ensayo con los 16,009 productos permanece

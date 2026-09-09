@@ -66,3 +66,40 @@ test("mantiene accesibles los seis destinos táctiles en teléfono vertical", as
     expect(box!.y + box!.height).toBeLessThanOrEqual(844);
   }
 });
+
+for (const viewport of [
+  { name: "teléfono", width: 390, height: 844 },
+  { name: "iPad", width: 820, height: 1180 },
+  { name: "computadora", width: 1440, height: 900 },
+]) {
+  test(`muestra Reportes sin desbordar en ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/reportes");
+    await expect(
+      page.getByRole("heading", { name: "Reportes reales" }),
+    ).toBeVisible();
+    await expect(page.locator(".report-summary-grid article")).toHaveCount(4);
+    expect(
+      await page.locator("html").evaluate((element) => element.scrollWidth),
+    ).toBeLessThanOrEqual(viewport.width);
+
+    const workspace = page.locator(".workspace-main");
+    await workspace.evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
+    await expect
+      .poll(async () =>
+        workspace.evaluate((element) =>
+          Math.abs(
+            element.scrollHeight - element.clientHeight - element.scrollTop,
+          ),
+        ),
+      )
+      .toBeLessThanOrEqual(1);
+    await expect(
+      page.getByRole("heading", { name: "Detalle vendido" }),
+    ).toBeInViewport();
+  });
+}
