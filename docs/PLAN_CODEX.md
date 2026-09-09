@@ -450,8 +450,8 @@ reglas. Las reglas de apartados confirmadas viven en
   `PARTIALLY_PAID`, `PAID`, `COMPLETED` y `CANCELLED`. Vencido es una
   condición visual calculada y no cierra el documento automáticamente.
 - Historial de compras del cliente, visible también en su PWA.
-- Crédito ya tiene sus reglas principales; faltan devoluciones y migración de
-  saldos.
+- Crédito tiene sus reglas cerradas en `specs/M7_CREDITO.md`: las devoluciones
+  reducen primero la deuda y no existen saldos heredados por migrar.
 - Lealtad, puntos, redención, descuento de cumpleaños y niveles se posponen por
   decisión del negocio. No bloquean apartados ni crédito y tendrán una entrega
   posterior cuando existan sus reglas.

@@ -88,17 +88,21 @@ como efectivo, tarjeta o transferencia recibida hasta que exista un abono real.
 - Los controles y comprobantes funcionan con scroll en teléfono, iPad y
   computadora.
 
-## 7. Decisiones todavía pendientes
+## 7. Devoluciones, cancelaciones y migración
 
-1. ¿Cómo afectan las devoluciones y cancelaciones al saldo? Debe definirse si
-   primero reducen deuda pendiente y qué ocurre cuando el cliente ya pagó parte
-   o toda la compra.
-2. ¿Existen saldos de crédito actuales en SICAR que deban migrarse? Si existen,
-   se necesita exportar cliente, saldo, vencimiento y movimientos o al menos un
-   saldo inicial conciliado.
-
-Hasta responder la primera, M7 no debe inventar una conversión de devolución a
-efectivo ni permitir que una cancelación borre deuda sin documento compensatorio.
+- Una devolución o cancelación reduce primero la parte de la deuda que todavía
+  no se ha pagado.
+- Si el importe que corresponde devolver supera la deuda pendiente, sólo el
+  excedente ya pagado se reembolsa por los mismos métodos con los que el cliente
+  pagó realmente.
+- En pagos mixtos se conserva el desglose original. Una compra con tarjeta o
+  transferencia no se convierte automáticamente en devolución en efectivo.
+- Un reembolso en efectivo sigue sujeto a que exista dinero suficiente en la
+  caja, a la autorización y a los controles ya definidos en M5.
+- La venta, sus cargos y sus abonos permanecen inmutables. La reducción de deuda
+  y el reembolso se registran como documentos compensatorios auditables.
+- Vaqueros SM confirmó que no existen saldos de crédito actuales en SICAR que
+  deban migrarse. El módulo comienza sin cartera heredada.
 
 ## 8. Criterios de aceptación
 
@@ -113,4 +117,6 @@ efectivo ni permitir que una cancelación borre deuda sin documento compensatori
 - Un atraso bloquea solamente nuevas operaciones de crédito. Una excepción de
   administrador es explícita, limitada y auditable.
 - No se generan intereses o recargos automáticos.
+- Una devolución reduce primero la deuda y sólo reembolsa el excedente pagado
+  mediante los métodos originales, sin duplicar caja ni saldo.
 - El estado de cuenta cuadra desde el saldo inicial hasta el saldo actual.
