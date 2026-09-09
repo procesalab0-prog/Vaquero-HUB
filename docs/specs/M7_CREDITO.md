@@ -2,7 +2,8 @@
 
 > Reglas confirmadas por Vaqueros SM el 9 de septiembre de 2026.
 > Esta especificación cubre ventas a crédito y cobro de saldos. Apartados
-> viven en `M7_APARTADOS.md`; puntos y lealtad continúan pendientes.
+> viven en `M7_APARTADOS.md`; puntos y lealtad se harán en una etapa posterior
+> y no bloquean la entrega de apartados y crédito.
 
 ## 1. Regla principal
 
