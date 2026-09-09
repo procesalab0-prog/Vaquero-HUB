@@ -906,9 +906,11 @@ No incrementar stock hasta registrar correctamente la recepción.
 
 20. Apartados
 
-Vaqueros SM utiliza funciones que deberán documentarse antes de implementar.
+Las reglas confirmadas, controles de concurrencia y decisiones todavía abiertas
+viven en [`specs/M7_APARTADOS.md`](specs/M7_APARTADOS.md). Esa especificación es
+la fuente de verdad para implementar M7.
 
-Si utilizan apartados, contemplar:
+Los apartados contemplan:
 
 layaways
 layaway_items
@@ -921,10 +923,12 @@ Estados conceptuales:
 OPEN
 PARTIALLY_PAID
 PAID
+COMPLETED
 CANCELLED
-EXPIRED
 
-No asumir reglas de negocio. Documentarlas con el cliente.
+El vencimiento no cancela el apartado: sólo produce avisos amarillo y rojo. Un
+usuario con permiso decide si lo cancela. No asumir las reglas que la
+especificación todavía marca como pendientes.
 
 ⸻
 
