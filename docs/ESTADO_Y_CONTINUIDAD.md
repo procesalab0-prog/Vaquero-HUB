@@ -79,6 +79,10 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
   M8.1 0.32.0 también quedó promovido: las funciones de reportes conservan
   `search_path` vacío, rechazan ejecución anónima y vuelven a validar permiso y
   sucursal antes de consultar ventas o inventario.
+  La corrección 0.32.1 se promovió después de CI verde. Una prueba reversible
+  confirmó que el alta crea acceso, Caja 01 y visibilidad en traspasos dentro
+  de la misma transacción; `anon` no puede llamar la función y los empleados no
+  pueden escribir directamente en `locations`.
 - **Pruebas:** la rama Supabase `staging`, referencia
   `zsezjtswqeijboezvado`, se reserva para Vercel Preview y validaciones previas
   a producción. M4 0.21.3 conserva esa validación, corrige la lectura segura

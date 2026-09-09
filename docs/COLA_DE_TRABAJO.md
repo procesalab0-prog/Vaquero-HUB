@@ -955,10 +955,10 @@ sucursal, **le da acceso a quien la dio de alta** y **le abre su primera
 caja**. La escritura directa a `locations` quedó revocada para `authenticated`,
 así que ya no hay forma de crear una sucursal a medias.
 
-La migración quedó aplicada primero en staging. La prueba reversible confirmó
-que acceso, Caja 01 y visibilidad en traspasos nacen juntos y no dejó una
-sucursal de prueba persistida. Producción requiere promoción explícita después
-de CI verde.
+La migración quedó aplicada primero en staging y después en producción con
+autorización explícita. En ambos ambientes, la prueba reversible confirmó que
+acceso, Caja 01 y visibilidad en traspasos nacen juntos y no dejó una sucursal
+de prueba persistida.
 
 | Prueba                                              | Resultado medido                   |
 | --------------------------------------------------- | ------------------------------------ |

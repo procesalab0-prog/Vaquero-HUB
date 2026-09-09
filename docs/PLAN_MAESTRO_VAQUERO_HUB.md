@@ -2578,3 +2578,5 @@ Corrección visible 0.32.1 — traspasos y sucursales operables:
   expuesto valida `locations.manage`, registra auditoría y evita altas a medias.
 - La comprobación reversible en staging confirmó que la sucursal aparece de
   inmediato en traspasos y que un gerente sin el permiso no puede crearla.
+- La migración se promovió a producción con autorización explícita y repitió la
+  prueba reversible sin dejar sucursales de prueba ni cambios residuales.
