@@ -66,7 +66,7 @@ saltando lo bloqueado.
 | **Corrección 0.32.1**    | Traspasos visibles y alta atómica de sucursal con acceso administrativo y primera caja                 |
 | **Corrección 0.32.2**    | Sucursal activa persistente, asignación de empleados, caja real y recepción de traspaso explicada      |
 
-Setenta y tres migraciones versionadas del repositorio. El proyecto de Supabase
+Setenta y cuatro migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados

@@ -1088,6 +1088,8 @@ Implementado y validado primero en staging:
 - Mientras falta la compensación completa, una devolución que intente tratar
   crédito como reembolso se revierte entera y explica que primero debe reducir
   la deuda.
+- La validación diferida de venta y libro quedó corregida mediante una migración
+  nueva: nunca se reescribió la migración que ya había corrido en staging.
 
 Siguiente bloque de M7.2 antes de M7.3:
 
