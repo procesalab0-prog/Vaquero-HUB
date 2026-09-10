@@ -14,7 +14,7 @@ on conflict do nothing;
 
 alter table public.folios drop constraint folios_document_type_check;
 alter table public.folios add constraint folios_document_type_check
-  check (document_type in ('SALE', 'QUOTE'));
+  check (document_type in ('SALE', 'RETURN', 'QUOTE'));
 
 create table public.quotes (
   id uuid primary key default extensions.gen_random_uuid(),
