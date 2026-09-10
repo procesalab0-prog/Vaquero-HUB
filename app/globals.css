@@ -6846,6 +6846,144 @@ a:active {
   background: color-mix(in srgb, var(--brick) 5%, var(--surface));
 }
 
+.credit-statement-link {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 18px 18px;
+}
+
+.credit-documents {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--brick) 34%, var(--border));
+  border-radius: 20px;
+  background: var(--surface);
+}
+
+.credit-documents > header,
+.credit-document-actions,
+.credit-statement-summary,
+.credit-statement-list article,
+.credit-receipt-parts > div,
+.credit-receipt-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.credit-documents > header h2,
+.credit-documents > header p {
+  margin: 0;
+}
+.credit-documents .icon-button svg,
+.credit-document-actions svg {
+  width: 18px;
+}
+
+.credit-statement-summary {
+  flex-wrap: wrap;
+  padding: 16px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--brick) 7%, var(--surface));
+}
+
+.credit-statement-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.credit-statement-filters label {
+  display: grid;
+  gap: 6px;
+}
+.credit-statement-filters input {
+  width: 100%;
+}
+
+.credit-statement-summary strong {
+  color: var(--brick);
+  font-size: 1.5rem;
+}
+
+.credit-statement-list {
+  display: grid;
+  max-height: 420px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.credit-statement-list article {
+  padding: 13px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.credit-statement-list article > div {
+  display: grid;
+  gap: 3px;
+}
+.credit-statement-list small {
+  color: var(--muted);
+}
+.credit-statement-list .charge {
+  color: var(--brick);
+}
+.credit-statement-list .payment {
+  color: var(--success);
+}
+.credit-empty {
+  color: var(--muted);
+}
+
+.credit-payment-receipt {
+  width: min(100%, 80mm);
+  margin-inline: auto;
+  padding: 18px;
+  border: 1px dashed #222;
+  background: #fff;
+  color: #111;
+  font-family: var(--font-mono), monospace;
+}
+
+.credit-payment-receipt > header {
+  display: grid;
+  gap: 3px;
+  text-align: center;
+}
+.credit-payment-receipt dl,
+.credit-receipt-parts {
+  display: grid;
+  gap: 7px;
+  margin: 14px 0;
+}
+.credit-payment-receipt dl div {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 8px;
+}
+.credit-payment-receipt dt {
+  color: #555;
+}
+.credit-payment-receipt dd {
+  margin: 0;
+  text-align: right;
+}
+.credit-receipt-total {
+  padding-top: 10px;
+  border-top: 2px solid #111;
+}
+.credit-receipt-balance {
+  margin-top: 8px;
+  text-align: right;
+}
+.credit-document-actions {
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 .credit-settings-form > label:not(.consent-check) {
   display: grid;
   gap: 7px;
@@ -6901,6 +7039,23 @@ a:active {
   .credit-settings-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+  .credit-documents {
+    padding: 14px 12px;
+  }
+  .credit-statement-filters {
+    grid-template-columns: 1fr;
+  }
+  .credit-documents > header,
+  .credit-statement-list article {
+    align-items: flex-start;
+  }
+  .credit-statement-link {
+    margin-inline: 12px;
+  }
+  .credit-document-actions > * {
+    width: 100%;
+    justify-content: center;
   }
 }
 

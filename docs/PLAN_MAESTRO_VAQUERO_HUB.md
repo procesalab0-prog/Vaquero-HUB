@@ -2640,9 +2640,26 @@ Entrega visible 0.35.0 — M7.2, ventas a crédito y abonos:
   atómica y con explicación hasta integrar el documento compensatorio de M7.2.
   Los cambios sin reembolso siguen usando M5. No se permite tratar crédito como
   efectivo ni fabricar una devolución monetaria.
-- Continúa después: reducción de deuda por devolución/cancelación, excepción
-  administrativa por atraso y vista completa del estado de cuenta; luego M7.3
-  implementará apartados con las decisiones abiertas de su especificación.
+- Continúa después: reducción de deuda por devolución/cancelación y excepción
+  administrativa por atraso; luego M7.3 implementará apartados con las
+  decisiones abiertas de su especificación.
+
+Entrega visible 0.36.0 — estado de cuenta y comprobantes de abono:
+
+- Clientes muestra el libro real de cartera con cargos, abonos, folios,
+  sucursal, empleado, vencimiento y saldo, sin habilitar edición directa.
+- Cada abono abre su comprobante real con el desglose de efectivo, tarjeta y
+  transferencia, y se puede imprimir en rollo de 80 mm.
+- La consulta del comprobante valida sesión, permiso y acceso a la sucursal en
+  el servidor. No expone las tablas cerradas ni confía en el identificador que
+  llega desde la URL.
+- El envío externo del comprobante no se habilita todavía: antes se debe
+  definir el contenido mínimo, el destinatario y el consentimiento para no
+  compartir saldo o datos personales por accidente.
+- Se integra la corrección estructural de 0.35.1: los tipos del libro de caja
+  pasan de una lista reescribible a una tabla referenciada y se revocan los
+  permisos de tabla que Supabase concede por omisión. La misma mejora del libro
+  de inventario se hará junto con apartados, no como cambio aislado.
 
 Corrección visible 0.32.1 — traspasos y sucursales operables:
 

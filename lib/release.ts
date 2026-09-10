@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.35.0";
-export const APP_RELEASE = "Crédito y abonos sin inventar dinero";
+export const APP_VERSION = "0.36.0";
+export const APP_RELEASE = "Estado de cuenta y comprobantes de abono";
