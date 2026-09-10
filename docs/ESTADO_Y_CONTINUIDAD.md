@@ -7,7 +7,7 @@
 > memoria del proyecto.** Todo lo que haga falta para continuar tiene que
 > estar aquí, no en un chat.
 >
-> Última actualización: 2026-09-07.
+> Última actualización: 2026-09-09.
 
 ## 1. Qué es esto
 
@@ -61,10 +61,11 @@ saltando lo bloqueado.
 | **Hardware 0.31.2**      | Modelos reales documentados: BIXOLON SRP-330II para tickets y SICAR EVA58 para etiquetas               |
 | **Hardware 0.31.3**      | Prueba de ticket térmico sin registrar venta, mover inventario, caja ni folios                           |
 | **M8.1 (0.32.0)**        | Reportes reales de ventas e inventario con periodo, producto, variante, cajero y conciliación de cobros |
+| **M8.2 (0.33.0)**        | Cotizaciones reales con folio, vigencia opcional, búsqueda y conversión atómica mediante el POS        |
 | **Corrección 0.32.1**    | Traspasos visibles y alta atómica de sucursal con acceso administrativo y primera caja                 |
 | **Corrección 0.32.2**    | Sucursal activa persistente, asignación de empleados, caja real y recepción de traspaso explicada      |
 
-Sesenta y seis migraciones versionadas del repositorio. El proyecto de Supabase
+Sesenta y ocho migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -121,11 +122,12 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 | **M5** — devoluciones, cambios, cancelaciones    | **Terminado en software en 0.28.0:** acceso desde Venta, PIN propio, mismos métodos y efectivo limitado al cajón          |
 | **M6** — compras, proveedores y recepción        | **Ampliado en 0.31.0:** alta rápida multivariante, foto opcional y lote exacto de etiquetas al recibir                    |
 | **Hardware físico** — tickets y etiquetas        | **Preparado en 0.31.3:** guía y muestra imprimible; falta ejecutar la validación con ambas impresoras reales             |
-| **M8** — reportes, cotizaciones y ticket digital | **Iniciado en 0.32.0:** ventas e inventario reales; faltan cotizaciones y enlace digital seguro                          |
+| **M8** — reportes, cotizaciones y ticket digital | **Dos entregas listas:** reportes y cotizaciones reales; falta el enlace digital seguro y compartir por WhatsApp         |
 | **M9** — importador y sincronizador de SICAR     | Sincronizador de catálogo listo en staging en 0.29.0; falta primer ensayo real tras limpiar tres precios y validar código |
 
-M7 apartados y lealtad sigue bloqueado por reglas de negocio. M8 se adelantó
-porque sus reportes básicos son necesarios para el piloto de octubre.
+M7 apartados ya tiene reglas aprobadas y su implementación sigue pendiente;
+lealtad se pospuso por decisión del negocio. M8 se adelantó porque reportes y
+cotizaciones son necesarios para la operación y el piloto de octubre.
 
 **Con M3, M4, M5 y M5.5 cerrados, M9 ya cuenta con analizador y sincronizador
 de catálogo en staging.** El primer ensayo con los 16,009 productos permanece
