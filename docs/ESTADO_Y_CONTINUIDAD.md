@@ -125,9 +125,10 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 | **M8** — reportes, cotizaciones y ticket digital | **Dos entregas listas:** reportes y cotizaciones reales; falta el enlace digital seguro y compartir por WhatsApp         |
 | **M9** — importador y sincronizador de SICAR     | Sincronizador de catálogo listo en staging en 0.29.0; falta primer ensayo real tras limpiar tres precios y validar código |
 
-M7 apartados ya tiene reglas aprobadas y su implementación sigue pendiente;
-lealtad se pospuso por decisión del negocio. M8 se adelantó porque reportes y
-cotizaciones son necesarios para la operación y el piloto de octubre.
+M7 comenzó en 0.34.0 con autorización y límite global de crédito por cliente.
+La venta a crédito, los abonos y los apartados continúan en los siguientes
+bloques; lealtad se pospuso por decisión del negocio. M8 se adelantó porque
+reportes y cotizaciones son necesarios para la operación y el piloto de octubre.
 
 **Con M3, M4, M5 y M5.5 cerrados, M9 ya cuenta con analizador y sincronizador
 de catálogo en staging.** El primer ensayo con los 16,009 productos permanece

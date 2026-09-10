@@ -2574,7 +2574,8 @@ Entrega visible 0.32.0 — M8.1, reportes operativos reales:
   directos. Las funciones validan identidad, permiso, sucursal, rango máximo de
   366 días y longitud de búsqueda en el servidor.
 - M8 continúa después con cotizaciones y enlace digital seguro para compartir
-  el ticket. M7 permanece bloqueado hasta definir las reglas de apartados.
+  el ticket. M7 ya tiene reglas de crédito cerradas; apartados conserva las
+  decisiones puntuales enumeradas en su especificación.
 
 Entrega visible 0.33.0 — M8.2, cotizaciones reales:
 
@@ -2593,6 +2594,22 @@ Entrega visible 0.33.0 — M8.2, cotizaciones reales:
   importe: se rechaza y se prepara una cotización actualizada.
 - La conversión parcial continúa pendiente de decisión del negocio. Por ahora
   se cobra el documento completo o se crea uno nuevo.
+
+Entrega visible 0.34.0 — M7.1, autorización de crédito:
+
+- Administración y gerencia pueden autorizar crédito y definir un límite
+  global por cliente desde Clientes. Caja no puede cambiar esa autorización.
+- La pantalla muestra límite, saldo y disponible sin obligar a navegar a otro
+  módulo. Desactivar crédito o reducir el límite por debajo de un saldo futuro
+  queda rechazado en el servidor.
+- La cartera y su libro contable nacen cerrados al acceso directo, con RLS,
+  permisos separados y auditoría del motivo, autor, valor anterior y nuevo.
+- El POS sólo obtiene un resumen mínimo de disponibilidad; no recibe permiso
+  para editar cuentas. El libro rechaza edición, borrado e inserciones directas
+  incluso con acceso privilegiado.
+- Esta entrega no finge ventas ni abonos: M7.2 conectará la venta a crédito y
+  el cobro de saldos a la caja real. Apartados continúa después, respetando las
+  decisiones abiertas de `specs/M7_APARTADOS.md` §6. Lealtad sigue pospuesta.
 
 Corrección visible 0.32.1 — traspasos y sucursales operables:
 

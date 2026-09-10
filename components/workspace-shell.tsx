@@ -61,7 +61,7 @@ function moduleTitle(pathname: string) {
 }
 
 export function WorkspaceShell({ children, identity, initialLocationId = "" }: { children: React.ReactNode; identity: WorkspaceIdentity | null; initialLocationId?: string }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const router = useRouter();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
