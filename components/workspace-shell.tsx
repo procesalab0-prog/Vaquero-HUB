@@ -22,6 +22,7 @@ import type { LucideIcon } from "lucide-react";
 import type { WorkspaceIdentity } from "@/lib/auth/types";
 import { WorkspaceContext } from "@/components/workspace-context";
 import { LA_PIEDAD_STORE } from "@/lib/business-profile";
+import { saveActiveLocationPreference } from "@/lib/location-preference";
 
 const navigation: Array<{ href: string; label: string; icon: LucideIcon; secondary?: boolean }> = [
   { href: "/inicio", label: "Inicio", icon: House },
@@ -39,6 +40,7 @@ const demoIdentity: WorkspaceIdentity = {
   role: "Administrador",
   roleCode: "ADMIN",
   locations: [LA_PIEDAD_STORE],
+  openCashSession: { locationId: LA_PIEDAD_STORE.id, registerName: "Caja 01" },
 };
 
 function moduleTitle(pathname: string) {
@@ -48,29 +50,46 @@ function moduleTitle(pathname: string) {
   if (pathname.startsWith("/compras")) return "Compras";
   if (pathname.startsWith("/caja")) return "Caja";
   if (pathname.startsWith("/tickets")) return "Tickets";
+  if (pathname.startsWith("/cotizaciones")) return "Cotizaciones";
   if (pathname.startsWith("/etiquetas")) return "Etiquetas";
   if (pathname.startsWith("/ajustes")) return "Ajustes";
   if (pathname.startsWith("/administracion")) return "Administración";
   if (pathname.startsWith("/clientes")) return "Clientes";
+  if (pathname.startsWith("/reportes")) return "Reportes";
   if (pathname.startsWith("/mas")) return "Más módulos";
   return "Punto de venta";
 }
 
-export function WorkspaceShell({ children, identity }: { children: React.ReactNode; identity: WorkspaceIdentity | null }) {
-  const pathname = usePathname();
+export function WorkspaceShell({ children, identity, initialLocationId = "" }: { children: React.ReactNode; identity: WorkspaceIdentity | null; initialLocationId?: string }) {
+  const pathname = usePathname() ?? "/";
   const router = useRouter();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(true);
   const activeIdentity = identity ?? demoIdentity;
-  const [activeLocationId, setActiveLocationId] = useState(activeIdentity.locations[0]?.id ?? "");
+  const [activeLocationId, setActiveLocationId] = useState(initialLocationId || activeIdentity.locations[0]?.id || "");
   const activeLocation = activeIdentity.locations.find((location) => location.id === activeLocationId);
+  const cashLocation = activeIdentity.locations.find((location) => location.id === activeIdentity.openCashSession?.locationId);
+  const cashLabel = activeIdentity.openCashSession
+    ? activeIdentity.openCashSession.locationId === activeLocationId
+      ? activeIdentity.openCashSession.registerName
+      : `${activeIdentity.openCashSession.registerName} en ${cashLocation?.name ?? "otra sucursal"}`
+    : "Sin caja abierta";
   const workspaceContext = useMemo(() => ({ identity: activeIdentity, activeLocation: activeLocation ?? null }), [activeIdentity, activeLocation]);
   const initial = activeIdentity.name.trim().charAt(0).toUpperCase() || "V";
 
+  function locationHref(href: string) {
+    if (!activeLocationId) return href;
+    const [path, query = ""] = href.split("?");
+    const params = new URLSearchParams(query);
+    params.set("ubicacion", activeLocationId);
+    return `${path}?${params.toString()}`;
+  }
+
   function changeLocation(locationId: string) {
     setActiveLocationId(locationId);
+    saveActiveLocationPreference(locationId);
     const next = new URLSearchParams(window.location.search);
     next.set("ubicacion", locationId);
     router.replace(`${pathname}?${next.toString()}`);
@@ -90,17 +109,17 @@ export function WorkspaceShell({ children, identity }: { children: React.ReactNo
   return (
     <div className="workspace-shell">
       <aside className="nav-rail" aria-label="Navegación principal">
-        <Link className="rail-brand" href="/pos" aria-label="Mi Tienda SM">
+        <Link className="rail-brand" href={locationHref("/pos")} aria-label="Mi Tienda SM">
           <Image src="/brand/emblema-blanco.png" alt="" width={64} height={42} priority />
         </Link>
         <nav className="rail-links">
           {navigation.map(({ href, label, icon: Icon }) => {
-            const morePath = ["/mas", "/tickets", "/etiquetas", "/ajustes", "/administracion", "/clientes"];
+            const morePath = ["/mas", "/tickets", "/cotizaciones", "/etiquetas", "/ajustes", "/administracion", "/clientes"];
             const active = href === "/mas"
               ? morePath.some((path) => pathname.startsWith(path))
               : pathname.startsWith(href);
             return (
-              <Link className={active ? "rail-link active" : "rail-link"} href={href} key={label}>
+              <Link className={active ? "rail-link active" : "rail-link"} href={locationHref(href)} key={label}>
                 <Icon aria-hidden="true" strokeWidth={1.8} />
                 <span>{label}</span>
               </Link>
@@ -115,18 +134,18 @@ export function WorkspaceShell({ children, identity }: { children: React.ReactNo
 
       <div className="workspace-content">
         <header className="app-topbar">
-          <Link className="mobile-menu" href="/mas" aria-label="Abrir más módulos">
+          <Link className="mobile-menu" href={locationHref("/mas")} aria-label="Abrir más módulos">
             <Menu aria-hidden="true" />
           </Link>
           <h1>{moduleTitle(pathname)}</h1>
-          <div className="location-pill">
+          <div className="location-pill" title={`${activeLocation?.name ?? "Sin sucursal"} · ${cashLabel}`}>
             <MapPin aria-hidden="true" strokeWidth={1.8} />
             {activeIdentity.locations.length > 1 ? (
               <select aria-label="Sucursal activa" value={activeLocationId} onChange={(event) => changeLocation(event.target.value)}>
                 {activeIdentity.locations.map((location) => <option value={location.id} key={location.id}>{location.name}</option>)}
               </select>
-            ) : <span>{activeLocation?.name ?? "Sin sucursal"}</span>}
-            <i>·</i><strong>Caja 01</strong>
+            ) : <span className="location-name">{activeLocation?.name ?? "Sin sucursal"}</span>}
+            <i>·</i><strong className="cash-name">{cashLabel}</strong>
           </div>
           <div className="online-pill"><span />En línea</div>
           <div className="topbar-actions">
@@ -146,7 +165,7 @@ export function WorkspaceShell({ children, identity }: { children: React.ReactNo
           <header><strong>Notificaciones</strong><button type="button" aria-label="Cerrar notificaciones" onClick={() => setNotificationsOpen(false)}><X aria-hidden="true" /></button></header>
           <article><span className="notification-dot warning" /><div><strong>Última pieza</strong><p>Bota Cuadra café, talla 26.</p></div><small>Ahora</small></article>
           <article><span className="notification-dot" /><div><strong>Caja en orden</strong><p>La sesión lleva 8 ventas registradas.</p></div><small>14:32</small></article>
-          <Link href="/inventario" onClick={() => setNotificationsOpen(false)}>Ver inventario</Link>
+          <Link href={locationHref("/inventario")} onClick={() => setNotificationsOpen(false)}>Ver inventario</Link>
         </aside>
       ) : null}
       {profileOpen ? (

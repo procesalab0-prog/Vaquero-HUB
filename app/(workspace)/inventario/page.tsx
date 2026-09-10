@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { resolveActiveLocation } from "@/lib/auth/active-location";
 import { requirePermission } from "@/lib/auth/authorization";
 import type {
   InventoryCount,
@@ -88,6 +89,12 @@ type TransferRow = {
   qty_requested: number | string;
   qty_sent: number | string | null;
   qty_received: number | string | null;
+};
+
+type TransferActorRow = {
+  id: string;
+  approved_by: string | null;
+  sent_by: string | null;
 };
 
 type Location = { id: string; name: string; code: string };
@@ -183,9 +190,10 @@ export default async function InventoryPage({
         Boolean(location?.is_active && location.type !== "TRANSIT"),
     )
     .map(({ id, name, code }) => ({ id, name, code }));
-  const activeLocation =
-    locations.find((location) => location.id === params.ubicacion) ??
-    locations[0];
+  const activeLocation = await resolveActiveLocation(
+    locations,
+    params.ubicacion,
+  );
   if (!activeLocation) {
     return (
       <InventoryWorkspace
@@ -204,11 +212,17 @@ export default async function InventoryPage({
   const permissionSet = new Set(
     (permissionsResult.data ?? []).map((row) => row.permission_code),
   );
-  const [inventory, movementsData, countsData, transfersData, destinations] =
-    await Promise.all([
-      supabase.rpc("get_inventory_snapshot", {
-        p_location_id: activeLocation.id,
-        p_query: "",
+  const [
+    inventory,
+    movementsData,
+    countsData,
+    transfersData,
+    transferActorsData,
+    destinations,
+  ] = await Promise.all([
+    supabase.rpc("get_inventory_snapshot", {
+      p_location_id: activeLocation.id,
+      p_query: "",
         p_limit: 500,
       }),
       supabase.rpc("list_inventory_movements", {
@@ -224,12 +238,20 @@ export default async function InventoryPage({
         .order("created_at", { ascending: false })
         .limit(20),
       supabase.rpc("list_inventory_transfers", {
-        p_location_id: activeLocation.id,
-        p_limit: 30,
-      }),
-      permissionSet.has("transfers.create") ||
-      permissionSet.has("transfers.receive")
-        ? supabase.rpc("list_transfer_locations")
+      p_location_id: activeLocation.id,
+      p_limit: 30,
+    }),
+    supabase
+      .from("transfers")
+      .select("id,approved_by,sent_by")
+      .or(
+        `from_location_id.eq.${activeLocation.id},to_location_id.eq.${activeLocation.id}`,
+      )
+      .order("requested_at", { ascending: false })
+      .limit(30),
+    permissionSet.has("transfers.create") ||
+    permissionSet.has("transfers.receive")
+      ? supabase.rpc("list_transfer_locations")
         : Promise.resolve({ data: [] as Location[], error: null }),
     ]);
 
@@ -238,6 +260,7 @@ export default async function InventoryPage({
     movementsData,
     countsData,
     transfersData,
+    transferActorsData,
     destinations,
   ]
     .map((result) => result.error)
@@ -312,8 +335,15 @@ export default async function InventoryPage({
     }),
   );
   const transferLocations = (destinations.data ?? []) as Location[];
+  const transferActors = new Map(
+    ((transferActorsData.data ?? []) as TransferActorRow[]).map((row) => [
+      row.id,
+      row,
+    ]),
+  );
   const transfersById = new Map<string, InventoryTransfer>();
   for (const row of (transfersData.data ?? []) as TransferRow[]) {
+    const actors = transferActors.get(row.transfer_id);
     const transfer = transfersById.get(row.transfer_id) ?? {
       id: row.transfer_id,
       folio: row.folio,
@@ -324,6 +354,8 @@ export default async function InventoryPage({
       status: row.status,
       note: row.note,
       requestedAt: row.requested_at,
+      approvedById: actors?.approved_by ?? null,
+      sentById: actors?.sent_by ?? null,
       items: [],
     };
     transfer.items.push({

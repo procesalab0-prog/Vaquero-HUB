@@ -15,7 +15,8 @@ function textField(formData: FormData, name: string) {
 function errorStatus(error: unknown) {
   const message = error instanceof Error ? error.message : "";
   if (message.includes("CUSTOMER_ALREADY_EXISTS")) return "cliente-duplicado";
-  if (message.includes("PRIVACY_NOTICE_REQUIRED")) return "cliente-aviso-requerido";
+  if (message.includes("PRIVACY_NOTICE_REQUIRED"))
+    return "cliente-aviso-requerido";
   if (message.includes("LOCATION_NOT_ALLOWED")) return "cliente-sucursal-error";
   return "cliente-error";
 }
@@ -32,8 +33,15 @@ export async function createCustomer(formData: FormData) {
     const privacyNoticeVersion = textField(formData, "privacy_notice_version");
     const marketingConsent = formData.get("marketing_consent") === "on";
 
-    if (!fullName || !normalizeMexicanPhone(phone) || !privacyNoticeVersion || !locationId) {
-      status = !privacyNoticeVersion ? "cliente-aviso-requerido" : "cliente-datos-invalidos";
+    if (
+      !fullName ||
+      !normalizeMexicanPhone(phone) ||
+      !privacyNoticeVersion ||
+      !locationId
+    ) {
+      status = !privacyNoticeVersion
+        ? "cliente-aviso-requerido"
+        : "cliente-datos-invalidos";
     } else {
       const { error } = await supabase.rpc("create_customer", {
         p_full_name: fullName,
@@ -89,6 +97,53 @@ export async function updateCustomer(formData: FormData) {
     console.error("[clientes/updateCustomer] failed", {
       status,
       message: error instanceof Error ? error.message : "UNKNOWN_ERROR",
+    });
+  }
+
+  revalidatePath(customersPath);
+  redirect(`${customersPath}?status=${status}`);
+}
+
+export async function setCustomerCredit(formData: FormData) {
+  let status = "credito-error";
+  try {
+    const { supabase } = await requirePermission("customers.credit");
+    const customerId = textField(formData, "customer_id");
+    const isAuthorized = formData.get("is_authorized") === "on";
+    const limitText = textField(formData, "limit").replace(/,/g, "");
+    const limitCents = isAuthorized
+      ? Math.round(Number(limitText || 0) * 100)
+      : 0;
+    const reason = textField(formData, "reason");
+
+    if (
+      !customerId ||
+      !Number.isSafeInteger(limitCents) ||
+      limitCents < 0 ||
+      (isAuthorized && limitCents <= 0) ||
+      reason.length < 3
+    ) {
+      status = "credito-datos-invalidos";
+    } else {
+      const { error } = await supabase.rpc("set_customer_credit", {
+        p_customer_id: customerId,
+        p_is_authorized: isAuthorized,
+        p_limit_cents: limitCents,
+        p_reason: reason,
+      });
+      if (error) throw error;
+      status = isAuthorized ? "credito-autorizado" : "credito-desactivado";
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    status = message.includes("CREDIT_BALANCE_REMAINS")
+      ? "credito-saldo-pendiente"
+      : message.includes("CREDIT_LIMIT_BELOW_BALANCE")
+        ? "credito-limite-menor-saldo"
+        : status;
+    console.error("[clientes/setCustomerCredit] failed", {
+      status,
+      message: message || "UNKNOWN_ERROR",
     });
   }
 

@@ -6,7 +6,7 @@
 > Para entender el proyecto antes de tocarlo, empezar por
 > [`ESTADO_Y_CONTINUIDAD.md`](ESTADO_Y_CONTINUIDAD.md).
 >
-> Última actualización: 2026-09-07, al completar la ampliación M6.1.
+> Última actualización: 2026-09-09, al validar M8.2 cotizaciones.
 
 ## Cómo usar esta cola
 
@@ -955,6 +955,11 @@ sucursal, **le da acceso a quien la dio de alta** y **le abre su primera
 caja**. La escritura directa a `locations` quedó revocada para `authenticated`,
 así que ya no hay forma de crear una sucursal a medias.
 
+La migración quedó aplicada primero en staging y después en producción con
+autorización explícita. En ambos ambientes, la prueba reversible confirmó que
+acceso, Caja 01 y visibilidad en traspasos nacen juntos y no dejó una sucursal
+de prueba persistida.
+
 | Prueba                                              | Resultado medido                   |
 | --------------------------------------------------- | ------------------------------------ |
 | El gerente intenta crear una sucursal               | `NOT_AUTHORIZED` (es de ADMIN)      |
@@ -1073,3 +1078,41 @@ entrega junto con la versión visible.
 Y una pregunta encima de todo, porque tres hallazgos de la auditoría
 fueron exactamente de ese tipo: **¿este control de verdad hace lo que
 dice?** Que el código exista no significa que funcione.
+## Avance M8.1 — reportes operativos
+
+- [x] Reporte real de ventas por día, semana, mes o año.
+- [x] Búsqueda por producto, SKU, talla o color con fecha, hora y cajero.
+- [x] Conciliación de venta neta contra métodos de pago cuando se consulta el
+  ticket completo.
+- [x] Reporte de inventario con existencia, reservado, disponible y valores.
+- [x] M8.2: cotizaciones que no mueven inventario ni caja; folio propio,
+      cliente opcional, vigencia elegida por el usuario, estados, búsqueda y
+      conversión completa por el cobro normal del POS.
+- [ ] M8.3: enlace digital opaco, compartir nativo y WhatsApp.
+- [x] M7.1: autorización de crédito y límite global por cliente, con cartera
+      cerrada, consulta para POS y auditoría de cada cambio.
+- [ ] M7.2: venta a crédito y abonos conciliados con caja.
+- [ ] M7.3: apartados; antes de cerrarlos deben resolverse las decisiones
+      puntuales que siguen abiertas en `specs/M7_APARTADOS.md` §6.
+- [ ] Lealtad: pospuesta por decisión del negocio; no bloquea M7.
+
+La conversión parcial de una cotización permanece fuera de M8.2 porque el
+negocio todavía no la ha definido. No se inventa: una cotización se cobra
+completa o se crea una nueva. El sistema vuelve a validar precio, producto,
+existencia, sucursal y estado dentro de la misma transacción; dos cajas no
+pueden convertirla en dos ventas.
+
+## Corrección operativa 0.32.2 — sucursal activa
+
+- [x] Conservar la sucursal elegida al navegar entre módulos y validar siempre
+      que pertenezca al empleado.
+- [x] Hacer activa la tienda recién creada y mantener su Caja 01 propia.
+- [x] Permitir a Administración asignar varias sucursales a otro empleado de
+      forma atómica y auditable.
+- [x] Mostrar la caja realmente abierta en cabecera y tickets.
+- [x] Explicar antes de confirmar que quien aprobó o envió un traspaso no puede
+      recibirlo; conservar la regla dura en PostgreSQL.
+- [ ] Para terminar el traspaso #1 de producción, otro empleado con
+      `transfers.receive` y acceso a La Piedad Prueba debe confirmar las cinco
+      piezas. No se debe relajar la separación de funciones para cerrar una
+      prueba.

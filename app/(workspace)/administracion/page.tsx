@@ -86,6 +86,10 @@ const statusMessages: Record<string, string> = {
     "El acceso no se completó porque el código o correo del empleado ya están en uso.",
   "empleado-sucursal-error":
     "El acceso se creó, pero falta asignar una sucursal. El empleado quedó inactivo para proteger la operación.",
+  "empleado-sucursales-vacias":
+    "Selecciona por lo menos una sucursal para el empleado.",
+  "empleado-sucursales-error":
+    "No fue posible actualizar las sucursales del empleado.",
   "sucursal-creada": "Sucursal creada correctamente.",
   "sucursal-actualizada": "Sucursal actualizada correctamente.",
   "sucursal-error": "No fue posible guardar la sucursal.",
@@ -105,7 +109,8 @@ export default async function AdministrationPage({
     (params.status.includes("error") ||
       params.status === "empleado-correo-existe" ||
       params.status === "empleado-pin-invalido" ||
-      params.status === "empleado-pin-vacio"),
+      params.status === "empleado-pin-vacio" ||
+      params.status === "empleado-sucursales-vacias"),
   );
   if (!isSupabaseConfigured()) return <AdministrationPreview tab={tab} />;
   const { supabase, userId } = await requirePermission(
@@ -408,6 +413,28 @@ function EmployeesPanel({
                       ))}
                     </select>
                   </label>
+                  <fieldset className="admin-location-access wide-field">
+                    <legend>Sucursales permitidas</legend>
+                    <small>
+                      El empleado podrá cambiar únicamente entre las tiendas
+                      seleccionadas.
+                    </small>
+                    <div>
+                      {locations.map((location) => (
+                        <label key={location.id}>
+                          <input
+                            name="location_ids"
+                            type="checkbox"
+                            value={location.id}
+                            defaultChecked={employee.user_locations.some(
+                              (item) => item.locations?.id === location.id,
+                            )}
+                          />
+                          <span>{location.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
                 </>
               )}
               <label>

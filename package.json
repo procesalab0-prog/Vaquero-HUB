@@ -1,6 +1,6 @@
 {
   "name": "vaquero-hub",
-  "version": "0.31.5",
+  "version": "0.34.0",
   "private": true,
   "scripts": {
     "dev": "next dev",

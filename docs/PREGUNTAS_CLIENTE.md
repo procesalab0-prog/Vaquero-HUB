@@ -8,7 +8,7 @@
 > conversación, y cada pregunta indica **qué bloquea** y **para cuándo se
 > necesita**.
 >
-> Última actualización: 2026-09-01.
+> Última actualización: 2026-09-09.
 
 ## Cómo usar esta lista
 
@@ -70,15 +70,25 @@ usa**. Esta lista es el índice, no la fuente de verdad.
 
 | # | Pregunta | Bloquea | Urgencia |
 |---|---|---|---|
-| 5.1 | **Apartados: ¿plazo máximo, enganche mínimo, y qué pasa cuando vence?** | M7 | 🟡 |
-| 5.2 | **Crédito a clientes: ¿ya lo operan en SICAR o sería nuevo? ¿Quién autoriza el límite? ¿Hay recargos?** | M7 | 🟡 |
+| 5.1 | **Mayormente contestada:** reglas de apartados confirmadas el 9 de septiembre de 2026 y documentadas en [`specs/M7_APARTADOS.md`](specs/M7_APARTADOS.md). Quedan las decisiones puntuales de su sección 6 | M7 | 🟡 |
+| 5.2 | **Contestado:** reglas de crédito cerradas el 9 de septiembre de 2026 y documentadas en [`specs/M7_CREDITO.md`](specs/M7_CREDITO.md) | M7 | ✅ |
 | 5.3 | ¿Cuántos apartados abiertos suelen tener a la vez? Importa para el día del cambio de sistema | Migración | 🟡 |
+| 5.4 | Sin enganche mínimo, ¿se permite confirmar un apartado con $0 abonados? | M7 | 🟡 |
+| 5.5 | ¿Cuántos días antes del vencimiento comienza el aviso amarillo? | M7 | 🟡 |
+| 5.6 | Si un cambio de producto o precio deja dinero abonado de más, ¿se devuelve o queda como saldo a favor? | M7 | 🟡 |
+| 5.7 | ¿Qué excepciones permiten devolver abonos y quién puede autorizarlas? | M7 | 🟡 |
+| 5.8 | ~~En una devolución o cancelación de una venta a crédito, ¿primero se reduce la deuda y qué ocurre si ya fue pagada?~~ **Contestado:** primero reduce deuda; el excedente pagado vuelve por su método original | M7 | ✅ |
+| 5.9 | ~~¿Existen saldos de crédito actuales en SICAR que deban migrarse?~~ **Contestado: no existen saldos por migrar** | M7, migración | ✅ |
 
 ## 6. Programa de lealtad
 
 Ninguna de éstas frena el arranque: la tarjeta identifica al cliente desde
 M1B sin necesidad de que los puntos existan. Pero todo el motor de puntos
 queda detenido hasta tenerlas.
+
+**Decisión del 9 de septiembre de 2026:** lealtad, puntos, niveles y beneficios
+de cumpleaños se realizarán después de apartados y crédito. No bloquean el
+cierre de la primera entrega de M7.
 
 | # | Pregunta | Bloquea | Urgencia |
 |---|---|---|---|
@@ -93,9 +103,24 @@ queda detenido hasta tenerlas.
 
 ## 7. Datos personales
 
+Decisiones confirmadas el 9 de septiembre de 2026:
+
+- El cliente se dará de alta por sí mismo desde la aplicación o la web.
+- El primer canal para recordatorios será WhatsApp, inicialmente mediante un
+  enlace o acción iniciada por la persona, sin contratar un proveedor. La
+  automatización por API se evaluará aparte porque no se debe asumir que es
+  gratuita.
+- Los avisos de vencimiento se enviarán con siete días de anticipación.
+- ProcesaLab preparará el aviso de privacidad y lo enviará a Vaqueros SM para
+  revisión y aprobación antes de publicarlo.
+- El alta de una cuenta no se interpretará como consentimiento de marketing.
+  Sigue pendiente confirmar si las promociones usarán una casilla opcional y
+  separada; los avisos operativos y las promociones conservarán finalidades
+  distintas.
+
 | # | Pregunta | Bloquea | Urgencia |
 |---|---|---|---|
-| 7.1 | **¿Quién redacta el aviso de privacidad y qué dice?** Guardar nombre, teléfono, cumpleaños e historial de compras es tratamiento de datos personales | M1B | 🟡 |
+| 7.1 | **Parcialmente contestada:** ProcesaLab redactará y enviará el aviso; falta aprobar el texto definitivo antes de publicarlo | M1B | 🟡 |
 | 7.2 | **¿Las promociones y el descuento de cumpleaños se mandan sólo a quien dio consentimiento de marketing?** Recomendación: que sea explícito y separado del consentimiento de lealtad | M1B | 🟡 |
 
 ## 8. Migración de SICAR

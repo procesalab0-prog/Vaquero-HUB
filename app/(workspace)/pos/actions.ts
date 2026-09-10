@@ -17,6 +17,7 @@ export type SaleActionInput = {
   items: Array<{ variant_id: string; quantity: number; gift_receipt: boolean }>;
   payments: SalePaymentInput[];
   customerId?: string | null;
+  quoteId?: string | null;
   discount?: {
     percent: number;
     authorizationToken: string;
@@ -49,6 +50,7 @@ export type PosDraftPayload = {
   label: string | null;
   items: PosDraftItemInput[];
   discount_percent: number;
+  quote_id?: string | null;
   held_at: string | null;
   updated_at: string;
   customer: {
@@ -92,6 +94,10 @@ function saleError(error: unknown): SaleActionResult {
       "IDEMPOTENCY_CONFLICT",
       "La solicitud de venta cambió. Vuelve a intentar el cobro.",
     ],
+    ["QUOTE_EXPIRED", "La cotización venció. Crea una nueva antes de cobrar."],
+    ["QUOTE_NOT_CONVERTIBLE", "Esta cotización ya fue cobrada o ya no está disponible."],
+    ["QUOTE_PRICE_OR_PRODUCT_CHANGED", "Cambió el precio o la disponibilidad de un artículo. Crea una cotización actualizada."],
+    ["QUOTE_LOCATION_MISMATCH", "La cotización pertenece a otra sucursal."],
   ];
   const match = definitions.find(([code]) => raw.includes(code));
   return {
@@ -268,15 +274,29 @@ export async function createPosSale(
           },
         ]
       : [];
-    const { data, error } = await supabase.rpc("create_sale", {
-      p_idempotency_key: input.idempotencyKey,
-      p_cash_session_id: input.cashSessionId,
-      p_items: input.items,
-      p_payments: input.payments,
-      p_customer_id: input.customerId ?? null,
-      p_discounts: discounts,
-      p_notes: null,
-    });
+    if (input.quoteId && discounts.length > 0) {
+      return {
+        ok: false,
+        code: "QUOTE_DISCOUNT_NOT_ALLOWED",
+        message: "La cotización conserva su total. Crea otra si necesitas aplicar un descuento.",
+      };
+    }
+    const { data, error } = input.quoteId
+      ? await supabase.rpc("convert_quote_to_sale", {
+          p_quote_id: input.quoteId,
+          p_idempotency_key: input.idempotencyKey,
+          p_cash_session_id: input.cashSessionId,
+          p_payments: input.payments,
+        })
+      : await supabase.rpc("create_sale", {
+          p_idempotency_key: input.idempotencyKey,
+          p_cash_session_id: input.cashSessionId,
+          p_items: input.items,
+          p_payments: input.payments,
+          p_customer_id: input.customerId ?? null,
+          p_discounts: discounts,
+          p_notes: null,
+        });
     if (error) throw error;
     const sale = data as {
       id: string;
@@ -290,6 +310,7 @@ export async function createPosSale(
     revalidatePath("/pos");
     revalidatePath("/caja");
     revalidatePath("/inventario");
+    revalidatePath("/cotizaciones");
     return {
       ok: true,
       saleId: sale.id,

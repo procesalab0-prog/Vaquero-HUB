@@ -25,6 +25,7 @@ type ThermalReceiptProps = {
   change?: number;
   reprintLabel?: string;
   cashierName?: string;
+  registerName?: string;
   location?: WorkspaceLocation | null;
   returnWindowDays?: number;
 };
@@ -65,6 +66,7 @@ export function ThermalReceipt({
   change = 0,
   reprintLabel,
   cashierName = "Salomon",
+  registerName = "Caja 01",
   location,
   returnWindowDays = 15,
 }: ThermalReceiptProps) {
@@ -121,22 +123,24 @@ export function ThermalReceipt({
             <div>
               <span>Cajero</span>
               <span>{cashierName}</span>
-            </div>
-            <div>
-              <span>Caja</span>
-              <span>Caja 01</span>
-            </div>
-          </>
-        ) : (
+              </div>
+              <div>
+                <span>Caja</span>
+                <span>{registerName}</span>
+              </div>
+            </>
+          ) : (
           <div>
             <span>Sucursal</span>
             <span>{receiptLocation.name}</span>
-          </div>
-        )}
-        {reprintLabel ? (
-          <strong className="reprint-label">REIMPRESIÓN {reprintLabel}</strong>
-        ) : null}
-      </section>
+            </div>
+          )}
+          {reprintLabel ? (
+            <strong className="reprint-label">
+              REIMPRESIÓN {reprintLabel}
+            </strong>
+          ) : null}
+        </section>
 
       <section className="thermal-lines">
         {items.map((item, index) => (
@@ -197,14 +201,14 @@ export function ThermalReceipt({
           <div className="receipt-qr" aria-hidden="true" />
         )}
         <code>{receiptFolio}</code>
-        {mode === "sale" ? (
-          <>
-            <p>
-              Cambios y devoluciones dentro de {returnWindowDays} días con este
-              ticket
-              <br />y etiqueta original. No aplica en oferta.
-            </p>
-            <strong>¡Gracias por su compra!</strong>
+          {mode === "sale" ? (
+            <>
+              <p>
+                Cambios y devoluciones dentro de {returnWindowDays} días con
+                este ticket
+                <br />y etiqueta original. No aplica en oferta.
+              </p>
+              <strong>¡Gracias por su compra!</strong>
             <span>{BUSINESS_PROFILE.website}</span>
           </>
         ) : (

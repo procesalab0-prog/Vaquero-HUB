@@ -906,9 +906,11 @@ No incrementar stock hasta registrar correctamente la recepción.
 
 20. Apartados
 
-Vaqueros SM utiliza funciones que deberán documentarse antes de implementar.
+Las reglas confirmadas, controles de concurrencia y decisiones todavía abiertas
+viven en [`specs/M7_APARTADOS.md`](specs/M7_APARTADOS.md). Esa especificación es
+la fuente de verdad para implementar M7.
 
-Si utilizan apartados, contemplar:
+Los apartados contemplan:
 
 layaways
 layaway_items
@@ -921,10 +923,12 @@ Estados conceptuales:
 OPEN
 PARTIALLY_PAID
 PAID
+COMPLETED
 CANCELLED
-EXPIRED
 
-No asumir reglas de negocio. Documentarlas con el cliente.
+El vencimiento no cancela el apartado: sólo produce avisos amarillo y rojo. Un
+usuario con permiso decide si lo cancela. No asumir las reglas que la
+especificación todavía marca como pendientes.
 
 ⸻
 
@@ -1309,6 +1313,12 @@ y posteriormente permitir conciliación si existe integración.
 35. Clientes y lealtad
 
 Puede agregarse posteriormente.
+
+Las reglas confirmadas de apartados y crédito viven respectivamente en
+[`specs/M7_APARTADOS.md`](specs/M7_APARTADOS.md) y
+[`specs/M7_CREDITO.md`](specs/M7_CREDITO.md). Puntos, recompensas y niveles
+se realizarán en una etapa posterior por decisión del negocio y no bloquean la
+entrega de apartados y crédito.
 
 Posible módulo:
 
@@ -2549,3 +2559,92 @@ Entrega visible 0.31.2–0.31.3 — hardware confirmado y prueba sin venta:
   La muestra no crea ventas, no consume folios y no modifica caja ni inventario.
 - La guía de primera impresión registra márgenes, escala, corte y lectura del
   código para cerrar la validación física antes del piloto.
+
+Entrega visible 0.32.0 — M8.1, reportes operativos reales:
+
+- Reporte de ventas por día, semana, mes o año, filtrable por sucursal,
+  producto, SKU, talla o color. Cada renglón conserva ticket, día, hora y
+  cajero para responder consultas concretas de la operación.
+- Sin búsqueda de producto, la venta neta debe cuadrar contra la suma de los
+  métodos cobrados. Con búsqueda, el sistema muestra sólo el valor de los
+  renglones coincidentes y evita atribuirles pagos mixtos de otros artículos.
+- Reporte de inventario con existencia, reservado, disponible, faltantes,
+  variantes bajas y valor a costo/menudeo para usuarios autorizados.
+- Las vistas auxiliares permanecen en el esquema privado y sin permisos
+  directos. Las funciones validan identidad, permiso, sucursal, rango máximo de
+  366 días y longitud de búsqueda en el servidor.
+- M8 continúa después con cotizaciones y enlace digital seguro para compartir
+  el ticket. M7 ya tiene reglas de crédito cerradas; apartados conserva las
+  decisiones puntuales enumeradas en su especificación.
+
+Entrega visible 0.33.0 — M8.2, cotizaciones reales:
+
+- Una cotización recibe folio propio por sucursal, cliente opcional, notas y
+  una vigencia opcional elegida por el usuario. No se impone un plazo que el
+  negocio no haya decidido.
+- Sus estados son borrador, enviada, convertida y vencida. Se puede buscar por
+  folio, cliente, producto o SKU.
+- Crear o enviar una cotización no reserva mercancía, no modifica existencias
+  y no genera movimientos de caja.
+- “Cobrar en Venta” carga los renglones al POS. El cobro vuelve a validar en el
+  servidor precio, disponibilidad, sucursal y vigencia, y usa `create_sale`
+  dentro de una conversión atómica. Dos cajas no pueden generar dos ventas de
+  la misma cotización.
+- Si el precio o el producto cambió, no se cobra silenciosamente con otro
+  importe: se rechaza y se prepara una cotización actualizada.
+- La conversión parcial continúa pendiente de decisión del negocio. Por ahora
+  se cobra el documento completo o se crea uno nuevo.
+
+Entrega visible 0.34.0 — M7.1, autorización de crédito:
+
+- Administración y gerencia pueden autorizar crédito y definir un límite
+  global por cliente desde Clientes. Caja no puede cambiar esa autorización.
+- La pantalla muestra límite, saldo y disponible sin obligar a navegar a otro
+  módulo. Desactivar crédito o reducir el límite por debajo de un saldo futuro
+  queda rechazado en el servidor.
+- La cartera y su libro contable nacen cerrados al acceso directo, con RLS,
+  permisos separados y auditoría del motivo, autor, valor anterior y nuevo.
+- El POS sólo obtiene un resumen mínimo de disponibilidad; no recibe permiso
+  para editar cuentas. El libro rechaza edición, borrado e inserciones directas
+  incluso con acceso privilegiado.
+- Esta entrega no finge ventas ni abonos: M7.2 conectará la venta a crédito y
+  el cobro de saldos a la caja real. Apartados continúa después, respetando las
+  decisiones abiertas de `specs/M7_APARTADOS.md` §6. Lealtad sigue pospuesta.
+
+Corrección visible 0.32.1 — traspasos y sucursales operables:
+
+- Más módulos deja de anunciar los traspasos como pendientes y enlaza al flujo
+  real de Inventario: solicitud, aprobación, preparación, despacho y recepción.
+- El alta de una sucursal se vuelve atómica. Además de guardar sus datos, asigna
+  acceso al administrador que la crea y abre Caja 01 cuando es una tienda.
+- La clave de la sucursal queda inmutable porque forma parte de los folios
+  históricos. La ubicación técnica de tránsito tampoco puede editarse.
+- La escritura directa de sucursales se revoca para empleados; el único camino
+  expuesto valida `locations.manage`, registra auditoría y evita altas a medias.
+- La comprobación reversible en staging confirmó que la sucursal aparece de
+  inmediato en traspasos y que un gerente sin el permiso no puede crearla.
+- La migración se promovió a producción con autorización explícita y repitió la
+  prueba reversible sin dejar sucursales de prueba ni cambios residuales.
+
+Corrección visible 0.32.2 — sucursal activa y recepción clara:
+
+- La sucursal elegida se conserva durante la navegación y se resuelve siempre
+  contra las ubicaciones realmente asignadas al empleado. Venta, Caja,
+  Inventario, Compras, Tickets y Reportes comparten la misma selección.
+- Crear una tienda la convierte en la sucursal activa del administrador. La
+  operación sigue naciendo completa: acceso para quien la crea y Caja 01 propia.
+- Administración permite asignar una o varias sucursales a cada empleado. El
+  reemplazo es transaccional, exige `users.manage`, conserva al menos una
+  ubicación activa y no permite que el administrador cambie su propio acceso.
+- La cabecera distingue la sucursal seleccionada de la caja realmente abierta;
+  dejó de afirmar siempre “Caja 01”. Los tickets imprimen el nombre real de la
+  caja que registró la venta.
+- Si una caja está abierta en otra sucursal, Venta lo detecta también cuando la
+  ubicación proviene de la preferencia guardada y no sólo de la URL.
+- La recepción de traspasos mantiene separación de funciones: quien aprobó o
+  envió no puede recibir. La interfaz lo explica antes del intento y los errores
+  de Supabase ya no se degradan al mensaje genérico “guardar el ajuste”.
+- El traspaso real #1 quedó en tránsito hacia La Piedad Prueba: Emmanuel lo
+  solicitó, aprobó y envió, por lo que debe recibirlo otro empleado autorizado
+  en el destino. No se alteró el documento ni el inventario para evadir el
+  control.

@@ -28,6 +28,8 @@ import type {
   InventoryMovement,
   InventoryTransfer,
 } from "@/lib/domain";
+import { useWorkspace } from "@/components/workspace-context";
+import { saveActiveLocationPreference } from "@/lib/location-preference";
 
 type Location = { id: string; name: string; code: string };
 
@@ -125,7 +127,7 @@ const statusMessages: Record<
   },
   "inventario-separacion-funciones": {
     title: "Se requiere otra persona",
-    copy: "Quien aprobó el traspaso no puede recibirlo.",
+    copy: "Quien aprobó o envió el traspaso no puede recibirlo. Debe confirmarlo otra persona autorizada en la sucursal destino.",
     tone: "error",
   },
   "inventario-sin-existencia": {
@@ -667,6 +669,7 @@ export function InventoryWorkspace({
   status?: string;
   preview?: boolean;
 }) {
+  const { identity } = useWorkspace();
   const [showMovements, setShowMovements] = useState(false);
   const [showCounts, setShowCounts] = useState(false);
   const [showTransfers, setShowTransfers] = useState(false);
@@ -727,11 +730,12 @@ export function InventoryWorkspace({
               <span className="sr-only">Sucursal</span>
               <select
                 value={activeLocationId}
-                onChange={(event) =>
+                onChange={(event) => {
+                  saveActiveLocationPreference(event.target.value);
                   window.location.assign(
                     `/inventario?ubicacion=${encodeURIComponent(event.target.value)}`,
-                  )
-                }
+                  );
+                }}
               >
                 {locations.map((location) => (
                   <option value={location.id} key={location.id}>
@@ -1229,6 +1233,9 @@ export function InventoryWorkspace({
                 const isOrigin = transfer.fromLocationId === activeLocationId;
                 const isDestination =
                   transfer.toLocationId === activeLocationId;
+                const receiveNeedsAnotherEmployee =
+                  transfer.approvedById === identity.id ||
+                  transfer.sentById === identity.id;
                 return (
                   <article
                     className="inventory-document-card"
@@ -1319,7 +1326,8 @@ export function InventoryWorkspace({
                     ) : null}
                     {transfer.status === "IN_TRANSIT" &&
                     isDestination &&
-                    canReceiveTransfer ? (
+                    canReceiveTransfer &&
+                    !receiveNeedsAnotherEmployee ? (
                       <TransferItemForm
                         action={receiveTransferAction}
                         transfer={transfer}
@@ -1327,6 +1335,19 @@ export function InventoryWorkspace({
                         mode="receive"
                         label="Confirmar recepción"
                       />
+                    ) : null}
+                    {transfer.status === "IN_TRANSIT" &&
+                    isDestination &&
+                    canReceiveTransfer &&
+                    receiveNeedsAnotherEmployee ? (
+                      <div className="admin-inline-warning">
+                        <strong>Otra persona debe recibirlo</strong>
+                        <span>
+                          Tú aprobaste o enviaste este traspaso. Pide a otro
+                          empleado autorizado de {transfer.toLocationName} que
+                          confirme las cantidades recibidas.
+                        </span>
+                      </div>
                     ) : null}
                     {isOrigin &&
                     canCreateTransfer &&

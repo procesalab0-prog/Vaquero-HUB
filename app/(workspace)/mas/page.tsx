@@ -17,7 +17,9 @@ import {
 export const metadata: Metadata = { title: "Más módulos" };
 
 const modules = [
+  { href: "/reportes", title: "Reportes", description: "Ventas por periodo, producto o variante e inventario valorizado.", icon: BarChart3, ready: true },
   { href: "/tickets", title: "Tickets", description: "Consulta, reimpresión y tickets de regalo.", icon: FileText, ready: true },
+  { href: "/cotizaciones", title: "Cotizaciones", description: "Crea propuestas, márcalas como enviadas y cóbralas sin duplicar la venta.", icon: FileText, ready: true },
   { href: "/etiquetas", title: "Etiquetas y códigos", description: "Busca códigos SICAR y prepara etiquetas para imprimir.", icon: Tags, ready: true },
   { href: "/prueba-impresion", title: "Prueba de impresión", description: "Imprime un ticket de muestra para calibrar la impresora, sin registrar ventas.", icon: Printer, ready: true },
   { href: "/ajustes", title: "Ajustes", description: "Sucursales, apariencia, POS, tickets y preferencias.", icon: Settings, ready: true },
@@ -25,7 +27,6 @@ const modules = [
   { href: "/compras?tab=proveedores", title: "Proveedores", description: "Contactos y datos de tus proveedores.", icon: Truck, ready: true },
   { href: "/inventario", title: "Traspasos entre sucursales", description: "Solicita, aprueba, despacha y recibe mercancía en tránsito.", icon: Boxes, ready: true },
   { href: "/administracion", title: "Usuarios y permisos", description: "Empleados, sucursales, roles y bitácora protegidos.", icon: Users, ready: true },
-  { href: "#", title: "Reportes", description: "Ventas, inventario, caja y conciliación.", icon: BarChart3, ready: false },
   { href: "/clientes", title: "Clientes", description: "Alta, búsqueda y número de socio; lealtad se activará al definir sus reglas.", icon: Gift, ready: true },
 ];
 

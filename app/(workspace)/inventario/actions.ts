@@ -17,7 +17,15 @@ function numberField(formData: FormData, name: string) {
 }
 
 function errorStatus(error: unknown) {
-  const message = error instanceof Error ? error.message : "";
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" &&
+          error !== null &&
+          "message" in error &&
+          typeof error.message === "string"
+        ? error.message
+        : "";
   if (message.includes("STALE_INVENTORY")) return "inventario-desactualizado";
   if (message.includes("INSUFFICIENT_STOCK")) return "inventario-reservado";
   if (

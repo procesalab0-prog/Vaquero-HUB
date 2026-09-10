@@ -49,6 +49,7 @@ type PosDraftPayload = {
   label: string | null;
   items: PosDraftItemInput[];
   discount_percent: number;
+  quote_id?: string | null;
   held_at: string | null;
   updated_at: string;
   customer: CustomerSummary | null;
@@ -66,6 +67,7 @@ type SaleActionInput = {
   items: Array<{ variant_id: string; quantity: number; gift_receipt: boolean }>;
   payments: SalePaymentInput[];
   customerId?: string | null;
+  quoteId?: string | null;
   discount?: { percent: number; authorizationToken: string } | null;
 };
 type SaleActionResult =
@@ -235,6 +237,7 @@ export function PosWorkspace({
   const currentDraft = initialDrafts.find(
     (draft) => draft.status === "CURRENT",
   );
+  const quoteId = currentDraft?.quote_id ?? null;
   const restoredCart = useMemo(
     () =>
       (currentDraft?.items ?? []).flatMap((item) => {
@@ -303,7 +306,7 @@ export function PosWorkspace({
   const [heldTicketsOpen, setHeldTicketsOpen] = useState(false);
   const [draftBusy, setDraftBusy] = useState(false);
   const [draftStatus, setDraftStatus] = useState(
-    currentDraft ? "Carrito recuperado" : "",
+    quoteId ? "Cotización cargada · se validará al cobrar" : currentDraft ? "Carrito recuperado" : "",
   );
   const toastTimer = useRef<number | null>(null);
   const draftTimer = useRef<number | null>(null);
@@ -633,6 +636,7 @@ export function PosWorkspace({
         })),
         payments,
         customerId: selectedCustomer?.id ?? null,
+        quoteId,
         discount:
           discountPercent > 0 && discountAuthorization
             ? {
@@ -1009,6 +1013,7 @@ export function PosWorkspace({
                         : 0
                   }
                   cashierName={storedReceipt?.cashier_name ?? identity.name}
+                  registerName={cashSession?.register_name ?? "Caja 01"}
                   location={officialLocation}
                 />
               </div>
