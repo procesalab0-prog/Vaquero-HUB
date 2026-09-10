@@ -15,7 +15,12 @@ import Link from "next/link";
 import { requirePermission } from "@/lib/auth/authorization";
 import { formatCustomerPhone } from "@/lib/customers";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { createCustomer, setCustomerCredit, updateCustomer } from "./actions";
+import {
+  createCustomer,
+  receiveCustomerCreditPayment,
+  setCustomerCredit,
+  updateCustomer,
+} from "./actions";
 
 export const metadata: Metadata = { title: "Clientes" };
 
@@ -69,6 +74,15 @@ const statusMessages: Record<string, string> = {
     "El límite no puede quedar por debajo del saldo actual.",
   "credito-error":
     "No fue posible actualizar el crédito. Revisa tus permisos y los datos.",
+  "abono-registrado":
+    "Abono registrado. El saldo y la caja quedaron actualizados.",
+  "abono-datos-invalidos":
+    "Captura al menos un importe y las referencias electrónicas.",
+  "abono-caja-requerida": "Abre tu caja antes de recibir un abono.",
+  "abono-mayor-saldo": "El abono no puede ser mayor que el saldo pendiente.",
+  "abono-sin-saldo": "Este cliente ya no tiene saldo pendiente.",
+  "abono-error":
+    "No fue posible registrar el abono. No se movió dinero ni saldo.",
 };
 
 export default async function CustomersPage({
@@ -125,21 +139,24 @@ export default async function CustomersPage({
     customersData = data ?? [];
   }
 
-  const [{ data: locationsData, error: locationsError }, creditPermission] =
+  const [{ data: locationsData, error: locationsError }, creditPermissions] =
     await Promise.all([
       locationsRequest,
       supabase
         .from("role_permissions")
         .select("permission_code")
         .eq("role_id", roleId)
-        .eq("permission_code", "customers.credit")
-        .maybeSingle(),
+        .in("permission_code", ["customers.credit", "credit.collect"]),
     ]);
   if (locationsError) throw locationsError;
 
-  const canManageCredit = Boolean(creditPermission.data);
+  const permissionCodes = new Set(
+    (creditPermissions.data ?? []).map((row) => row.permission_code),
+  );
+  const canManageCredit = permissionCodes.has("customers.credit");
+  const canCollectCredit = permissionCodes.has("credit.collect");
   let creditByCustomer = new Map<string, CreditSummary>();
-  if (canManageCredit) {
+  if (canManageCredit || canCollectCredit) {
     const { data: creditData, error: creditError } = await supabase.rpc(
       "list_customer_credit_accounts",
       {
@@ -169,6 +186,7 @@ export default async function CustomersPage({
       "cliente-actualizado",
       "credito-autorizado",
       "credito-desactivado",
+      "abono-registrado",
     ].includes(params.status),
   );
 
@@ -502,6 +520,83 @@ export default async function CustomersPage({
                   </div>
                   <button className="secondary-button" type="submit">
                     Guardar crédito
+                  </button>
+                </form>
+              ) : null}
+              {canCollectCredit && Number(credit?.balance_cents ?? 0) > 0 ? (
+                <form
+                  action={receiveCustomerCreditPayment}
+                  className="credit-payment-form"
+                >
+                  <input name="customer_id" type="hidden" value={customer.id} />
+                  <div className="credit-settings-heading">
+                    <span>
+                      <CircleDollarSign aria-hidden="true" />
+                      <strong>Recibir abono</strong>
+                    </span>
+                    <small>
+                      Saldo:{" "}
+                      {money.format(Number(credit?.balance_cents ?? 0) / 100)}
+                    </small>
+                  </div>
+                  <p>
+                    Puede combinar métodos. Captura sólo los importes recibidos.
+                  </p>
+                  <div className="credit-payment-grid">
+                    <label>
+                      <span>Efectivo</span>
+                      <input
+                        name="cash"
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                      />
+                    </label>
+                    <label>
+                      <span>Tarjeta</span>
+                      <input
+                        name="card"
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                      />
+                    </label>
+                    <label>
+                      <span>Referencia de tarjeta</span>
+                      <input
+                        name="card_reference"
+                        placeholder="Sólo si usó tarjeta"
+                      />
+                    </label>
+                    <label>
+                      <span>Transferencia</span>
+                      <input
+                        name="transfer"
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                      />
+                    </label>
+                    <label>
+                      <span>Referencia de transferencia</span>
+                      <input
+                        name="transfer_reference"
+                        placeholder="Sólo si usó transferencia"
+                      />
+                    </label>
+                    <label>
+                      <span>Nota (opcional)</span>
+                      <input name="note" minLength={3} maxLength={500} />
+                    </label>
+                  </div>
+                  <button className="primary-button" type="submit">
+                    Registrar abono
                   </button>
                 </form>
               ) : null}

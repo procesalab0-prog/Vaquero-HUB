@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.34.1";
-export const APP_RELEASE = "Tipos de folio a prueba de módulos";
+export const APP_VERSION = "0.35.0";
+export const APP_RELEASE = "Crédito y abonos sin inventar dinero";

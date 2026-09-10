@@ -10,6 +10,7 @@ import {
   cancelPosSale,
   createPosSale,
   discardPosDraft,
+  getPosCustomerCredit,
   holdPosDraft,
   requestSalePrint,
   resumePosDraft,
@@ -149,6 +150,7 @@ export default async function PosPage({
         }
       }
       createSaleAction={createPosSale}
+      getCustomerCreditAction={getPosCustomerCredit}
       authorizeDiscountAction={authorizeSaleDiscount}
       printAction={requestSalePrint}
       cancelSaleAction={cancelPosSale}

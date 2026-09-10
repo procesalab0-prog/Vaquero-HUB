@@ -898,7 +898,7 @@ La guía de la visita está en
 confirmado en [`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md).
 
 **Ya preparado:** una pantalla *Prueba de impresión* (*Más* → *Prueba de
-impresión*) que imprime un ticket de muestra **sin registrar venta**: no toca
+impresión_) que imprime un ticket de muestra **sin registrar venta**: no toca
 inventario, ni caja, ni folios. Antes, calibrar la impresora obligaba a cobrar
 de verdad y luego cancelar. El ticket de muestra trae nombres largos y un
 acento a propósito, que es donde se nota si el ancho quedó mal.
@@ -1071,6 +1071,34 @@ limpio. **No se encontraron defectos** en lo demás.
   alguien cambie sus propias asignaciones**, así que un administrador no puede
   darse acceso a una sucursal en silencio.
 
+### Entrega M7.2 · venta a crédito y abonos (0.35.0)
+
+Implementado y validado primero en staging:
+
+- Venta total o parcialmente a crédito con cliente, límite y vencimiento.
+- Candado transaccional por cliente para impedir sobregiro entre dos cajas.
+- Abonos parciales y mixtos con folio, método, referencia, sucursal, caja y
+  empleado; sólo el efectivo recibido mueve el cajón.
+- Libro, comprobantes y aplicaciones FIFO inmutables, sin acceso directo y con
+  restricciones de conciliación al cierre de la transacción.
+- Idempotencia de venta y abono; un reintento no duplica inventario, deuda ni
+  dinero.
+- La función normal de venta no puede aceptar el método `CREDIT`; sólo la ruta
+  especializada valida autorización, límite y atraso.
+- Mientras falta la compensación completa, una devolución que intente tratar
+  crédito como reembolso se revierte entera y explica que primero debe reducir
+  la deuda.
+- La validación diferida de venta y libro quedó corregida mediante una migración
+  nueva: nunca se reescribió la migración que ya había corrido en staging.
+
+Siguiente bloque de M7.2 antes de M7.3:
+
+1. Devoluciones y cancelaciones reducen primero la deuda abierta y sólo
+   reembolsan el excedente realmente pagado por el método original.
+2. Excepción puntual de administrador ante atraso, limitada a una operación y
+   auditada sin borrar el vencimiento.
+3. Estado de cuenta visible y comprobante de abono imprimible/compartible.
+
 ## Bloqueado por el cliente
 
 No se empieza hasta tener respuesta. Todas están en
@@ -1132,6 +1160,7 @@ entrega junto con la versión visible.
 Y una pregunta encima de todo, porque tres hallazgos de la auditoría
 fueron exactamente de ese tipo: **¿este control de verdad hace lo que
 dice?** Que el código exista no significa que funcione.
+
 ## Avance M8.1 — reportes operativos
 
 - [x] Reporte real de ventas por día, semana, mes o año.
