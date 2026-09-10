@@ -19,6 +19,7 @@ export const metadata: Metadata = { title: "Más módulos" };
 const modules = [
   { href: "/reportes", title: "Reportes", description: "Ventas por periodo, producto o variante e inventario valorizado.", icon: BarChart3, ready: true },
   { href: "/tickets", title: "Tickets", description: "Consulta, reimpresión y tickets de regalo.", icon: FileText, ready: true },
+  { href: "/cotizaciones", title: "Cotizaciones", description: "Crea propuestas, márcalas como enviadas y cóbralas sin duplicar la venta.", icon: FileText, ready: true },
   { href: "/etiquetas", title: "Etiquetas y códigos", description: "Busca códigos SICAR y prepara etiquetas para imprimir.", icon: Tags, ready: true },
   { href: "/prueba-impresion", title: "Prueba de impresión", description: "Imprime un ticket de muestra para calibrar la impresora, sin registrar ventas.", icon: Printer, ready: true },
   { href: "/ajustes", title: "Ajustes", description: "Sucursales, apariencia, POS, tickets y preferencias.", icon: Settings, ready: true },

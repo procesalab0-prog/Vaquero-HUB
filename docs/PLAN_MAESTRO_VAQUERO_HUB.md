@@ -2576,6 +2576,24 @@ Entrega visible 0.32.0 — M8.1, reportes operativos reales:
 - M8 continúa después con cotizaciones y enlace digital seguro para compartir
   el ticket. M7 permanece bloqueado hasta definir las reglas de apartados.
 
+Entrega visible 0.33.0 — M8.2, cotizaciones reales:
+
+- Una cotización recibe folio propio por sucursal, cliente opcional, notas y
+  una vigencia opcional elegida por el usuario. No se impone un plazo que el
+  negocio no haya decidido.
+- Sus estados son borrador, enviada, convertida y vencida. Se puede buscar por
+  folio, cliente, producto o SKU.
+- Crear o enviar una cotización no reserva mercancía, no modifica existencias
+  y no genera movimientos de caja.
+- “Cobrar en Venta” carga los renglones al POS. El cobro vuelve a validar en el
+  servidor precio, disponibilidad, sucursal y vigencia, y usa `create_sale`
+  dentro de una conversión atómica. Dos cajas no pueden generar dos ventas de
+  la misma cotización.
+- Si el precio o el producto cambió, no se cobra silenciosamente con otro
+  importe: se rechaza y se prepara una cotización actualizada.
+- La conversión parcial continúa pendiente de decisión del negocio. Por ahora
+  se cobra el documento completo o se crea uno nuevo.
+
 Corrección visible 0.32.1 — traspasos y sucursales operables:
 
 - Más módulos deja de anunciar los traspasos como pendientes y enlaza al flujo
