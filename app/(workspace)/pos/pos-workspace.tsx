@@ -7,6 +7,7 @@ import {
   Banknote,
   ArrowRightLeft,
   Barcode,
+  CalendarClock,
   Check,
   ChevronRight,
   CreditCard,
@@ -56,7 +57,7 @@ type PosDraftPayload = {
 };
 
 type SalePaymentInput = {
-  method_code: "CASH" | "CARD" | "TRANSFER";
+  method_code: "CASH" | "CARD" | "TRANSFER" | "CREDIT";
   amount_cents: number;
   tendered_cents?: number;
   reference?: string;
@@ -69,6 +70,15 @@ type SaleActionInput = {
   customerId?: string | null;
   quoteId?: string | null;
   discount?: { percent: number; authorizationToken: string } | null;
+  creditDueDate?: string | null;
+};
+type CreditSummary = {
+  is_authorized: boolean;
+  limit_cents: number;
+  balance_cents: number;
+  available_cents: number;
+  oldest_due_date: string | null;
+  has_overdue: boolean;
 };
 type SaleActionResult =
   | {
@@ -173,6 +183,7 @@ export function PosWorkspace({
   preview = false,
   status,
   createSaleAction,
+  getCustomerCreditAction,
   authorizeDiscountAction,
   printAction,
   cancelSaleAction,
@@ -187,6 +198,11 @@ export function PosWorkspace({
   preview?: boolean;
   status?: string;
   createSaleAction?: (input: SaleActionInput) => Promise<SaleActionResult>;
+  getCustomerCreditAction?: (
+    customerId: string,
+  ) => Promise<
+    { ok: true; summary: CreditSummary } | { ok: false; message: string }
+  >;
   authorizeDiscountAction?: (input: {
     employeeCode: string;
     pin: string;
@@ -282,6 +298,7 @@ export function PosWorkspace({
   const [splitCash, setSplitCash] = useState("");
   const [splitCard, setSplitCard] = useState("");
   const [splitTransfer, setSplitTransfer] = useState("");
+  const [splitCredit, setSplitCredit] = useState("");
   const [splitCardReference, setSplitCardReference] = useState("");
   const [splitTransferReference, setSplitTransferReference] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -289,6 +306,14 @@ export function PosWorkspace({
   const [paymentUsed, setPaymentUsed] = useState<PaymentMethod>("cash");
   const [receiptPaymentLabel, setReceiptPaymentLabel] = useState("Efectivo");
   const [paymentReference, setPaymentReference] = useState("");
+  const [creditSummary, setCreditSummary] = useState<CreditSummary | null>(
+    null,
+  );
+  const [creditDueDate, setCreditDueDate] = useState(() => {
+    const date = new Date();
+    date.setMonth(date.getMonth() + 1);
+    return date.toISOString().slice(0, 10);
+  });
   const [saleError, setSaleError] = useState("");
   const [saleFolio, setSaleFolio] = useState("V-000842");
   const [saleId, setSaleId] = useState("");
@@ -306,7 +331,11 @@ export function PosWorkspace({
   const [heldTicketsOpen, setHeldTicketsOpen] = useState(false);
   const [draftBusy, setDraftBusy] = useState(false);
   const [draftStatus, setDraftStatus] = useState(
-    quoteId ? "Cotización cargada · se validará al cobrar" : currentDraft ? "Carrito recuperado" : "",
+    quoteId
+      ? "Cotización cargada · se validará al cobrar"
+      : currentDraft
+        ? "Carrito recuperado"
+        : "",
   );
   const toastTimer = useRef<number | null>(null);
   const draftTimer = useRef<number | null>(null);
@@ -415,6 +444,7 @@ export function PosWorkspace({
     cash: "Efectivo",
     card: "Tarjeta",
     transfer: "Transferencia",
+    credit: "Crédito",
   };
 
   function notify(message: string) {
@@ -601,6 +631,7 @@ export function PosWorkspace({
     method: PaymentMethod,
     payments: SalePaymentInput[],
     receiptLabel = paymentLabels[method],
+    dueDate?: string,
   ) {
     if (submittingRef.current) return;
 
@@ -644,6 +675,7 @@ export function PosWorkspace({
                 authorizationToken: discountAuthorization,
               }
             : null,
+        creditDueDate: dueDate ?? null,
       });
       if (!result.ok) {
         submittingRef.current = false;
@@ -680,6 +712,23 @@ export function PosWorkspace({
       ]);
       return;
     }
+    if (method === "credit") {
+      if (!selectedCustomer) {
+        setSaleError("Selecciona al cliente antes de usar crédito.");
+        return;
+      }
+      if (!creditDueDate) {
+        setSaleError("Selecciona la fecha de vencimiento.");
+        return;
+      }
+      void submitSale(
+        "credit",
+        [{ method_code: "CREDIT", amount_cents: totalCents }],
+        "Crédito",
+        creditDueDate,
+      );
+      return;
+    }
     if (paymentReference.trim().length < 3) {
       setSaleError("Captura la referencia del pago electrónico.");
       return;
@@ -693,16 +742,47 @@ export function PosWorkspace({
     ]);
   }
 
-  function completeSplitSale() {
+  async function completeSplitSale() {
     const totalCents = Math.round(total * 100);
     const cashCents = Math.round(Number(splitCash || 0) * 100);
     const cardCents = Math.round(Number(splitCard || 0) * 100);
     const transferCents = Math.round(Number(splitTransfer || 0) * 100);
-    if (cashCents + cardCents + transferCents !== totalCents) {
+    const creditCents = Math.round(Number(splitCredit || 0) * 100);
+    if (cashCents + cardCents + transferCents + creditCents !== totalCents) {
       setSaleError(
         "La suma de los pagos debe coincidir exactamente con el total.",
       );
       return;
+    }
+    if (creditCents > 0) {
+      if (!selectedCustomer || !creditDueDate) {
+        setSaleError(
+          "Selecciona al cliente y la fecha de vencimiento del crédito.",
+        );
+        return;
+      }
+      if (!getCustomerCreditAction) {
+        setSaleError("La consulta de crédito no está disponible.");
+        return;
+      }
+      const result = await getCustomerCreditAction(selectedCustomer.id);
+      if (!result.ok) {
+        setSaleError(result.message);
+        return;
+      }
+      setCreditSummary(result.summary);
+      if (!result.summary.is_authorized || result.summary.has_overdue) {
+        setSaleError(
+          result.summary.has_overdue
+            ? "El cliente tiene saldo vencido y no puede usar más crédito."
+            : "Este cliente no tiene crédito autorizado.",
+        );
+        return;
+      }
+      if (creditCents > Number(result.summary.available_cents)) {
+        setSaleError("El importe supera el crédito disponible del cliente.");
+        return;
+      }
     }
     if (
       (cardCents > 0 && splitCardReference.trim().length < 3) ||
@@ -730,7 +810,42 @@ export function PosWorkspace({
         amount_cents: transferCents,
         reference: splitTransferReference.trim(),
       });
-    void submitSale("cash", payments, "Pago combinado");
+    if (creditCents > 0)
+      payments.push({ method_code: "CREDIT", amount_cents: creditCents });
+    void submitSale(
+      creditCents > 0 ? "credit" : "cash",
+      payments,
+      creditCents > 0 ? "Pago combinado con crédito" : "Pago combinado",
+      creditCents > 0 ? creditDueDate : undefined,
+    );
+  }
+
+  async function openCreditPayment() {
+    if (!selectedCustomer) {
+      setSaleError("Selecciona al cliente antes de usar crédito.");
+      setCustomerLookupOpen(true);
+      return;
+    }
+    if (!getCustomerCreditAction) {
+      setSaleError("La consulta de crédito no está disponible.");
+      return;
+    }
+    setSaleError("");
+    const result = await getCustomerCreditAction(selectedCustomer.id);
+    if (!result.ok) {
+      setSaleError(result.message);
+      return;
+    }
+    setCreditSummary(result.summary);
+    if (!result.summary.is_authorized || result.summary.has_overdue) {
+      setSaleError(
+        result.summary.has_overdue
+          ? "El cliente tiene saldo vencido y no puede usar más crédito."
+          : "Este cliente no tiene crédito autorizado.",
+      );
+      return;
+    }
+    setPaymentUsed("credit");
   }
 
   function newSale() {
@@ -749,6 +864,7 @@ export function PosWorkspace({
     setSplitCash("");
     setSplitCard("");
     setSplitTransfer("");
+    setSplitCredit("");
     setSplitCardReference("");
     setSplitTransferReference("");
     setSubmitting(false);
@@ -756,6 +872,7 @@ export function PosWorkspace({
     setReceiptMode(null);
     setSelectedCustomer(null);
     setPaymentReference("");
+    setCreditSummary(null);
     setSaleError("");
     setSaleId("");
     setStoredReceipt(null);
@@ -1551,7 +1668,7 @@ export function PosWorkspace({
           >
             <p className="kicker">Confirmar cobro</p>
             <h2 id="checkout-title">{money.format(total)}</h2>
-            {!cashMode && !splitMode ? (
+            {!cashMode && !splitMode && paymentUsed !== "credit" ? (
               <>
                 <p>Selecciona el método registrado en la venta.</p>
                 <div className="payment-options">
@@ -1583,6 +1700,18 @@ export function PosWorkspace({
                     <Landmark aria-hidden="true" />
                     <strong>Transferencia</strong>
                     <small>Referencia externa</small>
+                  </button>
+                  <button
+                    className="payment-credit"
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => void openCreditPayment()}
+                  >
+                    <CalendarClock aria-hidden="true" />
+                    <strong>Crédito</strong>
+                    <small>
+                      {selectedCustomer ? "Saldo por cobrar" : "Elige cliente"}
+                    </small>
                   </button>
                 </div>
                 <button
@@ -1650,6 +1779,34 @@ export function PosWorkspace({
                       />
                     </label>
                   ) : null}
+                  <label>
+                    <span>Crédito del cliente</span>
+                    <input
+                      inputMode="decimal"
+                      value={splitCredit}
+                      onChange={(event) => setSplitCredit(event.target.value)}
+                      placeholder="0.00"
+                      disabled={!selectedCustomer}
+                    />
+                    <small>
+                      {selectedCustomer
+                        ? `Cliente: ${selectedCustomer.full_name}`
+                        : "Asocia un cliente antes de dejar saldo pendiente."}
+                    </small>
+                  </label>
+                  {Number(splitCredit) > 0 ? (
+                    <label>
+                      <span>Fecha de vencimiento</span>
+                      <input
+                        type="date"
+                        min={new Date().toISOString().slice(0, 10)}
+                        value={creditDueDate}
+                        onChange={(event) =>
+                          setCreditDueDate(event.target.value)
+                        }
+                      />
+                    </label>
+                  ) : null}
                 </div>
                 <button
                   className="primary-button wide"
@@ -1708,7 +1865,58 @@ export function PosWorkspace({
                 </button>
               </div>
             )}
-            {!cashMode && paymentUsed !== "cash" ? (
+            {!cashMode && paymentUsed === "credit" ? (
+              <div className="credit-checkout-summary">
+                <div>
+                  <span>Cliente</span>
+                  <strong>{selectedCustomer?.full_name}</strong>
+                </div>
+                <div>
+                  <span>Crédito disponible</span>
+                  <strong>
+                    {money.format(
+                      Number(creditSummary?.available_cents ?? 0) / 100,
+                    )}
+                  </strong>
+                </div>
+                <label>
+                  <span>Vence</span>
+                  <input
+                    type="date"
+                    min={new Date().toISOString().slice(0, 10)}
+                    value={creditDueDate}
+                    onChange={(event) => setCreditDueDate(event.target.value)}
+                  />
+                </label>
+                <small>
+                  Saldo actual:{" "}
+                  {money.format(
+                    Number(creditSummary?.balance_cents ?? 0) / 100,
+                  )}{" "}
+                  · saldo después:{" "}
+                  {money.format(
+                    (Number(creditSummary?.balance_cents ?? 0) +
+                      Math.round(total * 100)) /
+                      100,
+                  )}
+                </small>
+                <button
+                  className="primary-button wide"
+                  type="button"
+                  disabled={
+                    submitting ||
+                    !creditDueDate ||
+                    Math.round(total * 100) >
+                      Number(creditSummary?.available_cents ?? 0)
+                  }
+                  onClick={() => completeSale("credit")}
+                >
+                  Confirmar venta a crédito
+                </button>
+              </div>
+            ) : null}
+            {!cashMode &&
+            (paymentUsed === "card" || paymentUsed === "transfer") ? (
               <div className="form-stack electronic-reference">
                 <label>
                   <span>
@@ -1737,16 +1945,19 @@ export function PosWorkspace({
               className="secondary-button wide"
               type="button"
               onClick={() => {
-                if (cashMode || splitMode) {
+                if (cashMode || splitMode || paymentUsed === "credit") {
                   setCashMode(false);
                   setSplitMode(false);
                   setCashInput("");
+                  setPaymentUsed("cash");
                 } else {
                   setCheckoutOpen(false);
                 }
               }}
             >
-              {cashMode || splitMode ? "Cambiar método" : "Volver al carrito"}
+              {cashMode || splitMode || paymentUsed === "credit"
+                ? "Cambiar método"
+                : "Volver al carrito"}
             </button>
           </section>
         </div>
@@ -1826,7 +2037,11 @@ export function PosWorkspace({
         <div className="modal-backdrop">
           <CustomerLookup
             selected={selectedCustomer}
-            onSelect={setSelectedCustomer}
+            onSelect={(customer) => {
+              setSelectedCustomer(customer);
+              setCreditSummary(null);
+              setPaymentUsed("cash");
+            }}
             onClose={() => setCustomerLookupOpen(false)}
           />
         </div>

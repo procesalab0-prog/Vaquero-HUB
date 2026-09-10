@@ -12,6 +12,19 @@ function textField(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
 }
 
+function databaseErrorText(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+  return String(error ?? "UNKNOWN_ERROR");
+}
+
 function errorStatus(error: unknown) {
   const message = error instanceof Error ? error.message : "";
   if (message.includes("CUSTOMER_ALREADY_EXISTS")) return "cliente-duplicado";
@@ -148,5 +161,94 @@ export async function setCustomerCredit(formData: FormData) {
   }
 
   revalidatePath(customersPath);
+  redirect(`${customersPath}?status=${status}`);
+}
+
+export async function receiveCustomerCreditPayment(formData: FormData) {
+  let status = "abono-error";
+  try {
+    const { supabase } = await requirePermission("credit.collect");
+    const customerId = textField(formData, "customer_id");
+    const cashCents = Math.round(
+      Number(textField(formData, "cash") || 0) * 100,
+    );
+    const cardCents = Math.round(
+      Number(textField(formData, "card") || 0) * 100,
+    );
+    const transferCents = Math.round(
+      Number(textField(formData, "transfer") || 0) * 100,
+    );
+    const cardReference = textField(formData, "card_reference");
+    const transferReference = textField(formData, "transfer_reference");
+    const note = textField(formData, "note");
+    const payments = [] as Array<{
+      method_code: "CASH" | "CARD" | "TRANSFER";
+      amount_cents: number;
+      tendered_cents?: number;
+      reference?: string;
+    }>;
+    if (cashCents > 0)
+      payments.push({
+        method_code: "CASH",
+        amount_cents: cashCents,
+        tendered_cents: cashCents,
+      });
+    if (cardCents > 0)
+      payments.push({
+        method_code: "CARD",
+        amount_cents: cardCents,
+        reference: cardReference,
+      });
+    if (transferCents > 0)
+      payments.push({
+        method_code: "TRANSFER",
+        amount_cents: transferCents,
+        reference: transferReference,
+      });
+    const invalid =
+      !customerId ||
+      payments.length === 0 ||
+      payments.some(
+        (payment) =>
+          !Number.isSafeInteger(payment.amount_cents) ||
+          payment.amount_cents <= 0 ||
+          (payment.method_code !== "CASH" &&
+            (payment.reference?.length ?? 0) < 3),
+      );
+    if (invalid) {
+      status = "abono-datos-invalidos";
+    } else {
+      const { data: session, error: sessionError } = await supabase.rpc(
+        "get_my_cash_session",
+      );
+      const cashSessionId = (session as { id?: string } | null)?.id;
+      if (sessionError || !cashSessionId) {
+        status = "abono-caja-requerida";
+      } else {
+        const { error } = await supabase.rpc("record_customer_credit_payment", {
+          p_idempotency_key: crypto.randomUUID(),
+          p_cash_session_id: cashSessionId,
+          p_customer_id: customerId,
+          p_payments: payments,
+          p_note: note || null,
+        });
+        if (error) throw error;
+        status = "abono-registrado";
+      }
+    }
+  } catch (error) {
+    const message = databaseErrorText(error);
+    status = message.includes("CREDIT_OVERPAYMENT")
+      ? "abono-mayor-saldo"
+      : message.includes("CREDIT_BALANCE_EMPTY")
+        ? "abono-sin-saldo"
+        : status;
+    console.error("[clientes/receiveCreditPayment] failed", {
+      status,
+      message: message || "UNKNOWN_ERROR",
+    });
+  }
+  revalidatePath(customersPath);
+  revalidatePath("/caja");
   redirect(`${customersPath}?status=${status}`);
 }

@@ -31,7 +31,7 @@ export type CartLine = {
   giftReceipt: boolean;
 };
 
-export type PaymentMethod = "cash" | "card" | "transfer";
+export type PaymentMethod = "cash" | "card" | "transfer" | "credit";
 
 export type GiftReceiptStatus =
   "valid" | "partially_used" | "used" | "expired" | "cancelled";

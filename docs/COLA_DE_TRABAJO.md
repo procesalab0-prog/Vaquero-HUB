@@ -898,7 +898,7 @@ La guía de la visita está en
 confirmado en [`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md).
 
 **Ya preparado:** una pantalla *Prueba de impresión* (*Más* → *Prueba de
-impresión*) que imprime un ticket de muestra **sin registrar venta**: no toca
+impresión_) que imprime un ticket de muestra **sin registrar venta**: no toca
 inventario, ni caja, ni folios. Antes, calibrar la impresora obligaba a cobrar
 de verdad y luego cancelar. El ticket de muestra trae nombres largos y un
 acento a propósito, que es donde se nota si el ancho quedó mal.
@@ -1017,6 +1017,88 @@ runbook.
 
 ---
 
+### Corregido de raíz: los tipos de folio se pisaban entre módulos
+
+Vale la pena contar cómo falló, porque el patrón iba a repetirse.
+
+`folios.document_type` se validaba con un CHECK que traía la lista completa de
+tipos. Cada módulo que agregaba uno tenía que **soltar la restricción y volver
+a escribirla entera**. M5 le agregó `RETURN`. M8 le agregó `QUOTE`… y en el
+camino borró `RETURN`. Al desplegar, **las devoluciones se quedaron sin folio**
+hasta que se detectó y se emitió `20260910033000_m8_restore_return_folio_type`.
+
+No fue descuido de nadie en particular: era una estructura que exigía recordar
+una lista completa de memoria cada vez. Y M7 apartados iba a tocarla otra vez.
+
+Ahora hay una tabla `folio_document_types` con llave foránea. **Agregar un tipo
+es un INSERT de un renglón**, y ya no existe una lista que alguien pueda
+reescribir olvidando la mitad. Lo que antes dependía de acordarse, ahora lo
+garantiza la estructura.
+
+| Prueba                                              | Resultado medido                |
+| --------------------------------------------------- | --------------------------------- |
+| Los tres tipos existentes siguen sirviendo          | SALE, RETURN y QUOTE aceptados    |
+| Un tipo inventado                                   | Rechazado por llave foránea       |
+| Agregar `LAYAWAY` para M7                           | Un INSERT, sin tocar nada más     |
+| Borrar un tipo que ya tiene folios                  | Rechazado                          |
+
+**Para M7:** el apartado no necesita migración de restricción, sólo
+`insert into public.folio_document_types values ('LAYAWAY', 'Apartado')`.
+
+Y la regla que ya estaba escrita se ganó otro ejemplo: **una migración que ya
+entró a `main` no se corrige editando su archivo.** La corrección de los folios
+editó además el archivo original de M8.2, así que hoy el repositorio describe
+algo distinto de lo que se aplicó en las bases que ya corrieron esa migración.
+CI no lo detecta porque reconstruye desde cero.
+
+### Revisión de M7.1, M8 y M8.2
+
+Verificado ejecutando contra una base reconstruida: 71 migraciones aplican
+limpio. **No se encontraron defectos** en lo demás.
+
+- **Crédito (M7.1):** el saldo es un **libro**, no un campo que se sobrescribe,
+  y el libro rechaza escrituras directas **incluso como superusuario**. Las dos
+  tablas están cerradas por completo: RLS activo, sin políticas y sin permisos,
+  alcanzables sólo por función autorizada. Todavía no hay ventas a crédito ni
+  abonos; esto es la cimentación.
+- **Reportes (M8):** sin costos ni margen, y `reports.sales` sólo lo tienen
+  ADMIN y MANAGER.
+- **Cotizaciones (M8.2):** no tocan inventario, que es lo correcto —una
+  cotización no aparta mercancía—, y convertirla a venta **reusa `create_sale`**,
+  así que hereda todas las protecciones; además rechaza convertir si el precio
+  cambió desde que se cotizó.
+- **Asignar empleados a sucursales:** exige `users.manage` y **prohíbe que
+  alguien cambie sus propias asignaciones**, así que un administrador no puede
+  darse acceso a una sucursal en silencio.
+
+### Entrega M7.2 · venta a crédito y abonos (0.35.0)
+
+Implementado y validado primero en staging:
+
+- Venta total o parcialmente a crédito con cliente, límite y vencimiento.
+- Candado transaccional por cliente para impedir sobregiro entre dos cajas.
+- Abonos parciales y mixtos con folio, método, referencia, sucursal, caja y
+  empleado; sólo el efectivo recibido mueve el cajón.
+- Libro, comprobantes y aplicaciones FIFO inmutables, sin acceso directo y con
+  restricciones de conciliación al cierre de la transacción.
+- Idempotencia de venta y abono; un reintento no duplica inventario, deuda ni
+  dinero.
+- La función normal de venta no puede aceptar el método `CREDIT`; sólo la ruta
+  especializada valida autorización, límite y atraso.
+- Mientras falta la compensación completa, una devolución que intente tratar
+  crédito como reembolso se revierte entera y explica que primero debe reducir
+  la deuda.
+- La validación diferida de venta y libro quedó corregida mediante una migración
+  nueva: nunca se reescribió la migración que ya había corrido en staging.
+
+Siguiente bloque de M7.2 antes de M7.3:
+
+1. Devoluciones y cancelaciones reducen primero la deuda abierta y sólo
+   reembolsan el excedente realmente pagado por el método original.
+2. Excepción puntual de administrador ante atraso, limitada a una operación y
+   auditada sin borrar el vencimiento.
+3. Estado de cuenta visible y comprobante de abono imprimible/compartible.
+
 ## Bloqueado por el cliente
 
 No se empieza hasta tener respuesta. Todas están en
@@ -1078,6 +1160,7 @@ entrega junto con la versión visible.
 Y una pregunta encima de todo, porque tres hallazgos de la auditoría
 fueron exactamente de ese tipo: **¿este control de verdad hace lo que
 dice?** Que el código exista no significa que funcione.
+
 ## Avance M8.1 — reportes operativos
 
 - [x] Reporte real de ventas por día, semana, mes o año.

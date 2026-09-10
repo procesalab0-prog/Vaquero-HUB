@@ -62,10 +62,11 @@ saltando lo bloqueado.
 | **Hardware 0.31.3**      | Prueba de ticket térmico sin registrar venta, mover inventario, caja ni folios                           |
 | **M8.1 (0.32.0)**        | Reportes reales de ventas e inventario con periodo, producto, variante, cajero y conciliación de cobros |
 | **M8.2 (0.33.0)**        | Cotizaciones reales con folio, vigencia opcional, búsqueda y conversión atómica mediante el POS        |
+| **M7.1–M7.2 (0.35.0)**   | Crédito autorizado, límite global, venta total/mixta y abonos conciliados con caja                       |
 | **Corrección 0.32.1**    | Traspasos visibles y alta atómica de sucursal con acceso administrativo y primera caja                 |
 | **Corrección 0.32.2**    | Sucursal activa persistente, asignación de empleados, caja real y recepción de traspaso explicada      |
 
-Sesenta y ocho migraciones versionadas del repositorio. El proyecto de Supabase
+Setenta y cuatro migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -121,13 +122,15 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 | **M4** — POS, pagos mixtos, caja                 | **Terminado en software:** incluye carrito persistente y tickets en espera; falta validar iPad e impresora                |
 | **M5** — devoluciones, cambios, cancelaciones    | **Terminado en software en 0.28.0:** acceso desde Venta, PIN propio, mismos métodos y efectivo limitado al cajón          |
 | **M6** — compras, proveedores y recepción        | **Ampliado en 0.31.0:** alta rápida multivariante, foto opcional y lote exacto de etiquetas al recibir                    |
-| **Hardware físico** — tickets y etiquetas        | **Preparado en 0.31.3:** guía y muestra imprimible; falta ejecutar la validación con ambas impresoras reales             |
-| **M8** — reportes, cotizaciones y ticket digital | **Dos entregas listas:** reportes y cotizaciones reales; falta el enlace digital seguro y compartir por WhatsApp         |
+| **Hardware físico** — tickets y etiquetas        | **Preparado en 0.31.3:** guía y muestra imprimible; falta ejecutar la validación con ambas impresoras reales              |
+| **M8** — reportes, cotizaciones y ticket digital | **Dos entregas listas:** reportes y cotizaciones reales; falta el enlace digital seguro y compartir por WhatsApp          |
 | **M9** — importador y sincronizador de SICAR     | Sincronizador de catálogo listo en staging en 0.29.0; falta primer ensayo real tras limpiar tres precios y validar código |
 
 M7 comenzó en 0.34.0 con autorización y límite global de crédito por cliente.
-La venta a crédito, los abonos y los apartados continúan en los siguientes
-bloques; lealtad se pospuso por decisión del negocio. M8 se adelantó porque
+La entrega 0.35.0 agrega venta a crédito y abonos parciales o mixtos sin
+registrar deuda como dinero recibido. Falta integrar devoluciones contra deuda,
+la excepción administrativa por atraso y después los apartados; lealtad se
+pospuso por decisión del negocio. M8 se adelantó porque
 reportes y cotizaciones son necesarios para la operación y el piloto de octubre.
 
 **Con M3, M4, M5 y M5.5 cerrados, M9 ya cuenta con analizador y sincronizador
