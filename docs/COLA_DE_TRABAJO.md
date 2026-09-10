@@ -1089,7 +1089,12 @@ dice?** Que el código exista no significa que funcione.
       cliente opcional, vigencia elegida por el usuario, estados, búsqueda y
       conversión completa por el cobro normal del POS.
 - [ ] M8.3: enlace digital opaco, compartir nativo y WhatsApp.
-- [ ] M7: apartados y lealtad, bloqueados hasta recibir reglas de negocio.
+- [x] M7.1: autorización de crédito y límite global por cliente, con cartera
+      cerrada, consulta para POS y auditoría de cada cambio.
+- [ ] M7.2: venta a crédito y abonos conciliados con caja.
+- [ ] M7.3: apartados; antes de cerrarlos deben resolverse las decisiones
+      puntuales que siguen abiertas en `specs/M7_APARTADOS.md` §6.
+- [ ] Lealtad: pospuesta por decisión del negocio; no bloquea M7.
 
 La conversión parcial de una cotización permanece fuera de M8.2 porque el
 negocio todavía no la ha definido. No se inventa: una cotización se cobra
