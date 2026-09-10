@@ -6,7 +6,7 @@
 > Para entender el proyecto antes de tocarlo, empezar por
 > [`ESTADO_Y_CONTINUIDAD.md`](ESTADO_Y_CONTINUIDAD.md).
 >
-> Última actualización: 2026-09-08, al validar M8.1 y la corrección de sucursales.
+> Última actualización: 2026-09-09, al validar M8.2 cotizaciones.
 
 ## Cómo usar esta cola
 
@@ -1085,9 +1085,17 @@ dice?** Que el código exista no significa que funcione.
 - [x] Conciliación de venta neta contra métodos de pago cuando se consulta el
   ticket completo.
 - [x] Reporte de inventario con existencia, reservado, disponible y valores.
-- [ ] M8.2: cotizaciones que no mueven inventario ni caja.
+- [x] M8.2: cotizaciones que no mueven inventario ni caja; folio propio,
+      cliente opcional, vigencia elegida por el usuario, estados, búsqueda y
+      conversión completa por el cobro normal del POS.
 - [ ] M8.3: enlace digital opaco, compartir nativo y WhatsApp.
 - [ ] M7: apartados y lealtad, bloqueados hasta recibir reglas de negocio.
+
+La conversión parcial de una cotización permanece fuera de M8.2 porque el
+negocio todavía no la ha definido. No se inventa: una cotización se cobra
+completa o se crea una nueva. El sistema vuelve a validar precio, producto,
+existencia, sucursal y estado dentro de la misma transacción; dos cajas no
+pueden convertirla en dos ventas.
 
 ## Corrección operativa 0.32.2 — sucursal activa
 
