@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requirePermission } from "@/lib/auth/authorization";
 
 export type SalePaymentInput = {
-  method_code: "CASH" | "CARD" | "TRANSFER";
+  method_code: "CASH" | "CARD" | "TRANSFER" | "CREDIT";
   amount_cents: number;
   tendered_cents?: number;
   reference?: string;
@@ -22,6 +22,7 @@ export type SaleActionInput = {
     percent: number;
     authorizationToken: string;
   } | null;
+  creditDueDate?: string | null;
 };
 
 export type SaleActionResult =
@@ -66,8 +67,21 @@ type PosDraftActionResult =
   | { ok: true; draftId?: string; draft?: PosDraftPayload }
   | { ok: false; message: string };
 
+function databaseErrorText(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+  return String(error ?? "UNKNOWN_ERROR");
+}
+
 function saleError(error: unknown): SaleActionResult {
-  const raw = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+  const raw = databaseErrorText(error);
   const definitions: Array<[string, string]> = [
     [
       "INSUFFICIENT_STOCK",
@@ -95,9 +109,28 @@ function saleError(error: unknown): SaleActionResult {
       "La solicitud de venta cambió. Vuelve a intentar el cobro.",
     ],
     ["QUOTE_EXPIRED", "La cotización venció. Crea una nueva antes de cobrar."],
-    ["QUOTE_NOT_CONVERTIBLE", "Esta cotización ya fue cobrada o ya no está disponible."],
-    ["QUOTE_PRICE_OR_PRODUCT_CHANGED", "Cambió el precio o la disponibilidad de un artículo. Crea una cotización actualizada."],
+    [
+      "QUOTE_NOT_CONVERTIBLE",
+      "Esta cotización ya fue cobrada o ya no está disponible.",
+    ],
+    [
+      "QUOTE_PRICE_OR_PRODUCT_CHANGED",
+      "Cambió el precio o la disponibilidad de un artículo. Crea una cotización actualizada.",
+    ],
     ["QUOTE_LOCATION_MISMATCH", "La cotización pertenece a otra sucursal."],
+    ["CREDIT_NOT_AUTHORIZED", "Este cliente no tiene crédito autorizado."],
+    [
+      "CREDIT_LIMIT_EXCEEDED",
+      "El importe supera el crédito disponible del cliente.",
+    ],
+    [
+      "CREDIT_OVERDUE",
+      "El cliente tiene un saldo vencido y no puede usar más crédito.",
+    ],
+    [
+      "INVALID_CREDIT_SALE",
+      "Selecciona un cliente y una fecha de vencimiento válida.",
+    ],
   ];
   const match = definitions.find(([code]) => raw.includes(code));
   return {
@@ -110,7 +143,7 @@ function saleError(error: unknown): SaleActionResult {
 }
 
 function draftError(error: unknown): PosDraftActionResult {
-  const raw = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+  const raw = databaseErrorText(error);
   const message = raw.includes("CURRENT_DRAFT_NOT_EMPTY")
     ? "Guarda o vacía la venta actual antes de recuperar otra."
     : raw.includes("DRAFT_ITEMS_UNAVAILABLE")
@@ -278,7 +311,19 @@ export async function createPosSale(
       return {
         ok: false,
         code: "QUOTE_DISCOUNT_NOT_ALLOWED",
-        message: "La cotización conserva su total. Crea otra si necesitas aplicar un descuento.",
+        message:
+          "La cotización conserva su total. Crea otra si necesitas aplicar un descuento.",
+      };
+    }
+    const hasCredit = input.payments.some(
+      (payment) => payment.method_code === "CREDIT",
+    );
+    if (input.quoteId && hasCredit) {
+      return {
+        ok: false,
+        code: "QUOTE_CREDIT_NOT_AVAILABLE",
+        message:
+          "Por ahora crea la venta a crédito desde el carrito, no desde una cotización.",
       };
     }
     const { data, error } = input.quoteId
@@ -288,15 +333,26 @@ export async function createPosSale(
           p_cash_session_id: input.cashSessionId,
           p_payments: input.payments,
         })
-      : await supabase.rpc("create_sale", {
-          p_idempotency_key: input.idempotencyKey,
-          p_cash_session_id: input.cashSessionId,
-          p_items: input.items,
-          p_payments: input.payments,
-          p_customer_id: input.customerId ?? null,
-          p_discounts: discounts,
-          p_notes: null,
-        });
+      : hasCredit
+        ? await supabase.rpc("create_credit_sale", {
+            p_idempotency_key: input.idempotencyKey,
+            p_cash_session_id: input.cashSessionId,
+            p_items: input.items,
+            p_payments: input.payments,
+            p_customer_id: input.customerId ?? null,
+            p_due_date: input.creditDueDate ?? null,
+            p_discounts: discounts,
+            p_notes: null,
+          })
+        : await supabase.rpc("create_sale", {
+            p_idempotency_key: input.idempotencyKey,
+            p_cash_session_id: input.cashSessionId,
+            p_items: input.items,
+            p_payments: input.payments,
+            p_customer_id: input.customerId ?? null,
+            p_discounts: discounts,
+            p_notes: null,
+          });
     if (error) throw error;
     const sale = data as {
       id: string;
@@ -326,6 +382,32 @@ export async function createPosSale(
       message: error instanceof Error ? error.message : "UNKNOWN_ERROR",
     });
     return saleError(error);
+  }
+}
+
+export async function getPosCustomerCredit(customerId: string) {
+  try {
+    const { supabase } = await requirePermission("pos.sell");
+    const { data, error } = await supabase.rpc("get_customer_credit_summary", {
+      p_customer_id: customerId,
+    });
+    if (error) throw error;
+    return {
+      ok: true as const,
+      summary: data as {
+        is_authorized: boolean;
+        limit_cents: number;
+        balance_cents: number;
+        available_cents: number;
+        oldest_due_date: string | null;
+        has_overdue: boolean;
+      },
+    };
+  } catch {
+    return {
+      ok: false as const,
+      message: "No fue posible consultar el crédito del cliente.",
+    };
   }
 }
 

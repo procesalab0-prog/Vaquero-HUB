@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.34.0";
-export const APP_RELEASE = "Crédito con límite, no de palabra";
+export const APP_VERSION = "0.35.0";
+export const APP_RELEASE = "Crédito y abonos sin inventar dinero";

@@ -1642,7 +1642,7 @@ code {
 .payment-options {
   margin: 22px 0 14px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 .payment-options button {
@@ -4555,6 +4555,70 @@ a:active {
   background: #f2eef9;
   color: #65418d;
 }
+.payment-options .payment-credit {
+  border-color: #d9b45f;
+  background: #fff8df;
+}
+
+.credit-checkout-summary {
+  margin-top: 18px;
+  display: grid;
+  gap: 12px;
+}
+.credit-checkout-summary > div,
+.credit-checkout-summary > label {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-raised);
+}
+.credit-checkout-summary span,
+.credit-checkout-summary small,
+.credit-payment-form > p {
+  color: var(--muted);
+  font-size: 13px;
+}
+.credit-checkout-summary input {
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 0 12px;
+  font: inherit;
+}
+
+.credit-payment-form {
+  margin: 0 18px 18px;
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+  border: 1px solid #e7c972;
+  border-radius: 14px;
+  background: #fffaf0;
+}
+.credit-payment-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.credit-payment-grid label {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  font-weight: 700;
+}
+.credit-payment-grid input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 0 12px;
+  background: var(--surface);
+  font: inherit;
+}
 .payment-options button small {
   color: inherit;
   opacity: 0.75;
@@ -6825,6 +6889,9 @@ a:active {
 }
 
 @media (max-width: 640px) {
+  .credit-payment-grid {
+    grid-template-columns: 1fr;
+  }
   .credit-settings-form {
     grid-template-columns: 1fr;
     margin: 0 12px 14px;

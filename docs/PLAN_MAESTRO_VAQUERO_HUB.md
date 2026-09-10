@@ -2611,6 +2611,39 @@ Entrega visible 0.34.0 — M7.1, autorización de crédito:
   el cobro de saldos a la caja real. Apartados continúa después, respetando las
   decisiones abiertas de `specs/M7_APARTADOS.md` §6. Lealtad sigue pospuesta.
 
+Corrección visible 0.34.1 — tipos de folio extensibles:
+
+- Los tipos de documento dejan de vivir en una restricción con una lista que
+  cada módulo debía reescribir completa. Ahora se validan mediante una tabla
+  referenciada: agregar un tipo es insertar un renglón y no puede borrar por
+  accidente venta, devolución o cotización.
+- La corrección es una migración nueva hacia delante. Las migraciones que ya
+  entraron a un ambiente no se vuelven a editar para ocultar diferencias.
+
+Entrega visible 0.35.0 — M7.2, ventas a crédito y abonos:
+
+- Venta permite dejar todo o una parte del ticket a crédito únicamente cuando
+  existe un cliente asociado, autorizado, sin atraso y con límite suficiente.
+  La fecha de vencimiento propone un mes y puede cambiarse antes de cobrar.
+- La comprobación del límite se serializa por cliente dentro de PostgreSQL: dos
+  cajas simultáneas no pueden aprobar juntas más crédito del disponible.
+- La parte pagada conserva efectivo, tarjeta o transferencia; sólo el efectivo
+  real entra al cajón. La parte a crédito genera un cargo en el libro de cartera
+  y no infla el corte de caja.
+- Clientes permite recibir abonos parciales y combinar métodos. Cada abono
+  genera folio, sucursal, caja, empleado, referencias y aplicación FIFO a los
+  cargos más antiguos. Repetir una solicitud no duplica saldo ni dinero.
+- El saldo se obtiene del libro inmutable; los comprobantes, partes y
+  aplicaciones están cerrados al acceso directo y protegidos además por
+  restricciones diferidas que exigen conciliación exacta.
+- Las devoluciones que tendrían que reducir deuda primero se rechazan de forma
+  atómica y con explicación hasta integrar el documento compensatorio de M7.2.
+  Los cambios sin reembolso siguen usando M5. No se permite tratar crédito como
+  efectivo ni fabricar una devolución monetaria.
+- Continúa después: reducción de deuda por devolución/cancelación, excepción
+  administrativa por atraso y vista completa del estado de cuenta; luego M7.3
+  implementará apartados con las decisiones abiertas de su especificación.
+
 Corrección visible 0.32.1 — traspasos y sucursales operables:
 
 - Más módulos deja de anunciar los traspasos como pendientes y enlaza al flujo

@@ -52,6 +52,10 @@ function exchangeMessage(error: unknown) {
   const raw = databaseErrorText(error);
   const messages: Array<[string, string]> = [
     ["RETURN_EXCEEDS_SOLD", "Ese artículo ya fue cambiado o devuelto."],
+    [
+      "CREDIT_RETURN_REQUIRES_DEBT_SETTLEMENT",
+      "Esta venta tiene saldo a crédito. La devolución debe aplicarse primero a la deuda; esa operación se habilitará en el siguiente avance de M7.",
+    ],
     ["INSUFFICIENT_STOCK", "La existencia cambió. Elige otro artículo."],
     [
       "INSUFFICIENT_CASH",
