@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.34.0";
-export const APP_RELEASE = "Crédito con límite, no de palabra";
+export const APP_VERSION = "0.34.1";
+export const APP_RELEASE = "Tipos de folio a prueba de módulos";
