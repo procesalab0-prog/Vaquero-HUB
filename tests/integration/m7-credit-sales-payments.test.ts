@@ -245,6 +245,22 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
     );
     expect(statement.error).toBeNull();
     expect(statement.data.balance_cents).toBe(10000);
+    const receipt = await state.cashierA!.client.rpc(
+      "get_customer_credit_payment_receipt",
+      { p_payment_id: first.data.id },
+    );
+    expect(receipt.error).toBeNull();
+    expect(receipt.data).toMatchObject({
+      id: first.data.id,
+      total_cents: 10000,
+      balance_cents: 10000,
+      customer_name: expect.any(String),
+      folio: expect.stringMatching(/-A-\d{6}$/),
+    });
+    expect(receipt.data.parts).toEqual([
+      expect.objectContaining({ method_code: "CASH", amount_cents: 5000 }),
+      expect.objectContaining({ method_code: "CARD", amount_cents: 5000 }),
+    ]);
   });
 
   it("mantiene comprobantes y asignaciones fuera del acceso directo", async () => {

@@ -166,6 +166,8 @@ export async function setCustomerCredit(formData: FormData) {
 
 export async function receiveCustomerCreditPayment(formData: FormData) {
   let status = "abono-error";
+  let customerIdForReceipt = "";
+  let paymentId = "";
   try {
     const { supabase } = await requirePermission("credit.collect");
     const customerId = textField(formData, "customer_id");
@@ -225,14 +227,19 @@ export async function receiveCustomerCreditPayment(formData: FormData) {
       if (sessionError || !cashSessionId) {
         status = "abono-caja-requerida";
       } else {
-        const { error } = await supabase.rpc("record_customer_credit_payment", {
-          p_idempotency_key: crypto.randomUUID(),
-          p_cash_session_id: cashSessionId,
-          p_customer_id: customerId,
-          p_payments: payments,
-          p_note: note || null,
-        });
+        const { data, error } = await supabase.rpc(
+          "record_customer_credit_payment",
+          {
+            p_idempotency_key: crypto.randomUUID(),
+            p_cash_session_id: cashSessionId,
+            p_customer_id: customerId,
+            p_payments: payments,
+            p_note: note || null,
+          },
+        );
         if (error) throw error;
+        paymentId = String((data as { id?: string } | null)?.id ?? "");
+        customerIdForReceipt = customerId;
         status = "abono-registrado";
       }
     }
@@ -250,5 +257,8 @@ export async function receiveCustomerCreditPayment(formData: FormData) {
   }
   revalidatePath(customersPath);
   revalidatePath("/caja");
-  redirect(`${customersPath}?status=${status}`);
+  const receiptQuery = customerIdForReceipt
+    ? `&credit=${encodeURIComponent(customerIdForReceipt)}${paymentId ? `&payment=${encodeURIComponent(paymentId)}` : ""}`
+    : "";
+  redirect(`${customersPath}?status=${status}${receiptQuery}`);
 }

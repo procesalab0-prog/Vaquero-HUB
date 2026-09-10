@@ -1097,7 +1097,26 @@ Siguiente bloque de M7.2 antes de M7.3:
    reembolsan el excedente realmente pagado por el método original.
 2. Excepción puntual de administrador ante atraso, limitada a una operación y
    auditada sin borrar el vencimiento.
-3. Estado de cuenta visible y comprobante de abono imprimible/compartible.
+3. [x] Estado de cuenta visible y comprobante de abono recuperable e
+       imprimible, terminado en 0.36.0. El envío externo queda separado hasta
+       definir qué datos financieros se comparten y registrar el consentimiento.
+
+### Entrega M7.2 · estado de cuenta y comprobante de abono (0.36.0)
+
+- Clientes abre la cartera completa sin mezclarla con la edición del cliente:
+  cargos, abonos, sucursal, empleado, folio, fecha y saldo actual.
+- Al registrar un abono, el redirect conserva el identificador real del
+  comprobante y muestra el desglose exacto por método de pago.
+- El comprobante se recupera desde una función protegida por sesión, permiso y
+  sucursal; no depende de datos fabricados por la interfaz.
+- Se imprime en el formato térmico de 80 mm y funciona con scroll propio en
+  móvil.
+- Se integró la corrección 0.35.1 revisada por Claude: los tipos del libro de
+  caja viven en tabla y ya no se reescribe una lista completa al agregar un
+  módulo. La revisión en staging quitó además los permisos de tabla concedidos
+  por omisión: RLS no sustituye el mínimo privilegio.
+- La misma mejora en inventario se hará junto con M7.3 apartados, donde nace la
+  reserva de mercancía y se puede probar el recorrido completo.
 
 ## Bloqueado por el cliente
 

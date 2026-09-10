@@ -21,6 +21,11 @@ import {
   setCustomerCredit,
   updateCustomer,
 } from "./actions";
+import {
+  CreditDocuments,
+  type CreditPaymentReceipt,
+  type CreditStatement,
+} from "./credit-documents";
 
 export const metadata: Metadata = { title: "Clientes" };
 
@@ -88,7 +93,14 @@ const statusMessages: Record<string, string> = {
 export default async function CustomersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    status?: string;
+    credit?: string;
+    payment?: string;
+    from?: string;
+    to?: string;
+  }>;
 }) {
   const params = await searchParams;
   if (!isSupabaseConfigured()) return <CustomersPreview />;
@@ -173,6 +185,27 @@ export default async function CustomersPage({
     );
   }
 
+  let statement: CreditStatement | null = null;
+  let receipt: CreditPaymentReceipt | null = null;
+  if (params.credit && (canManageCredit || canCollectCredit)) {
+    const [statementResult, receiptResult] = await Promise.all([
+      supabase.rpc("get_customer_credit_statement", {
+        p_customer_id: params.credit,
+        p_from: params.from || null,
+        p_to: params.to || null,
+      }),
+      params.payment
+        ? supabase.rpc("get_customer_credit_payment_receipt", {
+            p_payment_id: params.payment,
+          })
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+    if (!statementResult.error)
+      statement = statementResult.data as CreditStatement;
+    if (!receiptResult.error)
+      receipt = receiptResult.data as CreditPaymentReceipt | null;
+  }
+
   const customers = (customersData ?? []) as unknown as Customer[];
   const locations = (
     (locationsData ?? []) as unknown as Array<{ locations: Location | null }>
@@ -214,6 +247,15 @@ export default async function CustomersPage({
         >
           {statusMessages[params.status] ?? "Operación terminada."}
         </div>
+      ) : null}
+
+      {statement ? (
+        <CreditDocuments
+          statement={statement}
+          receipt={receipt}
+          from={params.from ?? ""}
+          to={params.to ?? ""}
+        />
       ) : null}
 
       <div className="customer-metrics">
@@ -522,6 +564,16 @@ export default async function CustomersPage({
                     Guardar crédito
                   </button>
                 </form>
+              ) : null}
+              {(canManageCredit || canCollectCredit) && credit ? (
+                <div className="credit-statement-link">
+                  <Link
+                    className="secondary-button"
+                    href={`/clientes?credit=${encodeURIComponent(customer.id)}`}
+                  >
+                    Ver estado de cuenta
+                  </Link>
+                </div>
               ) : null}
               {canCollectCredit && Number(credit?.balance_cents ?? 0) > 0 ? (
                 <form
