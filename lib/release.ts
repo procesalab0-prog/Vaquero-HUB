@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.35.0";
-export const APP_RELEASE = "Crédito y abonos sin inventar dinero";
+export const APP_VERSION = "0.35.1";
+export const APP_RELEASE = "Tipos del libro de caja a prueba de módulos";

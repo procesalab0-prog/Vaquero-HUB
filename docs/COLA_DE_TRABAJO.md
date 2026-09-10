@@ -1099,6 +1099,64 @@ Siguiente bloque de M7.2 antes de M7.3:
    auditada sin borrar el vencimiento.
 3. Estado de cuenta visible y comprobante de abono imprimible/compartible.
 
+### Revisión de M7: ventas a crédito y abonos
+
+Verificado ejecutando contra una base reconstruida: 75 migraciones aplican
+limpio. **No se encontraron defectos.** Es el módulo donde la tienda entrega
+mercancía sin cobrar, así que se probó a fondo.
+
+| Prueba                                              | Resultado medido                          |
+| --------------------------------------------------- | ------------------------------------------- |
+| Vender a crédito sin cuenta autorizada              | `CREDIT_NOT_AUTHORIZED`                     |
+| La cajera intenta autorizar el crédito              | `NOT_AUTHORIZED`: es de gerencia            |
+| Venta a crédito de $1,000                           | **El cajón no se movió**: no entró dinero   |
+| Pasarse del límite                                  | `CREDIT_LIMIT_EXCEEDED`, y **la existencia no se descontó** |
+| **Dos ventas a crédito simultáneas** que juntas se pasan | Pasó una sola; el saldo quedó en $2,000 de $2,500 |
+| Abono en efectivo                                   | Bajó el saldo y **entró al cajón**          |
+| Abono con tarjeta                                   | Bajó el saldo y **no** entró al cajón       |
+| Abonar más de lo que se debe                        | `CREDIT_OVERPAYMENT`                        |
+| El almacén intenta recibir un abono                 | `NOT_AUTHORIZED`                            |
+
+Dos decisiones del diseño que conviene no deshacer: **el saldo se deriva del
+libro**, nunca es un número que se sobrescriba; y **`create_credit_sale` reusa
+`create_sale`**, así que hereda todas las protecciones de una venta normal.
+
+Codex además aplicó bien la regla de las migraciones: los dos arreglos de esta
+entrega se hicieron **hacia delante**, con nota explícita de que la original ya
+había corrido en staging. Y usó la tabla de tipos de folio para agregar
+`CREDIT_PAYMENT` con un INSERT, que era justo para lo que se creó.
+
+### Corregido: la misma trampa, ahora en el libro de caja
+
+`cash_movements.movement_type` se validaba con un CHECK que traía la lista
+completa, igual que los folios. **Ya se había reescrito tres veces** —M4 agregó
+`CANCELLATION`, M5 agregó `RETURN`, M7 agregó `CREDIT_PAYMENT`— y las tres
+salieron bien de milagro. La de folios falló a la segunda.
+
+Aquí el descuido costaría más: si alguien reescribe la lista y se le va
+`'SALE'`, **deja de poder entrar a la caja el dinero de las ventas**.
+
+Ahora es tabla con llave foránea, igual que los folios. Verificado ejecutando
+que venta en efectivo, retiro manual, abono a crédito y cierre de turno siguen
+funcionando, y que un tipo inventado se rechaza.
+
+### Queda una tercera copia de la misma lista
+
+`inventory_movements.movement_type` tiene el mismo CHECK con lista completa, y
+además **`app.apply_movement` la repite dentro de la función**, junto con el
+permiso que corresponde a cada tipo. Son dos lugares que hay que mantener a
+mano para el mismo dato.
+
+Todavía no ha fallado porque nadie ha agregado un tipo de inventario desde M3,
+pero **los apartados van a necesitar uno** para reservar mercancía.
+
+Propuesta para cuando toque: mover los tipos a `inventory_movement_types` con
+una columna `required_permission`, y que `apply_movement` lea el permiso de ahí
+en vez de traer el `case`. Así agregar un tipo es un INSERT que ya viaja con su
+permiso, y se acaban las dos copias. No se hizo ahora porque toca el corazón
+del inventario y conviene hacerlo junto con el módulo que lo necesite, no
+antes.
+
 ## Bloqueado por el cliente
 
 No se empieza hasta tener respuesta. Todas están en
