@@ -28,6 +28,7 @@ export type ReturnableSale = {
   window_days: number;
   return_deadline: string;
   within_window: boolean;
+  credit_outstanding_cents: number;
   payments: OriginalPayment[];
   items: ReturnableSaleItem[];
 };
@@ -63,6 +64,10 @@ export type CreateExchangeResult =
         amount_cents: number;
         reference: string | null;
       }>;
+      creditSettlement?: {
+        debtReductionCents: number;
+        paidRefundCents: number;
+      };
     }
   | { ok: false; message: string };
 

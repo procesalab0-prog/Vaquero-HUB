@@ -63,10 +63,11 @@ saltando lo bloqueado.
 | **M8.1 (0.32.0)**        | Reportes reales de ventas e inventario con periodo, producto, variante, cajero y conciliación de cobros |
 | **M8.2 (0.33.0)**        | Cotizaciones reales con folio, vigencia opcional, búsqueda y conversión atómica mediante el POS        |
 | **M7.1–M7.2 (0.35.0)**   | Crédito autorizado, límite global, venta total/mixta y abonos conciliados con caja                       |
+| **M7.2 (0.37.0)**        | Devolución reduce primero deuda; sólo dinero pagado vuelve por su método real                            |
 | **Corrección 0.32.1**    | Traspasos visibles y alta atómica de sucursal con acceso administrativo y primera caja                 |
 | **Corrección 0.32.2**    | Sucursal activa persistente, asignación de empleados, caja real y recepción de traspaso explicada      |
 
-Setenta y cuatro migraciones versionadas del repositorio. El proyecto de Supabase
+Setenta y cinco migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -128,9 +129,10 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 M7 comenzó en 0.34.0 con autorización y límite global de crédito por cliente.
 La entrega 0.35.0 agrega venta a crédito y abonos parciales o mixtos sin
-registrar deuda como dinero recibido. Falta integrar devoluciones contra deuda,
-la excepción administrativa por atraso y después los apartados; lealtad se
-pospuso por decisión del negocio. M8 se adelantó porque
+registrar deuda como dinero recibido. La 0.37.0 integra devoluciones contra la
+deuda y bloquea la cancelación antigua para que no deje saldos huérfanos. Falta
+la cancelación compensada, la excepción administrativa por atraso y después los
+apartados; lealtad se pospuso por decisión del negocio. M8 se adelantó porque
 reportes y cotizaciones son necesarios para la operación y el piloto de octubre.
 
 **Con M3, M4, M5 y M5.5 cerrados, M9 ya cuenta con analizador y sincronizador

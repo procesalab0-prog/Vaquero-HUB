@@ -456,6 +456,10 @@ export async function cancelPosSale(
     const raw = error instanceof Error ? error.message : "UNKNOWN_ERROR";
     const definitions: Array<[string, string]> = [
       [
+        "CREDIT_CANCELLATION_REQUIRES_RETURN",
+        "La venta tiene crédito o abonos. Registra la operación como devolución para reducir primero la deuda y reembolsar sólo lo pagado.",
+      ],
+      [
         "SALE_SESSION_CLOSED",
         "La caja original ya cerró. Esta operación debe registrarse como devolución.",
       ],
