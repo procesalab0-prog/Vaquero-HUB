@@ -89,6 +89,7 @@ $$;
 create or replace function app.check_return_payment_balance()
 returns trigger
 language plpgsql
+security definer
 set search_path = ''
 as $$
 declare
