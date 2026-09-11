@@ -271,8 +271,8 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
   it("reduce primero la deuda y sólo devuelve el dinero realmente abonado", async () => {
     expect(
       (
-        await state.admin!.client.rpc("reset_supervisor_pin", {
-          p_user_id: state.admin!.id,
+        await state.admin!.client.rpc("update_my_profile", {
+          p_full_name: null,
           p_new_pin: "7319",
         })
       ).error,
