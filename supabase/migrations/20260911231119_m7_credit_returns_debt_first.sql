@@ -81,7 +81,7 @@ as $$
     coalesce((select amount_cents from public.customer_credit_ledger
       where id = p_charge_id and entry_type = 'CHARGE'), 0)
     - coalesce((select sum(amount_cents) from public.customer_credit_allocations
-      where charge_ledger_id = p_charge_id), 0)
+      where charge_ledger_id = p_charge_id), 0),
     0
   )::bigint
 $$;
