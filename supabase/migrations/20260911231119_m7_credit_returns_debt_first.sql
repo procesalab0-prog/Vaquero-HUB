@@ -86,6 +86,39 @@ as $$
   )::bigint
 $$;
 
+create or replace function app.check_return_payment_balance()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  v_return_id uuid;
+  v_expected bigint;
+  v_actual bigint;
+begin
+  if tg_table_name = 'returns' then
+    v_return_id := coalesce(new.id, old.id);
+  else
+    v_return_id := coalesce(new.return_id, old.return_id);
+  end if;
+  select difference_cents into v_expected
+  from public.returns where id = v_return_id;
+  if not found then return null; end if;
+  select
+    coalesce((select sum(case when direction = 'CHARGE'
+      then amount_cents else -amount_cents end)
+      from public.return_payments where return_id = v_return_id), 0)
+    - coalesce((select debt_reduction_cents
+      from public.customer_credit_return_settlements
+      where return_id = v_return_id), 0)
+  into v_actual;
+  if v_actual <> v_expected then
+    raise exception 'RETURN_PAYMENT_TOTAL_MISMATCH' using errcode = '23514';
+  end if;
+  return null;
+end;
+$$;
+
 -- La misma tabla FIFO enlaza pagos y documentos compensatorios con el cargo.
 -- Así record_customer_credit_payment ve las reducciones anteriores sin tener
 -- que mantener una segunda definición de "saldo pendiente".
