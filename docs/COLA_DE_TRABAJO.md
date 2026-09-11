@@ -1093,8 +1093,10 @@ Implementado y validado primero en staging:
 
 Siguiente bloque de M7.2 antes de M7.3:
 
-1. Devoluciones y cancelaciones reducen primero la deuda abierta y sólo
-   reembolsan el excedente realmente pagado por el método original.
+1. [x] Devoluciones reducen primero la deuda abierta y sólo reembolsan el
+   excedente realmente pagado por el método original, terminado en 0.37.0.
+   La cancelación de una venta con crédito queda bloqueada sin efectos hasta
+   incorporar su documento compensatorio completo.
 2. Excepción puntual de administrador ante atraso, limitada a una operación y
    auditada sin borrar el vencimiento.
 3. [x] Estado de cuenta visible y comprobante de abono recuperable e
@@ -1117,6 +1119,19 @@ Siguiente bloque de M7.2 antes de M7.3:
   por omisión: RLS no sustituye el mínimo privilegio.
 - La misma mejora en inventario se hará junto con M7.3 apartados, donde nace la
   reserva de mercancía y se puede probar el recorrido completo.
+
+### Entrega M7.2 · devolución que reduce deuda (0.37.0)
+
+- El cargo original se serializa por cliente y la porción todavía pendiente se
+  reduce antes de calcular cualquier salida de dinero.
+- Los pagos iniciales y abonos FIFO forman una sola fuente de dinero real por
+  método; los reembolsos anteriores se descuentan para impedir duplicados.
+- Una devolución totalmente pendiente no crea `return_payments` ni movimiento
+  de caja. Una parcialmente pagada sólo devuelve la parte pagada.
+- La conciliación es inmutable y una restricción diferida comprueba que el
+  ajuste de cartera pertenece a la devolución y a la venta correctas.
+- El RPC de cancelación M4 rechaza ventas a crédito antes de tocar estado,
+  inventario o caja. Falta construir la cancelación compensada completa.
 
 ## Bloqueado por el cliente
 

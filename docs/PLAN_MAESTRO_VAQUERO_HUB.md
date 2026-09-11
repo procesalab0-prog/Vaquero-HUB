@@ -2636,11 +2636,9 @@ Entrega visible 0.35.0 — M7.2, ventas a crédito y abonos:
 - El saldo se obtiene del libro inmutable; los comprobantes, partes y
   aplicaciones están cerrados al acceso directo y protegidos además por
   restricciones diferidas que exigen conciliación exacta.
-- Las devoluciones que tendrían que reducir deuda primero se rechazan de forma
-  atómica y con explicación hasta integrar el documento compensatorio de M7.2.
-  Los cambios sin reembolso siguen usando M5. No se permite tratar crédito como
-  efectivo ni fabricar una devolución monetaria.
-- Continúa después: reducción de deuda por devolución/cancelación y excepción
+- Desde 0.37.0 las devoluciones reducen primero la deuda y sólo reembolsan el
+  excedente realmente pagado. Nunca se trata crédito como efectivo.
+- Continúa después: cancelación compensada de venta a crédito y excepción
   administrativa por atraso; luego M7.3 implementará apartados con las
   decisiones abiertas de su especificación.
 
@@ -2660,6 +2658,22 @@ Entrega visible 0.36.0 — estado de cuenta y comprobantes de abono:
   pasan de una lista reescribible a una tabla referenciada y se revocan los
   permisos de tabla que Supabase concede por omisión. La misma mejora del libro
   de inventario se hará junto con apartados, no como cambio aislado.
+
+Entrega visible 0.37.0 — devoluciones de crédito conciliadas:
+
+- Una devolución aplica primero su importe al saldo pendiente del cargo
+  original. Sólo el sobrante que el cliente sí pagó se devuelve como dinero.
+- Los abonos FIFO se rastrean hasta sus métodos reales. Si fueron mixtos, el
+  reembolso conserva efectivo, tarjeta y transferencia en centavos exactos.
+- El cajón sólo disminuye por la porción realmente devuelta en efectivo y
+  conserva la protección que impide dejarlo en negativo.
+- El POS explica antes de confirmar cuánto reducirá deuda y cuánto se
+  reembolsará; después muestra ambos importes por separado.
+- La conciliación queda en un libro inmutable, con RLS, mínimo privilegio,
+  auditoría y restricción diferida entre venta, devolución, cargo y ajuste.
+- La cancelación antigua se niega de forma atómica para ventas con crédito:
+  no puede restaurar mercancía dejando una deuda huérfana. La cancelación
+  compensada completa permanece como el siguiente subbloque de M7.2.
 
 Corrección visible 0.32.1 — traspasos y sucursales operables:
 

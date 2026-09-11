@@ -267,6 +267,10 @@ export async function createReturnExchange(input: {
         amount_cents: number;
         reference: string | null;
       }>;
+      credit_settlement?: {
+        debt_reduction_cents: number;
+        paid_refund_cents: number;
+      };
     };
     revalidatePath("/tickets");
     revalidatePath("/inventario");
@@ -279,6 +283,16 @@ export async function createReturnExchange(input: {
       type: result.type,
       differenceCents: Number(result.difference_cents),
       payments: result.payments ?? [],
+      creditSettlement: result.credit_settlement
+        ? {
+            debtReductionCents: Number(
+              result.credit_settlement.debt_reduction_cents,
+            ),
+            paidRefundCents: Number(
+              result.credit_settlement.paid_refund_cents,
+            ),
+          }
+        : undefined,
     };
   } catch (error) {
     console.error("[tickets/createReturnExchange] failed", {

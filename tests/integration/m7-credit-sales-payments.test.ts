@@ -17,6 +17,8 @@ const state = {
   sessionA: "",
   sessionB: "",
   customerId: "",
+  adminEmployeeCode: "",
+  creditSaleId: "",
 };
 
 function publicClient() {
@@ -89,11 +91,12 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
       });
       expect(auth.error).toBeNull();
       const id = auth.data.user!.id;
+      const employeeCode = `CV${definition.key.toUpperCase()}${runCode}`;
       expect(
         (
           await server.from("app_users").insert({
             id,
-            employee_code: `CV${definition.key.toUpperCase()}${runCode}`,
+            employee_code: employeeCode,
             full_name: `Crédito venta ${definition.key}`,
             email,
             role_id: roleIds[definition.role],
@@ -113,6 +116,7 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
         (await client.auth.signInWithPassword({ email, password })).error,
       ).toBeNull();
       state[definition.key] = { id, client };
+      if (definition.key === "admin") state.adminEmployeeCode = employeeCode;
     }
 
     const registerA = await state.admin!.client.rpc("create_cash_register", {
@@ -199,6 +203,7 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
       ),
     ]);
     expect(results.filter((result) => !result.error)).toHaveLength(1);
+    state.creditSaleId = results.find((result) => !result.error)!.data.id;
     expect(results.find((result) => result.error)?.error?.message).toContain(
       "CREDIT_LIMIT_EXCEEDED",
     );
@@ -261,6 +266,189 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
       expect.objectContaining({ method_code: "CASH", amount_cents: 5000 }),
       expect.objectContaining({ method_code: "CARD", amount_cents: 5000 }),
     ]);
+  });
+
+  it("reduce primero la deuda y sólo devuelve el dinero realmente abonado", async () => {
+    expect(
+      (
+        await state.admin!.client.rpc("reset_supervisor_pin", {
+          p_user_id: state.admin!.id,
+          p_new_pin: "7319",
+        })
+      ).error,
+    ).toBeNull();
+    const authorization = await state.cashierA!.client.rpc(
+      "verify_supervisor_pin",
+      {
+        p_employee_code: state.adminEmployeeCode,
+        p_pin: "7319",
+        p_permission: "returns.authorize",
+      },
+    );
+    expect(authorization.error).toBeNull();
+    const item = await state
+      .server!.from("sale_items")
+      .select("id")
+      .eq("sale_id", state.creditSaleId)
+      .single();
+    expect(item.error).toBeNull();
+
+    const returned = await state.cashierA!.client.rpc(
+      "create_return_exchange",
+      {
+        p_idempotency_key: crypto.randomUUID(),
+        p_cash_session_id: state.sessionA,
+        p_original_sale_id: state.creditSaleId,
+        p_items_in: [
+          {
+            sale_item_id: item.data!.id,
+            quantity: 1,
+            condition: "RESELLABLE",
+          },
+        ],
+        p_items_out: [],
+        p_charge_payments: [],
+        p_refund_references: [
+          { method_code: "CARD", reference: "DEV-CREDITO-001" },
+        ],
+        p_authorization_token: authorization.data.authorization_token,
+        p_reason: "Devolución de venta con abono parcial",
+      },
+    );
+    expect(returned.error).toBeNull();
+    expect(returned.data.credit_settlement).toEqual({
+      debt_reduction_cents: 10000,
+      paid_refund_cents: 10000,
+    });
+    expect(returned.data.payments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ method_code: "CASH", amount_cents: 5000 }),
+        expect.objectContaining({ method_code: "CARD", amount_cents: 5000 }),
+      ]),
+    );
+    expect(returned.data.payments).toHaveLength(2);
+    const summary = await state.cashierA!.client.rpc(
+      "get_customer_credit_summary",
+      { p_customer_id: state.customerId },
+    );
+    expect(summary.data.balance_cents).toBe(0);
+    const statement = await state.cashierA!.client.rpc(
+      "get_customer_credit_statement",
+      { p_customer_id: state.customerId },
+    );
+    expect(
+      statement.data.entries.some(
+        (entry: { entry_type: string; amount_cents: number }) =>
+          entry.entry_type === "RETURN" && entry.amount_cents === -10000,
+      ),
+    ).toBe(true);
+  });
+
+  it("no permite que la cancelación anterior deje una deuda huérfana", async () => {
+    const variantId = await createVariant(
+      "Crédito protegido al cancelar",
+      8000,
+    );
+    const due = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+    const sale = await state.cashierA!.client.rpc("create_credit_sale", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_items: [{ variant_id: variantId, quantity: 1 }],
+      p_payments: [{ method_code: "CREDIT", amount_cents: 8000 }],
+      p_customer_id: state.customerId,
+      p_due_date: due,
+      p_discounts: [],
+      p_notes: null,
+    });
+    expect(sale.error).toBeNull();
+    const cancelled = await state.admin!.client.rpc("cancel_sale", {
+      p_sale_id: sale.data.id,
+      p_reason: "No debe dejar deuda huérfana",
+    });
+    expect(cancelled.error?.message).toContain(
+      "CREDIT_CANCELLATION_REQUIRES_RETURN",
+    );
+    const persisted = await state
+      .server!.from("sales")
+      .select("status")
+      .eq("id", sale.data.id)
+      .single();
+    expect(persisted.data?.status).toBe("COMPLETED");
+  });
+
+  it("una devolución totalmente pendiente no entrega dinero", async () => {
+    const variantId = await createVariant("Crédito sin abono", 10000);
+    const due = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+    const sale = await state.cashierA!.client.rpc("create_credit_sale", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_items: [{ variant_id: variantId, quantity: 1 }],
+      p_payments: [{ method_code: "CREDIT", amount_cents: 10000 }],
+      p_customer_id: state.customerId,
+      p_due_date: due,
+      p_discounts: [],
+      p_notes: null,
+    });
+    expect(sale.error).toBeNull();
+    const item = await state
+      .server!.from("sale_items")
+      .select("id")
+      .eq("sale_id", sale.data.id)
+      .single();
+    const authorization = await state.cashierA!.client.rpc(
+      "verify_supervisor_pin",
+      {
+        p_employee_code: state.adminEmployeeCode,
+        p_pin: "7319",
+        p_permission: "returns.authorize",
+      },
+    );
+    const returned = await state.cashierA!.client.rpc(
+      "create_return_exchange",
+      {
+        p_idempotency_key: crypto.randomUUID(),
+        p_cash_session_id: state.sessionA,
+        p_original_sale_id: sale.data.id,
+        p_items_in: [
+          {
+            sale_item_id: item.data!.id,
+            quantity: 1,
+            condition: "RESELLABLE",
+          },
+        ],
+        p_items_out: [],
+        p_charge_payments: [],
+        p_refund_references: [],
+        p_authorization_token: authorization.data.authorization_token,
+        p_reason: "Devolución sin dinero recibido",
+      },
+    );
+    expect(returned.error).toBeNull();
+    expect(returned.data.credit_settlement).toEqual({
+      debt_reduction_cents: 10000,
+      paid_refund_cents: 0,
+    });
+    expect(returned.data.payments).toEqual([]);
+
+    const paid = await state.cashierA!.client.rpc(
+      "record_customer_credit_payment",
+      {
+        p_idempotency_key: crypto.randomUUID(),
+        p_cash_session_id: state.sessionA,
+        p_customer_id: state.customerId,
+        p_payments: [
+          { method_code: "CARD", amount_cents: 8000, reference: "ABONO-008" },
+        ],
+        p_note: "Liquida el único cargo que sigue abierto",
+      },
+    );
+    expect(paid.error).toBeNull();
+    const finalSummary = await state.cashierA!.client.rpc(
+      "get_customer_credit_summary",
+      { p_customer_id: state.customerId },
+    );
+    expect(finalSummary.data.balance_cents).toBe(0);
+    expect(finalSummary.data.oldest_due_date).toBeNull();
   });
 
   it("mantiene comprobantes y asignaciones fuera del acceso directo", async () => {
