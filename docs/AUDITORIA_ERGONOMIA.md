@@ -50,6 +50,19 @@ La suite completa de navegador es la evidencia automatizada de regresión: 46
 pruebas pasaron en la corrida local de producción. El CI del PR debe quedar
 verde antes de fusionar esta auditoría.
 
+## Mejora programada: movimiento e identidad
+
+Antes del piloto se hará una revisión específica de movimiento visual. Primero
+se estabilizan los recorridos operativos; después se incorporan y comparan
+microinteracciones ligeras. Higgsfield queda reservado para bienvenida,
+capacitación, estados vacíos, demostraciones y momentos de marca, no para
+cobros, pagos, devoluciones, autorizaciones, conteos ni errores.
+
+Cada propuesta debe tener alternativa estática, respetar la preferencia de
+reducir movimiento y demostrar en teléfono, iPad y computadora que no retrasa
+acciones, no mueve controles, no rompe el desplazamiento y no degrada la PWA.
+El criterio completo vive en la sección 44 del Plan Maestro.
+
 ## Pendiente antes del piloto
 
 1. Medir con al menos un cajero y una persona de almacén el tiempo real de cada

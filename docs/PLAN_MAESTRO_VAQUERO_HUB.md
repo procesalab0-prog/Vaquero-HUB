@@ -1635,6 +1635,29 @@ Especial prioridad:
 
 No sacrificar simplicidad por agregar funciones.
 
+### Movimiento y animación — mejora programada antes del piloto
+
+Las animaciones se revisarán dentro de la auditoría ergonómica previa al
+piloto, cuando los recorridos operativos principales estén estables. No serán
+una capa decorativa agregada a todas las pantallas.
+
+- Las microinteracciones ligeras de la propia interfaz podrán confirmar toque,
+  carga, éxito y cambio de estado sin retrasar la siguiente acción.
+- Higgsfield podrá producir piezas breves de identidad para bienvenida,
+  capacitación inicial, estados vacíos, demostraciones y momentos especiales
+  de marca.
+- Cobro, pagos, devoluciones, autorizaciones, conteos, captura repetitiva y
+  mensajes de error no dependerán de video ni de animaciones llamativas.
+- Ninguna animación ocultará controles, bloqueará el desplazamiento, moverá un
+  botón mientras se intenta tocar ni demorará una operación.
+- Los recursos deberán cargarse sólo cuando se necesiten, funcionar de forma
+  razonable con conexión limitada y contar con una alternativa estática.
+- Se respetará la preferencia de reducir movimiento del dispositivo y no habrá
+  reproducción automática con sonido.
+- La aceptación se comprobará en teléfono, iPad y computadora, midiendo que no
+  empeore el tiempo del recorrido, la claridad, el consumo ni la respuesta de
+  la PWA. Si una animación estorba, se simplifica o se elimina.
+
 Principio humano:
 
 Si un empleado necesita aprender una forma innecesariamente complicada de trabajar únicamente porque así fue programado el sistema, primero debe cuestionarse el diseño del sistema.
