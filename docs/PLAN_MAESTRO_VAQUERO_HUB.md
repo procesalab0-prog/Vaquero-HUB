@@ -2735,3 +2735,22 @@ Corrección visible 0.32.2 — sucursal activa y recepción clara:
   solicitó, aprobó y envió, por lo que debe recibirlo otro empleado autorizado
   en el destino. No se alteró el documento ni el inventario para evadir el
   control.
+
+Corrección visible 0.37.1 — administración global por sucursal:
+
+- El rol `ADMIN` puede seleccionar y operar todas las tiendas activas del
+  negocio sin depender de una asignación individual en `user_locations`.
+- Gerentes, cajeros, almacén y los demás roles conservan el principio de mínimo
+  privilegio: sólo operan las sucursales que les fueron asignadas.
+- La ubicación técnica de tránsito queda fuera del selector y no se convierte
+  en una sucursal operable.
+- El alcance se valida también en PostgreSQL mediante
+  `app.can_access_location`; no depende únicamente de mostrar la sucursal en la
+  interfaz.
+- La separación de funciones de traspasos permanece intacta. Un administrador
+  global puede recibir en el destino sólo si no fue quien aprobó o despachó el
+  mismo traspaso.
+- Caso real que motivó la regla: Salomón, con rol Administrador y acceso
+  individual sólo a La Piedad, debe poder cambiar a La Piedad Prueba y recibir
+  el traspaso enviado por Emmanuel sin crear asignaciones manuales para cada
+  tienda nueva.
