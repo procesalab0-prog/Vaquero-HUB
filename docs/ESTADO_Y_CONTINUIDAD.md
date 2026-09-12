@@ -66,8 +66,9 @@ saltando lo bloqueado.
 | **M7.2 (0.37.0)**        | Devolución reduce primero deuda; sólo dinero pagado vuelve por su método real                            |
 | **Corrección 0.32.1**    | Traspasos visibles y alta atómica de sucursal con acceso administrativo y primera caja                 |
 | **Corrección 0.32.2**    | Sucursal activa persistente, asignación de empleados, caja real y recepción de traspaso explicada      |
+| **Corrección 0.37.1**    | Administración global puede cambiar y operar todas las sucursales activas sin asignaciones individuales |
 
-Setenta y cinco migraciones versionadas del repositorio. El proyecto de Supabase
+Setenta y seis migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -134,6 +135,13 @@ deuda y bloquea la cancelación antigua para que no deje saldos huérfanos. Falt
 la cancelación compensada, la excepción administrativa por atraso y después los
 apartados; lealtad se pospuso por decisión del negocio. M8 se adelantó porque
 reportes y cotizaciones son necesarios para la operación y el piloto de octubre.
+
+La corrección 0.37.1 formaliza que el rol `ADMIN` es global: puede seleccionar y
+operar cualquier tienda activa aunque no tenga una asignación individual. Los
+demás roles continúan limitados a `user_locations`, y la ubicación técnica de
+tránsito nunca aparece como sucursal operable. Esta regla permite que un segundo
+administrador reciba un traspaso en el destino sin debilitar la separación de
+funciones: quien lo aprobó o despachó sigue sin poder recibirlo.
 
 **Con M3, M4, M5 y M5.5 cerrados, M9 ya cuenta con analizador y sincronizador
 de catálogo en staging.** El primer ensayo con los 16,009 productos permanece
