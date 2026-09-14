@@ -105,13 +105,9 @@ export default async function CustomersPage({
   const params = await searchParams;
   if (!isSupabaseConfigured()) return <CustomersPreview />;
 
-  const { supabase, userId, roleId } =
+  const { supabase, roleId, profile } =
     await requirePermission("customers.manage");
   const query = (params.q ?? "").trim();
-  const locationsRequest = supabase
-    .from("user_locations")
-    .select("locations(id, name, code)")
-    .eq("user_id", userId);
   const customerFields =
     "id, member_number, full_name, phone_e164, email, birthdate, auth_user_id, privacy_notice_version, marketing_consent, created_at";
   let customersData: unknown[] = [];
@@ -151,16 +147,12 @@ export default async function CustomersPage({
     customersData = data ?? [];
   }
 
-  const [{ data: locationsData, error: locationsError }, creditPermissions] =
-    await Promise.all([
-      locationsRequest,
-      supabase
-        .from("role_permissions")
-        .select("permission_code")
-        .eq("role_id", roleId)
-        .in("permission_code", ["customers.credit", "credit.collect"]),
-    ]);
-  if (locationsError) throw locationsError;
+  const creditPermissions = await supabase
+    .from("role_permissions")
+    .select("permission_code")
+    .eq("role_id", roleId)
+    .in("permission_code", ["customers.credit", "credit.collect"]);
+  if (creditPermissions.error) throw creditPermissions.error;
 
   const permissionCodes = new Set(
     (creditPermissions.data ?? []).map((row) => row.permission_code),
@@ -208,10 +200,22 @@ export default async function CustomersPage({
 
   const customers = (customersData ?? []) as unknown as Customer[];
   const locations = (
-    (locationsData ?? []) as unknown as Array<{ locations: Location | null }>
+    (profile.user_locations ?? []) as unknown as Array<{
+      locations:
+        | (Location & { type: string; is_active: boolean })
+        | Array<Location & { type: string; is_active: boolean }>
+        | null;
+    }>
   )
-    .map((row) => row.locations)
-    .filter((location): location is Location => Boolean(location));
+    .flatMap((row) =>
+      Array.isArray(row.locations)
+        ? row.locations
+        : row.locations
+          ? [row.locations]
+          : [],
+    )
+    .filter((location) => location.is_active && location.type !== "TRANSIT")
+    .map(({ id, name, code }) => ({ id, name, code }));
   const statusIsError = Boolean(
     params.status &&
     ![
