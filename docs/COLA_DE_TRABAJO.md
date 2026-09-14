@@ -847,15 +847,15 @@ modo analizador y corrida en seco.
 Verificado ejecutando contra una base reconstruida: 63 migraciones aplican
 limpio. **No se encontraron defectos.**
 
-| Prueba                                              | Resultado medido                          |
-| --------------------------------------------------- | ------------------------------------------- |
-| La cajera intenta recibir mercancía                 | `NOT_AUTHORIZED`                            |
-| Recibir 12 de una orden de 10                       | `RECEIPT_EXCEEDS_ORDER`                     |
-| Doble toque con la misma llave                      | `replayed: true`; la existencia no se movió |
-| Recepción parcial y luego el resto                  | 6 + 4 = 10, estado pasa a `RECEIVED`        |
-| Recibir de más de forma acumulada                   | Rechazado                                    |
+| Prueba                                                     | Resultado medido                            |
+| ---------------------------------------------------------- | ------------------------------------------- |
+| La cajera intenta recibir mercancía                        | `NOT_AUTHORIZED`                            |
+| Recibir 12 de una orden de 10                              | `RECEIPT_EXCEEDS_ORDER`                     |
+| Doble toque con la misma llave                             | `replayed: true`; la existencia no se movió |
+| Recepción parcial y luego el resto                         | 6 + 4 = 10, estado pasa a `RECEIVED`        |
+| Recibir de más de forma acumulada                          | Rechazado                                   |
 | **Dos recepciones simultáneas de 7 sobre una orden de 10** | Pasó una sola; la existencia subió 7, no 14 |
-| Cancelar una orden ya recibida parcialmente         | `PURCHASE_NOT_CANCELLABLE`                  |
+| Cancelar una orden ya recibida parcialmente                | `PURCHASE_NOT_CANCELLABLE`                  |
 
 La recepción entra por `app.apply_movement`, así que queda en el libro y el
 invariante siguió cuadrando después de cada prueba.
@@ -880,13 +880,13 @@ Es lo primero del proyecto que acepta archivos, así que se revisó aparte.
   uno mismo creó**. Almacén puede fotografiar lo que da de alta sin poder
   reemplazar lo ajeno.
 
-| Prueba                                              | Resultado medido                |
-| --------------------------------------------------- | --------------------------------- |
-| La cajera asocia una foto                           | `NOT_AUTHORIZED`                  |
-| Apuntar la foto del producto A a la carpeta de B    | `INVALID_PRODUCT_IMAGE_PATH`      |
-| Ruta con salto de directorio (`../`)                | `INVALID_PRODUCT_IMAGE_PATH`      |
-| Archivo que no existe en el bucket                  | `PRODUCT_IMAGE_NOT_FOUND`         |
-| Escribir `image_path` a mano, saltándose la RPC     | `permission denied`               |
+| Prueba                                           | Resultado medido             |
+| ------------------------------------------------ | ---------------------------- |
+| La cajera asocia una foto                        | `NOT_AUTHORIZED`             |
+| Apuntar la foto del producto A a la carpeta de B | `INVALID_PRODUCT_IMAGE_PATH` |
+| Ruta con salto de directorio (`../`)             | `INVALID_PRODUCT_IMAGE_PATH` |
+| Archivo que no existe en el bucket               | `PRODUCT_IMAGE_NOT_FOUND`    |
+| Escribir `image_path` a mano, saltándose la RPC  | `permission denied`          |
 
 Y el alta rápida desde Compras pasa por `create_catalog_product`, así que los
 productos nuevos nacen con SKU y código propios, no con los del proveedor.
@@ -897,7 +897,7 @@ La guía de la visita está en
 [`hardware/PRIMERA_IMPRESION.md`](hardware/PRIMERA_IMPRESION.md) y el equipo
 confirmado en [`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md).
 
-**Ya preparado:** una pantalla *Prueba de impresión* (*Más* → *Prueba de
+**Ya preparado:** una pantalla _Prueba de impresión_ (_Más_ → *Prueba de
 impresión_) que imprime un ticket de muestra **sin registrar venta**: no toca
 inventario, ni caja, ni folios. Antes, calibrar la impresora obligaba a cobrar
 de verdad y luego cancelar. El ticket de muestra trae nombres largos y un
@@ -960,16 +960,16 @@ autorización explícita. En ambos ambientes, la prueba reversible confirmó que
 acceso, Caja 01 y visibilidad en traspasos nacen juntos y no dejó una sucursal
 de prueba persistida.
 
-| Prueba                                              | Resultado medido                   |
-| --------------------------------------------------- | ------------------------------------ |
-| El gerente intenta crear una sucursal               | `NOT_AUTHORIZED` (es de ADMIN)      |
-| El ADMIN crea una sucursal                          | Nace con acceso y con Caja 01        |
-| ¿Aparece en traspasos?                              | Sí, de inmediato                     |
-| Clave repetida                                      | `LOCATION_CODE_TAKEN`                |
-| Cambiarle la clave a una sucursal existente         | `LOCATION_CODE_IMMUTABLE`            |
-| Editar nombre, dirección y teléfono                 | Permitido                            |
-| Tocar la ubicación de tránsito                      | `TRANSIT_LOCATION_IS_NOT_EDITABLE`   |
-| Insertar en `locations` a mano                      | `permission denied`                  |
+| Prueba                                      | Resultado medido                   |
+| ------------------------------------------- | ---------------------------------- |
+| El gerente intenta crear una sucursal       | `NOT_AUTHORIZED` (es de ADMIN)     |
+| El ADMIN crea una sucursal                  | Nace con acceso y con Caja 01      |
+| ¿Aparece en traspasos?                      | Sí, de inmediato                   |
+| Clave repetida                              | `LOCATION_CODE_TAKEN`              |
+| Cambiarle la clave a una sucursal existente | `LOCATION_CODE_IMMUTABLE`          |
+| Editar nombre, dirección y teléfono         | Permitido                          |
+| Tocar la ubicación de tránsito              | `TRANSIT_LOCATION_IS_NOT_EDITABLE` |
+| Insertar en `locations` a mano              | `permission denied`                |
 
 **Por qué la clave no se puede cambiar:** viaja dentro del folio de cada venta
 (`SUC1-V-000001`). Cambiarla dejaría el historial de esa sucursal partido en
@@ -1035,12 +1035,12 @@ es un INSERT de un renglón**, y ya no existe una lista que alguien pueda
 reescribir olvidando la mitad. Lo que antes dependía de acordarse, ahora lo
 garantiza la estructura.
 
-| Prueba                                              | Resultado medido                |
-| --------------------------------------------------- | --------------------------------- |
-| Los tres tipos existentes siguen sirviendo          | SALE, RETURN y QUOTE aceptados    |
-| Un tipo inventado                                   | Rechazado por llave foránea       |
-| Agregar `LAYAWAY` para M7                           | Un INSERT, sin tocar nada más     |
-| Borrar un tipo que ya tiene folios                  | Rechazado                          |
+| Prueba                                     | Resultado medido               |
+| ------------------------------------------ | ------------------------------ |
+| Los tres tipos existentes siguen sirviendo | SALE, RETURN y QUOTE aceptados |
+| Un tipo inventado                          | Rechazado por llave foránea    |
+| Agregar `LAYAWAY` para M7                  | Un INSERT, sin tocar nada más  |
+| Borrar un tipo que ya tiene folios         | Rechazado                      |
 
 **Para M7:** el apartado no necesita migración de restricción, sólo
 `insert into public.folio_document_types values ('LAYAWAY', 'Apartado')`.
@@ -1094,16 +1094,19 @@ Implementado y validado primero en staging:
 Siguiente bloque de M7.2 antes de M7.3:
 
 1. [x] Devoluciones reducen primero la deuda abierta y sólo reembolsan el
-   excedente realmente pagado por el método original, terminado en 0.37.0.
-   La cancelación de una venta con crédito queda bloqueada sin efectos hasta
-   incorporar su documento compensatorio completo.
+       excedente realmente pagado por el método original, terminado en 0.37.0.
+       La cancelación de una venta con crédito queda bloqueada sin efectos hasta
+       incorporar su documento compensatorio completo.
 2. [x] Excepción puntual de administrador ante atraso, limitada a una operación
-   y auditada sin borrar el vencimiento, terminada en 0.38.0. El cobro normal
-   quedó intacto; la excepción usa una ruta separada y un token ADMIN de un
-   solo uso ligado a la venta creada.
+       y auditada sin borrar el vencimiento, terminada en 0.38.0. El cobro normal
+       quedó intacto; la excepción usa una ruta separada y un token ADMIN de un
+       solo uso ligado a la venta creada.
 3. [x] Estado de cuenta visible y comprobante de abono recuperable e
        imprimible, terminado en 0.36.0. El envío externo queda separado hasta
        definir qué datos financieros se comparten y registrar el consentimiento.
+4. [x] Cancelación compensada completa, terminada en 0.39.0: crea una
+       devolución por todos los artículos restantes, reduce deuda antes de devolver
+       dinero y sólo entonces marca la venta original como cancelada.
 
 ### Entrega M7.2 · estado de cuenta y comprobante de abono (0.36.0)
 
@@ -1152,6 +1155,19 @@ Siguiente bloque de M7.2 antes de M7.3:
   la cabecera para ADMIN. Así Salomón y Emmanuel ven el mismo selector y el
   contenido ya no cae silenciosamente en La Piedad cuando está activa La
   Piedad Prueba.
+
+### Entrega M7.2 · cancelación compensada de crédito (0.39.0)
+
+- Usa el motor real de devoluciones para restaurar una sola vez los artículos
+  restantes; nunca llama a la cancelación M4 que duplicaría inventario o caja.
+- Requiere permiso de cancelación, autorización de gerente de un solo uso,
+  motivo y caja abierta en la misma sucursal.
+- Reduce primero el cargo pendiente. Sólo el excedente realmente pagado se
+  reembolsa por efectivo, tarjeta o transferencia y exige sus referencias.
+- La venta cambia a `CANCELLED` únicamente después de crear y conciliar el
+  documento compensatorio. Un error revierte toda la operación.
+- La llave idempotente permite repetir la petición sin crear otra devolución,
+  otro ajuste de deuda ni otro movimiento de efectivo.
 
 ## Bloqueado por el cliente
 
@@ -1220,7 +1236,7 @@ dice?** Que el código exista no significa que funcione.
 - [x] Reporte real de ventas por día, semana, mes o año.
 - [x] Búsqueda por producto, SKU, talla o color con fecha, hora y cajero.
 - [x] Conciliación de venta neta contra métodos de pago cuando se consulta el
-  ticket completo.
+      ticket completo.
 - [x] Reporte de inventario con existencia, reservado, disponible y valores.
 - [x] M8.2: cotizaciones que no mueven inventario ni caja; folio propio,
       cliente opcional, vigencia elegida por el usuario, estados, búsqueda y
@@ -1228,8 +1244,8 @@ dice?** Que el código exista no significa que funcione.
 - [ ] M8.3: enlace digital opaco, compartir nativo y WhatsApp.
 - [x] M7.1: autorización de crédito y límite global por cliente, con cartera
       cerrada, consulta para POS y auditoría de cada cambio.
-- [ ] M7.2: venta, abonos, devoluciones y excepción de atraso ya conciliados;
-      falta únicamente la cancelación compensada de una venta a crédito.
+- [x] M7.2: venta, abonos, devoluciones, excepción de atraso y cancelación
+      compensada conciliados y auditados.
 - [ ] M7.3: apartados; antes de cerrarlos deben resolverse las decisiones
       puntuales que siguen abiertas en `specs/M7_APARTADOS.md` §6.
 - [ ] Lealtad: pospuesta por decisión del negocio; no bloquea M7.

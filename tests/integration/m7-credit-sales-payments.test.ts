@@ -16,6 +16,7 @@ const state = {
   locationId: "",
   sessionA: "",
   sessionB: "",
+  adminSession: "",
   customerId: "",
   adminEmployeeCode: "",
   creditSaleId: "",
@@ -161,7 +162,15 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
       p_code: "CAJA02",
       p_name: "Caja 02",
     });
-    const [openA, openB] = await Promise.all([
+    const registerAdmin = await state.admin!.client.rpc(
+      "create_cash_register",
+      {
+        p_location_id: state.locationId,
+        p_code: "CAJA03",
+        p_name: "Caja administrativa",
+      },
+    );
+    const [openA, openB, openAdmin] = await Promise.all([
       state.cashierA!.client.rpc("open_cash_session", {
         p_register_id: registerA.data.id,
         p_opening_amount_cents: 10000,
@@ -170,11 +179,17 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
         p_register_id: registerB.data.id,
         p_opening_amount_cents: 10000,
       }),
+      state.admin!.client.rpc("open_cash_session", {
+        p_register_id: registerAdmin.data.id,
+        p_opening_amount_cents: 20000,
+      }),
     ]);
     expect(openA.error).toBeNull();
     expect(openB.error).toBeNull();
     state.sessionA = openA.data.id;
     state.sessionB = openB.data.id;
+    expect(openAdmin.error).toBeNull();
+    state.adminSession = openAdmin.data.id;
 
     const customer = await state.cashierA!.client.rpc("create_customer", {
       p_full_name: `Cliente venta crédito ${runCode}`,
@@ -481,6 +496,85 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
     );
     expect(finalSummary.data.balance_cents).toBe(0);
     expect(finalSummary.data.oldest_due_date).toBeNull();
+  });
+
+  it("cancela una venta a crédito con un documento compensatorio idempotente", async () => {
+    const variantId = await createVariant("Crédito cancelado completo", 10000);
+    const due = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+    const sale = await state.cashierA!.client.rpc("create_credit_sale", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_items: [{ variant_id: variantId, quantity: 1 }],
+      p_payments: [
+        { method_code: "CASH", amount_cents: 3000, tendered_cents: 3000 },
+        { method_code: "CREDIT", amount_cents: 7000 },
+      ],
+      p_customer_id: state.customerId,
+      p_due_date: due,
+      p_discounts: [],
+      p_notes: null,
+    });
+    expect(sale.error).toBeNull();
+
+    const authorization = await state.admin!.client.rpc(
+      "verify_supervisor_pin",
+      {
+        p_employee_code: state.adminEmployeeCode,
+        p_pin: "7319",
+        p_permission: "returns.authorize",
+      },
+    );
+    expect(authorization.error).toBeNull();
+    const key = crypto.randomUUID();
+    const input = {
+      p_idempotency_key: key,
+      p_cash_session_id: state.adminSession,
+      p_sale_id: sale.data.id,
+      p_refund_references: [],
+      p_authorization_token: authorization.data.authorization_token,
+      p_reason: "Cancelación completa autorizada",
+    };
+    const cancelled = await state.admin!.client.rpc(
+      "cancel_credit_sale",
+      input,
+    );
+    const retry = await state.admin!.client.rpc("cancel_credit_sale", input);
+    expect(cancelled.error).toBeNull();
+    expect(retry.error).toBeNull();
+    expect(retry.data.id).toBe(cancelled.data.id);
+    expect(cancelled.data.credit_settlement).toEqual({
+      debt_reduction_cents: 7000,
+      paid_refund_cents: 3000,
+    });
+
+    const persisted = await state
+      .server!.from("sales")
+      .select("status,cancellation_reason")
+      .eq("id", sale.data.id)
+      .single();
+    expect(persisted.data).toMatchObject({
+      status: "CANCELLED",
+      cancellation_reason: "Cancelación completa autorizada",
+    });
+    const inventory = await state
+      .server!.from("inventory_by_location")
+      .select("qty")
+      .eq("variant_id", variantId)
+      .eq("location_id", state.locationId)
+      .single();
+    expect(Number(inventory.data?.qty)).toBe(2);
+    const refundCash = await state
+      .server!.from("cash_movements")
+      .select("amount_cents")
+      .eq("session_id", state.adminSession)
+      .eq("reference_type", "RETURN")
+      .eq("reference_id", cancelled.data.id);
+    expect(refundCash.data).toEqual([{ amount_cents: -3000 }]);
+    const duplicateReturns = await state
+      .server!.from("returns")
+      .select("id")
+      .eq("original_sale_id", sale.data.id);
+    expect(duplicateReturns.data).toHaveLength(1);
   });
 
   it("autoriza un solo crédito vencido, conserva el atraso y permite reintento idempotente", async () => {

@@ -75,6 +75,16 @@ export type ReturnAuthorizationResult =
   | { ok: true; authorizationToken: string; expiresAt: string }
   | { ok: false; message: string };
 
+export type CancelCreditSaleResult =
+  | {
+      ok: true;
+      saleFolio: string;
+      returnFolio: string;
+      debtReductionCents: number;
+      paidRefundCents: number;
+    }
+  | { ok: false; message: string };
+
 export function databaseErrorText(error: unknown) {
   if (error instanceof Error) return error.message;
   if (
