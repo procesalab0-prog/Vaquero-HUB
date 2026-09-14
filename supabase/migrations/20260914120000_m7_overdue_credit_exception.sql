@@ -30,7 +30,6 @@ declare
   v_balance bigint;
   v_overdue_balance bigint;
   v_oldest_due date;
-  v_supervisor_role text;
 begin
   if v_actor is null then raise exception 'NOT_AUTHENTICATED' using errcode = '28000'; end if;
   if not (select app.has_perm('pos.sell')) or not (select app.has_perm('credit.sell')) then
@@ -97,7 +96,7 @@ begin
     raise exception 'CREDIT_LIMIT_EXCEEDED' using errcode = '23514';
   end if;
 
-  select sa, r.code into v_authorization, v_supervisor_role
+  select sa.* into v_authorization
   from app.supervisor_authorizations sa
   join public.app_users u on u.id = sa.supervisor_user_id and u.is_active
   join public.roles r on r.id = u.role_id
@@ -106,8 +105,9 @@ begin
     and sa.permission_code = 'credit.override'
     and sa.used_at is null
     and sa.expires_at > now()
+    and r.code = 'ADMIN'
   for update of sa;
-  if not found or v_supervisor_role <> 'ADMIN' then
+  if not found then
     raise exception 'CREDIT_OVERDUE_OVERRIDE_REQUIRED' using errcode = '42501';
   end if;
 
