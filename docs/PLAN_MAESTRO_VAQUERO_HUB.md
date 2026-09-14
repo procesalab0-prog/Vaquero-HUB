@@ -2662,8 +2662,8 @@ Entrega visible 0.35.0 — M7.2, ventas a crédito y abonos:
 - Desde 0.37.0 las devoluciones reducen primero la deuda y sólo reembolsan el
   excedente realmente pagado. Nunca se trata crédito como efectivo.
 - Desde 0.38.0 la excepción administrativa por atraso es explícita, de un solo
-  uso y auditable; no modifica límite, vencimiento ni historial. Continúa
-  después la cancelación compensada de venta a crédito; luego M7.3 implementará
+  uso y auditable; no modifica límite, vencimiento ni historial. En 0.39.0 la
+  cancelación compensada cierra M7.2; luego M7.3 implementará
   apartados con las decisiones abiertas de su especificación.
 
 Entrega visible 0.36.0 — estado de cuenta y comprobantes de abono:
@@ -2716,6 +2716,20 @@ Entrega visible 0.38.0 — excepción administrativa ante atraso:
   Inventario, Clientes y Compras usan la misma lista de tiendas activas que la
   cabecera. Un ADMIN que elige La Piedad Prueba ya no ve contenido ni selector
   calculados con su antigua asignación individual a La Piedad.
+
+Entrega visible 0.39.0 — cancelación compensada de venta a crédito:
+
+- Cancelar una venta a crédito crea primero una devolución completa por las
+  unidades que todavía no hubieran regresado. No reutiliza el reverso M4 y por
+  eso no duplica inventario ni efectivo.
+- El importe extingue primero la deuda del cargo original. Únicamente el dinero
+  realmente recibido se devuelve por su método real, con referencia electrónica
+  y protección de efectivo disponible en el cajón.
+- Exige usuario con `sales.cancel`, autorización de gerente para devoluciones,
+  motivo y caja abierta en la sucursal del ticket.
+- La venta se marca cancelada sólo después de que devolución, cartera, pagos,
+  inventario y caja concilian. Todo el recorrido es atómico, idempotente y deja
+  la relación con el documento compensatorio en auditoría.
 
 Corrección visible 0.32.1 — traspasos y sucursales operables:
 

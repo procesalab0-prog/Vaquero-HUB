@@ -58,18 +58,19 @@ saltando lo bloqueado.
 | **M9 (0.29.0)**          | Sincronizador idempotente de catálogo restringido a staging; conserva SHA, aprobación y conciliación     |
 | **Calidad 0.31.0**       | Proveedor y cliente con scroll táctil; carrito de Venta como cajón en teléfono e iPad                    |
 | **Corrección 0.31.1**    | Al abrir una ventana móvil se bloquea el fondo y sólo el cuadro recibe el gesto vertical                 |
-| **Hardware 0.31.2**      | Modelos reales documentados: BIXOLON SRP-330II para tickets y SICAR EVA58 para etiquetas               |
+| **Hardware 0.31.2**      | Modelos reales documentados: BIXOLON SRP-330II para tickets y SICAR EVA58 para etiquetas                 |
 | **Hardware 0.31.3**      | Prueba de ticket térmico sin registrar venta, mover inventario, caja ni folios                           |
-| **M8.1 (0.32.0)**        | Reportes reales de ventas e inventario con periodo, producto, variante, cajero y conciliación de cobros |
-| **M8.2 (0.33.0)**        | Cotizaciones reales con folio, vigencia opcional, búsqueda y conversión atómica mediante el POS        |
+| **M8.1 (0.32.0)**        | Reportes reales de ventas e inventario con periodo, producto, variante, cajero y conciliación de cobros  |
+| **M8.2 (0.33.0)**        | Cotizaciones reales con folio, vigencia opcional, búsqueda y conversión atómica mediante el POS          |
 | **M7.1–M7.2 (0.35.0)**   | Crédito autorizado, límite global, venta total/mixta y abonos conciliados con caja                       |
 | **M7.2 (0.37.0)**        | Devolución reduce primero deuda; sólo dinero pagado vuelve por su método real                            |
 | **M7.2 (0.38.0)**        | Excepción ADMIN de un solo uso permite una venta vencida sin borrar atraso ni historial                  |
-| **Corrección 0.32.1**    | Traspasos visibles y alta atómica de sucursal con acceso administrativo y primera caja                 |
-| **Corrección 0.32.2**    | Sucursal activa persistente, asignación de empleados, caja real y recepción de traspaso explicada      |
-| **Corrección 0.37.1**    | Administración global puede cambiar y operar todas las sucursales activas sin asignaciones individuales |
+| **M7.2 (0.39.0)**        | Cancelación de crédito crea devolución completa, extingue deuda y sólo reembolsa dinero real             |
+| **Corrección 0.32.1**    | Traspasos visibles y alta atómica de sucursal con acceso administrativo y primera caja                   |
+| **Corrección 0.32.2**    | Sucursal activa persistente, asignación de empleados, caja real y recepción de traspaso explicada        |
+| **Corrección 0.37.1**    | Administración global puede cambiar y operar todas las sucursales activas sin asignaciones individuales  |
 
-Ochenta migraciones versionadas del repositorio. El proyecto de Supabase
+Ochenta y una migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -134,8 +135,9 @@ La entrega 0.35.0 agrega venta a crédito y abonos parciales o mixtos sin
 registrar deuda como dinero recibido. La 0.37.0 integra devoluciones contra la
 deuda y bloquea la cancelación antigua para que no deje saldos huérfanos. La
 0.38.0 permite una excepción ADMIN de un solo uso sin ocultar el atraso y
-unifica el selector global de sucursal en Inventario, Clientes y Compras. Falta
-la cancelación compensada y después los apartados; lealtad se pospuso por
+unifica el selector global de sucursal en Inventario, Clientes y Compras. La
+0.39.0 cierra M7.2 con cancelación compensada e idempotente. Siguen los
+apartados; lealtad se pospuso por
 decisión del negocio. M8 se adelantó porque
 reportes y cotizaciones son necesarios para la operación y el piloto de octubre.
 
