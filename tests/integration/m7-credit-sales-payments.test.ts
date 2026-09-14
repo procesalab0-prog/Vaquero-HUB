@@ -27,6 +27,38 @@ function publicClient() {
   });
 }
 
+function dateInZone(timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const value = Object.fromEntries(
+    parts.map((part) => [part.type, part.value]),
+  );
+  return `${value.year}-${value.month}-${value.day}`;
+}
+
+async function clientInTimezone(source: SupabaseClient, timeZone: string) {
+  const current = await source.auth.getSession();
+  const client = createClient(url, publishableKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+    global: { headers: { Prefer: `timezone=${timeZone}` } },
+  });
+  const session = current.data.session;
+  expect(session).not.toBeNull();
+  expect(
+    (
+      await client.auth.setSession({
+        access_token: session!.access_token,
+        refresh_token: session!.refresh_token,
+      })
+    ).error,
+  ).toBeNull();
+  return client;
+}
+
 async function createVariant(label: string, priceCents: number) {
   const { data: category } = await state
     .server!.from("categories")
@@ -449,6 +481,107 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
     );
     expect(finalSummary.data.balance_cents).toBe(0);
     expect(finalSummary.data.oldest_due_date).toBeNull();
+  });
+
+  it("autoriza un solo crédito vencido, conserva el atraso y permite reintento idempotente", async () => {
+    const westZone = "Etc/GMT+12";
+    const eastZone = "Pacific/Kiritimati";
+    const westCashier = await clientInTimezone(
+      state.cashierA!.client,
+      westZone,
+    );
+    const eastCashier = await clientInTimezone(
+      state.cashierA!.client,
+      eastZone,
+    );
+    const overdueVariant = await createVariant("Crédito que vence", 5000);
+    const firstSale = await westCashier.rpc("create_credit_sale", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_items: [{ variant_id: overdueVariant, quantity: 1 }],
+      p_payments: [{ method_code: "CREDIT", amount_cents: 5000 }],
+      p_customer_id: state.customerId,
+      p_due_date: dateInZone(westZone),
+      p_discounts: [],
+      p_notes: null,
+    });
+    expect(firstSale.error).toBeNull();
+
+    const summary = await eastCashier.rpc("get_customer_credit_summary", {
+      p_customer_id: state.customerId,
+    });
+    expect(summary.error).toBeNull();
+    expect(summary.data.has_overdue).toBe(true);
+
+    const normalAttemptVariant = await createVariant(
+      "Crédito normal bloqueado",
+      4000,
+    );
+    const due = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+    const normalAttempt = await eastCashier.rpc("create_credit_sale", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_items: [{ variant_id: normalAttemptVariant, quantity: 1 }],
+      p_payments: [{ method_code: "CREDIT", amount_cents: 4000 }],
+      p_customer_id: state.customerId,
+      p_due_date: due,
+      p_discounts: [],
+      p_notes: null,
+    });
+    expect(normalAttempt.error?.message).toContain("CREDIT_OVERDUE");
+
+    const authorization = await eastCashier.rpc("verify_supervisor_pin", {
+      p_employee_code: state.adminEmployeeCode,
+      p_pin: "7319",
+      p_permission: "credit.override",
+    });
+    expect(authorization.error).toBeNull();
+    expect(authorization.data.status).toBe("AUTHORIZED");
+
+    const key = crypto.randomUUID();
+    const input = {
+      p_idempotency_key: key,
+      p_cash_session_id: state.sessionA,
+      p_items: [{ variant_id: normalAttemptVariant, quantity: 1 }],
+      p_payments: [{ method_code: "CREDIT", amount_cents: 4000 }],
+      p_customer_id: state.customerId,
+      p_due_date: due,
+      p_overdue_authorization_token: authorization.data.authorization_token,
+      p_override_reason: "Excepción única autorizada para prueba",
+      p_discounts: [],
+      p_notes: null,
+    };
+    const allowed = await eastCashier.rpc("create_overdue_credit_sale", input);
+    const retry = await eastCashier.rpc("create_overdue_credit_sale", input);
+    expect(allowed.error).toBeNull();
+    expect(retry.error).toBeNull();
+    expect(retry.data.id).toBe(allowed.data.id);
+
+    const reused = await eastCashier.rpc("create_overdue_credit_sale", {
+      ...input,
+      p_idempotency_key: crypto.randomUUID(),
+    });
+    expect(reused.error?.message).toContain("CREDIT_OVERDUE_OVERRIDE_REQUIRED");
+
+    const audit = await state
+      .server!.from("audit_log")
+      .select("metadata")
+      .eq("action", "customer_credit.overdue_exception_used")
+      .eq("entity_id", allowed.data.id)
+      .single();
+    expect(audit.error).toBeNull();
+    expect(audit.data?.metadata).toMatchObject({
+      customer_id: state.customerId,
+      credit_cents: 4000,
+      overdue_balance_cents: 5000,
+    });
+    expect(
+      (
+        await eastCashier.rpc("get_customer_credit_summary", {
+          p_customer_id: state.customerId,
+        })
+      ).data.has_overdue,
+    ).toBe(true);
   });
 
   it("mantiene comprobantes y asignaciones fuera del acceso directo", async () => {

@@ -71,6 +71,8 @@ type SaleActionInput = {
   quoteId?: string | null;
   discount?: { percent: number; authorizationToken: string } | null;
   creditDueDate?: string | null;
+  creditOverrideAuthorizationToken?: string | null;
+  creditOverrideReason?: string | null;
 };
 type CreditSummary = {
   is_authorized: boolean;
@@ -185,6 +187,7 @@ export function PosWorkspace({
   createSaleAction,
   getCustomerCreditAction,
   authorizeDiscountAction,
+  authorizeCreditOverrideAction,
   printAction,
   cancelSaleAction,
   saveDraftAction,
@@ -204,6 +207,13 @@ export function PosWorkspace({
     { ok: true; summary: CreditSummary } | { ok: false; message: string }
   >;
   authorizeDiscountAction?: (input: {
+    employeeCode: string;
+    pin: string;
+  }) => Promise<
+    | { ok: true; authorizationToken: string; expiresAt: string }
+    | { ok: false; message: string }
+  >;
+  authorizeCreditOverrideAction?: (input: {
     employeeCode: string;
     pin: string;
   }) => Promise<
@@ -287,7 +297,9 @@ export function PosWorkspace({
     string | null
   >(null);
   const [discountError, setDiscountError] = useState("");
-  const [extraDialog, setExtraDialog] = useState<"discount" | null>(null);
+  const [extraDialog, setExtraDialog] = useState<
+    "discount" | "credit-override" | null
+  >(null);
   const [selectedCustomer, setSelectedCustomer] =
     useState<CustomerSummary | null>(currentDraft?.customer ?? null);
   const [customerLookupOpen, setCustomerLookupOpen] = useState(false);
@@ -309,6 +321,12 @@ export function PosWorkspace({
   const [creditSummary, setCreditSummary] = useState<CreditSummary | null>(
     null,
   );
+  const [creditOverrideAuthorization, setCreditOverrideAuthorization] =
+    useState<string | null>(null);
+  const [creditOverrideCode, setCreditOverrideCode] = useState("");
+  const [creditOverridePin, setCreditOverridePin] = useState("");
+  const [creditOverrideReason, setCreditOverrideReason] = useState("");
+  const [creditOverrideError, setCreditOverrideError] = useState("");
   const [creditDueDate, setCreditDueDate] = useState(() => {
     const date = new Date();
     date.setMonth(date.getMonth() + 1);
@@ -676,6 +694,8 @@ export function PosWorkspace({
               }
             : null,
         creditDueDate: dueDate ?? null,
+        creditOverrideAuthorizationToken: creditOverrideAuthorization,
+        creditOverrideReason,
       });
       if (!result.ok) {
         submittingRef.current = false;
@@ -771,12 +791,15 @@ export function PosWorkspace({
         return;
       }
       setCreditSummary(result.summary);
-      if (!result.summary.is_authorized || result.summary.has_overdue) {
+      if (!result.summary.is_authorized) {
+        setSaleError("Este cliente no tiene crédito autorizado.");
+        return;
+      }
+      if (result.summary.has_overdue && !creditOverrideAuthorization) {
         setSaleError(
-          result.summary.has_overdue
-            ? "El cliente tiene saldo vencido y no puede usar más crédito."
-            : "Este cliente no tiene crédito autorizado.",
+          "El cliente tiene saldo vencido. Se necesita autorización administrativa para esta venta.",
         );
+        setExtraDialog("credit-override");
         return;
       }
       if (creditCents > Number(result.summary.available_cents)) {
@@ -837,12 +860,15 @@ export function PosWorkspace({
       return;
     }
     setCreditSummary(result.summary);
-    if (!result.summary.is_authorized || result.summary.has_overdue) {
+    if (!result.summary.is_authorized) {
+      setSaleError("Este cliente no tiene crédito autorizado.");
+      return;
+    }
+    if (result.summary.has_overdue && !creditOverrideAuthorization) {
       setSaleError(
-        result.summary.has_overdue
-          ? "El cliente tiene saldo vencido y no puede usar más crédito."
-          : "Este cliente no tiene crédito autorizado.",
+        "El cliente tiene saldo vencido. Se necesita autorización administrativa para esta venta.",
       );
+      setExtraDialog("credit-override");
       return;
     }
     setPaymentUsed("credit");
@@ -873,6 +899,11 @@ export function PosWorkspace({
     setSelectedCustomer(null);
     setPaymentReference("");
     setCreditSummary(null);
+    setCreditOverrideAuthorization(null);
+    setCreditOverrideCode("");
+    setCreditOverridePin("");
+    setCreditOverrideReason("");
+    setCreditOverrideError("");
     setSaleError("");
     setSaleId("");
     setStoredReceipt(null);
@@ -922,6 +953,32 @@ export function PosWorkspace({
     setDiscountPercent(value);
     setExtraDialog(null);
     notify(value ? `Descuento de ${value}% aplicado` : "Descuento eliminado");
+  }
+
+  async function authorizeCreditOverride() {
+    setCreditOverrideError("");
+    if (creditOverrideReason.trim().length < 3) {
+      setCreditOverrideError("Escribe el motivo de la excepción.");
+      return;
+    }
+    if (!authorizeCreditOverrideAction) {
+      setCreditOverrideError("El servicio de autorización no está disponible.");
+      return;
+    }
+    const authorization = await authorizeCreditOverrideAction({
+      employeeCode: creditOverrideCode,
+      pin: creditOverridePin,
+    });
+    if (!authorization.ok) {
+      setCreditOverrideError(authorization.message);
+      return;
+    }
+    setCreditOverrideAuthorization(authorization.authorizationToken);
+    setCreditOverridePin("");
+    setExtraDialog(null);
+    setSaleError("");
+    if (!splitMode) setPaymentUsed("credit");
+    notify("Excepción autorizada para esta venta");
   }
 
   async function printReceipt() {
@@ -2033,6 +2090,78 @@ export function PosWorkspace({
         </div>
       ) : null}
 
+      {extraDialog === "credit-override" ? (
+        <div className="modal-backdrop">
+          <section
+            className="checkout-modal compact-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="credit-override-title"
+          >
+            <p className="eyebrow">Crédito vencido</p>
+            <h2 id="credit-override-title">Autorizar sólo esta venta</h2>
+            <p className="heading-copy">
+              El atraso seguirá visible. La autorización vence en cinco minutos
+              y no podrá reutilizarse en otra operación.
+            </p>
+            <div className="form-stack">
+              <label>
+                <span>Código del administrador</span>
+                <input
+                  autoCapitalize="characters"
+                  value={creditOverrideCode}
+                  onChange={(event) =>
+                    setCreditOverrideCode(event.target.value)
+                  }
+                  placeholder="Ej. ADMIN0"
+                />
+              </label>
+              <label>
+                <span>PIN del administrador</span>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  value={creditOverridePin}
+                  onChange={(event) => setCreditOverridePin(event.target.value)}
+                />
+              </label>
+              <label>
+                <span>Motivo de la excepción</span>
+                <textarea
+                  value={creditOverrideReason}
+                  onChange={(event) =>
+                    setCreditOverrideReason(event.target.value)
+                  }
+                  maxLength={500}
+                  placeholder="Ej. Autorizado por gerencia para esta compra"
+                />
+              </label>
+              {creditOverrideError ? (
+                <p className="field-error" role="alert">
+                  {creditOverrideError}
+                </p>
+              ) : null}
+            </div>
+            <div className="modal-actions">
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => setExtraDialog(null)}
+              >
+                No autorizar
+              </button>
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() => void authorizeCreditOverride()}
+              >
+                Autorizar esta venta
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
       {customerLookupOpen ? (
         <div className="modal-backdrop">
           <CustomerLookup
@@ -2040,6 +2169,8 @@ export function PosWorkspace({
             onSelect={(customer) => {
               setSelectedCustomer(customer);
               setCreditSummary(null);
+              setCreditOverrideAuthorization(null);
+              setCreditOverrideReason("");
               setPaymentUsed("cash");
             }}
             onClose={() => setCustomerLookupOpen(false)}

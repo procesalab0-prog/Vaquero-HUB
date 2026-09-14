@@ -100,18 +100,13 @@ export default async function PurchasesPage({
   const session = await getWorkspaceSession();
   if (!session?.userId || !session.profile?.is_active)
     throw new Error("NOT_AUTHORIZED");
-  const { supabase, userId, profile } = session;
+  const { supabase, profile } = session;
   const [
-    locationsResult,
     permissionsResult,
     suppliersResult,
     categoriesResult,
     attributeValuesResult,
   ] = await Promise.all([
-    supabase
-      .from("user_locations")
-      .select("locations(id,name,code,type,is_active)")
-      .eq("user_id", userId),
     supabase
       .from("role_permissions")
       .select("permission_code")
@@ -136,13 +131,13 @@ export default async function PurchasesPage({
       .order("display_order"),
   ]);
   if (
-    locationsResult.error ||
+    permissionsResult.error ||
     suppliersResult.error ||
     categoriesResult.error ||
     attributeValuesResult.error
   )
     throw (
-      locationsResult.error ??
+      permissionsResult.error ??
       suppliersResult.error ??
       categoriesResult.error ??
       attributeValuesResult.error
@@ -152,11 +147,20 @@ export default async function PurchasesPage({
   );
   if (!permissionSet.size) throw new Error("NOT_AUTHORIZED");
   const locations = (
-    (locationsResult.data ?? []) as unknown as Array<{
-      locations: (Location & { type: string; is_active: boolean }) | null;
+    (profile.user_locations ?? []) as unknown as Array<{
+      locations:
+        | (Location & { type: string; is_active: boolean })
+        | Array<Location & { type: string; is_active: boolean }>
+        | null;
     }>
   )
-    .map((row) => row.locations)
+    .flatMap((row) =>
+      Array.isArray(row.locations)
+        ? row.locations
+        : row.locations
+          ? [row.locations]
+          : [],
+    )
     .filter(
       (location): location is Location & { type: string; is_active: boolean } =>
         Boolean(location?.is_active && location.type !== "TRANSIT"),

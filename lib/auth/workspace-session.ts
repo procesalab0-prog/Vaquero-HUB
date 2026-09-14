@@ -23,6 +23,8 @@ export type WorkspaceProfileRow = {
           code: string;
           address: string | null;
           phone: string | null;
+          type: string;
+          is_active: boolean;
         }
       | Array<{
           id: string;
@@ -30,6 +32,8 @@ export type WorkspaceProfileRow = {
           code: string;
           address: string | null;
           phone: string | null;
+          type: string;
+          is_active: boolean;
         }>
       | null;
   }> | null;
@@ -54,7 +58,7 @@ export const getWorkspaceSession = cache(async () => {
   const { data, error } = await supabase
     .from("app_users")
     .select(
-      "id, role_id, full_name, employee_code, is_active, roles(code, name), user_locations(locations(id, name, code, address, phone))",
+      "id, role_id, full_name, employee_code, is_active, roles(code, name), user_locations(locations(id, name, code, address, phone, type, is_active))",
     )
     .eq("id", userId)
     .single();
@@ -71,7 +75,7 @@ export const getWorkspaceSession = cache(async () => {
   if (!error && profile?.is_active && role?.code === "ADMIN") {
     const { data: activeStores, error: activeStoresError } = await supabase
       .from("locations")
-      .select("id, name, code, address, phone")
+      .select("id, name, code, address, phone, type, is_active")
       .eq("is_active", true)
       .eq("type", "STORE")
       .order("name");

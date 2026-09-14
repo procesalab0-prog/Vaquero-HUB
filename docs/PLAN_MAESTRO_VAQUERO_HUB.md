@@ -2661,9 +2661,10 @@ Entrega visible 0.35.0 — M7.2, ventas a crédito y abonos:
   restricciones diferidas que exigen conciliación exacta.
 - Desde 0.37.0 las devoluciones reducen primero la deuda y sólo reembolsan el
   excedente realmente pagado. Nunca se trata crédito como efectivo.
-- Continúa después: cancelación compensada de venta a crédito y excepción
-  administrativa por atraso; luego M7.3 implementará apartados con las
-  decisiones abiertas de su especificación.
+- Desde 0.38.0 la excepción administrativa por atraso es explícita, de un solo
+  uso y auditable; no modifica límite, vencimiento ni historial. Continúa
+  después la cancelación compensada de venta a crédito; luego M7.3 implementará
+  apartados con las decisiones abiertas de su especificación.
 
 Entrega visible 0.36.0 — estado de cuenta y comprobantes de abono:
 
@@ -2697,6 +2698,24 @@ Entrega visible 0.37.0 — devoluciones de crédito conciliadas:
 - La cancelación antigua se niega de forma atómica para ventas con crédito:
   no puede restaurar mercancía dejando una deuda huérfana. La cancelación
   compensada completa permanece como el siguiente subbloque de M7.2.
+
+Entrega visible 0.38.0 — excepción administrativa ante atraso:
+
+- Una cuenta vencida sigue bloqueando el crédito ordinario, pero el POS permite
+  solicitar la autorización puntual sin perder el carrito ni volver a capturar
+  los métodos divididos.
+- Sólo un ADMIN con `credit.override` puede autorizar. El token dura cinco
+  minutos, pertenece al cajero que lo solicitó, se consume una vez y se liga a
+  la venta real.
+- La excepción no altera la cuenta: el vencimiento y el saldo atrasado siguen
+  visibles. La auditoría conserva autorizador, operador, cliente, montos,
+  fechas y operación permitida.
+- La ruta normal de venta a crédito permanece intacta. La excepción usa una
+  función adicional protegida para limitar el radio de una falla.
+- La administración global ya es consistente dentro de los módulos:
+  Inventario, Clientes y Compras usan la misma lista de tiendas activas que la
+  cabecera. Un ADMIN que elige La Piedad Prueba ya no ve contenido ni selector
+  calculados con su antigua asignación individual a La Piedad.
 
 Corrección visible 0.32.1 — traspasos y sucursales operables:
 

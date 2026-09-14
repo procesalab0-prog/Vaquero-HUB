@@ -23,6 +23,8 @@ export type SaleActionInput = {
     authorizationToken: string;
   } | null;
   creditDueDate?: string | null;
+  creditOverrideAuthorizationToken?: string | null;
+  creditOverrideReason?: string | null;
 };
 
 export type SaleActionResult =
@@ -126,6 +128,14 @@ function saleError(error: unknown): SaleActionResult {
     [
       "CREDIT_OVERDUE",
       "El cliente tiene un saldo vencido y no puede usar más crédito.",
+    ],
+    [
+      "CREDIT_OVERDUE_OVERRIDE_REQUIRED",
+      "La autorización administrativa venció o ya fue utilizada. Solicítala nuevamente.",
+    ],
+    [
+      "CREDIT_OVERRIDE_NOT_REQUIRED",
+      "El cliente ya no tiene saldo vencido. Actualiza sus datos y vuelve a cobrar.",
     ],
     [
       "INVALID_CREDIT_SALE",
@@ -272,6 +282,48 @@ export async function authorizeSaleDiscount(input: {
   }
 }
 
+export async function authorizeOverdueCredit(input: {
+  employeeCode: string;
+  pin: string;
+}): Promise<
+  | { ok: true; authorizationToken: string; expiresAt: string }
+  | { ok: false; message: string }
+> {
+  try {
+    const { supabase } = await requirePermission("credit.sell");
+    const { data, error } = await supabase.rpc("verify_supervisor_pin", {
+      p_employee_code: input.employeeCode.trim(),
+      p_pin: input.pin,
+      p_permission: "credit.override",
+    });
+    if (error) throw error;
+    const result = data as {
+      status?: string;
+      authorization_token?: string;
+      expires_at?: string;
+    } | null;
+    if (result?.status !== "AUTHORIZED" || !result.authorization_token) {
+      const message =
+        result?.status === "PIN_LOCKED"
+          ? "El PIN está bloqueado temporalmente por intentos fallidos."
+          : result?.status === "INSUFFICIENT_PERMISSION"
+            ? "Sólo un administrador autorizado puede permitir esta venta."
+            : "Código o PIN de administrador incorrecto.";
+      return { ok: false, message };
+    }
+    return {
+      ok: true,
+      authorizationToken: result.authorization_token,
+      expiresAt: result.expires_at ?? "",
+    };
+  } catch {
+    return {
+      ok: false,
+      message: "No fue posible validar la excepción administrativa.",
+    };
+  }
+}
+
 export async function createPosSale(
   input: SaleActionInput,
 ): Promise<SaleActionResult> {
@@ -333,26 +385,40 @@ export async function createPosSale(
           p_cash_session_id: input.cashSessionId,
           p_payments: input.payments,
         })
-      : hasCredit
-        ? await supabase.rpc("create_credit_sale", {
+      : hasCredit && input.creditOverrideAuthorizationToken
+        ? await supabase.rpc("create_overdue_credit_sale", {
             p_idempotency_key: input.idempotencyKey,
             p_cash_session_id: input.cashSessionId,
             p_items: input.items,
             p_payments: input.payments,
             p_customer_id: input.customerId ?? null,
             p_due_date: input.creditDueDate ?? null,
+            p_overdue_authorization_token:
+              input.creditOverrideAuthorizationToken,
+            p_override_reason: input.creditOverrideReason ?? null,
             p_discounts: discounts,
             p_notes: null,
           })
-        : await supabase.rpc("create_sale", {
-            p_idempotency_key: input.idempotencyKey,
-            p_cash_session_id: input.cashSessionId,
-            p_items: input.items,
-            p_payments: input.payments,
-            p_customer_id: input.customerId ?? null,
-            p_discounts: discounts,
-            p_notes: null,
-          });
+        : hasCredit
+          ? await supabase.rpc("create_credit_sale", {
+              p_idempotency_key: input.idempotencyKey,
+              p_cash_session_id: input.cashSessionId,
+              p_items: input.items,
+              p_payments: input.payments,
+              p_customer_id: input.customerId ?? null,
+              p_due_date: input.creditDueDate ?? null,
+              p_discounts: discounts,
+              p_notes: null,
+            })
+          : await supabase.rpc("create_sale", {
+              p_idempotency_key: input.idempotencyKey,
+              p_cash_session_id: input.cashSessionId,
+              p_items: input.items,
+              p_payments: input.payments,
+              p_customer_id: input.customerId ?? null,
+              p_discounts: discounts,
+              p_notes: null,
+            });
     if (error) throw error;
     const sale = data as {
       id: string;

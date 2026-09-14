@@ -1097,8 +1097,10 @@ Siguiente bloque de M7.2 antes de M7.3:
    excedente realmente pagado por el método original, terminado en 0.37.0.
    La cancelación de una venta con crédito queda bloqueada sin efectos hasta
    incorporar su documento compensatorio completo.
-2. Excepción puntual de administrador ante atraso, limitada a una operación y
-   auditada sin borrar el vencimiento.
+2. [x] Excepción puntual de administrador ante atraso, limitada a una operación
+   y auditada sin borrar el vencimiento, terminada en 0.38.0. El cobro normal
+   quedó intacto; la excepción usa una ruta separada y un token ADMIN de un
+   solo uso ligado a la venta creada.
 3. [x] Estado de cuenta visible y comprobante de abono recuperable e
        imprimible, terminado en 0.36.0. El envío externo queda separado hasta
        definir qué datos financieros se comparten y registrar el consentimiento.
@@ -1132,6 +1134,24 @@ Siguiente bloque de M7.2 antes de M7.3:
   ajuste de cartera pertenece a la devolución y a la venta correctas.
 - El RPC de cancelación M4 rechaza ventas a crédito antes de tocar estado,
   inventario o caja. Falta construir la cancelación compensada completa.
+
+### Entrega M7.2 · excepción administrativa por atraso (0.38.0)
+
+- El POS no pierde el carrito cuando encuentra crédito vencido: permite pedir
+  código y PIN de un administrador y continuar exactamente esa venta.
+- La autorización `credit.override` dura cinco minutos, se consume una sola
+  vez y queda ligada al identificador real de la venta. Reutilizarla en otra
+  operación se rechaza.
+- El cliente continúa marcado como vencido. La excepción no cambia su límite,
+  no mueve fechas y no borra cargos ni historial.
+- La bitácora conserva administrador, cajero, cliente, venta, saldo vencido,
+  vencimiento anterior, monto nuevo y nueva fecha acordada.
+- La función de cobro ordinaria no se reemplazó: la excepción vive en un RPC
+  aditivo para reducir el riesgo de alterar ventas sin atraso.
+- Inventario, Clientes y Compras consumen la misma lista global de tiendas que
+  la cabecera para ADMIN. Así Salomón y Emmanuel ven el mismo selector y el
+  contenido ya no cae silenciosamente en La Piedad cuando está activa La
+  Piedad Prueba.
 
 ## Bloqueado por el cliente
 
@@ -1208,7 +1228,8 @@ dice?** Que el código exista no significa que funcione.
 - [ ] M8.3: enlace digital opaco, compartir nativo y WhatsApp.
 - [x] M7.1: autorización de crédito y límite global por cliente, con cartera
       cerrada, consulta para POS y auditoría de cada cambio.
-- [ ] M7.2: venta a crédito y abonos conciliados con caja.
+- [ ] M7.2: venta, abonos, devoluciones y excepción de atraso ya conciliados;
+      falta únicamente la cancelación compensada de una venta a crédito.
 - [ ] M7.3: apartados; antes de cerrarlos deben resolverse las decisiones
       puntuales que siguen abiertas en `specs/M7_APARTADOS.md` §6.
 - [ ] Lealtad: pospuesta por decisión del negocio; no bloquea M7.

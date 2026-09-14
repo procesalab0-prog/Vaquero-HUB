@@ -7,7 +7,7 @@
 > memoria del proyecto.** Todo lo que haga falta para continuar tiene que
 > estar aquí, no en un chat.
 >
-> Última actualización: 2026-09-09.
+> Última actualización: 2026-09-14.
 
 ## 1. Qué es esto
 
@@ -64,11 +64,12 @@ saltando lo bloqueado.
 | **M8.2 (0.33.0)**        | Cotizaciones reales con folio, vigencia opcional, búsqueda y conversión atómica mediante el POS        |
 | **M7.1–M7.2 (0.35.0)**   | Crédito autorizado, límite global, venta total/mixta y abonos conciliados con caja                       |
 | **M7.2 (0.37.0)**        | Devolución reduce primero deuda; sólo dinero pagado vuelve por su método real                            |
+| **M7.2 (0.38.0)**        | Excepción ADMIN de un solo uso permite una venta vencida sin borrar atraso ni historial                  |
 | **Corrección 0.32.1**    | Traspasos visibles y alta atómica de sucursal con acceso administrativo y primera caja                 |
 | **Corrección 0.32.2**    | Sucursal activa persistente, asignación de empleados, caja real y recepción de traspaso explicada      |
 | **Corrección 0.37.1**    | Administración global puede cambiar y operar todas las sucursales activas sin asignaciones individuales |
 
-Setenta y seis migraciones versionadas del repositorio. El proyecto de Supabase
+Ochenta migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -131,9 +132,11 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 M7 comenzó en 0.34.0 con autorización y límite global de crédito por cliente.
 La entrega 0.35.0 agrega venta a crédito y abonos parciales o mixtos sin
 registrar deuda como dinero recibido. La 0.37.0 integra devoluciones contra la
-deuda y bloquea la cancelación antigua para que no deje saldos huérfanos. Falta
-la cancelación compensada, la excepción administrativa por atraso y después los
-apartados; lealtad se pospuso por decisión del negocio. M8 se adelantó porque
+deuda y bloquea la cancelación antigua para que no deje saldos huérfanos. La
+0.38.0 permite una excepción ADMIN de un solo uso sin ocultar el atraso y
+unifica el selector global de sucursal en Inventario, Clientes y Compras. Falta
+la cancelación compensada y después los apartados; lealtad se pospuso por
+decisión del negocio. M8 se adelantó porque
 reportes y cotizaciones son necesarios para la operación y el piloto de octubre.
 
 La corrección 0.37.1 formaliza que el rol `ADMIN` es global: puede seleccionar y

@@ -22,18 +22,21 @@ export async function getWorkspaceIdentity(): Promise<WorkspaceIdentity | null> 
 
   const role = first(profile.roles);
   const locations = (profile.user_locations ?? [])
-    .map((entry) => first(entry.locations))
-    .filter(
-      (
-        location,
-      ): location is {
-        id: string;
-        name: string;
-        code: string;
-        address: string | null;
-        phone: string | null;
-      } => Boolean(location),
-    );
+    .flatMap((entry) =>
+      Array.isArray(entry.locations)
+        ? entry.locations
+        : entry.locations
+          ? [entry.locations]
+          : [],
+    )
+    .filter((location) => location.is_active && location.type === "STORE")
+    .map(({ id, name, code, address, phone }) => ({
+      id,
+      name,
+      code,
+      address,
+      phone,
+    }));
 
   const { data: cashSession, error: cashSessionError } = await supabase.rpc(
     "get_my_cash_session",
