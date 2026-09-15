@@ -100,9 +100,7 @@ export default async function TicketsPage({
       findTicketAction={findTicketByCode}
       cancelSaleAction={cancelPermission.data ? cancelPosSale : undefined}
       cancelCreditSaleAction={
-        cancelPermission.data && returnPermission.data
-          ? cancelCreditSale
-          : undefined
+        returnPermission.data ? cancelCreditSale : undefined
       }
       prepareExchangeAction={
         returnPermission.data ? prepareEqualExchange : undefined

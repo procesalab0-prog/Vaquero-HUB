@@ -147,3 +147,18 @@ y en el comprobante aceptado por el cliente antes de recibir dinero.
 - Liquidar y entregar genera una venta normal sin volver a cobrar los abonos.
 - Ningún usuario sin permiso puede ejecutar operaciones sensibles llamando
   directamente al backend.
+
+## 8. Avance implementado en 0.40.0
+
+- El carrito de Venta crea un documento real con cliente, vencimiento editable,
+  folio propio y renglones con precio vigente.
+- El primer bloque permite iniciar con $0 abonados, coherente con la regla
+  confirmada de que no existe enganche mínimo. No crea movimientos de caja.
+- Reservar aumenta `reserved_qty` sin fingir una salida física y escribe un
+  libro inmutable separado con saldo anterior y nuevo.
+- La última pieza se protege con candado de fila y prueba concurrente. Dos cajas
+  no pueden confirmar la misma reserva.
+- La pantalla Apartados busca por folio, cliente o número de socio y distingue
+  próximos a vencer y vencidos sin cancelarlos automáticamente.
+- Todavía no permite recibir abonos, cancelar, sustituir ni entregar. Esas
+  operaciones llegan en bloques siguientes y no se simulan desde la interfaz.

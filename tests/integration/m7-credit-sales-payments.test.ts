@@ -499,6 +499,22 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
   });
 
   it("cancela una venta a crédito con un documento compensatorio idempotente", async () => {
+    const cashierCancelPermission = await state
+      .server!.from("role_permissions")
+      .select("permission_code")
+      .eq(
+        "role_id",
+        (
+          await state
+            .server!.from("app_users")
+            .select("role_id")
+            .eq("id", state.cashierA!.id)
+            .single()
+        ).data!.role_id,
+      )
+      .eq("permission_code", "sales.cancel")
+      .maybeSingle();
+    expect(cashierCancelPermission.data).toBeNull();
     const variantId = await createVariant("Crédito cancelado completo", 10000);
     const due = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
     const sale = await state.cashierA!.client.rpc("create_credit_sale", {
@@ -516,7 +532,7 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
     });
     expect(sale.error).toBeNull();
 
-    const authorization = await state.admin!.client.rpc(
+    const authorization = await state.cashierA!.client.rpc(
       "verify_supervisor_pin",
       {
         p_employee_code: state.adminEmployeeCode,
@@ -528,17 +544,17 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
     const key = crypto.randomUUID();
     const input = {
       p_idempotency_key: key,
-      p_cash_session_id: state.adminSession,
+      p_cash_session_id: state.sessionA,
       p_sale_id: sale.data.id,
       p_refund_references: [],
       p_authorization_token: authorization.data.authorization_token,
       p_reason: "Cancelación completa autorizada",
     };
-    const cancelled = await state.admin!.client.rpc(
+    const cancelled = await state.cashierA!.client.rpc(
       "cancel_credit_sale",
       input,
     );
-    const retry = await state.admin!.client.rpc("cancel_credit_sale", input);
+    const retry = await state.cashierA!.client.rpc("cancel_credit_sale", input);
     expect(cancelled.error).toBeNull();
     expect(retry.error).toBeNull();
     expect(retry.data.id).toBe(cancelled.data.id);
@@ -566,7 +582,7 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
     const refundCash = await state
       .server!.from("cash_movements")
       .select("amount_cents")
-      .eq("session_id", state.adminSession)
+      .eq("session_id", state.sessionA)
       .eq("reference_type", "RETURN")
       .eq("reference_id", cancelled.data.id);
     expect(refundCash.data).toEqual([{ amount_cents: -3000 }]);
@@ -575,6 +591,95 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
       .select("id")
       .eq("original_sale_id", sale.data.id);
     expect(duplicateReturns.data).toHaveLength(1);
+  });
+
+  it("permite apartar sin enganche, reserva la última existencia y no mueve caja", async () => {
+    const variantId = await createVariant("Apartado sin enganche", 12500);
+    const due = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+    const key = crypto.randomUUID();
+    const input = {
+      p_idempotency_key: key,
+      p_cash_session_id: state.sessionA,
+      p_customer_id: state.customerId,
+      p_due_date: due,
+      p_items: [{ variant_id: variantId, quantity: 2 }],
+      p_notes: "Prueba de reserva real",
+    };
+    const beforeCash = await state
+      .server!.from("cash_movements")
+      .select("id", { count: "exact", head: true })
+      .eq("session_id", state.sessionA);
+    const created = await state.cashierA!.client.rpc("create_layaway", input);
+    const retry = await state.cashierA!.client.rpc("create_layaway", input);
+    expect(created.error).toBeNull();
+    expect(created.data.folio).toContain("-A-");
+    expect(retry.error).toBeNull();
+    expect(retry.data.id).toBe(created.data.id);
+    expect(created.data).toMatchObject({
+      status: "OPEN",
+      total_cents: 25000,
+      paid_cents: 0,
+      balance_cents: 25000,
+    });
+
+    const inventory = await state
+      .server!.from("inventory_by_location")
+      .select("qty,reserved_qty")
+      .eq("variant_id", variantId)
+      .eq("location_id", state.locationId)
+      .single();
+    expect(inventory.data).toMatchObject({ qty: 2, reserved_qty: 2 });
+    const afterCash = await state
+      .server!.from("cash_movements")
+      .select("id", { count: "exact", head: true })
+      .eq("session_id", state.sessionA);
+    expect(afterCash.count).toBe(beforeCash.count);
+
+    const sale = await state.cashierB!.client.rpc("create_sale", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionB,
+      p_items: [{ variant_id: variantId, quantity: 1 }],
+      p_payments: [
+        { method_code: "CASH", amount_cents: 12500, tendered_cents: 12500 },
+      ],
+      p_customer_id: null,
+      p_discounts: [],
+      p_notes: null,
+    });
+    expect(sale.error?.message).toContain("INSUFFICIENT_STOCK");
+    const directEdit = await state
+      .server!.from("layaways")
+      .update({ status: "CANCELLED" })
+      .eq("id", created.data.id);
+    expect(directEdit.error?.message).toContain("LAYAWAY_LEDGER_IMMUTABLE");
+  });
+
+  it("dos cajas no pueden apartar ambas las mismas dos piezas", async () => {
+    const variantId = await createVariant("Apartado concurrente", 9000);
+    const due = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+    const makeInput = (session: string) => ({
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: session,
+      p_customer_id: state.customerId,
+      p_due_date: due,
+      p_items: [{ variant_id: variantId, quantity: 2 }],
+      p_notes: null,
+    });
+    const attempts = await Promise.all([
+      state.cashierA!.client.rpc("create_layaway", makeInput(state.sessionA)),
+      state.cashierB!.client.rpc("create_layaway", makeInput(state.sessionB)),
+    ]);
+    expect(attempts.filter((attempt) => !attempt.error)).toHaveLength(1);
+    expect(
+      attempts.filter((attempt) => attempt.error)[0].error?.message,
+    ).toContain("INSUFFICIENT_STOCK");
+    const inventory = await state
+      .server!.from("inventory_by_location")
+      .select("qty,reserved_qty")
+      .eq("variant_id", variantId)
+      .eq("location_id", state.locationId)
+      .single();
+    expect(inventory.data).toMatchObject({ qty: 2, reserved_qty: 2 });
   });
 
   it("autoriza un solo crédito vencido, conserva el atraso y permite reintento idempotente", async () => {
