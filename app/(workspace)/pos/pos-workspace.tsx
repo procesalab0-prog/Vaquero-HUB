@@ -94,6 +94,9 @@ type SaleActionResult =
   | { ok: false; code: string; message: string };
 type CancelSaleActionResult =
   { ok: true; folio: string } | { ok: false; code: string; message: string };
+type CreateLayawayResult =
+  | { ok: true; layawayId: string; folio: string; totalCents: number }
+  | { ok: false; code: string; message: string };
 type StoredReceipt = {
   subtotal_cents: number;
   discount_cents: number;
@@ -190,6 +193,7 @@ export function PosWorkspace({
   authorizeCreditOverrideAction,
   printAction,
   cancelSaleAction,
+  createLayawayAction,
   saveDraftAction,
   holdDraftAction,
   resumeDraftAction,
@@ -228,6 +232,14 @@ export function PosWorkspace({
     saleId: string,
     reason: string,
   ) => Promise<CancelSaleActionResult>;
+  createLayawayAction?: (input: {
+    idempotencyKey: string;
+    cashSessionId: string;
+    customerId: string;
+    dueDate: string;
+    items: Array<{ variant_id: string; quantity: number }>;
+    notes?: string;
+  }) => Promise<CreateLayawayResult>;
   saveDraftAction?: (input: {
     cashSessionId: string;
     items: PosDraftItemInput[];
@@ -343,6 +355,15 @@ export function PosWorkspace({
   const [cancelReason, setCancelReason] = useState("");
   const [cancelling, setCancelling] = useState(false);
   const [cancelled, setCancelled] = useState(false);
+  const [layawayOpen, setLayawayOpen] = useState(false);
+  const [layawayDueDate, setLayawayDueDate] = useState(() => {
+    const date = new Date();
+    date.setDate(date.getDate() + 30);
+    return date.toISOString().slice(0, 10);
+  });
+  const [layawayNotes, setLayawayNotes] = useState("");
+  const [layawayError, setLayawayError] = useState("");
+  const [layawayBusy, setLayawayBusy] = useState(false);
   const [heldDrafts, setHeldDrafts] = useState<PosDraftPayload[]>(
     initialDrafts.filter((draft) => draft.status === "HELD"),
   );
@@ -362,6 +383,66 @@ export function PosWorkspace({
   const draftOperationRef = useRef(false);
   const submittingRef = useRef(false);
   const idempotencyKey = useRef(crypto.randomUUID());
+  const layawayIdempotencyKey = useRef(crypto.randomUUID());
+
+  async function submitLayaway() {
+    if (draftOperationRef.current || layawayBusy) return;
+    if (
+      !createLayawayAction ||
+      !cashSession ||
+      !selectedCustomer ||
+      !layawayDueDate
+    ) {
+      setLayawayError("Selecciona un cliente y una fecha de vencimiento.");
+      return;
+    }
+    if (discountPercent > 0) {
+      setLayawayError(
+        "Quita el descuento antes de apartar. Los descuentos en apartados se habilitarán con su autorización propia.",
+      );
+      return;
+    }
+    setLayawayBusy(true);
+    draftOperationRef.current = true;
+    if (draftTimer.current) window.clearTimeout(draftTimer.current);
+    await draftSaveChain.current;
+    setLayawayError("");
+    const result = await createLayawayAction({
+      idempotencyKey: layawayIdempotencyKey.current,
+      cashSessionId: cashSession.id,
+      customerId: selectedCustomer.id,
+      dueDate: layawayDueDate,
+      items: cart.map((line) => ({
+        variant_id: line.variant.id,
+        quantity: line.quantity,
+      })),
+      notes: layawayNotes,
+    });
+    setLayawayBusy(false);
+    if (!result.ok) {
+      draftOperationRef.current = false;
+      setLayawayError(result.message);
+      return;
+    }
+    if (saveDraftAction) {
+      await saveDraftAction({
+        cashSessionId: cashSession.id,
+        items: [],
+        customerId: null,
+        discountPercent: 0,
+      });
+    }
+    draftOperationRef.current = false;
+    setCart([]);
+    setDiscountPercent(0);
+    setDiscountAuthorization(null);
+    setSelectedCustomer(null);
+    setLayawayOpen(false);
+    setLayawayNotes("");
+    layawayIdempotencyKey.current = crypto.randomUUID();
+    notify(`Apartado ${result.folio} creado · mercancía reservada`);
+    router.refresh();
+  }
 
   useEffect(
     () => () => {
@@ -1599,10 +1680,24 @@ export function PosWorkspace({
             </button>
             <button
               type="button"
-              disabled
-              title="Los apartados se implementan en M7. Por ahora se registran con el proceso vigente fuera del sistema."
+              disabled={cart.length === 0 || !createLayawayAction || layawayBusy}
+              title="Reserva la mercancía sin registrar una venta ni mover la caja."
+              onClick={() => {
+                if (!selectedCustomer) {
+                  notify("Selecciona primero al cliente del apartado");
+                  setCustomerLookupOpen(true);
+                  return;
+                }
+                if (discountPercent > 0) {
+                  notify("Quita el descuento antes de crear el apartado");
+                  return;
+                }
+                setCartDrawerOpen(false);
+                setLayawayError("");
+                setLayawayOpen(true);
+              }}
             >
-              Apartar · pendiente
+              Apartar
             </button>
           </div>
         </footer>
@@ -1627,6 +1722,70 @@ export function PosWorkspace({
             <Check aria-hidden="true" />
           </span>
           {toast}
+        </div>
+      ) : null}
+
+      {layawayOpen ? (
+        <div className="modal-backdrop">
+          <form
+            className="checkout-modal compact-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="layaway-title"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void submitLayaway();
+            }}
+          >
+            <button
+              className="modal-close"
+              type="button"
+              aria-label="Cerrar apartado"
+              onClick={() => setLayawayOpen(false)}
+            >
+              <X aria-hidden="true" />
+            </button>
+            <p className="kicker">Reserva real de inventario</p>
+            <h2 id="layaway-title">Crear apartado</h2>
+            <p>
+              La mercancía dejará de estar disponible para venta. En esta primera
+              entrega el apartado inicia sin enganche y no mueve la caja.
+            </p>
+            <div className="checkout-summary">
+              <span><small>Cliente</small><strong>{selectedCustomer?.full_name}</strong></span>
+              <span><small>Artículos</small><strong>{quantity}</strong></span>
+              <span><small>Total</small><strong>{money.format(total)}</strong></span>
+            </div>
+            <label className="form-field">
+              <span>Fecha de vencimiento</span>
+              <input
+                type="date"
+                required
+                min={new Date().toISOString().slice(0, 10)}
+                value={layawayDueDate}
+                onChange={(event) => setLayawayDueDate(event.target.value)}
+              />
+              <small>Se propone un mes; puedes cambiarla. Vencer no cancela automáticamente.</small>
+            </label>
+            <label className="form-field">
+              <span>Nota opcional</span>
+              <textarea
+                maxLength={500}
+                value={layawayNotes}
+                onChange={(event) => setLayawayNotes(event.target.value)}
+                placeholder="Acuerdo o indicación para el cliente"
+              />
+            </label>
+            {layawayError ? <p className="form-error" role="alert">{layawayError}</p> : null}
+            <div className="modal-actions">
+              <button type="button" className="secondary-button" onClick={() => setLayawayOpen(false)}>
+                Regresar
+              </button>
+              <button type="submit" className="primary-button" disabled={layawayBusy}>
+                {layawayBusy ? "Reservando…" : "Confirmar apartado"}
+              </button>
+            </div>
+          </form>
         </div>
       ) : null}
 

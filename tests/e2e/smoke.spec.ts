@@ -50,6 +50,31 @@ for (const viewport of [
   });
 }
 
+for (const viewport of [
+  { name: "teléfono", width: 390, height: 844 },
+  { name: "iPad", width: 820, height: 1180 },
+  { name: "computadora", width: 1440, height: 900 },
+]) {
+  test(`muestra Apartados sin desbordar en ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/apartados");
+    await expect(
+      page
+        .getByRole("main")
+        .getByRole("heading", { name: "Apartados", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /nuevo desde venta/i }),
+    ).toBeVisible();
+    expect(
+      await page.locator("html").evaluate((element) => element.scrollWidth),
+    ).toBeLessThanOrEqual(viewport.width);
+    await expect(page.getByText(/conecta supabase/i)).toBeVisible();
+  });
+}
+
 test("mantiene accesibles los seis destinos táctiles en teléfono vertical", async ({
   page,
 }) => {

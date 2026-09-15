@@ -51,6 +51,7 @@ function moduleTitle(pathname: string) {
   if (pathname.startsWith("/caja")) return "Caja";
   if (pathname.startsWith("/tickets")) return "Tickets";
   if (pathname.startsWith("/cotizaciones")) return "Cotizaciones";
+  if (pathname.startsWith("/apartados")) return "Apartados";
   if (pathname.startsWith("/etiquetas")) return "Etiquetas";
   if (pathname.startsWith("/ajustes")) return "Ajustes";
   if (pathname.startsWith("/administracion")) return "Administración";
@@ -114,7 +115,7 @@ export function WorkspaceShell({ children, identity, initialLocationId = "" }: {
         </Link>
         <nav className="rail-links">
           {navigation.map(({ href, label, icon: Icon }) => {
-            const morePath = ["/mas", "/tickets", "/cotizaciones", "/etiquetas", "/ajustes", "/administracion", "/clientes"];
+            const morePath = ["/mas", "/tickets", "/cotizaciones", "/apartados", "/etiquetas", "/ajustes", "/administracion", "/clientes"];
             const active = href === "/mas"
               ? morePath.some((path) => pathname.startsWith(path))
               : pathname.startsWith(href);

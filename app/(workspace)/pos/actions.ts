@@ -41,6 +41,10 @@ export type SaleActionResult =
 export type CancelSaleActionResult =
   { ok: true; folio: string } | { ok: false; code: string; message: string };
 
+export type CreateLayawayResult =
+  | { ok: true; layawayId: string; folio: string; totalCents: number }
+  | { ok: false; code: string; message: string };
+
 export type PosDraftItemInput = {
   variant_id: string;
   quantity: number;
@@ -164,6 +168,66 @@ function draftError(error: unknown): PosDraftActionResult {
           ? "La caja cambió o ya fue cerrada."
           : "No fue posible guardar el carrito. Intenta nuevamente.";
   return { ok: false, message };
+}
+
+export async function createLayawayFromCart(input: {
+  idempotencyKey: string;
+  cashSessionId: string;
+  customerId: string;
+  dueDate: string;
+  items: Array<{ variant_id: string; quantity: number }>;
+  notes?: string;
+}): Promise<CreateLayawayResult> {
+  try {
+    if (
+      !input.idempotencyKey ||
+      !input.cashSessionId ||
+      !input.customerId ||
+      !input.dueDate ||
+      input.items.length < 1 ||
+      input.items.length > 100
+    ) {
+      return {
+        ok: false,
+        code: "INVALID_LAYAWAY",
+        message: "Selecciona cliente, fecha y al menos un artículo.",
+      };
+    }
+    const { supabase } = await requirePermission("layaways.manage");
+    const { data, error } = await supabase.rpc("create_layaway", {
+      p_idempotency_key: input.idempotencyKey,
+      p_cash_session_id: input.cashSessionId,
+      p_customer_id: input.customerId,
+      p_due_date: input.dueDate,
+      p_items: input.items,
+      p_notes: input.notes?.trim() || null,
+    });
+    if (error) throw error;
+    const result = data as { id: string; folio: string; total_cents: number };
+    revalidatePath("/pos");
+    revalidatePath("/inventario");
+    revalidatePath("/apartados");
+    return {
+      ok: true,
+      layawayId: result.id,
+      folio: result.folio,
+      totalCents: Number(result.total_cents),
+    };
+  } catch (error) {
+    const raw = databaseErrorText(error);
+    const definitions: Array<[string, string]> = [
+      ["INSUFFICIENT_STOCK", "La existencia cambió. Revisa el carrito antes de apartar."],
+      ["SESSION_FORBIDDEN", "Abre tu caja antes de crear el apartado."],
+      ["CUSTOMER_NOT_FOUND", "El cliente ya no está disponible."],
+      ["VARIANT_NOT_SELLABLE", "Uno de los artículos ya no está disponible."],
+      ["IDEMPOTENCY_CONFLICT", "El apartado cambió. Cierra esta ventana y vuelve a intentarlo."],
+    ];
+    const match = definitions.find(([code]) => raw.includes(code)) ?? [
+      "LAYAWAY_FAILED",
+      "No fue posible crear el apartado. No se reservó mercancía.",
+    ] as const;
+    return { ok: false, code: match[0], message: match[1] };
+  }
 }
 
 export async function savePosCurrentDraft(input: {

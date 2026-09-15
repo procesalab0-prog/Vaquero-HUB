@@ -1160,8 +1160,10 @@ Siguiente bloque de M7.2 antes de M7.3:
 
 - Usa el motor real de devoluciones para restaurar una sola vez los artículos
   restantes; nunca llama a la cancelación M4 que duplicaría inventario o caja.
-- Requiere permiso de cancelación, autorización de gerente de un solo uso,
-  motivo y caja abierta en la misma sucursal.
+- Desde 0.40.0 la persona dueña de la caja ejecuta con `returns.create`; la
+  autorización de gerente de un solo uso, el motivo y la caja abierta en la
+  misma sucursal siguen siendo obligatorios. Esto permite operar una tienda con
+  una sola caja sin entregar el permiso permanente `sales.cancel` al cajero.
 - Reduce primero el cargo pendiente. Sólo el excedente realmente pagado se
   reembolsa por efectivo, tarjeta o transferencia y exige sus referencias.
 - La venta cambia a `CANCELLED` únicamente después de crear y conciliar el
@@ -1169,19 +1171,18 @@ Siguiente bloque de M7.2 antes de M7.3:
 - La llave idempotente permite repetir la petición sin crear otra devolución,
   otro ajuste de deuda ni otro movimiento de efectivo.
 
-## Bloqueado por el cliente
+## Decisiones del cliente todavía pendientes
 
-No se empieza hasta tener respuesta. Todas están en
-[`PREGUNTAS_CLIENTE.md`](PREGUNTAS_CLIENTE.md).
+No bloquean el primer bloque de apartados, pero sí los módulos indicados o su
+cierre definitivo. Todas están en [`PREGUNTAS_CLIENTE.md`](PREGUNTAS_CLIENTE.md).
 
 | Qué                                                 | Qué falta saber                                  |
 | --------------------------------------------------- | ------------------------------------------------ |
 | Escalas de talla de sombreros, texanas y cinturones | Preguntas 1.3 y 1.4. Por eso se sembraron vacías |
 | Simbología del código de barras                     | Pregunta 1.1                                     |
 | Motor de puntos, redención, cumpleaños, niveles     | Sección 6 completa                               |
-| Crédito a clientes                                  | Pregunta 5.2                                     |
-| Apartados: plazo, enganche, vencimiento             | Pregunta 5.1                                     |
-| Envío de tickets por SMS o correo                   | Pregunta 3.5                                     |
+| Apartados: excepciones, sustitución y otra sucursal | `specs/M7_APARTADOS.md` §6                       |
+| Envío automático por SMS o correo                   | Pregunta 3.5; WhatsApp manual ya está confirmado |
 | Costo de compra: promedio ponderado o último        | Pregunta 4.1                                     |
 
 ## Deuda pendiente
@@ -1246,8 +1247,11 @@ dice?** Que el código exista no significa que funcione.
       cerrada, consulta para POS y auditoría de cada cambio.
 - [x] M7.2: venta, abonos, devoluciones, excepción de atraso y cancelación
       compensada conciliados y auditados.
-- [ ] M7.3: apartados; antes de cerrarlos deben resolverse las decisiones
-      puntuales que siguen abiertas en `specs/M7_APARTADOS.md` §6.
+- [~] M7.3: el primer bloque ya crea apartados reales desde el carrito, reserva
+      inventario de forma atómica, genera folio y permite buscar por cliente o
+      folio. Faltan abonos, comprobante, cancelación, sustitución y entrega;
+      antes de cerrar deben resolverse las decisiones puntuales que siguen
+      abiertas en `specs/M7_APARTADOS.md` §6.
 - [ ] Lealtad: pospuesta por decisión del negocio; no bloquea M7.
 
 La conversión parcial de una cotización permanece fuera de M8.2 porque el

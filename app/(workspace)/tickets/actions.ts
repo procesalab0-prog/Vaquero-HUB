@@ -316,7 +316,9 @@ export async function cancelCreditSale(input: {
         message: "Escribe un motivo de al menos 3 caracteres.",
       };
     }
-    const { supabase } = await requirePermission("sales.cancel");
+    // La persona dueña de la caja ejecuta; la autoridad viene del token de
+    // gerente que create_return_exchange valida y consume en PostgreSQL.
+    const { supabase } = await requirePermission("returns.create");
     const { data, error } = await supabase.rpc("cancel_credit_sale", {
       p_idempotency_key: input.idempotencyKey,
       p_cash_session_id: input.cashSessionId,

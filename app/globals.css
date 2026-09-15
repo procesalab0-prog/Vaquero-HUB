@@ -1722,6 +1722,133 @@ code {
   grid-template-columns: minmax(240px, 1fr) 190px auto;
   gap: 10px;
 }
+
+/* M7.3 · Apartados */
+.layaway-filters {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(180px, 240px) auto;
+  gap: 12px;
+  margin: 22px 0;
+}
+
+.layaway-filters label {
+  display: flex;
+  min-height: 50px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.layaway-filters label svg {
+  width: 20px;
+  color: var(--muted);
+}
+
+.layaway-filters input,
+.layaway-filters select {
+  min-width: 0;
+  min-height: 50px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.layaway-filters label input {
+  width: 100%;
+  min-height: auto;
+  border: 0;
+  outline: 0;
+}
+
+.layaway-filters select {
+  padding: 0 14px;
+}
+
+.layaway-list {
+  display: grid;
+  gap: 14px;
+}
+
+.layaway-card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-left: 6px solid #48835f;
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.layaway-card.warning { border-left-color: #d39a25; }
+.layaway-card.overdue { border-left-color: #b43a2e; }
+.layaway-card.closed { border-left-color: var(--muted-light); }
+
+.layaway-card > header,
+.layaway-card > footer,
+.layaway-card-grid {
+  padding: 16px 18px;
+}
+
+.layaway-card > header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.layaway-card > header div,
+.layaway-card-grid span {
+  display: grid;
+  gap: 4px;
+}
+
+.layaway-card > header code {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.layaway-card > header span {
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: var(--surface-soft);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.layaway-card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.layaway-card-grid small,
+.layaway-card > footer {
+  color: var(--muted);
+}
+
+.layaway-card > footer {
+  padding-top: 0;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 720px) {
+  .layaway-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .layaway-card-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .layaways-page .section-heading .primary-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
 .quote-filters label,
 .quote-search {
   min-height: 48px;
