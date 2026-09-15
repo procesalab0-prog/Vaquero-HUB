@@ -2805,6 +2805,26 @@ Entrega visible 0.43.0 — sustituciones atómicas en apartados:
 - Continúan para cerrar M7.3 la liquidación y entrega, la política excepcional de
   devolución y la entrega en otra sucursal mediante traspaso confirmado.
 
+Entrega visible 0.44.0 — liquidación y entrega de apartados:
+
+- Apartados permite entregar mercancía sólo cuando el saldo llegó exactamente a
+  cero y el documento está `PAID`. La persona operadora debe tener
+  `layaways.deliver`, `pos.sell`, acceso a la sucursal y su propia caja abierta.
+- La entrega crea una venta real, conserva cliente, artículos, precios y el
+  desglose histórico de métodos de pago; el ticket queda disponible para
+  consulta e impresión.
+- Los abonos no se cobran otra vez ni generan un segundo movimiento de caja. El
+  vínculo inmutable entre apartado y venta permite demostrar de dónde salió
+  cada importe.
+- Existencia y reserva se descuentan juntas; los libros de inventario y reservas
+  registran la relación entre folio de apartado y folio de venta. Una falla
+  revierte venta, entrega e inventario completos.
+- La idempotencia y el candado del apartado garantizan una sola venta aun cuando
+  dos dispositivos confirmen al mismo tiempo.
+- La entrega en una sucursal diferente no se simula. Continúa pendiente definir
+  quién solicita y autoriza el traspaso y exigir su recepción física antes de
+  permitir la entrega.
+
 Corrección visible 0.32.1 — traspasos y sucursales operables:
 
 - Más módulos deja de anunciar los traspasos como pendientes y enlaza al flujo

@@ -209,3 +209,24 @@ y en el comprobante aceptado por el cliente antes de recibir dinero.
 - Los candados y la variante esperada evitan perder cambios cuando dos personas
   intentan sustituir al mismo tiempo. Una falla de existencia revierte también
   la liberación de la pieza original.
+
+## 12. Avance implementado en 0.44.0
+
+- Una cajera, gerente o administrador con `layaways.deliver`, `pos.sell` y su
+  propia caja abierta puede entregar un apartado totalmente liquidado en la
+  sucursal donde se creó.
+- Entregar crea una venta normal ligada al apartado y copia el desglose real de
+  sus abonos al ticket. No registra nuevos ingresos de caja: efectivo, tarjeta
+  y transferencia ya se contabilizaron cuando fueron recibidos.
+- Existencia física y reservada disminuyen juntas bajo candados estables. Cada
+  pieza deja un movimiento de venta y un movimiento `FULFILL` en el libro de
+  reservas, ambos ligados a los dos folios.
+- Apartado, venta, artículos, pagos, inventario, vínculo de entrega y auditoría
+  se confirman como una sola transacción. Cualquier inconsistencia revierte el
+  recorrido completo.
+- La operación es idempotente y serializa el apartado. Dos dispositivos no
+  pueden entregar dos veces ni producir dos ventas para la misma reserva.
+- La interfaz exige confirmar la entrega física y después enlaza al módulo de
+  Tickets para revisar o imprimir el comprobante real.
+- La entrega directa en otra sucursal continúa bloqueada: deberá existir primero
+  un traspaso confirmado conforme a la decisión pendiente de §6.
