@@ -5,12 +5,13 @@ import {
   CircleDollarSign,
   PackageCheck,
   Search,
+  TriangleAlert,
 } from "lucide-react";
 
 import { resolveActiveLocation } from "@/lib/auth/active-location";
 import { requirePermission } from "@/lib/auth/authorization";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { receiveLayawayPayment } from "./actions";
+import { cancelOverdueLayaway, receiveLayawayPayment } from "./actions";
 import { PrintButton } from "./print-button";
 
 export const metadata: Metadata = { title: "Apartados" };
@@ -77,6 +78,8 @@ export default async function LayawaysPage({
     estado?: string;
     status?: string;
     payment?: string;
+    penalty?: string;
+    released?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -131,6 +134,8 @@ export default async function LayawaysPage({
       selectedStatus={allowedStatus ?? ""}
       status={result.error?.message}
       operationStatus={params.status}
+      penaltyCents={Number(params.penalty ?? 0)}
+      releasedBalanceCents={Number(params.released ?? 0)}
       receipt={receiptResult.data as PaymentReceipt | null}
     />
   );
@@ -143,6 +148,8 @@ function LayawayPageContent({
   selectedStatus = "",
   status,
   operationStatus,
+  penaltyCents = 0,
+  releasedBalanceCents = 0,
   receipt,
   preview = false,
 }: {
@@ -152,6 +159,8 @@ function LayawayPageContent({
   selectedStatus?: string;
   status?: string;
   operationStatus?: string;
+  penaltyCents?: number;
+  releasedBalanceCents?: number;
   receipt?: PaymentReceipt | null;
   preview?: boolean;
 }) {
@@ -176,6 +185,23 @@ function LayawayPageContent({
       {operationStatus === "abono-registrado" ? (
         <p className="notice-banner" role="status">
           Abono registrado. El saldo y la caja ya fueron actualizados.
+        </p>
+      ) : null}
+      {operationStatus === "apartado-cancelado" ? (
+        <p className="notice-banner" role="status">
+          Apartado cancelado. Se conservaron {money.format(penaltyCents / 100)}
+          como penalización, se canceló el saldo de{" "}
+          {money.format(releasedBalanceCents / 100)} y la mercancía volvió a
+          estar disponible.
+        </p>
+      ) : null}
+      {operationStatus?.startsWith("cancelacion-") ? (
+        <p className="inline-error operation-feedback" role="alert">
+          {operationStatus === "cancelacion-no-vencido"
+            ? "Este apartado todavía no vence. Su política de cancelación y devolución aún debe definirse."
+            : operationStatus === "cancelacion-no-disponible"
+              ? "El apartado ya fue cancelado, entregado o no está disponible."
+              : "No fue posible cancelar el apartado. Revisa el motivo e intenta nuevamente."}
         </p>
       ) : null}
       {operationStatus?.startsWith("abono-") &&
@@ -409,6 +435,38 @@ function LayawayPageContent({
                       </div>
                       <button className="primary-button" type="submit">
                         Confirmar abono
+                      </button>
+                    </form>
+                  </details>
+                ) : null}
+                {timing === "overdue" ? (
+                  <details className="layaway-cancel-panel">
+                    <summary>
+                      <TriangleAlert aria-hidden="true" /> Cancelar vencido
+                    </summary>
+                    <form action={cancelOverdueLayaway}>
+                      <input type="hidden" name="layaway_id" value={row.id} />
+                      <p>
+                        Se conservarán{" "}
+                        <strong>
+                          {money.format(Number(row.paid_cents) / 100)}
+                        </strong>{" "}
+                        como penalización y se liberarán{" "}
+                        {Number(row.unit_count)} piezas. Esta operación no
+                        entrega dinero de caja.
+                      </p>
+                      <label>
+                        <span>Motivo de cancelación</span>
+                        <textarea
+                          name="reason"
+                          minLength={3}
+                          maxLength={500}
+                          required
+                          placeholder="Explica por qué se cancela el apartado vencido"
+                        />
+                      </label>
+                      <button className="danger-button" type="submit">
+                        Confirmar cancelación
                       </button>
                     </form>
                   </details>

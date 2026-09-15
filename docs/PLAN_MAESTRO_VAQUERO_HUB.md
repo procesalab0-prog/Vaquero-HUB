@@ -2769,6 +2769,24 @@ Entrega visible 0.41.0 — abonos reales de apartados:
   cancelación, sustitución y entrega siguen bloqueadas hasta sus operaciones
   atómicas correspondientes.
 
+Entrega visible 0.42.0 — cancelación segura de apartados vencidos:
+
+- Apartados permite cancelar manualmente un documento vencido con permiso y
+  motivo obligatorio. No existe cancelación automática al llegar la fecha.
+- Todo lo abonado se conserva como penalización según la regla confirmada; el
+  saldo restante queda documentado y la operación no inventa retiros ni
+  devoluciones de caja.
+- Las piezas reservadas vuelven a disponibilidad de forma atómica. Cada cambio
+  se escribe en el libro inmutable de reservas y una inconsistencia revierte la
+  cancelación completa.
+- La idempotencia y los candados impiden que un reintento o dos operadores
+  liberen dos veces la misma mercancía o dupliquen la penalización.
+- La pantalla anticipa el efecto antes de confirmar y comunica por separado
+  penalización, saldo cancelado y mercancía liberada.
+- La cancelación de un apartado todavía vigente se rechaza hasta definir qué
+  excepciones devuelven abonos y por cuál método. Sustitución y entrega siguen
+  como los siguientes bloques de M7.3.
+
 Corrección visible 0.32.1 — traspasos y sucursales operables:
 
 - Más módulos deja de anunciar los traspasos como pendientes y enlaza al flujo

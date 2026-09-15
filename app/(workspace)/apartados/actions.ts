@@ -79,3 +79,49 @@ export async function receiveLayawayPayment(formData: FormData) {
     `${path}?status=${status}${paymentId ? `&payment=${encodeURIComponent(paymentId)}` : ""}`,
   );
 }
+
+export async function cancelOverdueLayaway(formData: FormData) {
+  let status = "cancelacion-error";
+  let penalty = "";
+  let released = "";
+  try {
+    const { supabase } = await requirePermission("layaways.manage");
+    const layawayId = field(formData, "layaway_id");
+    const reason = field(formData, "reason");
+    if (!layawayId || reason.length < 3 || reason.length > 500) {
+      status = "cancelacion-datos-invalidos";
+    } else {
+      const result = await supabase.rpc("cancel_overdue_layaway", {
+        p_idempotency_key: crypto.randomUUID(),
+        p_layaway_id: layawayId,
+        p_reason: reason,
+      });
+      if (result.error) throw result.error;
+      const outcome = result.data as {
+        penalty_cents?: number;
+        released_balance_cents?: number;
+      } | null;
+      penalty = String(Number(outcome?.penalty_cents ?? 0));
+      released = String(Number(outcome?.released_balance_cents ?? 0));
+      status = "apartado-cancelado";
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("LAYAWAY_CANCELLATION_POLICY_UNDEFINED")) {
+      status = "cancelacion-no-vencido";
+    } else if (message.includes("LAYAWAY_NOT_CANCELLABLE")) {
+      status = "cancelacion-no-disponible";
+    }
+    console.error("[apartados/cancelOverdue] failed", { status, message });
+  }
+  revalidatePath(path);
+  revalidatePath("/inventario");
+  revalidatePath("/pos");
+  redirect(
+    `${path}?status=${status}${
+      status === "apartado-cancelado"
+        ? `&penalty=${encodeURIComponent(penalty)}&released=${encodeURIComponent(released)}`
+        : ""
+    }`,
+  );
+}

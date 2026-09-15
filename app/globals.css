@@ -1836,12 +1836,14 @@ code {
   color: var(--muted);
 }
 
-.layaway-payment-panel {
+.layaway-payment-panel,
+.layaway-cancel-panel {
   border-top: 1px solid var(--line);
-  padding-top: 12px;
+  padding: 12px 18px 16px;
 }
 
-.layaway-payment-panel summary {
+.layaway-payment-panel summary,
+.layaway-cancel-panel summary {
   align-items: center;
   color: var(--brick);
   cursor: pointer;
@@ -1851,13 +1853,33 @@ code {
   min-height: 48px;
 }
 
-.layaway-payment-panel summary svg {
+.layaway-payment-panel summary svg,
+.layaway-cancel-panel summary svg {
   width: 20px;
 }
-.layaway-payment-panel form {
+.layaway-payment-panel form,
+.layaway-cancel-panel form {
   display: grid;
   gap: 14px;
   padding-top: 12px;
+}
+
+.layaway-cancel-panel {
+  border-top-color: color-mix(in srgb, #b43a2e 35%, var(--line));
+}
+
+.layaway-cancel-panel summary {
+  color: #a52e24;
+}
+
+.layaway-cancel-panel label {
+  display: grid;
+  gap: 7px;
+}
+
+.layaway-cancel-panel textarea {
+  min-height: 96px;
+  resize: vertical;
 }
 
 .layaway-receipt {
