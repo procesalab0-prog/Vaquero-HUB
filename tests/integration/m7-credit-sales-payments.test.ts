@@ -756,6 +756,163 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
     expect(overpay.error?.message).toContain("LAYAWAY_NOT_PAYABLE");
   });
 
+  it("entrega un apartado liquidado como venta sin volver a mover caja", async () => {
+    const variantId = await createVariant("Entrega de apartado", 10000);
+    const created = await state.cashierA!.client.rpc("create_layaway", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_customer_id: state.customerId,
+      p_due_date: new Date(Date.now() + 30 * 86400000)
+        .toISOString()
+        .slice(0, 10),
+      p_items: [{ variant_id: variantId, quantity: 2 }],
+      p_notes: "Entrega operativa",
+    });
+    expect(created.error).toBeNull();
+    const paid = await state.cashierA!.client.rpc("record_layaway_payment", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_layaway_id: created.data.id,
+      p_payments: [
+        { method_code: "CASH", amount_cents: 5000, tendered_cents: 5000 },
+        { method_code: "CARD", amount_cents: 15000, reference: "ENT-123" },
+      ],
+      p_note: "Liquidación antes de entrega",
+    });
+    expect(paid.error).toBeNull();
+    const beforeCash = await state
+      .server!.from("cash_movements")
+      .select("id", { count: "exact", head: true })
+      .eq("session_id", state.sessionA);
+
+    const key = crypto.randomUUID();
+    const input = {
+      p_operation_key: key,
+      p_cash_session_id: state.sessionA,
+      p_layaway_id: created.data.id,
+    };
+    const delivered = await state.cashierA!.client.rpc(
+      "fulfill_layaway",
+      input,
+    );
+    const retry = await state.cashierA!.client.rpc("fulfill_layaway", input);
+    expect(delivered.error).toBeNull();
+    expect(retry.error).toBeNull();
+    expect(retry.data.sale_id).toBe(delivered.data.sale_id);
+    expect(delivered.data.sale_folio).toContain("-V-");
+
+    const layaway = await state
+      .server!.from("layaways")
+      .select("status,completed_at")
+      .eq("id", created.data.id)
+      .single();
+    expect(layaway.data?.status).toBe("COMPLETED");
+    expect(layaway.data?.completed_at).not.toBeNull();
+    const sale = await state
+      .server!.from("sales")
+      .select("status,total_cents,customer_id")
+      .eq("id", delivered.data.sale_id)
+      .single();
+    expect(sale.data).toMatchObject({
+      status: "COMPLETED",
+      total_cents: 20000,
+      customer_id: state.customerId,
+    });
+    const payments = await state
+      .server!.from("sale_payments")
+      .select("method_code,amount_cents")
+      .eq("sale_id", delivered.data.sale_id)
+      .order("method_code");
+    expect(payments.data).toEqual([
+      { method_code: "CARD", amount_cents: 15000 },
+      { method_code: "CASH", amount_cents: 5000 },
+    ]);
+    const inventory = await state
+      .server!.from("inventory_by_location")
+      .select("qty,reserved_qty")
+      .eq("variant_id", variantId)
+      .eq("location_id", state.locationId)
+      .single();
+    expect(inventory.data).toMatchObject({ qty: 0, reserved_qty: 0 });
+    const afterCash = await state
+      .server!.from("cash_movements")
+      .select("id", { count: "exact", head: true })
+      .eq("session_id", state.sessionA);
+    expect(afterCash.count).toBe(beforeCash.count);
+    const receipt = await state.cashierA!.client.rpc("get_sale_receipt", {
+      p_sale_id: delivered.data.sale_id,
+    });
+    expect(receipt.error).toBeNull();
+    expect(receipt.data).toMatchObject({
+      folio: delivered.data.sale_folio,
+      total_cents: 20000,
+    });
+  });
+
+  it("serializa dos intentos de entrega y crea una sola venta", async () => {
+    const variantId = await createVariant("Entrega simultánea", 8000);
+    const created = await state.cashierA!.client.rpc("create_layaway", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_customer_id: state.customerId,
+      p_due_date: new Date(Date.now() + 30 * 86400000)
+        .toISOString()
+        .slice(0, 10),
+      p_items: [{ variant_id: variantId, quantity: 1 }],
+      p_notes: null,
+    });
+    expect(created.error).toBeNull();
+    expect(
+      (
+        await state.cashierA!.client.rpc("record_layaway_payment", {
+          p_idempotency_key: crypto.randomUUID(),
+          p_cash_session_id: state.sessionA,
+          p_layaway_id: created.data.id,
+          p_payments: [
+            {
+              method_code: "TRANSFER",
+              amount_cents: 8000,
+              reference: "SIM-ENT-1",
+            },
+          ],
+          p_note: null,
+        })
+      ).error,
+    ).toBeNull();
+    const secondConnection = await clientInTimezone(
+      state.cashierA!.client,
+      "UTC",
+    );
+    const attempts = await Promise.all([
+      state.cashierA!.client.rpc("fulfill_layaway", {
+        p_operation_key: crypto.randomUUID(),
+        p_cash_session_id: state.sessionA,
+        p_layaway_id: created.data.id,
+      }),
+      secondConnection.rpc("fulfill_layaway", {
+        p_operation_key: crypto.randomUUID(),
+        p_cash_session_id: state.sessionA,
+        p_layaway_id: created.data.id,
+      }),
+    ]);
+    expect(attempts.filter((attempt) => !attempt.error)).toHaveLength(1);
+    expect(attempts.find((attempt) => attempt.error)?.error?.message).toContain(
+      "LAYAWAY_ALREADY_FULFILLED",
+    );
+    const fulfillments = await state
+      .server!.from("layaway_fulfillments")
+      .select("sale_id")
+      .eq("layaway_id", created.data.id);
+    expect(fulfillments.data).toHaveLength(1);
+    const movements = await state
+      .server!.from("inventory_movements")
+      .select("id")
+      .eq("reference_type", "SALE")
+      .eq("reference_id", fulfillments.data![0].sale_id)
+      .eq("variant_id", variantId);
+    expect(movements.data).toHaveLength(1);
+  });
+
   it("autoriza un solo crédito vencido, conserva el atraso y permite reintento idempotente", async () => {
     const westZone = "Etc/GMT+12";
     const eastZone = "Pacific/Kiritimati";

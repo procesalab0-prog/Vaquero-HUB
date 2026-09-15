@@ -80,6 +80,61 @@ export async function receiveLayawayPayment(formData: FormData) {
   );
 }
 
+export async function fulfillLayaway(formData: FormData) {
+  let status = "entrega-error";
+  let saleId = "";
+  let saleFolio = "";
+  try {
+    const { supabase } = await requirePermission("layaways.deliver");
+    const layawayId = field(formData, "layaway_id");
+    const confirmed = field(formData, "confirmed") === "yes";
+    if (!layawayId || !confirmed) {
+      status = "entrega-confirmacion-requerida";
+    } else {
+      const session = await supabase.rpc("get_my_cash_session");
+      const sessionId = (session.data as { id?: string } | null)?.id;
+      if (session.error || !sessionId) {
+        status = "entrega-caja-requerida";
+      } else {
+        const result = await supabase.rpc("fulfill_layaway", {
+          p_operation_key: crypto.randomUUID(),
+          p_cash_session_id: sessionId,
+          p_layaway_id: layawayId,
+        });
+        if (result.error) throw result.error;
+        const outcome = result.data as {
+          sale_id?: string;
+          sale_folio?: string;
+        } | null;
+        saleId = String(outcome?.sale_id ?? "");
+        saleFolio = String(outcome?.sale_folio ?? "");
+        status = "entrega-registrada";
+      }
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("LAYAWAY_NOT_READY")) {
+      status = "entrega-no-liquidada";
+    } else if (message.includes("LAYAWAY_WRONG_LOCATION")) {
+      status = "entrega-sucursal-incorrecta";
+    } else if (message.includes("LAYAWAY_ALREADY_FULFILLED")) {
+      status = "entrega-ya-registrada";
+    } else if (message.includes("RESERVATION_BALANCE_MISMATCH")) {
+      status = "entrega-inventario-inconsistente";
+    }
+    console.error("[apartados/fulfill] failed", { status, message });
+  }
+  revalidatePath(path);
+  revalidatePath("/inventario");
+  revalidatePath("/pos");
+  revalidatePath("/tickets");
+  redirect(
+    `${path}?status=${status}${
+      saleId ? `&sale=${encodeURIComponent(saleId)}` : ""
+    }${saleFolio ? `&folio=${encodeURIComponent(saleFolio)}` : ""}`,
+  );
+}
+
 export async function cancelOverdueLayaway(formData: FormData) {
   let status = "cancelacion-error";
   let penalty = "";

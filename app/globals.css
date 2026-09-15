@@ -2000,6 +2000,25 @@ code {
   padding-top: 12px;
 }
 
+.layaway-delivery-confirmation {
+  align-items: start;
+  background: color-mix(in srgb, #48835f 9%, var(--surface));
+  border: 1px solid color-mix(in srgb, #48835f 30%, var(--line));
+  border-radius: 12px;
+  cursor: pointer;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr);
+  line-height: 1.4;
+  padding: 12px;
+}
+
+.layaway-delivery-confirmation input {
+  height: 22px;
+  margin: 0;
+  width: 22px;
+}
+
 .layaway-cancel-panel {
   border-top-color: color-mix(in srgb, #b43a2e 35%, var(--line));
 }

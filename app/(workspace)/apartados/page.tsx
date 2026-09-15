@@ -14,6 +14,7 @@ import { requirePermission } from "@/lib/auth/authorization";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   cancelOverdueLayaway,
+  fulfillLayaway,
   receiveLayawayPayment,
   substituteLayawayItem,
 } from "./actions";
@@ -127,6 +128,8 @@ export default async function LayawaysPage({
     reemplazo?: string;
     total?: string;
     balance?: string;
+    sale?: string;
+    folio?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -161,12 +164,19 @@ export default async function LayawaysPage({
   ].includes(params.estado ?? "")
     ? params.estado!
     : null;
-  const [modifyPermission, result, receiptResult] = await Promise.all([
+  const [modifyPermission, deliverPermission, result, receiptResult] =
+    await Promise.all([
     supabase
       .from("role_permissions")
       .select("permission_code")
       .eq("role_id", roleId)
       .eq("permission_code", "layaways.modify")
+      .maybeSingle(),
+    supabase
+      .from("role_permissions")
+      .select("permission_code")
+      .eq("role_id", roleId)
+      .eq("permission_code", "layaways.deliver")
       .maybeSingle(),
     supabase.rpc("list_layaways", {
       p_location_id: location.id,
@@ -179,8 +189,9 @@ export default async function LayawaysPage({
           p_payment_id: params.payment,
         })
       : Promise.resolve({ data: null, error: null }),
-  ]);
+    ]);
   const canModify = Boolean(modifyPermission.data);
+  const canDeliver = Boolean(deliverPermission.data);
   const replacementQuery = (params.reemplazo ?? "").trim().slice(0, 100);
   const rows = (result.data ?? []) as LayawayRow[];
   const [itemsResult, selectedItemResult, catalogResult, inventoryResult] =
@@ -208,6 +219,7 @@ export default async function LayawaysPage({
   const selectedItem = selectedItemResult.data as SelectedLayawayItem | null;
   const dataError =
     modifyPermission.error ??
+    deliverPermission.error ??
     result.error ??
     receiptResult.error ??
     itemsResult.error ??
@@ -267,6 +279,8 @@ export default async function LayawaysPage({
       selectedItem={selectedItem}
       candidates={candidates}
       replacementQuery={replacementQuery}
+      canDeliver={canDeliver}
+      deliveredSaleFolio={params.folio}
     />
   );
 }
@@ -289,6 +303,8 @@ function LayawayPageContent({
   candidates = [],
   replacementQuery = "",
   preview = false,
+  canDeliver = false,
+  deliveredSaleFolio,
 }: {
   rows: LayawayRow[];
   locationId: string;
@@ -307,6 +323,8 @@ function LayawayPageContent({
   candidates?: ReplacementCandidate[];
   replacementQuery?: string;
   preview?: boolean;
+  canDeliver?: boolean;
+  deliveredSaleFolio?: string;
 }) {
   const today = new Date().toISOString().slice(0, 10);
   const warningDate = new Date();
@@ -335,6 +353,31 @@ function LayawayPageContent({
       {operationStatus === "abono-registrado" ? (
         <p className="notice-banner" role="status">
           Abono registrado. El saldo y la caja ya fueron actualizados.
+        </p>
+      ) : null}
+      {operationStatus === "entrega-registrada" ? (
+        <div className="notice-banner" role="status">
+          Apartado entregado. La venta {deliveredSaleFolio || "generada"} ya
+          aparece en Tickets; los abonos no se cobraron de nuevo.{" "}
+          <Link href="/tickets">Ver e imprimir ticket</Link>
+        </div>
+      ) : null}
+      {operationStatus?.startsWith("entrega-") &&
+      operationStatus !== "entrega-registrada" ? (
+        <p className="inline-error operation-feedback" role="alert">
+          {operationStatus === "entrega-caja-requerida"
+            ? "Abre tu caja en esta sucursal antes de entregar el apartado."
+            : operationStatus === "entrega-no-liquidada"
+              ? "El apartado todavía tiene saldo o ya no está disponible para entrega."
+              : operationStatus === "entrega-sucursal-incorrecta"
+                ? "La entrega debe registrarse en la sucursal donde se apartó la mercancía."
+                : operationStatus === "entrega-ya-registrada"
+                  ? "Este apartado ya fue entregado."
+                  : operationStatus === "entrega-inventario-inconsistente"
+                    ? "La reserva no coincide con el inventario. No se creó ninguna venta; solicita una revisión."
+                    : operationStatus === "entrega-confirmacion-requerida"
+                      ? "Confirma que el cliente recibió toda la mercancía."
+                      : "No fue posible entregar el apartado. No se modificó la venta, la caja ni el inventario."}
         </p>
       ) : null}
       {operationStatus === "apartado-cancelado" ? (
@@ -680,6 +723,36 @@ function LayawayPageContent({
                   Socio {row.member_number} · Total{" "}
                   {money.format(Number(row.total_cents) / 100)}
                 </footer>
+                {row.status === "PAID" && canDeliver ? (
+                  <details className="layaway-payment-panel">
+                    <summary>
+                      <PackageCheck aria-hidden="true" /> Entregar apartado
+                    </summary>
+                    <form action={fulfillLayaway}>
+                      <input type="hidden" name="layaway_id" value={row.id} />
+                      <p>
+                        Esta operación descontará físicamente las piezas
+                        reservadas, creará la venta real y habilitará su ticket.
+                        No volverá a cobrar los abonos.
+                      </p>
+                      <label className="layaway-delivery-confirmation">
+                        <input
+                          type="checkbox"
+                          name="confirmed"
+                          value="yes"
+                          required
+                        />
+                        <span>
+                          Confirmo que el cliente recibió todas las piezas en
+                          esta sucursal.
+                        </span>
+                      </label>
+                      <button className="primary-button" type="submit">
+                        Confirmar entrega y generar ticket
+                      </button>
+                    </form>
+                  </details>
+                ) : null}
                 {active && Number(row.balance_cents) > 0 ? (
                   <details className="layaway-payment-panel">
                     <summary>
