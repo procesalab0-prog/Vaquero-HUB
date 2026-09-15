@@ -2755,6 +2755,20 @@ Entrega visible 0.40.0 — inicio de M7.3, apartados reales:
   cancelación con penalización, sustituciones, liquidación y entrega. La
   interfaz no presenta estas operaciones como terminadas antes de existir.
 
+Entrega visible 0.41.0 — abonos reales de apartados:
+
+- Apartados recibe abonos parciales o totales desde la misma ficha, con efectivo,
+  tarjeta, transferencia o combinación exacta de los tres métodos.
+- PostgreSQL vuelve a calcular el saldo bajo candado. Un reintento devuelve el
+  mismo comprobante y dos cajas no pueden cobrar por encima del saldo restante.
+- Sólo el efectivo incrementa el cajón. Tarjeta y transferencia conservan su
+  referencia; el historial de pagos y sus partes no se edita ni se borra.
+- El comprobante registra folio del abono y del apartado, cliente, caja, empleado,
+  desglose por método, saldo anterior y nuevo, y se imprime a 80 mm.
+- Liquidar cambia el estado a `PAID`, pero no libera ni entrega mercancía. La
+  cancelación, sustitución y entrega siguen bloqueadas hasta sus operaciones
+  atómicas correspondientes.
+
 Corrección visible 0.32.1 — traspasos y sucursales operables:
 
 - Más módulos deja de anunciar los traspasos como pendientes y enlaza al flujo

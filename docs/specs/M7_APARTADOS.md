@@ -162,3 +162,16 @@ y en el comprobante aceptado por el cliente antes de recibir dinero.
   próximos a vencer y vencidos sin cancelarlos automáticamente.
 - Todavía no permite recibir abonos, cancelar, sustituir ni entregar. Esas
   operaciones llegan en bloques siguientes y no se simulan desde la interfaz.
+
+## 9. Avance implementado en 0.41.0
+
+- Un apartado abierto recibe abonos parciales o totales, incluidos pagos mixtos
+  entre efectivo, tarjeta y transferencia. No existe monto mínimo.
+- La operación es idempotente, serializa el apartado y rechaza pagar por encima
+  del saldo. Sólo el efectivo mueve el cajón; los otros métodos exigen referencia.
+- Cada abono conserva saldo anterior y posterior, sucursal, caja, empleado,
+  métodos y referencias en registros inmutables.
+- Al liquidar, el apartado pasa a `PAID`; la mercancía continúa reservada hasta
+  construir y confirmar la entrega, que no se simula en esta entrega.
+- El comprobante real se recupera por identificador, se muestra después del
+  registro y puede imprimirse a 80 mm.
