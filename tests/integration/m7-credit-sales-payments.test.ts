@@ -682,6 +682,80 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
     expect(inventory.data).toMatchObject({ qty: 2, reserved_qty: 2 });
   });
 
+  it("registra un abono mixto idempotente, mueve sólo efectivo y liquida el apartado", async () => {
+    const variantId = await createVariant("Apartado con abonos", 10000);
+    const created = await state.cashierA!.client.rpc("create_layaway", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_customer_id: state.customerId,
+      p_due_date: new Date(Date.now() + 30 * 86400000)
+        .toISOString()
+        .slice(0, 10),
+      p_items: [{ variant_id: variantId, quantity: 2 }],
+      p_notes: null,
+    });
+    expect(created.error).toBeNull();
+    const key = crypto.randomUUID();
+    const input = {
+      p_idempotency_key: key,
+      p_cash_session_id: state.sessionA,
+      p_layaway_id: created.data.id,
+      p_payments: [
+        { method_code: "CASH", amount_cents: 5000, tendered_cents: 5000 },
+        { method_code: "CARD", amount_cents: 15000, reference: "TAR-123" },
+      ],
+      p_note: "Liquidación de prueba",
+    };
+    const paid = await state.cashierA!.client.rpc(
+      "record_layaway_payment",
+      input,
+    );
+    const retry = await state.cashierA!.client.rpc(
+      "record_layaway_payment",
+      input,
+    );
+    expect(paid.error).toBeNull();
+    expect(retry.error).toBeNull();
+    expect(retry.data.id).toBe(paid.data.id);
+    expect(paid.data).toMatchObject({ total_cents: 20000, balance_cents: 0 });
+
+    const layaway = await state
+      .server!.from("layaways")
+      .select("status,paid_cents,balance_cents")
+      .eq("id", created.data.id)
+      .single();
+    expect(layaway.data).toMatchObject({
+      status: "PAID",
+      paid_cents: 20000,
+      balance_cents: 0,
+    });
+    const cash = await state
+      .server!.from("cash_movements")
+      .select("amount_cents")
+      .eq("reference_type", "LAYAWAY_PAYMENT")
+      .eq("reference_id", paid.data.id);
+    expect(cash.data).toEqual([{ amount_cents: 5000 }]);
+    const receipt = await state.cashierA!.client.rpc(
+      "get_layaway_payment_receipt",
+      { p_payment_id: paid.data.id },
+    );
+    expect(receipt.error).toBeNull();
+    expect(receipt.data.parts).toHaveLength(2);
+    expect(receipt.data).toMatchObject({
+      layaway_folio: created.data.folio,
+      balance_cents: 0,
+    });
+
+    const overpay = await state.cashierA!.client.rpc("record_layaway_payment", {
+      ...input,
+      p_idempotency_key: crypto.randomUUID(),
+      p_payments: [
+        { method_code: "CASH", amount_cents: 100, tendered_cents: 100 },
+      ],
+    });
+    expect(overpay.error?.message).toContain("LAYAWAY_NOT_PAYABLE");
+  });
+
   it("autoriza un solo crédito vencido, conserva el atraso y permite reintento idempotente", async () => {
     const westZone = "Etc/GMT+12";
     const eastZone = "Pacific/Kiritimati";

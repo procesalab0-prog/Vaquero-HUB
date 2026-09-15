@@ -1782,9 +1782,15 @@ code {
   background: var(--surface);
 }
 
-.layaway-card.warning { border-left-color: #d39a25; }
-.layaway-card.overdue { border-left-color: #b43a2e; }
-.layaway-card.closed { border-left-color: var(--muted-light); }
+.layaway-card.warning {
+  border-left-color: #d39a25;
+}
+.layaway-card.overdue {
+  border-left-color: #b43a2e;
+}
+.layaway-card.closed {
+  border-left-color: var(--muted-light);
+}
 
 .layaway-card > header,
 .layaway-card > footer,
@@ -1828,6 +1834,107 @@ code {
 .layaway-card-grid small,
 .layaway-card > footer {
   color: var(--muted);
+}
+
+.layaway-payment-panel {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.layaway-payment-panel summary {
+  align-items: center;
+  color: var(--brick);
+  cursor: pointer;
+  display: flex;
+  font-weight: 800;
+  gap: 8px;
+  min-height: 48px;
+}
+
+.layaway-payment-panel summary svg {
+  width: 20px;
+}
+.layaway-payment-panel form {
+  display: grid;
+  gap: 14px;
+  padding-top: 12px;
+}
+
+.layaway-receipt {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  color: #17120f;
+  display: grid;
+  gap: 12px;
+  margin: 0 auto 22px;
+  max-width: 460px;
+  padding: 22px;
+}
+
+.layaway-receipt > header,
+.layaway-receipt-parts p,
+.layaway-receipt-total {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.layaway-receipt > header div {
+  display: grid;
+  gap: 3px;
+}
+.layaway-receipt dl {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+.layaway-receipt dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+.layaway-receipt dd {
+  font-weight: 700;
+  margin: 0;
+  text-align: right;
+}
+.layaway-receipt-parts {
+  border-block: 1px dashed #777;
+  padding-block: 8px;
+}
+.layaway-receipt-parts p,
+.layaway-receipt-total {
+  margin: 4px 0;
+}
+.layaway-receipt-total {
+  font-size: 1.15rem;
+}
+
+@media print {
+  body:has(.layaway-receipt) > * {
+    visibility: hidden;
+  }
+  .layaway-receipt,
+  .layaway-receipt * {
+    visibility: visible;
+  }
+  .layaway-receipt {
+    border: 0;
+    border-radius: 0;
+    left: 0;
+    margin: 0;
+    max-width: 80mm;
+    padding: 4mm;
+    position: absolute;
+    top: 0;
+    width: 80mm;
+  }
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
 }
 
 .layaway-card > footer {

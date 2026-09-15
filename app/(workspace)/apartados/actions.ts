@@ -1,0 +1,81 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+
+import { requirePermission } from "@/lib/auth/authorization";
+
+const path = "/apartados";
+const field = (data: FormData, name: string) =>
+  String(data.get(name) ?? "").trim();
+const amount = (data: FormData, name: string) =>
+  Math.round(Number(field(data, name) || 0) * 100);
+
+export async function receiveLayawayPayment(formData: FormData) {
+  let status = "abono-error";
+  let paymentId = "";
+  try {
+    const { supabase } = await requirePermission("layaways.manage");
+    const layawayId = field(formData, "layaway_id");
+    const cash = amount(formData, "cash");
+    const card = amount(formData, "card");
+    const transfer = amount(formData, "transfer");
+    const payments: Array<Record<string, string | number>> = [];
+    if (cash > 0)
+      payments.push({
+        method_code: "CASH",
+        amount_cents: cash,
+        tendered_cents: cash,
+      });
+    if (card > 0)
+      payments.push({
+        method_code: "CARD",
+        amount_cents: card,
+        reference: field(formData, "card_reference"),
+      });
+    if (transfer > 0)
+      payments.push({
+        method_code: "TRANSFER",
+        amount_cents: transfer,
+        reference: field(formData, "transfer_reference"),
+      });
+    if (
+      !layawayId ||
+      payments.length === 0 ||
+      payments.some(
+        (p) =>
+          !Number.isSafeInteger(p.amount_cents) ||
+          Number(p.amount_cents) <= 0 ||
+          (p.method_code !== "CASH" && String(p.reference).length < 3),
+      )
+    ) {
+      status = "abono-datos-invalidos";
+    } else {
+      const session = await supabase.rpc("get_my_cash_session");
+      const sessionId = (session.data as { id?: string } | null)?.id;
+      if (session.error || !sessionId) status = "abono-caja-requerida";
+      else {
+        const result = await supabase.rpc("record_layaway_payment", {
+          p_idempotency_key: crypto.randomUUID(),
+          p_cash_session_id: sessionId,
+          p_layaway_id: layawayId,
+          p_payments: payments,
+          p_note: field(formData, "note") || null,
+        });
+        if (result.error) throw result.error;
+        paymentId = String((result.data as { id?: string } | null)?.id ?? "");
+        status = "abono-registrado";
+      }
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("LAYAWAY_OVERPAYMENT")) status = "abono-mayor-saldo";
+    if (message.includes("LAYAWAY_NOT_PAYABLE")) status = "abono-no-disponible";
+    console.error("[apartados/receivePayment] failed", { status, message });
+  }
+  revalidatePath(path);
+  revalidatePath("/caja");
+  redirect(
+    `${path}?status=${status}${paymentId ? `&payment=${encodeURIComponent(paymentId)}` : ""}`,
+  );
+}
