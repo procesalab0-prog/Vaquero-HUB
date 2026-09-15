@@ -23,6 +23,8 @@ export type WorkspaceProfileRow = {
           code: string;
           address: string | null;
           phone: string | null;
+          type: string;
+          is_active: boolean;
         }
       | Array<{
           id: string;
@@ -30,6 +32,8 @@ export type WorkspaceProfileRow = {
           code: string;
           address: string | null;
           phone: string | null;
+          type: string;
+          is_active: boolean;
         }>
       | null;
   }> | null;
@@ -54,15 +58,43 @@ export const getWorkspaceSession = cache(async () => {
   const { data, error } = await supabase
     .from("app_users")
     .select(
-      "id, role_id, full_name, employee_code, is_active, roles(code, name), user_locations(locations(id, name, code, address, phone))",
+      "id, role_id, full_name, employee_code, is_active, roles(code, name), user_locations(locations(id, name, code, address, phone, type, is_active))",
     )
     .eq("id", userId)
     .single();
 
+  const profile = data as WorkspaceProfileRow | null;
+  const role = Array.isArray(profile?.roles)
+    ? (profile.roles[0] ?? null)
+    : profile?.roles;
+
+  // La administración es global: la selección de sucursal debe mostrar todas
+  // las tiendas activas, no sólo las asignaciones heredadas. El resto de roles
+  // sigue limitado por user_locations. Si esta lectura adicional falla,
+  // conservamos el alcance asignado para fallar de forma segura.
+  if (!error && profile?.is_active && role?.code === "ADMIN") {
+    const { data: activeStores, error: activeStoresError } = await supabase
+      .from("locations")
+      .select("id, name, code, address, phone, type, is_active")
+      .eq("is_active", true)
+      .eq("type", "STORE")
+      .order("name");
+
+    if (activeStoresError) {
+      console.error("[auth/getWorkspaceSession] admin locations unavailable", {
+        message: activeStoresError.message,
+      });
+    } else {
+      profile.user_locations = (activeStores ?? []).map((location) => ({
+        locations: location,
+      }));
+    }
+  }
+
   return {
     supabase,
     userId,
-    profile: data as WorkspaceProfileRow | null,
+    profile,
     profileError: error,
   };
 });

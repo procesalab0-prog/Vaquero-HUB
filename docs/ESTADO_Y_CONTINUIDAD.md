@@ -7,7 +7,7 @@
 > memoria del proyecto.** Todo lo que haga falta para continuar tiene que
 > estar aquí, no en un chat.
 >
-> Última actualización: 2026-09-09.
+> Última actualización: 2026-09-14.
 
 ## 1. Qué es esto
 
@@ -58,15 +58,19 @@ saltando lo bloqueado.
 | **M9 (0.29.0)**          | Sincronizador idempotente de catálogo restringido a staging; conserva SHA, aprobación y conciliación     |
 | **Calidad 0.31.0**       | Proveedor y cliente con scroll táctil; carrito de Venta como cajón en teléfono e iPad                    |
 | **Corrección 0.31.1**    | Al abrir una ventana móvil se bloquea el fondo y sólo el cuadro recibe el gesto vertical                 |
-| **Hardware 0.31.2**      | Modelos reales documentados: BIXOLON SRP-330II para tickets y SICAR EVA58 para etiquetas               |
+| **Hardware 0.31.2**      | Modelos reales documentados: BIXOLON SRP-330II para tickets y SICAR EVA58 para etiquetas                 |
 | **Hardware 0.31.3**      | Prueba de ticket térmico sin registrar venta, mover inventario, caja ni folios                           |
-| **M8.1 (0.32.0)**        | Reportes reales de ventas e inventario con periodo, producto, variante, cajero y conciliación de cobros |
-| **M8.2 (0.33.0)**        | Cotizaciones reales con folio, vigencia opcional, búsqueda y conversión atómica mediante el POS        |
+| **M8.1 (0.32.0)**        | Reportes reales de ventas e inventario con periodo, producto, variante, cajero y conciliación de cobros  |
+| **M8.2 (0.33.0)**        | Cotizaciones reales con folio, vigencia opcional, búsqueda y conversión atómica mediante el POS          |
 | **M7.1–M7.2 (0.35.0)**   | Crédito autorizado, límite global, venta total/mixta y abonos conciliados con caja                       |
-| **Corrección 0.32.1**    | Traspasos visibles y alta atómica de sucursal con acceso administrativo y primera caja                 |
-| **Corrección 0.32.2**    | Sucursal activa persistente, asignación de empleados, caja real y recepción de traspaso explicada      |
+| **M7.2 (0.37.0)**        | Devolución reduce primero deuda; sólo dinero pagado vuelve por su método real                            |
+| **M7.2 (0.38.0)**        | Excepción ADMIN de un solo uso permite una venta vencida sin borrar atraso ni historial                  |
+| **M7.2 (0.39.0)**        | Cancelación de crédito crea devolución completa, extingue deuda y sólo reembolsa dinero real             |
+| **Corrección 0.32.1**    | Traspasos visibles y alta atómica de sucursal con acceso administrativo y primera caja                   |
+| **Corrección 0.32.2**    | Sucursal activa persistente, asignación de empleados, caja real y recepción de traspaso explicada        |
+| **Corrección 0.37.1**    | Administración global puede cambiar y operar todas las sucursales activas sin asignaciones individuales  |
 
-Setenta y cuatro migraciones versionadas del repositorio. El proyecto de Supabase
+Ochenta y una migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -128,10 +132,21 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 M7 comenzó en 0.34.0 con autorización y límite global de crédito por cliente.
 La entrega 0.35.0 agrega venta a crédito y abonos parciales o mixtos sin
-registrar deuda como dinero recibido. Falta integrar devoluciones contra deuda,
-la excepción administrativa por atraso y después los apartados; lealtad se
-pospuso por decisión del negocio. M8 se adelantó porque
+registrar deuda como dinero recibido. La 0.37.0 integra devoluciones contra la
+deuda y bloquea la cancelación antigua para que no deje saldos huérfanos. La
+0.38.0 permite una excepción ADMIN de un solo uso sin ocultar el atraso y
+unifica el selector global de sucursal en Inventario, Clientes y Compras. La
+0.39.0 cierra M7.2 con cancelación compensada e idempotente. Siguen los
+apartados; lealtad se pospuso por
+decisión del negocio. M8 se adelantó porque
 reportes y cotizaciones son necesarios para la operación y el piloto de octubre.
+
+La corrección 0.37.1 formaliza que el rol `ADMIN` es global: puede seleccionar y
+operar cualquier tienda activa aunque no tenga una asignación individual. Los
+demás roles continúan limitados a `user_locations`, y la ubicación técnica de
+tránsito nunca aparece como sucursal operable. Esta regla permite que un segundo
+administrador reciba un traspaso en el destino sin debilitar la separación de
+funciones: quien lo aprobó o despachó sigue sin poder recibirlo.
 
 **Con M3, M4, M5 y M5.5 cerrados, M9 ya cuenta con analizador y sincronizador
 de catálogo en staging.** El primer ensayo con los 16,009 productos permanece

@@ -98,6 +98,15 @@ export function ReturnExchangeDialog({
   const deliveredCents =
     mode === "EXCHANGE" ? (selectedOutput?.priceCents ?? 0) : 0;
   const differenceCents = deliveredCents - returnedCents;
+  const debtReductionCents =
+    differenceCents < 0
+      ? Math.min(
+          Math.abs(differenceCents),
+          Number(sale?.credit_outstanding_cents ?? 0),
+        )
+      : 0;
+  const paidRefundCents =
+    differenceCents < 0 ? Math.abs(differenceCents) - debtReductionCents : 0;
 
   useEffect(() => {
     if (started.current) return;
@@ -175,7 +184,7 @@ export function ReturnExchangeDialog({
             ]
           : [],
       refundReferences:
-        differenceCents < 0
+        paidRefundCents > 0
           ? electronicOriginals.map((payment) => ({
               method_code: payment.method_code,
               reference: refundReferences[payment.method_code]?.trim() ?? "",
@@ -191,7 +200,7 @@ export function ReturnExchangeDialog({
   }
 
   const missingRefundReference =
-    differenceCents < 0 &&
+    paidRefundCents > 0 &&
     Boolean(
       sale?.payments.some(
         (payment) =>
@@ -246,6 +255,20 @@ export function ReturnExchangeDialog({
               {result.type === "RETURN" ? "La devolución" : "El cambio"} quedó
               registrado con inventario, pagos, caja y autorización de gerente.
             </p>
+            {result.creditSettlement ? (
+              <div className="return-policy good">
+                <strong>
+                  {money.format(
+                    result.creditSettlement.debtReductionCents / 100,
+                  )} redujo la deuda
+                </strong>
+                <span>
+                  {money.format(
+                    result.creditSettlement.paidRefundCents / 100,
+                  )} se reembolsó por los métodos realmente pagados.
+                </span>
+              </div>
+            ) : null}
             <button className="primary-button" type="button" onClick={onClose}>
               Terminar
             </button>
@@ -469,7 +492,19 @@ export function ReturnExchangeDialog({
                     {money.format(Math.abs(differenceCents) / 100)}
                   </strong>
                 </div>
-                {differenceCents < 0 ? (
+                {differenceCents < 0 && debtReductionCents > 0 ? (
+                  <div className="return-policy good">
+                    <strong>
+                      Primero se reducirán {money.format(debtReductionCents / 100)} de la deuda
+                    </strong>
+                    <span>
+                      {paidRefundCents > 0
+                        ? `Sólo ${money.format(paidRefundCents / 100)} se devolverán como dinero.`
+                        : "No se entregará dinero porque este importe todavía estaba pendiente."}
+                    </span>
+                  </div>
+                ) : null}
+                {paidRefundCents > 0 ? (
                   <div className="refund-methods">
                     <p>
                       <strong>Mismos métodos de la compra</strong>

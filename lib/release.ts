@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.35.1";
-export const APP_RELEASE = "Tipos del libro de caja a prueba de módulos";
+export const APP_VERSION = "0.39.0";
+export const APP_RELEASE = "Cancelación de crédito con cuentas claras";

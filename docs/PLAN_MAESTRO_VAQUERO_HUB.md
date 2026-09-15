@@ -1635,6 +1635,29 @@ Especial prioridad:
 
 No sacrificar simplicidad por agregar funciones.
 
+### Movimiento y animación — mejora programada antes del piloto
+
+Las animaciones se revisarán dentro de la auditoría ergonómica previa al
+piloto, cuando los recorridos operativos principales estén estables. No serán
+una capa decorativa agregada a todas las pantallas.
+
+- Las microinteracciones ligeras de la propia interfaz podrán confirmar toque,
+  carga, éxito y cambio de estado sin retrasar la siguiente acción.
+- Higgsfield podrá producir piezas breves de identidad para bienvenida,
+  capacitación inicial, estados vacíos, demostraciones y momentos especiales
+  de marca.
+- Cobro, pagos, devoluciones, autorizaciones, conteos, captura repetitiva y
+  mensajes de error no dependerán de video ni de animaciones llamativas.
+- Ninguna animación ocultará controles, bloqueará el desplazamiento, moverá un
+  botón mientras se intenta tocar ni demorará una operación.
+- Los recursos deberán cargarse sólo cuando se necesiten, funcionar de forma
+  razonable con conexión limitada y contar con una alternativa estática.
+- Se respetará la preferencia de reducir movimiento del dispositivo y no habrá
+  reproducción automática con sonido.
+- La aceptación se comprobará en teléfono, iPad y computadora, midiendo que no
+  empeore el tiempo del recorrido, la claridad, el consumo ni la respuesta de
+  la PWA. Si una animación estorba, se simplifica o se elimina.
+
 Principio humano:
 
 Si un empleado necesita aprender una forma innecesariamente complicada de trabajar únicamente porque así fue programado el sistema, primero debe cuestionarse el diseño del sistema.
@@ -2636,13 +2659,77 @@ Entrega visible 0.35.0 — M7.2, ventas a crédito y abonos:
 - El saldo se obtiene del libro inmutable; los comprobantes, partes y
   aplicaciones están cerrados al acceso directo y protegidos además por
   restricciones diferidas que exigen conciliación exacta.
-- Las devoluciones que tendrían que reducir deuda primero se rechazan de forma
-  atómica y con explicación hasta integrar el documento compensatorio de M7.2.
-  Los cambios sin reembolso siguen usando M5. No se permite tratar crédito como
-  efectivo ni fabricar una devolución monetaria.
-- Continúa después: reducción de deuda por devolución/cancelación, excepción
-  administrativa por atraso y vista completa del estado de cuenta; luego M7.3
-  implementará apartados con las decisiones abiertas de su especificación.
+- Desde 0.37.0 las devoluciones reducen primero la deuda y sólo reembolsan el
+  excedente realmente pagado. Nunca se trata crédito como efectivo.
+- Desde 0.38.0 la excepción administrativa por atraso es explícita, de un solo
+  uso y auditable; no modifica límite, vencimiento ni historial. En 0.39.0 la
+  cancelación compensada cierra M7.2; luego M7.3 implementará
+  apartados con las decisiones abiertas de su especificación.
+
+Entrega visible 0.36.0 — estado de cuenta y comprobantes de abono:
+
+- Clientes muestra el libro real de cartera con cargos, abonos, folios,
+  sucursal, empleado, vencimiento y saldo, sin habilitar edición directa.
+- Cada abono abre su comprobante real con el desglose de efectivo, tarjeta y
+  transferencia, y se puede imprimir en rollo de 80 mm.
+- La consulta del comprobante valida sesión, permiso y acceso a la sucursal en
+  el servidor. No expone las tablas cerradas ni confía en el identificador que
+  llega desde la URL.
+- El envío externo del comprobante no se habilita todavía: antes se debe
+  definir el contenido mínimo, el destinatario y el consentimiento para no
+  compartir saldo o datos personales por accidente.
+- Se integra la corrección estructural de 0.35.1: los tipos del libro de caja
+  pasan de una lista reescribible a una tabla referenciada y se revocan los
+  permisos de tabla que Supabase concede por omisión. La misma mejora del libro
+  de inventario se hará junto con apartados, no como cambio aislado.
+
+Entrega visible 0.37.0 — devoluciones de crédito conciliadas:
+
+- Una devolución aplica primero su importe al saldo pendiente del cargo
+  original. Sólo el sobrante que el cliente sí pagó se devuelve como dinero.
+- Los abonos FIFO se rastrean hasta sus métodos reales. Si fueron mixtos, el
+  reembolso conserva efectivo, tarjeta y transferencia en centavos exactos.
+- El cajón sólo disminuye por la porción realmente devuelta en efectivo y
+  conserva la protección que impide dejarlo en negativo.
+- El POS explica antes de confirmar cuánto reducirá deuda y cuánto se
+  reembolsará; después muestra ambos importes por separado.
+- La conciliación queda en un libro inmutable, con RLS, mínimo privilegio,
+  auditoría y restricción diferida entre venta, devolución, cargo y ajuste.
+- La cancelación antigua se niega de forma atómica para ventas con crédito:
+  no puede restaurar mercancía dejando una deuda huérfana. La cancelación
+  compensada completa permanece como el siguiente subbloque de M7.2.
+
+Entrega visible 0.38.0 — excepción administrativa ante atraso:
+
+- Una cuenta vencida sigue bloqueando el crédito ordinario, pero el POS permite
+  solicitar la autorización puntual sin perder el carrito ni volver a capturar
+  los métodos divididos.
+- Sólo un ADMIN con `credit.override` puede autorizar. El token dura cinco
+  minutos, pertenece al cajero que lo solicitó, se consume una vez y se liga a
+  la venta real.
+- La excepción no altera la cuenta: el vencimiento y el saldo atrasado siguen
+  visibles. La auditoría conserva autorizador, operador, cliente, montos,
+  fechas y operación permitida.
+- La ruta normal de venta a crédito permanece intacta. La excepción usa una
+  función adicional protegida para limitar el radio de una falla.
+- La administración global ya es consistente dentro de los módulos:
+  Inventario, Clientes y Compras usan la misma lista de tiendas activas que la
+  cabecera. Un ADMIN que elige La Piedad Prueba ya no ve contenido ni selector
+  calculados con su antigua asignación individual a La Piedad.
+
+Entrega visible 0.39.0 — cancelación compensada de venta a crédito:
+
+- Cancelar una venta a crédito crea primero una devolución completa por las
+  unidades que todavía no hubieran regresado. No reutiliza el reverso M4 y por
+  eso no duplica inventario ni efectivo.
+- El importe extingue primero la deuda del cargo original. Únicamente el dinero
+  realmente recibido se devuelve por su método real, con referencia electrónica
+  y protección de efectivo disponible en el cajón.
+- Exige usuario con `sales.cancel`, autorización de gerente para devoluciones,
+  motivo y caja abierta en la sucursal del ticket.
+- La venta se marca cancelada sólo después de que devolución, cartera, pagos,
+  inventario y caja concilian. Todo el recorrido es atómico, idempotente y deja
+  la relación con el documento compensatorio en auditoría.
 
 Corrección visible 0.32.1 — traspasos y sucursales operables:
 
@@ -2681,3 +2768,22 @@ Corrección visible 0.32.2 — sucursal activa y recepción clara:
   solicitó, aprobó y envió, por lo que debe recibirlo otro empleado autorizado
   en el destino. No se alteró el documento ni el inventario para evadir el
   control.
+
+Corrección visible 0.37.1 — administración global por sucursal:
+
+- El rol `ADMIN` puede seleccionar y operar todas las tiendas activas del
+  negocio sin depender de una asignación individual en `user_locations`.
+- Gerentes, cajeros, almacén y los demás roles conservan el principio de mínimo
+  privilegio: sólo operan las sucursales que les fueron asignadas.
+- La ubicación técnica de tránsito queda fuera del selector y no se convierte
+  en una sucursal operable.
+- El alcance se valida también en PostgreSQL mediante
+  `app.can_access_location`; no depende únicamente de mostrar la sucursal en la
+  interfaz.
+- La separación de funciones de traspasos permanece intacta. Un administrador
+  global puede recibir en el destino sólo si no fue quien aprobó o despachó el
+  mismo traspaso.
+- Caso real que motivó la regla: Salomón, con rol Administrador y acceso
+  individual sólo a La Piedad, debe poder cambiar a La Piedad Prueba y recibir
+  el traspaso enviado por Emmanuel sin crear asignaciones manuales para cada
+  tienda nueva.

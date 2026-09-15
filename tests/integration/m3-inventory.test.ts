@@ -89,13 +89,6 @@ describe.sequential("M3.1: libro y saldos de inventario", () => {
       state[definition.key] = { id, client };
     }
 
-    const { error: adminDestinationAssignmentError } = await server
-      .from("user_locations")
-      .insert({
-        user_id: state.admin!.id,
-        location_id: state.otherLocationId,
-      });
-    expect(adminDestinationAssignmentError).toBeNull();
     const { error: warehouseDestinationAssignmentError } = await server
       .from("user_locations")
       .insert({
@@ -149,6 +142,28 @@ describe.sequential("M3.1: libro y saldos de inventario", () => {
       },
     );
     expect(error?.message).toContain("LOCATION_FORBIDDEN");
+  });
+
+  it("permite a ADMIN operar una tienda activa aunque no tenga asignación individual", async () => {
+    const { data: assignment, error: assignmentError } = await state
+      .server!.from("user_locations")
+      .select("location_id")
+      .eq("user_id", state.admin!.id)
+      .eq("location_id", state.otherLocationId)
+      .maybeSingle();
+    expect(assignmentError).toBeNull();
+    expect(assignment).toBeNull();
+
+    const { data, error } = await state.admin!.client.rpc(
+      "get_inventory_snapshot",
+      {
+        p_location_id: state.otherLocationId,
+        p_query: productName,
+        p_limit: 10,
+      },
+    );
+    expect(error).toBeNull();
+    expect(data).toHaveLength(1);
   });
 
   it("un cajero puede consultar pero no ajustar", async () => {

@@ -5,6 +5,7 @@ import { requirePermission } from "@/lib/auth/authorization";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { cancelPosSale } from "../pos/actions";
 import {
+  cancelCreditSale,
   authorizeReturn,
   createReturnExchange,
   findTicketByCode,
@@ -98,6 +99,11 @@ export default async function TicketsPage({
       locationId={location.id}
       findTicketAction={findTicketByCode}
       cancelSaleAction={cancelPermission.data ? cancelPosSale : undefined}
+      cancelCreditSaleAction={
+        cancelPermission.data && returnPermission.data
+          ? cancelCreditSale
+          : undefined
+      }
       prepareExchangeAction={
         returnPermission.data ? prepareEqualExchange : undefined
       }

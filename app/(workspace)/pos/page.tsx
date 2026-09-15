@@ -6,6 +6,7 @@ import { requirePermission } from "@/lib/auth/authorization";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { productImageUrl } from "@/lib/product-images";
 import {
+  authorizeOverdueCredit,
   authorizeSaleDiscount,
   cancelPosSale,
   createPosSale,
@@ -152,6 +153,7 @@ export default async function PosPage({
       createSaleAction={createPosSale}
       getCustomerCreditAction={getPosCustomerCredit}
       authorizeDiscountAction={authorizeSaleDiscount}
+      authorizeCreditOverrideAction={authorizeOverdueCredit}
       printAction={requestSalePrint}
       cancelSaleAction={cancelPosSale}
       saveDraftAction={savePosCurrentDraft}

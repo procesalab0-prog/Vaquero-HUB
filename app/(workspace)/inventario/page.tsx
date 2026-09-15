@@ -157,38 +157,37 @@ export default async function InventoryPage({
     );
   }
 
-  const { supabase, userId, roleId } =
+  const { supabase, roleId, profile } =
     await requirePermission("inventory.read");
-  const [locationsResult, permissionsResult] = await Promise.all([
-    supabase
-      .from("user_locations")
-      .select("locations(id, name, code, type, is_active)")
-      .eq("user_id", userId),
-    supabase
-      .from("role_permissions")
-      .select("permission_code")
-      .eq("role_id", roleId)
-      .in("permission_code", [
-        "inventory.adjust",
-        "inventory.count",
-        "transfers.create",
-        "transfers.approve",
-        "transfers.receive",
-      ]),
-  ]);
-  if (locationsResult.error || permissionsResult.error)
-    throw locationsResult.error ?? permissionsResult.error;
+  const permissionsResult = await supabase
+    .from("role_permissions")
+    .select("permission_code")
+    .eq("role_id", roleId)
+    .in("permission_code", [
+      "inventory.adjust",
+      "inventory.count",
+      "transfers.create",
+      "transfers.approve",
+      "transfers.receive",
+    ]);
+  if (permissionsResult.error) throw permissionsResult.error;
 
   const locations = (
-    (locationsResult.data ?? []) as unknown as Array<{
-      locations: (Location & { type: string; is_active: boolean }) | null;
+    (profile.user_locations ?? []) as unknown as Array<{
+      locations:
+        | (Location & { type: string; is_active: boolean })
+        | Array<Location & { type: string; is_active: boolean }>
+        | null;
     }>
   )
-    .map((row) => row.locations)
-    .filter(
-      (location): location is Location & { type: string; is_active: boolean } =>
-        Boolean(location?.is_active && location.type !== "TRANSIT"),
+    .flatMap((row) =>
+      Array.isArray(row.locations)
+        ? row.locations
+        : row.locations
+          ? [row.locations]
+          : [],
     )
+    .filter((location) => location.is_active && location.type !== "TRANSIT")
     .map(({ id, name, code }) => ({ id, name, code }));
   const activeLocation = await resolveActiveLocation(
     locations,
@@ -223,21 +222,21 @@ export default async function InventoryPage({
     supabase.rpc("get_inventory_snapshot", {
       p_location_id: activeLocation.id,
       p_query: "",
-        p_limit: 500,
-      }),
-      supabase.rpc("list_inventory_movements", {
-        p_location_id: activeLocation.id,
-        p_limit: 100,
-      }),
-      supabase
-        .from("inventory_counts")
-        .select(
-          "id, folio, status, created_at, closed_at, inventory_count_items(variant_id, counted_qty, system_qty, difference, had_movement_after_count)",
-        )
-        .eq("location_id", activeLocation.id)
-        .order("created_at", { ascending: false })
-        .limit(20),
-      supabase.rpc("list_inventory_transfers", {
+      p_limit: 500,
+    }),
+    supabase.rpc("list_inventory_movements", {
+      p_location_id: activeLocation.id,
+      p_limit: 100,
+    }),
+    supabase
+      .from("inventory_counts")
+      .select(
+        "id, folio, status, created_at, closed_at, inventory_count_items(variant_id, counted_qty, system_qty, difference, had_movement_after_count)",
+      )
+      .eq("location_id", activeLocation.id)
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase.rpc("list_inventory_transfers", {
       p_location_id: activeLocation.id,
       p_limit: 30,
     }),
@@ -252,8 +251,8 @@ export default async function InventoryPage({
     permissionSet.has("transfers.create") ||
     permissionSet.has("transfers.receive")
       ? supabase.rpc("list_transfer_locations")
-        : Promise.resolve({ data: [] as Location[], error: null }),
-    ]);
+      : Promise.resolve({ data: [] as Location[], error: null }),
+  ]);
 
   const errors = [
     inventory,

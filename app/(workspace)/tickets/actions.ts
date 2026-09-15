@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requirePermission } from "@/lib/auth/authorization";
 import { databaseErrorText } from "@/lib/returns";
 import type {
+  CancelCreditSaleResult,
   CreateExchangeResult,
   ExchangeSearchResult,
   ExchangeVariant,
@@ -267,6 +268,10 @@ export async function createReturnExchange(input: {
         amount_cents: number;
         reference: string | null;
       }>;
+      credit_settlement?: {
+        debt_reduction_cents: number;
+        paid_refund_cents: number;
+      };
     };
     revalidatePath("/tickets");
     revalidatePath("/inventario");
@@ -279,11 +284,106 @@ export async function createReturnExchange(input: {
       type: result.type,
       differenceCents: Number(result.difference_cents),
       payments: result.payments ?? [],
+      creditSettlement: result.credit_settlement
+        ? {
+            debtReductionCents: Number(
+              result.credit_settlement.debt_reduction_cents,
+            ),
+            paidRefundCents: Number(result.credit_settlement.paid_refund_cents),
+          }
+        : undefined,
     };
   } catch (error) {
     console.error("[tickets/createReturnExchange] failed", {
       message: databaseErrorText(error),
     });
     return { ok: false, message: exchangeMessage(error) };
+  }
+}
+
+export async function cancelCreditSale(input: {
+  idempotencyKey: string;
+  cashSessionId: string;
+  saleId: string;
+  refundReferences: Array<{ method_code: string; reference: string }>;
+  authorizationToken: string;
+  reason: string;
+}): Promise<CancelCreditSaleResult> {
+  try {
+    if (input.reason.trim().length < 3 || input.reason.trim().length > 500) {
+      return {
+        ok: false,
+        message: "Escribe un motivo de al menos 3 caracteres.",
+      };
+    }
+    const { supabase } = await requirePermission("sales.cancel");
+    const { data, error } = await supabase.rpc("cancel_credit_sale", {
+      p_idempotency_key: input.idempotencyKey,
+      p_cash_session_id: input.cashSessionId,
+      p_sale_id: input.saleId,
+      p_refund_references: input.refundReferences,
+      p_authorization_token: input.authorizationToken,
+      p_reason: input.reason.trim(),
+    });
+    if (error) throw error;
+    const result = data as {
+      sale_folio: string;
+      folio: string;
+      credit_settlement: {
+        debt_reduction_cents: number;
+        paid_refund_cents: number;
+      };
+    };
+    revalidatePath("/pos");
+    revalidatePath("/caja");
+    revalidatePath("/inventario");
+    revalidatePath("/tickets");
+    revalidatePath("/clientes");
+    return {
+      ok: true,
+      saleFolio: result.sale_folio,
+      returnFolio: result.folio,
+      debtReductionCents: Number(result.credit_settlement.debt_reduction_cents),
+      paidRefundCents: Number(result.credit_settlement.paid_refund_cents),
+    };
+  } catch (error) {
+    const raw = databaseErrorText(error);
+    const messages: Array<[string, string]> = [
+      [
+        "RETURN_AUTHORIZATION_REQUIRED",
+        "Solicita de nuevo la autorización del gerente.",
+      ],
+      [
+        "REFUND_REFERENCE_REQUIRED",
+        "Captura la referencia de devolución de tarjeta o transferencia.",
+      ],
+      [
+        "INSUFFICIENT_CASH",
+        "No hay suficiente efectivo en esta caja para realizar el reembolso.",
+      ],
+      [
+        "RETURN_WINDOW_EXPIRED",
+        "El plazo configurado para devoluciones ya terminó.",
+      ],
+      [
+        "SALE_ALREADY_FULLY_RETURNED",
+        "Todos los artículos de esta venta ya fueron devueltos.",
+      ],
+      [
+        "SALE_NOT_CANCELLABLE",
+        "La venta ya fue cancelada o no admite cancelación.",
+      ],
+      [
+        "SESSION_FORBIDDEN",
+        "Abre una caja en la misma sucursal antes de cancelar.",
+      ],
+      ["NOT_AUTHORIZED", "No tienes permisos para cancelar esta venta."],
+    ];
+    return {
+      ok: false,
+      message:
+        messages.find(([code]) => raw.includes(code))?.[1] ??
+        "No fue posible cancelar la venta. No se modificó deuda, inventario ni caja.",
+    };
   }
 }

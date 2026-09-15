@@ -18,11 +18,13 @@ import {
   type ReceiptLine,
 } from "@/components/thermal-receipt";
 import {
+  type CancelCreditSaleResult,
   type CreateExchangeResult,
   type ExchangeSearchResult,
   type PrepareExchangeResult,
   type ReturnAuthorizationResult,
 } from "@/lib/returns";
+import { CreditCancellationDialog } from "./credit-cancellation-dialog";
 import { ReturnExchangeDialog } from "./return-exchange-dialog";
 import { BarcodeScanner } from "@/components/barcode-scanner";
 
@@ -87,6 +89,7 @@ export function TicketsRealWorkspace({
   locationId,
   findTicketAction,
   cancelSaleAction,
+  cancelCreditSaleAction,
   prepareExchangeAction,
   searchExchangeVariantsAction,
   authorizeReturnAction,
@@ -103,6 +106,14 @@ export function TicketsRealWorkspace({
     code: string;
   }) => Promise<{ ok: true; ticket: Ticket } | { ok: false; message: string }>;
   cancelSaleAction?: (saleId: string, reason: string) => Promise<CancelResult>;
+  cancelCreditSaleAction?: (input: {
+    idempotencyKey: string;
+    cashSessionId: string;
+    saleId: string;
+    refundReferences: Array<{ method_code: string; reference: string }>;
+    authorizationToken: string;
+    reason: string;
+  }) => Promise<CancelCreditSaleResult>;
   prepareExchangeAction?: (saleId: string) => Promise<PrepareExchangeResult>;
   searchExchangeVariantsAction?: (input: {
     query: string;
@@ -147,6 +158,9 @@ export function TicketsRealWorkspace({
     useState(initialReturnLookup);
   const deferredQuery = useDeferredValue(query);
   const selected = rows.find((ticket) => ticket.id === selectedId) ?? null;
+  const selectedIsCredit = Boolean(
+    selected?.payments.some((payment) => payment.method_code === "CREDIT"),
+  );
 
   const filtered = useMemo(() => {
     const start = new Date(periodStarts[period]);
@@ -448,7 +462,7 @@ export function TicketsRealWorkspace({
                     Cambio o devolución
                   </button>
                 ) : null}
-                {cancelSaleAction &&
+                {(cancelSaleAction || cancelCreditSaleAction) &&
                 selected.status === "COMPLETED" &&
                 selected.cash_session_status === "OPEN" ? (
                   <button
@@ -478,7 +492,34 @@ export function TicketsRealWorkspace({
           )}
         </aside>
       </div>
-      {cancelOpen && selected ? (
+      {cancelOpen &&
+      selected &&
+      selectedIsCredit &&
+      prepareExchangeAction &&
+      authorizeReturnAction &&
+      cancelCreditSaleAction ? (
+        <CreditCancellationDialog
+          saleId={selected.id}
+          folio={selected.folio}
+          onClose={() => setCancelOpen(false)}
+          prepareAction={prepareExchangeAction}
+          authorizeAction={authorizeReturnAction}
+          cancelAction={cancelCreditSaleAction}
+          onCancelled={(reason) => {
+            setRows((current) =>
+              current.map((ticket) =>
+                ticket.id === selected.id
+                  ? {
+                      ...ticket,
+                      status: "CANCELLED",
+                      cancellation_reason: reason,
+                    }
+                  : ticket,
+              ),
+            );
+          }}
+        />
+      ) : cancelOpen && selected ? (
         <div className="modal-backdrop">
           <section
             className="checkout-modal compact-modal"

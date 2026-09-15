@@ -16,13 +16,48 @@ const state = {
   locationId: "",
   sessionA: "",
   sessionB: "",
+  adminSession: "",
   customerId: "",
+  adminEmployeeCode: "",
+  creditSaleId: "",
 };
 
 function publicClient() {
   return createClient(url, publishableKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+}
+
+function dateInZone(timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const value = Object.fromEntries(
+    parts.map((part) => [part.type, part.value]),
+  );
+  return `${value.year}-${value.month}-${value.day}`;
+}
+
+async function clientInTimezone(source: SupabaseClient, timeZone: string) {
+  const current = await source.auth.getSession();
+  const client = createClient(url, publishableKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+    global: { headers: { Prefer: `timezone=${timeZone}` } },
+  });
+  const session = current.data.session;
+  expect(session).not.toBeNull();
+  expect(
+    (
+      await client.auth.setSession({
+        access_token: session!.access_token,
+        refresh_token: session!.refresh_token,
+      })
+    ).error,
+  ).toBeNull();
+  return client;
 }
 
 async function createVariant(label: string, priceCents: number) {
@@ -89,11 +124,12 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
       });
       expect(auth.error).toBeNull();
       const id = auth.data.user!.id;
+      const employeeCode = `CV${definition.key.toUpperCase()}${runCode}`;
       expect(
         (
           await server.from("app_users").insert({
             id,
-            employee_code: `CV${definition.key.toUpperCase()}${runCode}`,
+            employee_code: employeeCode,
             full_name: `Crédito venta ${definition.key}`,
             email,
             role_id: roleIds[definition.role],
@@ -113,6 +149,7 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
         (await client.auth.signInWithPassword({ email, password })).error,
       ).toBeNull();
       state[definition.key] = { id, client };
+      if (definition.key === "admin") state.adminEmployeeCode = employeeCode;
     }
 
     const registerA = await state.admin!.client.rpc("create_cash_register", {
@@ -125,7 +162,15 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
       p_code: "CAJA02",
       p_name: "Caja 02",
     });
-    const [openA, openB] = await Promise.all([
+    const registerAdmin = await state.admin!.client.rpc(
+      "create_cash_register",
+      {
+        p_location_id: state.locationId,
+        p_code: "CAJA03",
+        p_name: "Caja administrativa",
+      },
+    );
+    const [openA, openB, openAdmin] = await Promise.all([
       state.cashierA!.client.rpc("open_cash_session", {
         p_register_id: registerA.data.id,
         p_opening_amount_cents: 10000,
@@ -134,11 +179,17 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
         p_register_id: registerB.data.id,
         p_opening_amount_cents: 10000,
       }),
+      state.admin!.client.rpc("open_cash_session", {
+        p_register_id: registerAdmin.data.id,
+        p_opening_amount_cents: 20000,
+      }),
     ]);
     expect(openA.error).toBeNull();
     expect(openB.error).toBeNull();
     state.sessionA = openA.data.id;
     state.sessionB = openB.data.id;
+    expect(openAdmin.error).toBeNull();
+    state.adminSession = openAdmin.data.id;
 
     const customer = await state.cashierA!.client.rpc("create_customer", {
       p_full_name: `Cliente venta crédito ${runCode}`,
@@ -199,6 +250,7 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
       ),
     ]);
     expect(results.filter((result) => !result.error)).toHaveLength(1);
+    state.creditSaleId = results.find((result) => !result.error)!.data.id;
     expect(results.find((result) => result.error)?.error?.message).toContain(
       "CREDIT_LIMIT_EXCEEDED",
     );
@@ -245,6 +297,385 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
     );
     expect(statement.error).toBeNull();
     expect(statement.data.balance_cents).toBe(10000);
+    const receipt = await state.cashierA!.client.rpc(
+      "get_customer_credit_payment_receipt",
+      { p_payment_id: first.data.id },
+    );
+    expect(receipt.error).toBeNull();
+    expect(receipt.data).toMatchObject({
+      id: first.data.id,
+      total_cents: 10000,
+      balance_cents: 10000,
+      customer_name: expect.any(String),
+      folio: expect.stringMatching(/-A-\d{6}$/),
+    });
+    expect(receipt.data.parts).toEqual([
+      expect.objectContaining({ method_code: "CASH", amount_cents: 5000 }),
+      expect.objectContaining({ method_code: "CARD", amount_cents: 5000 }),
+    ]);
+  });
+
+  it("reduce primero la deuda y sólo devuelve el dinero realmente abonado", async () => {
+    expect(
+      (
+        await state.admin!.client.rpc("update_my_profile", {
+          p_full_name: null,
+          p_new_pin: "7319",
+        })
+      ).error,
+    ).toBeNull();
+    const authorization = await state.cashierA!.client.rpc(
+      "verify_supervisor_pin",
+      {
+        p_employee_code: state.adminEmployeeCode,
+        p_pin: "7319",
+        p_permission: "returns.authorize",
+      },
+    );
+    expect(authorization.error).toBeNull();
+    const item = await state
+      .server!.from("sale_items")
+      .select("id")
+      .eq("sale_id", state.creditSaleId)
+      .single();
+    expect(item.error).toBeNull();
+
+    const returned = await state.cashierA!.client.rpc(
+      "create_return_exchange",
+      {
+        p_idempotency_key: crypto.randomUUID(),
+        p_cash_session_id: state.sessionA,
+        p_original_sale_id: state.creditSaleId,
+        p_items_in: [
+          {
+            sale_item_id: item.data!.id,
+            quantity: 1,
+            condition: "RESELLABLE",
+          },
+        ],
+        p_items_out: [],
+        p_charge_payments: [],
+        p_refund_references: [
+          { method_code: "CARD", reference: "DEV-CREDITO-001" },
+        ],
+        p_authorization_token: authorization.data.authorization_token,
+        p_reason: "Devolución de venta con abono parcial",
+      },
+    );
+    expect(returned.error).toBeNull();
+    expect(returned.data.credit_settlement).toEqual({
+      debt_reduction_cents: 10000,
+      paid_refund_cents: 10000,
+    });
+    expect(returned.data.payments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ method_code: "CASH", amount_cents: 5000 }),
+        expect.objectContaining({ method_code: "CARD", amount_cents: 5000 }),
+      ]),
+    );
+    expect(returned.data.payments).toHaveLength(2);
+    const summary = await state.cashierA!.client.rpc(
+      "get_customer_credit_summary",
+      { p_customer_id: state.customerId },
+    );
+    expect(summary.data.balance_cents).toBe(0);
+    const statement = await state.cashierA!.client.rpc(
+      "get_customer_credit_statement",
+      { p_customer_id: state.customerId },
+    );
+    expect(
+      statement.data.entries.some(
+        (entry: { entry_type: string; amount_cents: number }) =>
+          entry.entry_type === "RETURN" && entry.amount_cents === -10000,
+      ),
+    ).toBe(true);
+  });
+
+  it("no permite que la cancelación anterior deje una deuda huérfana", async () => {
+    const variantId = await createVariant(
+      "Crédito protegido al cancelar",
+      8000,
+    );
+    const due = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+    const sale = await state.cashierA!.client.rpc("create_credit_sale", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_items: [{ variant_id: variantId, quantity: 1 }],
+      p_payments: [{ method_code: "CREDIT", amount_cents: 8000 }],
+      p_customer_id: state.customerId,
+      p_due_date: due,
+      p_discounts: [],
+      p_notes: null,
+    });
+    expect(sale.error).toBeNull();
+    const cancelled = await state.admin!.client.rpc("cancel_sale", {
+      p_sale_id: sale.data.id,
+      p_reason: "No debe dejar deuda huérfana",
+    });
+    expect(cancelled.error?.message).toContain(
+      "CREDIT_CANCELLATION_REQUIRES_RETURN",
+    );
+    const persisted = await state
+      .server!.from("sales")
+      .select("status")
+      .eq("id", sale.data.id)
+      .single();
+    expect(persisted.data?.status).toBe("COMPLETED");
+  });
+
+  it("una devolución totalmente pendiente no entrega dinero", async () => {
+    const variantId = await createVariant("Crédito sin abono", 10000);
+    const due = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+    const sale = await state.cashierA!.client.rpc("create_credit_sale", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_items: [{ variant_id: variantId, quantity: 1 }],
+      p_payments: [{ method_code: "CREDIT", amount_cents: 10000 }],
+      p_customer_id: state.customerId,
+      p_due_date: due,
+      p_discounts: [],
+      p_notes: null,
+    });
+    expect(sale.error).toBeNull();
+    const item = await state
+      .server!.from("sale_items")
+      .select("id")
+      .eq("sale_id", sale.data.id)
+      .single();
+    const authorization = await state.cashierA!.client.rpc(
+      "verify_supervisor_pin",
+      {
+        p_employee_code: state.adminEmployeeCode,
+        p_pin: "7319",
+        p_permission: "returns.authorize",
+      },
+    );
+    const returned = await state.cashierA!.client.rpc(
+      "create_return_exchange",
+      {
+        p_idempotency_key: crypto.randomUUID(),
+        p_cash_session_id: state.sessionA,
+        p_original_sale_id: sale.data.id,
+        p_items_in: [
+          {
+            sale_item_id: item.data!.id,
+            quantity: 1,
+            condition: "RESELLABLE",
+          },
+        ],
+        p_items_out: [],
+        p_charge_payments: [],
+        p_refund_references: [],
+        p_authorization_token: authorization.data.authorization_token,
+        p_reason: "Devolución sin dinero recibido",
+      },
+    );
+    expect(returned.error).toBeNull();
+    expect(returned.data.credit_settlement).toEqual({
+      debt_reduction_cents: 10000,
+      paid_refund_cents: 0,
+    });
+    expect(returned.data.payments).toEqual([]);
+
+    const paid = await state.cashierA!.client.rpc(
+      "record_customer_credit_payment",
+      {
+        p_idempotency_key: crypto.randomUUID(),
+        p_cash_session_id: state.sessionA,
+        p_customer_id: state.customerId,
+        p_payments: [
+          { method_code: "CARD", amount_cents: 8000, reference: "ABONO-008" },
+        ],
+        p_note: "Liquida el único cargo que sigue abierto",
+      },
+    );
+    expect(paid.error).toBeNull();
+    const finalSummary = await state.cashierA!.client.rpc(
+      "get_customer_credit_summary",
+      { p_customer_id: state.customerId },
+    );
+    expect(finalSummary.data.balance_cents).toBe(0);
+    expect(finalSummary.data.oldest_due_date).toBeNull();
+  });
+
+  it("cancela una venta a crédito con un documento compensatorio idempotente", async () => {
+    const variantId = await createVariant("Crédito cancelado completo", 10000);
+    const due = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+    const sale = await state.cashierA!.client.rpc("create_credit_sale", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_items: [{ variant_id: variantId, quantity: 1 }],
+      p_payments: [
+        { method_code: "CASH", amount_cents: 3000, tendered_cents: 3000 },
+        { method_code: "CREDIT", amount_cents: 7000 },
+      ],
+      p_customer_id: state.customerId,
+      p_due_date: due,
+      p_discounts: [],
+      p_notes: null,
+    });
+    expect(sale.error).toBeNull();
+
+    const authorization = await state.admin!.client.rpc(
+      "verify_supervisor_pin",
+      {
+        p_employee_code: state.adminEmployeeCode,
+        p_pin: "7319",
+        p_permission: "returns.authorize",
+      },
+    );
+    expect(authorization.error).toBeNull();
+    const key = crypto.randomUUID();
+    const input = {
+      p_idempotency_key: key,
+      p_cash_session_id: state.adminSession,
+      p_sale_id: sale.data.id,
+      p_refund_references: [],
+      p_authorization_token: authorization.data.authorization_token,
+      p_reason: "Cancelación completa autorizada",
+    };
+    const cancelled = await state.admin!.client.rpc(
+      "cancel_credit_sale",
+      input,
+    );
+    const retry = await state.admin!.client.rpc("cancel_credit_sale", input);
+    expect(cancelled.error).toBeNull();
+    expect(retry.error).toBeNull();
+    expect(retry.data.id).toBe(cancelled.data.id);
+    expect(cancelled.data.credit_settlement).toEqual({
+      debt_reduction_cents: 7000,
+      paid_refund_cents: 3000,
+    });
+
+    const persisted = await state
+      .server!.from("sales")
+      .select("status,cancellation_reason")
+      .eq("id", sale.data.id)
+      .single();
+    expect(persisted.data).toMatchObject({
+      status: "CANCELLED",
+      cancellation_reason: "Cancelación completa autorizada",
+    });
+    const inventory = await state
+      .server!.from("inventory_by_location")
+      .select("qty")
+      .eq("variant_id", variantId)
+      .eq("location_id", state.locationId)
+      .single();
+    expect(Number(inventory.data?.qty)).toBe(2);
+    const refundCash = await state
+      .server!.from("cash_movements")
+      .select("amount_cents")
+      .eq("session_id", state.adminSession)
+      .eq("reference_type", "RETURN")
+      .eq("reference_id", cancelled.data.id);
+    expect(refundCash.data).toEqual([{ amount_cents: -3000 }]);
+    const duplicateReturns = await state
+      .server!.from("returns")
+      .select("id")
+      .eq("original_sale_id", sale.data.id);
+    expect(duplicateReturns.data).toHaveLength(1);
+  });
+
+  it("autoriza un solo crédito vencido, conserva el atraso y permite reintento idempotente", async () => {
+    const westZone = "Etc/GMT+12";
+    const eastZone = "Pacific/Kiritimati";
+    const westCashier = await clientInTimezone(
+      state.cashierA!.client,
+      westZone,
+    );
+    const eastCashier = await clientInTimezone(
+      state.cashierA!.client,
+      eastZone,
+    );
+    const overdueVariant = await createVariant("Crédito que vence", 5000);
+    const firstSale = await westCashier.rpc("create_credit_sale", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_items: [{ variant_id: overdueVariant, quantity: 1 }],
+      p_payments: [{ method_code: "CREDIT", amount_cents: 5000 }],
+      p_customer_id: state.customerId,
+      p_due_date: dateInZone(westZone),
+      p_discounts: [],
+      p_notes: null,
+    });
+    expect(firstSale.error).toBeNull();
+
+    const summary = await eastCashier.rpc("get_customer_credit_summary", {
+      p_customer_id: state.customerId,
+    });
+    expect(summary.error).toBeNull();
+    expect(summary.data.has_overdue).toBe(true);
+
+    const normalAttemptVariant = await createVariant(
+      "Crédito normal bloqueado",
+      4000,
+    );
+    const due = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+    const normalAttempt = await eastCashier.rpc("create_credit_sale", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_items: [{ variant_id: normalAttemptVariant, quantity: 1 }],
+      p_payments: [{ method_code: "CREDIT", amount_cents: 4000 }],
+      p_customer_id: state.customerId,
+      p_due_date: due,
+      p_discounts: [],
+      p_notes: null,
+    });
+    expect(normalAttempt.error?.message).toContain("CREDIT_OVERDUE");
+
+    const authorization = await eastCashier.rpc("verify_supervisor_pin", {
+      p_employee_code: state.adminEmployeeCode,
+      p_pin: "7319",
+      p_permission: "credit.override",
+    });
+    expect(authorization.error).toBeNull();
+    expect(authorization.data.status).toBe("AUTHORIZED");
+
+    const key = crypto.randomUUID();
+    const input = {
+      p_idempotency_key: key,
+      p_cash_session_id: state.sessionA,
+      p_items: [{ variant_id: normalAttemptVariant, quantity: 1 }],
+      p_payments: [{ method_code: "CREDIT", amount_cents: 4000 }],
+      p_customer_id: state.customerId,
+      p_due_date: due,
+      p_overdue_authorization_token: authorization.data.authorization_token,
+      p_override_reason: "Excepción única autorizada para prueba",
+      p_discounts: [],
+      p_notes: null,
+    };
+    const allowed = await eastCashier.rpc("create_overdue_credit_sale", input);
+    const retry = await eastCashier.rpc("create_overdue_credit_sale", input);
+    expect(allowed.error).toBeNull();
+    expect(retry.error).toBeNull();
+    expect(retry.data.id).toBe(allowed.data.id);
+
+    const reused = await eastCashier.rpc("create_overdue_credit_sale", {
+      ...input,
+      p_idempotency_key: crypto.randomUUID(),
+    });
+    expect(reused.error?.message).toContain("CREDIT_OVERDUE_OVERRIDE_REQUIRED");
+
+    const audit = await state
+      .server!.from("audit_log")
+      .select("metadata")
+      .eq("action", "customer_credit.overdue_exception_used")
+      .eq("entity_id", allowed.data.id)
+      .single();
+    expect(audit.error).toBeNull();
+    expect(audit.data?.metadata).toMatchObject({
+      customer_id: state.customerId,
+      credit_cents: 4000,
+      overdue_balance_cents: 5000,
+    });
+    expect(
+      (
+        await eastCashier.rpc("get_customer_credit_summary", {
+          p_customer_id: state.customerId,
+        })
+      ).data.has_overdue,
+    ).toBe(true);
   });
 
   it("mantiene comprobantes y asignaciones fuera del acceso directo", async () => {
