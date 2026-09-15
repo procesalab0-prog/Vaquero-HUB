@@ -2787,6 +2787,24 @@ Entrega visible 0.42.0 — cancelación segura de apartados vencidos:
   excepciones devuelven abonos y por cuál método. Sustitución y entrega siguen
   como los siguientes bloques de M7.3.
 
+Entrega visible 0.43.0 — sustituciones atómicas en apartados:
+
+- La ficha de cada apartado muestra sus productos reales. Administradores y
+  gerentes pueden elegir una línea, buscar por producto, talla, color, SKU o
+  código y sustituirla sin volver a capturar el documento.
+- La autorización se separa en `layaways.modify`; el permiso operativo general
+  de una cajera no le permite cambiar mercancía por omisión.
+- PostgreSQL libera la reserva anterior, comprueba y reserva la nueva variante,
+  actualiza el renglón y recalcula total, saldo y estado como una sola operación.
+- Los abonos históricos permanecen intactos. Un producto de mayor precio aumenta
+  el saldo; uno que dejaría el total por debajo de lo pagado se rechaza porque
+  todavía no se ha definido cómo devolver ese excedente.
+- Cada sustitución registra variantes, precios, cantidades, totales, saldos,
+  motivo y actor en un historial inmutable. Reintentos y operaciones simultáneas
+  no pueden aplicar dos cambios sobre la misma versión del renglón.
+- Continúan para cerrar M7.3 la liquidación y entrega, la política excepcional de
+  devolución y la entrega en otra sucursal mediante traspaso confirmado.
+
 Corrección visible 0.32.1 — traspasos y sucursales operables:
 
 - Más módulos deja de anunciar los traspasos como pendientes y enlaza al flujo

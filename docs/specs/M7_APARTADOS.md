@@ -192,3 +192,20 @@ y en el comprobante aceptado por el cliente antes de recibir dinero.
 - Cancelar antes del vencimiento permanece bloqueado porque la política de
   devolución para ese caso sigue pendiente en §6. No se infiere una regla de
   dinero desde la interfaz.
+
+## 11. Avance implementado en 0.43.0
+
+- Administradores y gerentes reciben el permiso separado `layaways.modify`;
+  una cajera puede cobrar abonos pero no sustituir mercancía por omisión.
+- Cada ficha muestra sus renglones reales y permite buscar un reemplazo por
+  producto, talla, color, SKU o código sin volver a capturar el apartado.
+- La sustitución reemplaza la línea completa: libera la variante anterior,
+  reserva la nueva y recalcula total, saldo y estado dentro de una transacción.
+- Los abonos ya registrados no se editan ni se reasignan. Si el nuevo total
+  quedara por debajo de lo pagado, la operación se bloquea hasta definir la
+  política de devolución pendiente en §6.
+- El historial inmutable conserva variante y precio anterior y nuevo, cantidad,
+  totales, saldos, motivo, actor y llave idempotente.
+- Los candados y la variante esperada evitan perder cambios cuando dos personas
+  intentan sustituir al mismo tiempo. Una falla de existencia revierte también
+  la liberación de la pieza original.
