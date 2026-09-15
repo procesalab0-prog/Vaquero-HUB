@@ -176,6 +176,22 @@ Dos salidas:
 Recomendado: la opción 2 si va a haber una sola caja. Conviene decidirlo antes
 de octubre, porque es una operación de mostrador con el cliente enfrente.
 
+## Decisión del dueño: cancelar un apartado antes de que venza
+
+El sistema hoy se niega, a propósito: la spec dice qué pasa con un apartado
+**vencido** (lo abonado se retiene como penalización) pero no dice nada de
+cuando **el cliente se arrepiente antes de la fecha**. La función responde
+`LAYAWAY_CANCELLATION_POLICY_UNDEFINED` en vez de inventar una regla con el
+dinero de alguien.
+
+En la tienda eso pasa, así que hay que decidir: ¿se puede cancelar antes de
+que venza? ¿se devuelve lo abonado, se retiene una parte, o lo autoriza el
+gerente? ¿y se devuelve por el mismo método de pago, como ya hacen las
+devoluciones de venta?
+
+Va junto con la pregunta 5.4: sin enganche mínimo, ¿se puede confirmar un
+apartado con $0 abonados?
+
 ## Orden inmediato de implementación
 
 1. El lector de cámara quedó construido en 0.15.0. Probarlo dentro de la PWA

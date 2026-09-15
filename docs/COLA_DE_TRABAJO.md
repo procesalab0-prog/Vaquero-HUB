@@ -1185,6 +1185,54 @@ cierre definitivo. Todas están en [`PREGUNTAS_CLIENTE.md`](PREGUNTAS_CLIENTE.md
 | Envío automático por SMS o correo                   | Pregunta 3.5; WhatsApp manual ya está confirmado |
 | Costo de compra: promedio ponderado o último        | Pregunta 4.1                                     |
 
+### Revisión de M7.3: apartados
+
+Verificado ejecutando contra una base reconstruida: 87 migraciones aplican
+limpio. **No se encontraron defectos.**
+
+La prueba que define el módulo —**que lo apartado no se pueda vender**— la
+pasa. Es la primera vez que `reserved_qty` se usa de verdad desde que se creó
+en M3, y el candado que ya traía `app.apply_movement` la respeta solo.
+
+| Prueba                                              | Resultado medido                       |
+| --------------------------------------------------- | ---------------------------------------- |
+| Apartar 3 de 5 botas                                | 5 totales, 3 apartadas                   |
+| Vender las 2 libres                                 | Permitido                                |
+| **Vender una de las apartadas**                     | **`INSUFFICIENT_STOCK`**                 |
+| Entregar sin liquidar                               | `LAYAWAY_NOT_READY`                      |
+| Abonar de más                                       | `LAYAWAY_NOT_PAYABLE`                    |
+| Entregar ya liquidado                               | Genera la venta, saca la mercancía y libera la reserva |
+| Mover a mano la fecha de vencimiento                | `LAYAWAY_LEDGER_IMMUTABLE`, ni como superusuario |
+
+El ciclo completo cuadra: cada abono entra al cajón, la entrega no cobra de
+nuevo porque ya estaba pagado, y al final la reserva queda en cero.
+
+### Decisión del dueño: cancelar un apartado que todavía no vence
+
+Al cancelar un apartado **no vencido**, el sistema responde
+`LAYAWAY_CANCELLATION_POLICY_UNDEFINED`. **No es un defecto: es la decisión
+correcta.** La spec define qué pasa cuando la tienda cancela un apartado
+vencido —lo abonado se retiene como penalización— pero no dice nada del caso
+en que **el cliente se arrepiente antes de la fecha**. En vez de inventar una
+regla con el dinero de alguien, la función se niega y lo dice.
+
+Pero en una tienda eso pasa: «ya no lo quiero, devuélvanme lo que llevo
+abonado». Hoy no hay salida por sistema.
+
+Lo que falta decidir:
+
+1. ¿Se puede cancelar antes del vencimiento, o hay que esperar a que venza?
+2. Si se puede, ¿se devuelve lo abonado, se retiene una parte, o se deja a
+   criterio del gerente con autorización?
+3. Si se devuelve, ¿por el mismo método de pago? Ahí ya hay precedente: la
+   devolución de una venta reparte por método original y nunca convierte
+   tarjeta en efectivo. Conviene que el apartado siga la misma regla.
+
+Va junto con la pregunta 5.4, que tampoco está contestada: **sin enganche
+mínimo, ¿se puede confirmar un apartado con $0 abonados?** Si la respuesta es
+que sí, un apartado sin dinero de por medio aparta mercancía real y el caso de
+cancelación anticipada se vuelve más frecuente, no menos.
+
 ## Deuda pendiente
 
 | Qué                                                                                       | Dónde              |
