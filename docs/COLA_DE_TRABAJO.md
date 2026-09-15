@@ -1227,6 +1227,63 @@ permiso, y se acaban las dos copias. No se hizo ahora porque toca el corazón
 del inventario y conviene hacerlo junto con el módulo que lo necesite, no
 antes.
 
+### Revisión de M7.2: crédito cruzado con devoluciones y cancelaciones
+
+Verificado ejecutando contra una base reconstruida: 81 migraciones aplican
+limpio. Es donde el dinero puede salir dos veces, y **no sale**.
+
+La prueba que importaba: **compra $1,000 a crédito, abona $300 y devuelve la
+mercancía.**
+
+| Momento                      | Deuda   | Caja    |
+| ---------------------------- | ------- | ------- |
+| Venta a crédito de $1,000    | $1,000  | $2,000  |
+| Abona $300 en efectivo       | $700    | $2,300  |
+| **Devuelve la bota**         | **$0**  | **$2,000** |
+
+Devolvió exactamente los $300 que había pagado y canceló los $700 que debía.
+**La tienda no entregó un peso de más.** Y el caso inverso —devolver sin haber
+abonado nada— no saca nada del cajón: la deuda baja a cero y ya.
+
+El resto también aguantó: la excepción de crédito vencido exige token de
+supervisor con `credit.override` y motivo escrito, y encima **se niega a usarse
+cuando no hace falta** (`CREDIT_OVERRIDE_NOT_REQUIRED`), así que no se puede
+quemar la autorización de adorno. El libro de crédito rechazó incluso mi
+intento de mover una fecha de vencimiento para simular un vencido.
+
+Codex además apretó mi migración de tipos de caja: yo dejé los permisos de
+tabla por omisión del esquema público y ellos los revocaron. Correcto.
+
+### Decisión del dueño: quién cancela una venta a crédito, y con cuántas cajas
+
+**Comprobado ejecutando que hoy no se puede cancelar una venta a crédito en una
+sucursal con una sola caja.** No es un error de programación: es cómo se
+cruzan tres reglas que por separado están bien.
+
+1. Una venta a crédito sólo se cancela con `cancel_credit_sale`; la
+   cancelación normal la rechaza a propósito.
+2. Esa función exige `sales.cancel`, que tienen ADMIN y MANAGER, **y** que
+   quien la ejecuta tenga **su propia caja abierta** en esa sucursal.
+3. Sólo puede haber una sesión abierta por caja.
+
+Resultado: la cajera tiene la caja abierta pero no el permiso; el gerente tiene
+el permiso pero no puede abrir sesión en la única caja. El cliente espera a que
+termine el turno.
+
+Hay dos salidas y la diferencia es de negocio, no técnica:
+
+- **Dos cajas por sucursal.** Cero código: el gerente abre la suya y cancela.
+  Es lo común en tiendas con mostrador y trastienda, y responde de paso la
+  pregunta 9.4 del cliente, que sigue sin contestar.
+- **Que la cajera pueda cancelar con PIN del gerente.** La función **ya exige**
+  un token de supervisor, así que el control no se debilita: cambia quién
+  aprieta el botón, no quién autoriza. Es el mismo patrón del descuento y de la
+  devolución, y es lo que recomiendo si va a haber una sola caja por sucursal.
+
+No se cambió por cuenta propia porque define quién puede anular una venta, y
+eso lo decide el dueño. **Conviene resolverlo antes de octubre:** es una
+operación de mostrador con un cliente enfrente.
+
 ## Bloqueado por el cliente
 
 No se empieza hasta tener respuesta. Todas están en

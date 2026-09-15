@@ -158,6 +158,24 @@ etiqueta y si el cajón de dinero está conectado a la BIXOLON.
 Antes de desinstalar SICAR: conseguir por separado el controlador de la
 impresora de etiquetas, que pudo haber llegado dentro de su instalador.
 
+## Decisión del dueño: cancelar una venta a crédito
+
+Comprobado ejecutando: **con una sola caja por sucursal, una venta a crédito no
+se puede cancelar durante el turno.** La cajera tiene la caja abierta pero no
+el permiso; el gerente tiene el permiso pero no puede abrir sesión en la única
+caja.
+
+Dos salidas:
+
+1. **Dos cajas por sucursal.** Cero código. De paso contesta la pregunta 9.4,
+   que sigue abierta.
+2. **Que la cajera cancele con PIN del gerente.** La función ya exige token de
+   supervisor, así que no se debilita el control: cambia quién aprieta el
+   botón, no quién autoriza.
+
+Recomendado: la opción 2 si va a haber una sola caja. Conviene decidirlo antes
+de octubre, porque es una operación de mostrador con el cliente enfrente.
+
 ## Orden inmediato de implementación
 
 1. El lector de cámara quedó construido en 0.15.0. Probarlo dentro de la PWA
