@@ -32,6 +32,7 @@ export type TicketPdfData = {
   totalCents?: number;
   payments?: TicketPdfPayment[];
   returnWindowDays: number;
+  logoPng?: Uint8Array;
 };
 
 const MM = 72 / 25.4;
@@ -60,17 +61,28 @@ function money(cents = 0) {
   return `$${pesos.format(cents / 100)}`;
 }
 
-function barcodeDataUrl(code: string) {
-  if (typeof document === "undefined") return null;
-  const canvas = document.createElement("canvas");
-  JsBarcode(canvas, code, {
+function barcodeBits(code: string) {
+  const target = {} as { encodings?: Array<{ data: string }> };
+  JsBarcode(target as unknown as SVGElement, code, {
     format: "CODE128",
     displayValue: false,
-    height: 42,
     margin: 0,
-    width: 1.45,
   });
-  return canvas.toDataURL("image/png");
+  return target.encodings?.map((encoding) => encoding.data).join("") ?? "";
+}
+
+async function loadLogo(data: TicketPdfData) {
+  if (data.logoPng) return data.logoPng;
+  if (typeof window === "undefined") return null;
+  try {
+    const response = await fetch("/brand/logo-vaquerosm-negro.png", {
+      cache: "force-cache",
+    });
+    if (!response.ok) return null;
+    return new Uint8Array(await response.arrayBuffer());
+  } catch {
+    return null;
+  }
 }
 
 function wrapText(text: string, font: PDFFont, size: number, maxWidth: number) {
@@ -93,9 +105,10 @@ function wrapText(text: string, font: PDFFont, size: number, maxWidth: number) {
 export async function createTicketPdf(data: TicketPdfData) {
   const receiptFolio =
     data.mode === "gift" ? giftFolio(data.folio) : data.folio;
+  const logoBytes = await loadLogo(data);
   const heightMm = Math.max(
     150,
-    116 +
+    131 +
       data.lines.length * (data.mode === "sale" ? 15 : 11) +
       (data.payments?.length ?? 0) * 7,
   );
@@ -147,8 +160,21 @@ export async function createTicketPdf(data: TicketPdfData) {
     }
   };
 
-  centered("VAQUERO SM", 15, bold);
-  y -= 19;
+  if (logoBytes) {
+    const logo = await pdf.embedPng(logoBytes);
+    const logoWidth = 50 * MM;
+    const logoHeight = 19 * MM;
+    page.drawImage(logo, {
+      x: (width - logoWidth) / 2,
+      y: y - logoHeight,
+      width: logoWidth,
+      height: logoHeight,
+    });
+    y -= 22 * MM;
+  } else {
+    centered("VAQUERO SM", 15, bold);
+    y -= 19;
+  }
   centered(`SUCURSAL ${data.locationName.toLocaleUpperCase("es-MX")}`, 8, bold);
   y -= 12;
   if (data.mode === "sale" && data.address) wrappedCentered(data.address, 7);
@@ -250,15 +276,22 @@ export async function createTicketPdf(data: TicketPdfData) {
   }
 
   y -= 3;
-  const barcode = barcodeDataUrl(receiptFolio);
+  const barcode = barcodeBits(receiptFolio);
   if (barcode) {
-    const image = await pdf.embedPng(barcode);
-    page.drawImage(image, {
-      x: 13 * MM,
-      y: y - 13 * MM,
-      width: 54 * MM,
-      height: 13 * MM,
-    });
+    const barcodeX = 13 * MM;
+    const barcodeY = y - 13 * MM;
+    const quietZone = 3 * MM;
+    const moduleWidth = (54 * MM - quietZone * 2) / barcode.length;
+    for (let index = 0; index < barcode.length; index += 1) {
+      if (barcode[index] !== "1") continue;
+      page.drawRectangle({
+        x: barcodeX + quietZone + index * moduleWidth,
+        y: barcodeY,
+        width: moduleWidth + 0.05,
+        height: 13 * MM,
+        color: rgb(0, 0, 0),
+      });
+    }
     y -= 17 * MM;
   }
   const folioWidth = mono.widthOfTextAtSize(receiptFolio, 8);
