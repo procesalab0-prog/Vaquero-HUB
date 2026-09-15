@@ -469,10 +469,11 @@ para venta; abonar reduce el saldo; cancelar libera el stock.
 - `quotes`, `quote_items` con estados `DRAFT`, `SENT`, `CONVERTED`,
   `EXPIRED`; una cotización **no** mueve inventario ni caja.
 - Ticket de regalo (mismo comprobante, sin precios).
-- Ticket digital mediante enlace seguro, opaco y no enumerable, sin
-  capacidad de modificar la venta ni consultar comprobantes ajenos.
-- Compartir nativo y apertura de WhatsApp con mensaje y enlace preparados:
-  **no requieren proveedor** y forman parte del alcance obligatorio.
+- Ticket digital como PDF local equivalente al comprobante térmico, sin enlace
+  público ni copia del destinatario. El cliente decide después desde qué
+  aplicación compartir el archivo.
+- Historial privado en Mi Vaquero: una venta ligada al cliente aparece sólo
+  dentro de su sesión autenticada y permite volver a descargar el PDF.
 - Envío automático por correo/SMS: **bloqueado** hasta elegir proveedor
   (sección 8). Se implementa desacoplado, de modo que una falla de cualquier
   canal jamás afecte una venta ya cobrada.
@@ -640,18 +641,18 @@ No es la migración: es leer un archivo para diseñar bien.
 Codex **no implementa** estas funciones hasta tener respuesta. Cada una
 indica qué milestone bloquea.
 
-| #   | Pregunta                                                                                                                                                         | Bloquea |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| 1   | Crédito a clientes: ¿ya existe en SICAR? ¿quién autoriza el límite? ¿hay recargos?                                                                               | M7      |
-| 2   | Descuento de cumpleaños: ¿automático o autorizado? ¿monto o porcentaje? ¿vigencia el día o el mes?                                                               | M7      |
-| 3   | Tarjeta de lealtad: ¿ya existe una tarjeta física con código impreso?                                                                                            | M7      |
-| 4   | Apartados: ¿plazo máximo? ¿enganche mínimo? ¿qué pasa al vencer?                                                                                                 | M7      |
-| 5   | Envío automático de tickets: ¿proveedor de SMS/correo y envío obligatorio o a petición? Compartir nativo y WhatsApp con enlace ya están aprobados sin proveedor. | M8      |
-| 6   | Ticket de regalo: ¿oculta sólo precios unitarios o también totales?                                                                                              | M8      |
-| 7   | Cotizaciones: ¿vigencia? ¿conversión parcial a venta?                                                                                                            | M8      |
-| 8   | Cambios: ¿se permite cambio por producto de distinto precio? ¿cómo se maneja la diferencia?                                                                      | M5      |
-| 9   | Costo de compra: ¿costo promedio ponderado o último costo?                                                                                                       | M6      |
-| 10  | Pagos: ¿cuántos métodos simultáneos permite hoy SICAR en una venta?                                                                                              | M4      |
+| #   | Pregunta                                                                                                                                                    | Bloquea |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| 1   | Crédito a clientes: ¿ya existe en SICAR? ¿quién autoriza el límite? ¿hay recargos?                                                                          | M7      |
+| 2   | Descuento de cumpleaños: ¿automático o autorizado? ¿monto o porcentaje? ¿vigencia el día o el mes?                                                          | M7      |
+| 3   | Tarjeta de lealtad: ¿ya existe una tarjeta física con código impreso?                                                                                       | M7      |
+| 4   | Apartados: ¿plazo máximo? ¿enganche mínimo? ¿qué pasa al vencer?                                                                                            | M7      |
+| 5   | Envío automático de tickets: ¿proveedor de SMS/correo y envío obligatorio o a petición? PDF local e historial autenticado ya están aprobados sin proveedor. | M8      |
+| 6   | Ticket de regalo: ¿oculta sólo precios unitarios o también totales?                                                                                         | M8      |
+| 7   | Cotizaciones: ¿vigencia? ¿conversión parcial a venta?                                                                                                       | M8      |
+| 8   | Cambios: ¿se permite cambio por producto de distinto precio? ¿cómo se maneja la diferencia?                                                                 | M5      |
+| 9   | Costo de compra: ¿costo promedio ponderado o último costo?                                                                                                  | M6      |
+| 10  | Pagos: ¿cuántos métodos simultáneos permite hoy SICAR en una venta?                                                                                         | M4      |
 
 ## 9. Dependencias externas y accesos
 
@@ -670,10 +671,10 @@ indica qué milestone bloquea.
 **Actualización de septiembre: no se compra impresora.** El dueño confirmó
 que el sistema debe funcionar con las dos que la tienda ya tiene:
 
-| Uso        | Equipo                                    |
-| ---------- | ----------------------------------------- |
-| Tickets    | **BIXOLON** térmica de mostrador          |
-| Etiquetas  | Impresora de etiquetas **marca SICAR**    |
+| Uso       | Equipo                                 |
+| --------- | -------------------------------------- |
+| Tickets   | **BIXOLON** térmica de mostrador       |
+| Etiquetas | Impresora de etiquetas **marca SICAR** |
 
 Esto **retira el riesgo en vez de agravarlo**, porque coincide con lo que
 ya se construyó. Tanto el ticket como la etiqueta se imprimen con

@@ -1176,14 +1176,62 @@ Siguiente bloque de M7.2 antes de M7.3:
 No bloquean el primer bloque de apartados, pero sí los módulos indicados o su
 cierre definitivo. Todas están en [`PREGUNTAS_CLIENTE.md`](PREGUNTAS_CLIENTE.md).
 
-| Qué                                                 | Qué falta saber                                  |
-| --------------------------------------------------- | ------------------------------------------------ |
-| Escalas de talla de sombreros, texanas y cinturones | Preguntas 1.3 y 1.4. Por eso se sembraron vacías |
-| Simbología del código de barras                     | Pregunta 1.1                                     |
-| Motor de puntos, redención, cumpleaños, niveles     | Sección 6 completa                               |
-| Apartados: excepciones, sustitución y otra sucursal | `specs/M7_APARTADOS.md` §6                       |
-| Envío automático por SMS o correo                   | Pregunta 3.5; WhatsApp manual ya está confirmado |
-| Costo de compra: promedio ponderado o último        | Pregunta 4.1                                     |
+| Qué                                                 | Qué falta saber                                                  |
+| --------------------------------------------------- | ---------------------------------------------------------------- |
+| Escalas de talla de sombreros, texanas y cinturones | Preguntas 1.3 y 1.4. Por eso se sembraron vacías                 |
+| Simbología del código de barras                     | Pregunta 1.1                                                     |
+| Motor de puntos, redención, cumpleaños, niveles     | Sección 6 completa                                               |
+| Apartados: excepciones, sustitución y otra sucursal | `specs/M7_APARTADOS.md` §6                                       |
+| Envío automático por SMS o correo                   | Pregunta 3.5; PDF local e historial privado ya están confirmados |
+| Costo de compra: promedio ponderado o último        | Pregunta 4.1                                                     |
+
+### Revisión de M7.3: apartados
+
+Verificado ejecutando contra una base reconstruida: 87 migraciones aplican
+limpio. **No se encontraron defectos.**
+
+La prueba que define el módulo —**que lo apartado no se pueda vender**— la
+pasa. Es la primera vez que `reserved_qty` se usa de verdad desde que se creó
+en M3, y el candado que ya traía `app.apply_movement` la respeta solo.
+
+| Prueba                               | Resultado medido                                       |
+| ------------------------------------ | ------------------------------------------------------ |
+| Apartar 3 de 5 botas                 | 5 totales, 3 apartadas                                 |
+| Vender las 2 libres                  | Permitido                                              |
+| **Vender una de las apartadas**      | **`INSUFFICIENT_STOCK`**                               |
+| Entregar sin liquidar                | `LAYAWAY_NOT_READY`                                    |
+| Abonar de más                        | `LAYAWAY_NOT_PAYABLE`                                  |
+| Entregar ya liquidado                | Genera la venta, saca la mercancía y libera la reserva |
+| Mover a mano la fecha de vencimiento | `LAYAWAY_LEDGER_IMMUTABLE`, ni como superusuario       |
+
+El ciclo completo cuadra: cada abono entra al cajón, la entrega no cobra de
+nuevo porque ya estaba pagado, y al final la reserva queda en cero.
+
+### Decisión del dueño: cancelar un apartado que todavía no vence
+
+Al cancelar un apartado **no vencido**, el sistema responde
+`LAYAWAY_CANCELLATION_POLICY_UNDEFINED`. **No es un defecto: es la decisión
+correcta.** La spec define qué pasa cuando la tienda cancela un apartado
+vencido —lo abonado se retiene como penalización— pero no dice nada del caso
+en que **el cliente se arrepiente antes de la fecha**. En vez de inventar una
+regla con el dinero de alguien, la función se niega y lo dice.
+
+Pero en una tienda eso pasa: «ya no lo quiero, devuélvanme lo que llevo
+abonado». Hoy no hay salida por sistema.
+
+Lo que falta decidir:
+
+1. ¿Se puede cancelar antes del vencimiento, o hay que esperar a que venza?
+2. Si se puede, ¿se devuelve lo abonado, se retiene una parte, o se deja a
+   criterio del gerente con autorización?
+3. Si se devuelve, ¿por el mismo método de pago? Ahí ya hay precedente: la
+   devolución de una venta reparte por método original y nunca convierte
+   tarjeta en efectivo. Conviene que el apartado siga la misma regla.
+
+Va junto con la pregunta 5.4, que tampoco está contestada: **sin enganche
+mínimo, ¿se puede confirmar un apartado con $0 abonados?** Si la respuesta es
+que sí, un apartado sin dinero de por medio aparta mercancía real y el caso de
+cancelación anticipada se vuelve más frecuente, no menos.
 
 ## Deuda pendiente
 
@@ -1242,7 +1290,10 @@ dice?** Que el código exista no significa que funcione.
 - [x] M8.2: cotizaciones que no mueven inventario ni caja; folio propio,
       cliente opcional, vigencia elegida por el usuario, estados, búsqueda y
       conversión completa por el cobro normal del POS.
-- [ ] M8.3: enlace digital opaco, compartir nativo y WhatsApp.
+- [x] M8.3: PDF de venta o regalo generado localmente, descarga auditable e
+      historial privado en Mi Vaquero para las ventas vinculadas al cliente.
+      El envío automático por WhatsApp/SMS/correo queda separado hasta elegir
+      proveedor; no existen enlaces públicos en la primera versión.
 - [x] M7.1: autorización de crédito y límite global por cliente, con cartera
       cerrada, consulta para POS y auditoría de cada cambio.
 - [x] M7.2: venta, abonos, devoluciones, excepción de atraso y cancelación
@@ -1256,6 +1307,11 @@ dice?** Que el código exista no significa que funcione.
   antes de cerrar deben resolverse las decisiones puntuales que siguen
   abiertas en `specs/M7_APARTADOS.md` §6.
 - [ ] Lealtad: pospuesta por decisión del negocio; no bloquea M7.
+- [ ] Fase final de diseño: después del piloto y con los recorridos estables,
+      ejecutar la auditoría visual descrita en el plan maestro y decidir con
+      evidencia entre conservar, refrescar o rediseñar. No sustituye las
+      revisiones ergonómicas de cada entrega ni puede empeorar velocidad,
+      accesibilidad o controles operativos.
 
 La conversión parcial de una cotización permanece fuera de M8.2 porque el
 negocio todavía no la ha definido. No se inventa: una cotización se cobra

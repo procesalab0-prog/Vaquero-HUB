@@ -10,6 +10,7 @@ import {
   createReturnExchange,
   findTicketByCode,
   prepareEqualExchange,
+  recordTicketDelivery,
   searchEqualExchangeVariants,
 } from "./actions";
 import { TicketsRealWorkspace, type Ticket } from "./tickets-real-workspace";
@@ -114,6 +115,7 @@ export default async function TicketsPage({
       createReturnExchangeAction={
         returnPermission.data ? createReturnExchange : undefined
       }
+      recordTicketDeliveryAction={recordTicketDelivery}
       initialReturnLookup={params.accion === "devolver"}
     />
   );

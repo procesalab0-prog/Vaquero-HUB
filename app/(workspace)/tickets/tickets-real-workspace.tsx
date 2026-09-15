@@ -3,6 +3,7 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import {
   ArrowRightLeft,
+  Download,
   FileText,
   Gift,
   Printer,
@@ -27,6 +28,7 @@ import {
 import { CreditCancellationDialog } from "./credit-cancellation-dialog";
 import { ReturnExchangeDialog } from "./return-exchange-dialog";
 import { BarcodeScanner } from "@/components/barcode-scanner";
+import type { TicketDeliveryEventInput } from "@/lib/ticket-delivery";
 
 type TicketItem = {
   line_number: number;
@@ -94,6 +96,7 @@ export function TicketsRealWorkspace({
   searchExchangeVariantsAction,
   authorizeReturnAction,
   createReturnExchangeAction,
+  recordTicketDeliveryAction,
   initialReturnLookup = false,
 }: {
   tickets: Ticket[];
@@ -141,6 +144,9 @@ export function TicketsRealWorkspace({
     authorizationToken: string;
     reason: string;
   }) => Promise<CreateExchangeResult>;
+  recordTicketDeliveryAction?: (
+    input: TicketDeliveryEventInput,
+  ) => Promise<void>;
   initialReturnLookup?: boolean;
 }) {
   const [rows, setRows] = useState(tickets);
@@ -152,7 +158,9 @@ export function TicketsRealWorkspace({
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
   const [ticketScannerOpen, setTicketScannerOpen] =
     useState(initialReturnLookup);
@@ -204,6 +212,70 @@ export function TicketsRealWorkspace({
     setReceiptMode("sale");
     setReprintDate(formatReceiptDate());
     setError("");
+    setNotice("");
+  }
+
+  async function downloadPdf() {
+    if (!selected) return;
+    const giftItems = selected.items.filter((item) => item.gift_receipt);
+    if (receiptMode === "gift" && giftItems.length === 0) {
+      setError("Este ticket no tiene artículos marcados para regalo.");
+      return;
+    }
+    const receiptItems = receiptMode === "gift" ? giftItems : selected.items;
+    setPdfBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const { createTicketPdf, downloadTicketPdf } = await import(
+        "@/lib/ticket-pdf"
+      );
+      const { blob, fileName } = await createTicketPdf({
+        mode: receiptMode,
+        folio: selected.folio,
+        soldAt: formatReceiptDate(new Date(selected.sold_at)),
+        locationName: selected.location.name,
+        address: selected.location.address,
+        phone: selected.location.phone,
+        cashierName: selected.cashier_name,
+        registerName: selected.register_name,
+        lines: receiptItems.map((item) => ({
+          name: item.product_name,
+          variant: item.variant_description,
+          code: item.sku,
+          quantity: Number(item.quantity),
+          unitPriceCents: Number(item.unit_price_cents),
+        })),
+        subtotalCents: Number(selected.subtotal_cents),
+        discountCents: Number(selected.discount_cents),
+        totalCents: Number(selected.total_cents),
+        payments: selected.payments.map((payment) => ({
+          methodName: payment.method_name,
+          amountCents: Number(payment.amount_cents),
+        })),
+        returnWindowDays,
+      });
+      downloadTicketPdf(blob, fileName);
+      setNotice(
+        "PDF descargado. Puedes compartirlo desde Archivos, Descargas o WhatsApp.",
+      );
+      await recordTicketDeliveryAction?.({
+        saleId: selected.id,
+        channel: "DOWNLOAD",
+        status: "DOWNLOADED",
+        receiptKind: receiptMode === "gift" ? "GIFT" : "SALE",
+      });
+    } catch {
+      setError("No fue posible crear el PDF. La venta no fue modificada.");
+      await recordTicketDeliveryAction?.({
+        saleId: selected.id,
+        channel: "DOWNLOAD",
+        status: "FAILED",
+        receiptKind: receiptMode === "gift" ? "GIFT" : "SALE",
+      });
+    } finally {
+      setPdfBusy(false);
+    }
   }
 
   async function findScannedTicket(code: string) {
@@ -420,6 +492,15 @@ export function TicketsRealWorkspace({
                   discount={Number(selected.discount_cents) / 100}
                   total={Number(selected.total_cents) / 100}
                   method={method}
+                  paymentDetails={
+                    receiptMode === "sale"
+                      ? selected.payments.map((payment) => ({
+                          method: payment.method_name,
+                          amount: Number(payment.amount_cents) / 100,
+                          reference: payment.reference,
+                        }))
+                      : []
+                  }
                   tendered={tendered}
                   change={change}
                   reprintLabel={reprintDate}
@@ -439,6 +520,11 @@ export function TicketsRealWorkspace({
                   {error}
                 </p>
               ) : null}
+              {notice ? (
+                <p className="admin-status" role="status">
+                  {notice}
+                </p>
+              ) : null}
               <div className="detail-actions">
                 <button
                   className="primary-button"
@@ -447,6 +533,15 @@ export function TicketsRealWorkspace({
                 >
                   <Printer aria-hidden="true" />
                   Imprimir esta vista
+                </button>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  disabled={pdfBusy}
+                  onClick={() => void downloadPdf()}
+                >
+                  <Download aria-hidden="true" />
+                  {pdfBusy ? "Preparando PDF…" : "Descargar PDF"}
                 </button>
                 {prepareExchangeAction &&
                 searchExchangeVariantsAction &&

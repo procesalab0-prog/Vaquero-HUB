@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { requirePermission } from "@/lib/auth/authorization";
 import { databaseErrorText } from "@/lib/returns";
+import type { TicketDeliveryEventInput } from "@/lib/ticket-delivery";
 import type {
   CancelCreditSaleResult,
   CreateExchangeResult,
@@ -25,6 +26,25 @@ type ExchangeVariantRow = {
   attributes: Record<string, string> | null;
   available_qty: number;
 };
+
+export async function recordTicketDelivery(
+  input: TicketDeliveryEventInput,
+): Promise<void> {
+  try {
+    const { supabase } = await requirePermission("pos.sell");
+    const { error } = await supabase.rpc("record_sale_ticket_delivery", {
+      p_sale_id: input.saleId,
+      p_channel: input.channel,
+      p_status: input.status,
+      p_receipt_kind: input.receiptKind,
+    });
+    if (error) throw error;
+  } catch (error) {
+    console.error("[tickets/recordTicketDelivery] failed", {
+      message: error instanceof Error ? error.message : "UNKNOWN_ERROR",
+    });
+  }
+}
 
 export async function findTicketByCode(input: {
   locationId: string;
