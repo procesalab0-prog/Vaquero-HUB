@@ -1160,8 +1160,10 @@ Siguiente bloque de M7.2 antes de M7.3:
 
 - Usa el motor real de devoluciones para restaurar una sola vez los artículos
   restantes; nunca llama a la cancelación M4 que duplicaría inventario o caja.
-- Requiere permiso de cancelación, autorización de gerente de un solo uso,
-  motivo y caja abierta en la misma sucursal.
+- Desde 0.40.0 la persona dueña de la caja ejecuta con `returns.create`; la
+  autorización de gerente de un solo uso, el motivo y la caja abierta en la
+  misma sucursal siguen siendo obligatorios. Esto permite operar una tienda con
+  una sola caja sin entregar el permiso permanente `sales.cancel` al cajero.
 - Reduce primero el cargo pendiente. Sólo el excedente realmente pagado se
   reembolsa por efectivo, tarjeta o transferencia y exige sus referencias.
 - La venta cambia a `CANCELLED` únicamente después de crear y conciliar el
@@ -1169,134 +1171,18 @@ Siguiente bloque de M7.2 antes de M7.3:
 - La llave idempotente permite repetir la petición sin crear otra devolución,
   otro ajuste de deuda ni otro movimiento de efectivo.
 
-### Revisión de M7: ventas a crédito y abonos
+## Decisiones del cliente todavía pendientes
 
-Verificado ejecutando contra una base reconstruida: 75 migraciones aplican
-limpio. **No se encontraron defectos.** Es el módulo donde la tienda entrega
-mercancía sin cobrar, así que se probó a fondo.
-
-| Prueba                                              | Resultado medido                          |
-| --------------------------------------------------- | ------------------------------------------- |
-| Vender a crédito sin cuenta autorizada              | `CREDIT_NOT_AUTHORIZED`                     |
-| La cajera intenta autorizar el crédito              | `NOT_AUTHORIZED`: es de gerencia            |
-| Venta a crédito de $1,000                           | **El cajón no se movió**: no entró dinero   |
-| Pasarse del límite                                  | `CREDIT_LIMIT_EXCEEDED`, y **la existencia no se descontó** |
-| **Dos ventas a crédito simultáneas** que juntas se pasan | Pasó una sola; el saldo quedó en $2,000 de $2,500 |
-| Abono en efectivo                                   | Bajó el saldo y **entró al cajón**          |
-| Abono con tarjeta                                   | Bajó el saldo y **no** entró al cajón       |
-| Abonar más de lo que se debe                        | `CREDIT_OVERPAYMENT`                        |
-| El almacén intenta recibir un abono                 | `NOT_AUTHORIZED`                            |
-
-Dos decisiones del diseño que conviene no deshacer: **el saldo se deriva del
-libro**, nunca es un número que se sobrescriba; y **`create_credit_sale` reusa
-`create_sale`**, así que hereda todas las protecciones de una venta normal.
-
-Codex además aplicó bien la regla de las migraciones: los dos arreglos de esta
-entrega se hicieron **hacia delante**, con nota explícita de que la original ya
-había corrido en staging. Y usó la tabla de tipos de folio para agregar
-`CREDIT_PAYMENT` con un INSERT, que era justo para lo que se creó.
-
-### Corregido: la misma trampa, ahora en el libro de caja
-
-`cash_movements.movement_type` se validaba con un CHECK que traía la lista
-completa, igual que los folios. **Ya se había reescrito tres veces** —M4 agregó
-`CANCELLATION`, M5 agregó `RETURN`, M7 agregó `CREDIT_PAYMENT`— y las tres
-salieron bien de milagro. La de folios falló a la segunda.
-
-Aquí el descuido costaría más: si alguien reescribe la lista y se le va
-`'SALE'`, **deja de poder entrar a la caja el dinero de las ventas**.
-
-Ahora es tabla con llave foránea, igual que los folios. Verificado ejecutando
-que venta en efectivo, retiro manual, abono a crédito y cierre de turno siguen
-funcionando, y que un tipo inventado se rechaza.
-
-### Queda una tercera copia de la misma lista
-
-`inventory_movements.movement_type` tiene el mismo CHECK con lista completa, y
-además **`app.apply_movement` la repite dentro de la función**, junto con el
-permiso que corresponde a cada tipo. Son dos lugares que hay que mantener a
-mano para el mismo dato.
-
-Todavía no ha fallado porque nadie ha agregado un tipo de inventario desde M3,
-pero **los apartados van a necesitar uno** para reservar mercancía.
-
-Propuesta para cuando toque: mover los tipos a `inventory_movement_types` con
-una columna `required_permission`, y que `apply_movement` lea el permiso de ahí
-en vez de traer el `case`. Así agregar un tipo es un INSERT que ya viaja con su
-permiso, y se acaban las dos copias. No se hizo ahora porque toca el corazón
-del inventario y conviene hacerlo junto con el módulo que lo necesite, no
-antes.
-
-### Revisión de M7.2: crédito cruzado con devoluciones y cancelaciones
-
-Verificado ejecutando contra una base reconstruida: 81 migraciones aplican
-limpio. Es donde el dinero puede salir dos veces, y **no sale**.
-
-La prueba que importaba: **compra $1,000 a crédito, abona $300 y devuelve la
-mercancía.**
-
-| Momento                      | Deuda   | Caja    |
-| ---------------------------- | ------- | ------- |
-| Venta a crédito de $1,000    | $1,000  | $2,000  |
-| Abona $300 en efectivo       | $700    | $2,300  |
-| **Devuelve la bota**         | **$0**  | **$2,000** |
-
-Devolvió exactamente los $300 que había pagado y canceló los $700 que debía.
-**La tienda no entregó un peso de más.** Y el caso inverso —devolver sin haber
-abonado nada— no saca nada del cajón: la deuda baja a cero y ya.
-
-El resto también aguantó: la excepción de crédito vencido exige token de
-supervisor con `credit.override` y motivo escrito, y encima **se niega a usarse
-cuando no hace falta** (`CREDIT_OVERRIDE_NOT_REQUIRED`), así que no se puede
-quemar la autorización de adorno. El libro de crédito rechazó incluso mi
-intento de mover una fecha de vencimiento para simular un vencido.
-
-Codex además apretó mi migración de tipos de caja: yo dejé los permisos de
-tabla por omisión del esquema público y ellos los revocaron. Correcto.
-
-### Decisión del dueño: quién cancela una venta a crédito, y con cuántas cajas
-
-**Comprobado ejecutando que hoy no se puede cancelar una venta a crédito en una
-sucursal con una sola caja.** No es un error de programación: es cómo se
-cruzan tres reglas que por separado están bien.
-
-1. Una venta a crédito sólo se cancela con `cancel_credit_sale`; la
-   cancelación normal la rechaza a propósito.
-2. Esa función exige `sales.cancel`, que tienen ADMIN y MANAGER, **y** que
-   quien la ejecuta tenga **su propia caja abierta** en esa sucursal.
-3. Sólo puede haber una sesión abierta por caja.
-
-Resultado: la cajera tiene la caja abierta pero no el permiso; el gerente tiene
-el permiso pero no puede abrir sesión en la única caja. El cliente espera a que
-termine el turno.
-
-Hay dos salidas y la diferencia es de negocio, no técnica:
-
-- **Dos cajas por sucursal.** Cero código: el gerente abre la suya y cancela.
-  Es lo común en tiendas con mostrador y trastienda, y responde de paso la
-  pregunta 9.4 del cliente, que sigue sin contestar.
-- **Que la cajera pueda cancelar con PIN del gerente.** La función **ya exige**
-  un token de supervisor, así que el control no se debilita: cambia quién
-  aprieta el botón, no quién autoriza. Es el mismo patrón del descuento y de la
-  devolución, y es lo que recomiendo si va a haber una sola caja por sucursal.
-
-No se cambió por cuenta propia porque define quién puede anular una venta, y
-eso lo decide el dueño. **Conviene resolverlo antes de octubre:** es una
-operación de mostrador con un cliente enfrente.
-
-## Bloqueado por el cliente
-
-No se empieza hasta tener respuesta. Todas están en
-[`PREGUNTAS_CLIENTE.md`](PREGUNTAS_CLIENTE.md).
+No bloquean el primer bloque de apartados, pero sí los módulos indicados o su
+cierre definitivo. Todas están en [`PREGUNTAS_CLIENTE.md`](PREGUNTAS_CLIENTE.md).
 
 | Qué                                                 | Qué falta saber                                  |
 | --------------------------------------------------- | ------------------------------------------------ |
 | Escalas de talla de sombreros, texanas y cinturones | Preguntas 1.3 y 1.4. Por eso se sembraron vacías |
 | Simbología del código de barras                     | Pregunta 1.1                                     |
 | Motor de puntos, redención, cumpleaños, niveles     | Sección 6 completa                               |
-| Crédito a clientes                                  | Pregunta 5.2                                     |
-| Apartados: plazo, enganche, vencimiento             | Pregunta 5.1                                     |
-| Envío de tickets por SMS o correo                   | Pregunta 3.5                                     |
+| Apartados: excepciones, sustitución y otra sucursal | `specs/M7_APARTADOS.md` §6                       |
+| Envío automático por SMS o correo                   | Pregunta 3.5; WhatsApp manual ya está confirmado |
 | Costo de compra: promedio ponderado o último        | Pregunta 4.1                                     |
 
 ## Deuda pendiente
@@ -1361,8 +1247,14 @@ dice?** Que el código exista no significa que funcione.
       cerrada, consulta para POS y auditoría de cada cambio.
 - [x] M7.2: venta, abonos, devoluciones, excepción de atraso y cancelación
       compensada conciliados y auditados.
-- [ ] M7.3: apartados; antes de cerrarlos deben resolverse las decisiones
-      puntuales que siguen abiertas en `specs/M7_APARTADOS.md` §6.
+- [~] M7.3: crea apartados reales desde el carrito, reserva inventario de forma
+  atómica, genera folio, permite buscar, recibe abonos mixtos con comprobante
+  inmutable, cancela vencidos, sustituye líneas completas conservando abonos e
+  inventario y entrega un apartado liquidado como una venta real sin volver a
+  mover caja. Faltan definir cancelaciones antes del vencimiento,
+  sustituciones que requieran devolver dinero y la entrega en otra sucursal;
+  antes de cerrar deben resolverse las decisiones puntuales que siguen
+  abiertas en `specs/M7_APARTADOS.md` §6.
 - [ ] Lealtad: pospuesta por decisión del negocio; no bloquea M7.
 
 La conversión parcial de una cotización permanece fuera de M8.2 porque el

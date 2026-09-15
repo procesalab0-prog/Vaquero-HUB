@@ -147,3 +147,86 @@ y en el comprobante aceptado por el cliente antes de recibir dinero.
 - Liquidar y entregar genera una venta normal sin volver a cobrar los abonos.
 - Ningún usuario sin permiso puede ejecutar operaciones sensibles llamando
   directamente al backend.
+
+## 8. Avance implementado en 0.40.0
+
+- El carrito de Venta crea un documento real con cliente, vencimiento editable,
+  folio propio y renglones con precio vigente.
+- El primer bloque permite iniciar con $0 abonados, coherente con la regla
+  confirmada de que no existe enganche mínimo. No crea movimientos de caja.
+- Reservar aumenta `reserved_qty` sin fingir una salida física y escribe un
+  libro inmutable separado con saldo anterior y nuevo.
+- La última pieza se protege con candado de fila y prueba concurrente. Dos cajas
+  no pueden confirmar la misma reserva.
+- La pantalla Apartados busca por folio, cliente o número de socio y distingue
+  próximos a vencer y vencidos sin cancelarlos automáticamente.
+- Todavía no permite recibir abonos, cancelar, sustituir ni entregar. Esas
+  operaciones llegan en bloques siguientes y no se simulan desde la interfaz.
+
+## 9. Avance implementado en 0.41.0
+
+- Un apartado abierto recibe abonos parciales o totales, incluidos pagos mixtos
+  entre efectivo, tarjeta y transferencia. No existe monto mínimo.
+- La operación es idempotente, serializa el apartado y rechaza pagar por encima
+  del saldo. Sólo el efectivo mueve el cajón; los otros métodos exigen referencia.
+- Cada abono conserva saldo anterior y posterior, sucursal, caja, empleado,
+  métodos y referencias en registros inmutables.
+- Al liquidar, el apartado pasa a `PAID`; la mercancía continúa reservada hasta
+  construir y confirmar la entrega, que no se simula en esta entrega.
+- El comprobante real se recupera por identificador, se muestra después del
+  registro y puede imprimirse a 80 mm.
+
+## 10. Avance implementado en 0.42.0
+
+- Un empleado con `layaways.manage` puede cancelar manualmente un apartado
+  vencido desde su ficha, con motivo obligatorio y sin PIN adicional.
+- Los abonos ya recibidos se conservan íntegros como penalización. El saldo que
+  faltaba queda documentado como cancelado y no se fabrica una devolución ni un
+  movimiento de caja.
+- La reserva de cada variante se libera bajo candado y se registra en el libro
+  inmutable con saldo anterior, nuevo, actor, folio, motivo y llave de operación.
+- El reintento con la misma llave devuelve el mismo resultado; una segunda
+  cancelación distinta se rechaza y nunca libera dos veces la mercancía.
+- La interfaz muestra antes de confirmar cuánto se retendrá, cuántas piezas se
+  liberarán y que no saldrá dinero del cajón.
+- Cancelar antes del vencimiento permanece bloqueado porque la política de
+  devolución para ese caso sigue pendiente en §6. No se infiere una regla de
+  dinero desde la interfaz.
+
+## 11. Avance implementado en 0.43.0
+
+- Administradores y gerentes reciben el permiso separado `layaways.modify`;
+  una cajera puede cobrar abonos pero no sustituir mercancía por omisión.
+- Cada ficha muestra sus renglones reales y permite buscar un reemplazo por
+  producto, talla, color, SKU o código sin volver a capturar el apartado.
+- La sustitución reemplaza la línea completa: libera la variante anterior,
+  reserva la nueva y recalcula total, saldo y estado dentro de una transacción.
+- Los abonos ya registrados no se editan ni se reasignan. Si el nuevo total
+  quedara por debajo de lo pagado, la operación se bloquea hasta definir la
+  política de devolución pendiente en §6.
+- El historial inmutable conserva variante y precio anterior y nuevo, cantidad,
+  totales, saldos, motivo, actor y llave idempotente.
+- Los candados y la variante esperada evitan perder cambios cuando dos personas
+  intentan sustituir al mismo tiempo. Una falla de existencia revierte también
+  la liberación de la pieza original.
+
+## 12. Avance implementado en 0.44.0
+
+- Una cajera, gerente o administrador con `layaways.deliver`, `pos.sell` y su
+  propia caja abierta puede entregar un apartado totalmente liquidado en la
+  sucursal donde se creó.
+- Entregar crea una venta normal ligada al apartado y copia el desglose real de
+  sus abonos al ticket. No registra nuevos ingresos de caja: efectivo, tarjeta
+  y transferencia ya se contabilizaron cuando fueron recibidos.
+- Existencia física y reservada disminuyen juntas bajo candados estables. Cada
+  pieza deja un movimiento de venta y un movimiento `FULFILL` en el libro de
+  reservas, ambos ligados a los dos folios.
+- Apartado, venta, artículos, pagos, inventario, vínculo de entrega y auditoría
+  se confirman como una sola transacción. Cualquier inconsistencia revierte el
+  recorrido completo.
+- La operación es idempotente y serializa el apartado. Dos dispositivos no
+  pueden entregar dos veces ni producir dos ventas para la misma reserva.
+- La interfaz exige confirmar la entrega física y después enlaza al módulo de
+  Tickets para revisar o imprimir el comprobante real.
+- La entrega directa en otra sucursal continúa bloqueada: deberá existir primero
+  un traspaso confirmado conforme a la decisión pendiente de §6.

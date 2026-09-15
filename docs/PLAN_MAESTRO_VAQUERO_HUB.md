@@ -2725,11 +2725,105 @@ Entrega visible 0.39.0 — cancelación compensada de venta a crédito:
 - El importe extingue primero la deuda del cargo original. Únicamente el dinero
   realmente recibido se devuelve por su método real, con referencia electrónica
   y protección de efectivo disponible en el cajón.
-- Exige usuario con `sales.cancel`, autorización de gerente para devoluciones,
-  motivo y caja abierta en la sucursal del ticket.
+- Desde 0.40.0, la persona dueña de la caja puede ejecutarla con
+  `returns.create`; la autoridad sigue siendo un gerente mediante autorización
+  de devolución de un solo uso. También exige motivo y caja abierta en la
+  sucursal del ticket.
 - La venta se marca cancelada sólo después de que devolución, cartera, pagos,
   inventario y caja concilian. Todo el recorrido es atómico, idempotente y deja
   la relación con el documento compensatorio en auditoría.
+
+Entrega visible 0.40.0 — inicio de M7.3, apartados reales:
+
+- Venta habilita nuevamente “Apartar”, ahora conectado a PostgreSQL. Exige
+  cliente, fecha de vencimiento y caja propia abierta; no fabrica folios ni
+  vacía el carrito si la operación falla.
+- El apartado inicia sin enganche, por la regla confirmada de que no existe un
+  mínimo. Crear el documento no registra una venta ni mueve dinero de caja.
+- La mercancía queda reservada de forma atómica y deja de estar disponible para
+  venta. La existencia física no se altera: un libro inmutable independiente
+  registra cada cambio del saldo reservado con anterior, nuevo, actor y folio.
+- Dos cajas que intentan reservar las últimas piezas no pueden ganar juntas.
+  La idempotencia evita que un reintento duplique documento o reserva.
+- El módulo Apartados permite consultar por folio, nombre o número de socio y
+  muestra vigentes, próximos a vencer y vencidos sin cancelación automática.
+- La incompatibilidad de una sola caja detectada al revisar M7.2 quedó resuelta:
+  la persona dueña de la sesión ejecuta la cancelación de crédito y el gerente
+  conserva la autoridad mediante PIN y token de un solo uso. La auditoría
+  distingue operador y autorizador.
+- Continúan para los siguientes bloques de M7.3: abonos y comprobantes,
+  cancelación con penalización, sustituciones, liquidación y entrega. La
+  interfaz no presenta estas operaciones como terminadas antes de existir.
+
+Entrega visible 0.41.0 — abonos reales de apartados:
+
+- Apartados recibe abonos parciales o totales desde la misma ficha, con efectivo,
+  tarjeta, transferencia o combinación exacta de los tres métodos.
+- PostgreSQL vuelve a calcular el saldo bajo candado. Un reintento devuelve el
+  mismo comprobante y dos cajas no pueden cobrar por encima del saldo restante.
+- Sólo el efectivo incrementa el cajón. Tarjeta y transferencia conservan su
+  referencia; el historial de pagos y sus partes no se edita ni se borra.
+- El comprobante registra folio del abono y del apartado, cliente, caja, empleado,
+  desglose por método, saldo anterior y nuevo, y se imprime a 80 mm.
+- Liquidar cambia el estado a `PAID`, pero no libera ni entrega mercancía. La
+  cancelación, sustitución y entrega siguen bloqueadas hasta sus operaciones
+  atómicas correspondientes.
+
+Entrega visible 0.42.0 — cancelación segura de apartados vencidos:
+
+- Apartados permite cancelar manualmente un documento vencido con permiso y
+  motivo obligatorio. No existe cancelación automática al llegar la fecha.
+- Todo lo abonado se conserva como penalización según la regla confirmada; el
+  saldo restante queda documentado y la operación no inventa retiros ni
+  devoluciones de caja.
+- Las piezas reservadas vuelven a disponibilidad de forma atómica. Cada cambio
+  se escribe en el libro inmutable de reservas y una inconsistencia revierte la
+  cancelación completa.
+- La idempotencia y los candados impiden que un reintento o dos operadores
+  liberen dos veces la misma mercancía o dupliquen la penalización.
+- La pantalla anticipa el efecto antes de confirmar y comunica por separado
+  penalización, saldo cancelado y mercancía liberada.
+- La cancelación de un apartado todavía vigente se rechaza hasta definir qué
+  excepciones devuelven abonos y por cuál método. Sustitución y entrega siguen
+  como los siguientes bloques de M7.3.
+
+Entrega visible 0.43.0 — sustituciones atómicas en apartados:
+
+- La ficha de cada apartado muestra sus productos reales. Administradores y
+  gerentes pueden elegir una línea, buscar por producto, talla, color, SKU o
+  código y sustituirla sin volver a capturar el documento.
+- La autorización se separa en `layaways.modify`; el permiso operativo general
+  de una cajera no le permite cambiar mercancía por omisión.
+- PostgreSQL libera la reserva anterior, comprueba y reserva la nueva variante,
+  actualiza el renglón y recalcula total, saldo y estado como una sola operación.
+- Los abonos históricos permanecen intactos. Un producto de mayor precio aumenta
+  el saldo; uno que dejaría el total por debajo de lo pagado se rechaza porque
+  todavía no se ha definido cómo devolver ese excedente.
+- Cada sustitución registra variantes, precios, cantidades, totales, saldos,
+  motivo y actor en un historial inmutable. Reintentos y operaciones simultáneas
+  no pueden aplicar dos cambios sobre la misma versión del renglón.
+- Continúan para cerrar M7.3 la liquidación y entrega, la política excepcional de
+  devolución y la entrega en otra sucursal mediante traspaso confirmado.
+
+Entrega visible 0.44.0 — liquidación y entrega de apartados:
+
+- Apartados permite entregar mercancía sólo cuando el saldo llegó exactamente a
+  cero y el documento está `PAID`. La persona operadora debe tener
+  `layaways.deliver`, `pos.sell`, acceso a la sucursal y su propia caja abierta.
+- La entrega crea una venta real, conserva cliente, artículos, precios y el
+  desglose histórico de métodos de pago; el ticket queda disponible para
+  consulta e impresión.
+- Los abonos no se cobran otra vez ni generan un segundo movimiento de caja. El
+  vínculo inmutable entre apartado y venta permite demostrar de dónde salió
+  cada importe.
+- Existencia y reserva se descuentan juntas; los libros de inventario y reservas
+  registran la relación entre folio de apartado y folio de venta. Una falla
+  revierte venta, entrega e inventario completos.
+- La idempotencia y el candado del apartado garantizan una sola venta aun cuando
+  dos dispositivos confirmen al mismo tiempo.
+- La entrega en una sucursal diferente no se simula. Continúa pendiente definir
+  quién solicita y autoriza el traspaso y exigir su recepción física antes de
+  permitir la entrega.
 
 Corrección visible 0.32.1 — traspasos y sucursales operables:
 

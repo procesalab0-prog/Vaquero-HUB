@@ -9,6 +9,7 @@ import {
   authorizeOverdueCredit,
   authorizeSaleDiscount,
   cancelPosSale,
+  createLayawayFromCart,
   createPosSale,
   discardPosDraft,
   getPosCustomerCredit,
@@ -156,6 +157,7 @@ export default async function PosPage({
       authorizeCreditOverrideAction={authorizeOverdueCredit}
       printAction={requestSalePrint}
       cancelSaleAction={cancelPosSale}
+      createLayawayAction={createLayawayFromCart}
       saveDraftAction={savePosCurrentDraft}
       holdDraftAction={holdPosDraft}
       resumeDraftAction={resumePosDraft}
