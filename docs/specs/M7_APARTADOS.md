@@ -175,3 +175,20 @@ y en el comprobante aceptado por el cliente antes de recibir dinero.
   construir y confirmar la entrega, que no se simula en esta entrega.
 - El comprobante real se recupera por identificador, se muestra después del
   registro y puede imprimirse a 80 mm.
+
+## 10. Avance implementado en 0.42.0
+
+- Un empleado con `layaways.manage` puede cancelar manualmente un apartado
+  vencido desde su ficha, con motivo obligatorio y sin PIN adicional.
+- Los abonos ya recibidos se conservan íntegros como penalización. El saldo que
+  faltaba queda documentado como cancelado y no se fabrica una devolución ni un
+  movimiento de caja.
+- La reserva de cada variante se libera bajo candado y se registra en el libro
+  inmutable con saldo anterior, nuevo, actor, folio, motivo y llave de operación.
+- El reintento con la misma llave devuelve el mismo resultado; una segunda
+  cancelación distinta se rechaza y nunca libera dos veces la mercancía.
+- La interfaz muestra antes de confirmar cuánto se retendrá, cuántas piezas se
+  liberarán y que no saldrá dinero del cajón.
+- Cancelar antes del vencimiento permanece bloqueado porque la política de
+  devolución para ese caso sigue pendiente en §6. No se infiere una regla de
+  dinero desde la interfaz.

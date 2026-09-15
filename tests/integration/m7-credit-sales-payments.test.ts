@@ -857,6 +857,135 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
     ).toBe(true);
   });
 
+  it("cancela un apartado vencido una sola vez, retiene lo abonado y libera la reserva", async () => {
+    const westZone = "Etc/GMT+12";
+    const eastZone = "Pacific/Kiritimati";
+    const westCashier = await clientInTimezone(
+      state.cashierA!.client,
+      westZone,
+    );
+    const eastCashier = await clientInTimezone(
+      state.cashierA!.client,
+      eastZone,
+    );
+    const variantId = await createVariant("Apartado vencido", 10000);
+    const created = await westCashier.rpc("create_layaway", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_customer_id: state.customerId,
+      p_due_date: dateInZone(westZone),
+      p_items: [{ variant_id: variantId, quantity: 1 }],
+      p_notes: "Se cancelará al vencer",
+    });
+    expect(created.error).toBeNull();
+    const paid = await westCashier.rpc("record_layaway_payment", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_layaway_id: created.data.id,
+      p_payments: [
+        { method_code: "CASH", amount_cents: 3000, tendered_cents: 3000 },
+      ],
+      p_note: "Abono que se retiene como penalización",
+    });
+    expect(paid.error).toBeNull();
+    const beforeCash = await state
+      .server!.from("cash_movements")
+      .select("id", { count: "exact", head: true })
+      .eq("session_id", state.sessionA);
+
+    const key = crypto.randomUUID();
+    const input = {
+      p_idempotency_key: key,
+      p_layaway_id: created.data.id,
+      p_reason: "Cliente no liquidó el apartado vencido",
+    };
+    const cancelled = await eastCashier.rpc("cancel_overdue_layaway", input);
+    const retry = await eastCashier.rpc("cancel_overdue_layaway", input);
+    expect(cancelled.error).toBeNull();
+    expect(retry.error).toBeNull();
+    expect(retry.data).toEqual(cancelled.data);
+    expect(cancelled.data).toMatchObject({
+      id: created.data.id,
+      status: "CANCELLED",
+      penalty_cents: 3000,
+      released_balance_cents: 7000,
+    });
+
+    const layaway = await state
+      .server!.from("layaways")
+      .select(
+        "status,paid_cents,balance_cents,cancellation_penalty_cents,cancelled_balance_cents,cancellation_reason",
+      )
+      .eq("id", created.data.id)
+      .single();
+    expect(layaway.data).toMatchObject({
+      status: "CANCELLED",
+      paid_cents: 3000,
+      balance_cents: 7000,
+      cancellation_penalty_cents: 3000,
+      cancelled_balance_cents: 7000,
+      cancellation_reason: "Cliente no liquidó el apartado vencido",
+    });
+    const inventory = await state
+      .server!.from("inventory_by_location")
+      .select("qty,reserved_qty")
+      .eq("variant_id", variantId)
+      .eq("location_id", state.locationId)
+      .single();
+    expect(inventory.data).toMatchObject({ qty: 2, reserved_qty: 0 });
+    const releases = await state
+      .server!.from("inventory_reservation_movements")
+      .select("movement_type,quantity")
+      .eq("operation_key", key);
+    expect(releases.data).toEqual([{ movement_type: "RELEASE", quantity: -1 }]);
+    const afterCash = await state
+      .server!.from("cash_movements")
+      .select("id", { count: "exact", head: true })
+      .eq("session_id", state.sessionA);
+    expect(afterCash.count).toBe(beforeCash.count);
+
+    const secondCancellation = await eastCashier.rpc("cancel_overdue_layaway", {
+      ...input,
+      p_idempotency_key: crypto.randomUUID(),
+    });
+    expect(secondCancellation.error?.message).toContain(
+      "LAYAWAY_NOT_CANCELLABLE",
+    );
+  });
+
+  it("bloquea cancelar antes del vencimiento hasta definir la devolución", async () => {
+    const variantId = await createVariant("Apartado vigente", 6000);
+    const created = await state.cashierA!.client.rpc("create_layaway", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_customer_id: state.customerId,
+      p_due_date: new Date(Date.now() + 30 * 86400000)
+        .toISOString()
+        .slice(0, 10),
+      p_items: [{ variant_id: variantId, quantity: 1 }],
+      p_notes: null,
+    });
+    expect(created.error).toBeNull();
+    const cancellation = await state.cashierA!.client.rpc(
+      "cancel_overdue_layaway",
+      {
+        p_idempotency_key: crypto.randomUUID(),
+        p_layaway_id: created.data.id,
+        p_reason: "Intento antes de vencer",
+      },
+    );
+    expect(cancellation.error?.message).toContain(
+      "LAYAWAY_CANCELLATION_POLICY_UNDEFINED",
+    );
+    const inventory = await state
+      .server!.from("inventory_by_location")
+      .select("reserved_qty")
+      .eq("variant_id", variantId)
+      .eq("location_id", state.locationId)
+      .single();
+    expect(inventory.data?.reserved_qty).toBe(1);
+  });
+
   it("mantiene comprobantes y asignaciones fuera del acceso directo", async () => {
     expect(
       (await state.admin!.client.from("customer_credit_payments").select("id"))
