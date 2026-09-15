@@ -1836,6 +1836,142 @@ code {
   color: var(--muted);
 }
 
+.layaway-items {
+  display: grid;
+  gap: 8px;
+  margin: 0 18px 14px;
+}
+
+.layaway-items > div {
+  align-items: center;
+  background: var(--surface-soft);
+  border-radius: 12px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  min-height: 58px;
+  padding: 10px 12px;
+}
+
+.layaway-items span:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.layaway-items small {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.layaway-items a {
+  align-items: center;
+  color: var(--brick);
+  display: inline-flex;
+  font-weight: 800;
+  gap: 3px;
+  min-height: 42px;
+}
+
+.layaway-items a svg {
+  width: 18px;
+}
+
+.layaway-substitution-editor {
+  background: var(--surface);
+  border: 2px solid color-mix(in srgb, var(--brick) 30%, var(--line));
+  border-radius: 18px;
+  display: grid;
+  gap: 16px;
+  margin-bottom: 22px;
+  padding: 20px;
+}
+
+.layaway-substitution-editor > header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.layaway-substitution-editor h2,
+.layaway-substitution-editor p {
+  margin: 0;
+}
+
+.layaway-substitution-current {
+  background: var(--surface-soft);
+  border-radius: 14px;
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+}
+
+.layaway-substitution-current span,
+.layaway-substitution-form label > span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.layaway-replacement-search {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.layaway-replacement-search label {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: flex;
+  gap: 8px;
+  min-height: 50px;
+  padding: 0 12px;
+}
+
+.layaway-replacement-search svg {
+  color: var(--muted);
+  width: 20px;
+}
+
+.layaway-replacement-search input {
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  font: inherit;
+  min-width: 0;
+  outline: 0;
+  width: 100%;
+}
+
+.layaway-substitution-form {
+  display: grid;
+  gap: 14px;
+}
+
+.layaway-substitution-form label {
+  display: grid;
+  gap: 7px;
+}
+
+.layaway-substitution-form select,
+.layaway-substitution-form textarea {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  font: inherit;
+  min-height: 50px;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.layaway-substitution-form textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
 .layaway-payment-panel,
 .layaway-cancel-panel {
   border-top: 1px solid var(--line);
@@ -1971,6 +2107,24 @@ code {
 
   .layaway-card-grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .layaway-items > div {
+    align-items: start;
+    grid-template-columns: 1fr auto;
+  }
+
+  .layaway-items a {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+
+  .layaway-replacement-search {
+    grid-template-columns: 1fr;
+  }
+
+  .layaway-substitution-editor {
+    padding: 16px;
   }
 
   .layaways-page .section-heading .primary-button {

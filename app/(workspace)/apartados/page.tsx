@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   CalendarClock,
+  ChevronRight,
   CircleDollarSign,
   PackageCheck,
   Search,
@@ -11,7 +12,11 @@ import {
 import { resolveActiveLocation } from "@/lib/auth/active-location";
 import { requirePermission } from "@/lib/auth/authorization";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { cancelOverdueLayaway, receiveLayawayPayment } from "./actions";
+import {
+  cancelOverdueLayaway,
+  receiveLayawayPayment,
+  substituteLayawayItem,
+} from "./actions";
 import { PrintButton } from "./print-button";
 
 export const metadata: Metadata = { title: "Apartados" };
@@ -50,6 +55,44 @@ type PaymentReceipt = {
   }>;
 };
 
+type LayawayItemRow = {
+  id: string;
+  layaway_id: string;
+  line_number: number;
+  variant_id: string;
+  product_name: string;
+  sku: string;
+  variant_description: string;
+  quantity: number;
+  unit_price_cents: number;
+  line_total_cents: number;
+};
+
+type SelectedLayawayItem = LayawayItemRow & {
+  layaway_folio: string;
+  layaway_status: LayawayRow["status"];
+  location_id: string;
+  paid_cents: number;
+  balance_cents: number;
+  total_cents: number;
+};
+
+type CatalogRow = {
+  variant_id: string;
+  product_name: string;
+  sku: string;
+  price_cents: number;
+  attributes: Record<string, string> | null;
+  is_active: boolean;
+};
+
+type InventoryRow = { variant_id: string; available_qty: number };
+
+type ReplacementCandidate = CatalogRow & {
+  available_qty: number;
+  disabled_reason?: string;
+};
+
 const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
   currency: "MXN",
@@ -80,13 +123,18 @@ export default async function LayawaysPage({
     payment?: string;
     penalty?: string;
     released?: string;
+    cambiar?: string;
+    reemplazo?: string;
+    total?: string;
+    balance?: string;
   }>;
 }) {
   const params = await searchParams;
   if (!isSupabaseConfigured()) {
     return <LayawayPageContent rows={[]} locationId="preview" preview />;
   }
-  const { supabase, profile } = await requirePermission("layaways.manage");
+  const { supabase, profile, roleId } =
+    await requirePermission("layaways.manage");
   const locations = (profile?.user_locations ?? []).flatMap((entry) =>
     Array.isArray(entry.locations)
       ? entry.locations
@@ -113,7 +161,13 @@ export default async function LayawaysPage({
   ].includes(params.estado ?? "")
     ? params.estado!
     : null;
-  const [result, receiptResult] = await Promise.all([
+  const [modifyPermission, result, receiptResult] = await Promise.all([
+    supabase
+      .from("role_permissions")
+      .select("permission_code")
+      .eq("role_id", roleId)
+      .eq("permission_code", "layaways.modify")
+      .maybeSingle(),
     supabase.rpc("list_layaways", {
       p_location_id: location.id,
       p_query: (params.busqueda ?? "").trim().slice(0, 100),
@@ -126,17 +180,93 @@ export default async function LayawaysPage({
         })
       : Promise.resolve({ data: null, error: null }),
   ]);
+  const canModify = Boolean(modifyPermission.data);
+  const replacementQuery = (params.reemplazo ?? "").trim().slice(0, 100);
+  const rows = (result.data ?? []) as LayawayRow[];
+  const [itemsResult, selectedItemResult, catalogResult, inventoryResult] =
+    await Promise.all([
+      supabase.rpc("list_layaway_items", {
+        p_layaway_ids: rows.map((row) => row.id),
+      }),
+      params.cambiar && canModify
+        ? supabase.rpc("get_layaway_item", { p_item_id: params.cambiar })
+        : Promise.resolve({ data: null, error: null }),
+      params.cambiar && canModify
+        ? supabase.rpc("search_catalog", {
+            p_query: replacementQuery,
+            p_limit: 50,
+          })
+        : Promise.resolve({ data: [], error: null }),
+      params.cambiar && canModify
+        ? supabase.rpc("get_inventory_snapshot", {
+            p_location_id: location.id,
+            p_query: replacementQuery,
+            p_limit: 100,
+          })
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+  const selectedItem = selectedItemResult.data as SelectedLayawayItem | null;
+  const dataError =
+    modifyPermission.error ??
+    result.error ??
+    receiptResult.error ??
+    itemsResult.error ??
+    selectedItemResult.error ??
+    catalogResult.error ??
+    inventoryResult.error;
+  if (dataError) {
+    console.error("[apartados] data unavailable", {
+      message: dataError.message,
+      selectedItem: params.cambiar ?? null,
+    });
+  }
+  const stocks = new Map(
+    ((inventoryResult.data ?? []) as InventoryRow[]).map((row) => [
+      row.variant_id,
+      Number(row.available_qty),
+    ]),
+  );
+  const candidates = ((catalogResult.data ?? []) as CatalogRow[])
+    .filter(
+      (row) => row.is_active && row.variant_id !== selectedItem?.variant_id,
+    )
+    .map((row): ReplacementCandidate => {
+      const available = stocks.get(row.variant_id) ?? 0;
+      const quantity = Number(selectedItem?.quantity ?? 0);
+      const resultingTotal = selectedItem
+        ? Number(selectedItem.total_cents) -
+          Number(selectedItem.line_total_cents) +
+          quantity * Number(row.price_cents)
+        : 0;
+      return {
+        ...row,
+        available_qty: available,
+        disabled_reason:
+          available < quantity
+            ? "Sin existencia suficiente"
+            : selectedItem && resultingTotal < Number(selectedItem.paid_cents)
+              ? "Requeriría devolver dinero"
+              : undefined,
+      };
+    });
   return (
     <LayawayPageContent
-      rows={(result.data ?? []) as LayawayRow[]}
+      rows={rows}
       locationId={location.id}
       query={params.busqueda ?? ""}
       selectedStatus={allowedStatus ?? ""}
-      status={result.error?.message}
+      status={dataError?.message}
       operationStatus={params.status}
+      operationTotalCents={Number(params.total ?? 0)}
+      operationBalanceCents={Number(params.balance ?? 0)}
       penaltyCents={Number(params.penalty ?? 0)}
       releasedBalanceCents={Number(params.released ?? 0)}
       receipt={receiptResult.data as PaymentReceipt | null}
+      items={(itemsResult.data ?? []) as LayawayItemRow[]}
+      canModify={canModify}
+      selectedItem={selectedItem}
+      candidates={candidates}
+      replacementQuery={replacementQuery}
     />
   );
 }
@@ -148,9 +278,16 @@ function LayawayPageContent({
   selectedStatus = "",
   status,
   operationStatus,
+  operationTotalCents = 0,
+  operationBalanceCents = 0,
   penaltyCents = 0,
   releasedBalanceCents = 0,
   receipt,
+  items = [],
+  canModify = false,
+  selectedItem,
+  candidates = [],
+  replacementQuery = "",
   preview = false,
 }: {
   rows: LayawayRow[];
@@ -159,15 +296,28 @@ function LayawayPageContent({
   selectedStatus?: string;
   status?: string;
   operationStatus?: string;
+  operationTotalCents?: number;
+  operationBalanceCents?: number;
   penaltyCents?: number;
   releasedBalanceCents?: number;
   receipt?: PaymentReceipt | null;
+  items?: LayawayItemRow[];
+  canModify?: boolean;
+  selectedItem?: SelectedLayawayItem | null;
+  candidates?: ReplacementCandidate[];
+  replacementQuery?: string;
   preview?: boolean;
 }) {
   const today = new Date().toISOString().slice(0, 10);
   const warningDate = new Date();
   warningDate.setDate(warningDate.getDate() + 7);
   const warning = warningDate.toISOString().slice(0, 10);
+  const itemsByLayaway = new Map<string, LayawayItemRow[]>();
+  for (const item of items) {
+    const grouped = itemsByLayaway.get(item.layaway_id) ?? [];
+    grouped.push(item);
+    itemsByLayaway.set(item.layaway_id, grouped);
+  }
   return (
     <section className="module-page layaways-page">
       <div className="section-heading">
@@ -195,6 +345,29 @@ function LayawayPageContent({
           estar disponible.
         </p>
       ) : null}
+      {operationStatus === "sustitucion-registrada" ? (
+        <p className="notice-banner" role="status">
+          Producto sustituido. El nuevo total es{" "}
+          {money.format(operationTotalCents / 100)} y quedan{" "}
+          {money.format(operationBalanceCents / 100)} por pagar.
+        </p>
+      ) : null}
+      {operationStatus?.startsWith("sustitucion-") &&
+      operationStatus !== "sustitucion-registrada" ? (
+        <p className="inline-error operation-feedback" role="alert">
+          {operationStatus === "sustitucion-sin-existencia"
+            ? "La variante elegida ya no tiene existencia suficiente."
+            : operationStatus === "sustitucion-reembolso-pendiente"
+              ? "Ese cambio dejaría dinero a devolver y la política todavía no está definida."
+              : operationStatus === "sustitucion-desactualizada"
+                ? "Otra persona modificó el apartado. Ábrelo nuevamente antes de continuar."
+                : operationStatus === "sustitucion-variante-repetida"
+                  ? "Esa variante ya forma parte del mismo apartado."
+                  : operationStatus === "sustitucion-no-disponible"
+                    ? "El apartado ya no admite modificaciones."
+                    : "No fue posible sustituir el producto. Revisa la selección y el motivo."}
+        </p>
+      ) : null}
       {operationStatus?.startsWith("cancelacion-") ? (
         <p className="inline-error operation-feedback" role="alert">
           {operationStatus === "cancelacion-no-vencido"
@@ -213,6 +386,121 @@ function LayawayPageContent({
               ? "El abono supera el saldo pendiente."
               : "No fue posible registrar el abono. Revisa importes y referencias."}
         </p>
+      ) : null}
+      {selectedItem && canModify ? (
+        <article className="layaway-substitution-editor">
+          <header>
+            <div>
+              <p className="eyebrow">Sustituir producto</p>
+              <h2>{selectedItem.layaway_folio}</h2>
+            </div>
+            <Link
+              className="secondary-button"
+              href={`/apartados?ubicacion=${encodeURIComponent(locationId)}`}
+            >
+              Cerrar
+            </Link>
+          </header>
+          <div className="layaway-substitution-current">
+            <span>Producto actual</span>
+            <strong>{selectedItem.product_name}</strong>
+            <small>
+              {selectedItem.variant_description || "Única"} · {selectedItem.sku}
+              {" · "}
+              {Number(selectedItem.quantity)} pzas ·{" "}
+              {money.format(Number(selectedItem.line_total_cents) / 100)}
+            </small>
+          </div>
+          <form className="layaway-replacement-search" method="get">
+            <input type="hidden" name="ubicacion" value={locationId} />
+            <input type="hidden" name="cambiar" value={selectedItem.id} />
+            <label>
+              <Search aria-hidden="true" />
+              <input
+                name="reemplazo"
+                defaultValue={replacementQuery}
+                placeholder="Buscar producto, talla, color, SKU o código"
+                maxLength={100}
+              />
+            </label>
+            <button className="secondary-button" type="submit">
+              Buscar reemplazo
+            </button>
+          </form>
+          <form
+            className="layaway-substitution-form"
+            action={substituteLayawayItem}
+          >
+            <input
+              type="hidden"
+              name="layaway_id"
+              value={selectedItem.layaway_id}
+            />
+            <input
+              type="hidden"
+              name="layaway_item_id"
+              value={selectedItem.id}
+            />
+            <input
+              type="hidden"
+              name="expected_variant_id"
+              value={selectedItem.variant_id}
+            />
+            <label>
+              <span>Nuevo producto para toda la línea</span>
+              <select name="new_variant_id" required defaultValue="">
+                <option value="" disabled>
+                  Selecciona entre {candidates.length} resultados
+                </option>
+                {candidates.map((candidate) => {
+                  const attributes = Object.values(candidate.attributes ?? {})
+                    .filter(Boolean)
+                    .join(" · ");
+                  return (
+                    <option
+                      key={candidate.variant_id}
+                      value={candidate.variant_id}
+                      disabled={Boolean(candidate.disabled_reason)}
+                    >
+                      {candidate.product_name} · {attributes || "Única"} ·{" "}
+                      {candidate.sku} ·{" "}
+                      {money.format(Number(candidate.price_cents) / 100)}
+                      {" · "}
+                      {Number(candidate.available_qty)} disponibles
+                      {candidate.disabled_reason
+                        ? ` · ${candidate.disabled_reason}`
+                        : ""}
+                    </option>
+                  );
+                })}
+              </select>
+            </label>
+            <label>
+              <span>Motivo del cambio</span>
+              <textarea
+                name="reason"
+                required
+                minLength={3}
+                maxLength={500}
+                placeholder="Ej. El cliente solicitó otra talla"
+              />
+            </label>
+            <p>
+              Se reemplazarán las {Number(selectedItem.quantity)} piezas de esta
+              línea. El sistema liberará la anterior, reservará la nueva y
+              recalculará el saldo sin modificar los abonos recibidos.
+            </p>
+            <button
+              className="primary-button"
+              type="submit"
+              disabled={
+                !candidates.some((candidate) => !candidate.disabled_reason)
+              }
+            >
+              Confirmar sustitución
+            </button>
+          </form>
+        </article>
       ) : null}
       {receipt ? (
         <article className="layaway-receipt print-receipt">
@@ -319,6 +607,7 @@ function LayawayPageContent({
         ) : (
           rows.map((row) => {
             const active = activeStatuses.has(row.status);
+            const rowItems = itemsByLayaway.get(row.id) ?? [];
             const timing = !active
               ? "closed"
               : row.due_date < today
@@ -361,6 +650,31 @@ function LayawayPageContent({
                       {money.format(Number(row.balance_cents) / 100)}
                     </strong>
                   </span>
+                </div>
+                <div className="layaway-items">
+                  {rowItems.map((item) => (
+                    <div key={item.id}>
+                      <span>
+                        <strong>{item.product_name}</strong>
+                        <small>
+                          {item.variant_description || "Única"} · {item.sku}
+                        </small>
+                      </span>
+                      <span>
+                        {Number(item.quantity)} ×{" "}
+                        {money.format(Number(item.unit_price_cents) / 100)}
+                      </span>
+                      {active && canModify ? (
+                        <Link
+                          href={`/apartados?ubicacion=${encodeURIComponent(
+                            locationId,
+                          )}&cambiar=${encodeURIComponent(item.id)}`}
+                        >
+                          Sustituir <ChevronRight aria-hidden="true" />
+                        </Link>
+                      ) : null}
+                    </div>
+                  ))}
                 </div>
                 <footer>
                   Socio {row.member_number} · Total{" "}

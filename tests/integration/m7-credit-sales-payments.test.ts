@@ -986,6 +986,270 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
     expect(inventory.data?.reserved_qty).toBe(1);
   });
 
+  it("sustituye una línea una sola vez, mueve la reserva y conserva los abonos", async () => {
+    const oldVariantId = await createVariant("Apartado a sustituir", 10000);
+    const newVariantId = await createVariant("Reemplazo de apartado", 15000);
+    const created = await state.cashierA!.client.rpc("create_layaway", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_customer_id: state.customerId,
+      p_due_date: new Date(Date.now() + 30 * 86400000)
+        .toISOString()
+        .slice(0, 10),
+      p_items: [{ variant_id: oldVariantId, quantity: 1 }],
+      p_notes: null,
+    });
+    expect(created.error).toBeNull();
+    const payment = await state.cashierA!.client.rpc("record_layaway_payment", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_layaway_id: created.data.id,
+      p_payments: [
+        { method_code: "CASH", amount_cents: 3000, tendered_cents: 3000 },
+      ],
+      p_note: null,
+    });
+    expect(payment.error).toBeNull();
+    const item = await state
+      .server!.from("layaway_items")
+      .select("id")
+      .eq("layaway_id", created.data.id)
+      .single();
+    expect(item.error).toBeNull();
+    const denied = await state.cashierA!.client.rpc("substitute_layaway_item", {
+      p_operation_key: crypto.randomUUID(),
+      p_layaway_id: created.data.id,
+      p_layaway_item_id: item.data!.id,
+      p_expected_variant_id: oldVariantId,
+      p_new_variant_id: newVariantId,
+      p_reason: "La cajera no debe cambiar productos",
+    });
+    expect(denied.error?.message).toContain("NOT_AUTHORIZED");
+
+    const beforeCash = await state
+      .server!.from("cash_movements")
+      .select("id", { count: "exact", head: true })
+      .eq("session_id", state.sessionA);
+    const key = crypto.randomUUID();
+    const input = {
+      p_operation_key: key,
+      p_layaway_id: created.data.id,
+      p_layaway_item_id: item.data!.id,
+      p_expected_variant_id: oldVariantId,
+      p_new_variant_id: newVariantId,
+      p_reason: "El cliente solicitó otra talla",
+    };
+    const changed = await state.admin!.client.rpc(
+      "substitute_layaway_item",
+      input,
+    );
+    const retry = await state.admin!.client.rpc(
+      "substitute_layaway_item",
+      input,
+    );
+    expect(changed.error).toBeNull();
+    expect(retry.error).toBeNull();
+    expect(retry.data).toEqual(changed.data);
+    expect(changed.data).toMatchObject({
+      old_variant_id: oldVariantId,
+      new_variant_id: newVariantId,
+      old_total_cents: 10000,
+      new_total_cents: 15000,
+      new_balance_cents: 12000,
+    });
+
+    const layaway = await state
+      .server!.from("layaways")
+      .select("status,total_cents,paid_cents,balance_cents")
+      .eq("id", created.data.id)
+      .single();
+    expect(layaway.data).toMatchObject({
+      status: "PARTIALLY_PAID",
+      total_cents: 15000,
+      paid_cents: 3000,
+      balance_cents: 12000,
+    });
+    const updatedItem = await state
+      .server!.from("layaway_items")
+      .select("variant_id,unit_price_cents,line_total_cents")
+      .eq("id", item.data!.id)
+      .single();
+    expect(updatedItem.data).toMatchObject({
+      variant_id: newVariantId,
+      unit_price_cents: 15000,
+      line_total_cents: 15000,
+    });
+    const inventory = await state
+      .server!.from("inventory_by_location")
+      .select("variant_id,qty,reserved_qty")
+      .in("variant_id", [oldVariantId, newVariantId])
+      .eq("location_id", state.locationId)
+      .order("variant_id");
+    const stock = new Map(
+      (inventory.data ?? []).map((row) => [row.variant_id, row]),
+    );
+    expect(stock.get(oldVariantId)).toMatchObject({ qty: 2, reserved_qty: 0 });
+    expect(stock.get(newVariantId)).toMatchObject({ qty: 2, reserved_qty: 1 });
+    const movements = await state
+      .server!.from("inventory_reservation_movements")
+      .select("variant_id,movement_type,quantity")
+      .eq("operation_key", key)
+      .order("movement_type");
+    expect(movements.data).toEqual(
+      expect.arrayContaining([
+        {
+          variant_id: oldVariantId,
+          movement_type: "RELEASE",
+          quantity: -1,
+        },
+        {
+          variant_id: newVariantId,
+          movement_type: "RESERVE",
+          quantity: 1,
+        },
+      ]),
+    );
+    const afterCash = await state
+      .server!.from("cash_movements")
+      .select("id", { count: "exact", head: true })
+      .eq("session_id", state.sessionA);
+    expect(afterCash.count).toBe(beforeCash.count);
+    const stale = await state.admin!.client.rpc("substitute_layaway_item", {
+      ...input,
+      p_operation_key: crypto.randomUUID(),
+    });
+    expect(stale.error?.message).toContain("LAYAWAY_ITEM_CHANGED");
+  });
+
+  it("rechaza una sustitución que requeriría devolver dinero y no mueve inventario", async () => {
+    const oldVariantId = await createVariant("Apartado con abono alto", 10000);
+    const cheapVariantId = await createVariant("Reemplazo más barato", 2000);
+    const created = await state.cashierA!.client.rpc("create_layaway", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_customer_id: state.customerId,
+      p_due_date: new Date(Date.now() + 30 * 86400000)
+        .toISOString()
+        .slice(0, 10),
+      p_items: [{ variant_id: oldVariantId, quantity: 1 }],
+      p_notes: null,
+    });
+    expect(created.error).toBeNull();
+    expect(
+      (
+        await state.cashierA!.client.rpc("record_layaway_payment", {
+          p_idempotency_key: crypto.randomUUID(),
+          p_cash_session_id: state.sessionA,
+          p_layaway_id: created.data.id,
+          p_payments: [
+            {
+              method_code: "CARD",
+              amount_cents: 5000,
+              reference: "ABONO-ALTO-1",
+            },
+          ],
+          p_note: null,
+        })
+      ).error,
+    ).toBeNull();
+    const item = await state
+      .server!.from("layaway_items")
+      .select("id")
+      .eq("layaway_id", created.data.id)
+      .single();
+    const rejected = await state.admin!.client.rpc("substitute_layaway_item", {
+      p_operation_key: crypto.randomUUID(),
+      p_layaway_id: created.data.id,
+      p_layaway_item_id: item.data!.id,
+      p_expected_variant_id: oldVariantId,
+      p_new_variant_id: cheapVariantId,
+      p_reason: "No debe inventar una devolución",
+    });
+    expect(rejected.error?.message).toContain(
+      "LAYAWAY_SUBSTITUTION_REFUND_UNDEFINED",
+    );
+    const layaway = await state
+      .server!.from("layaways")
+      .select("total_cents,paid_cents,balance_cents")
+      .eq("id", created.data.id)
+      .single();
+    expect(layaway.data).toMatchObject({
+      total_cents: 10000,
+      paid_cents: 5000,
+      balance_cents: 5000,
+    });
+    const inventory = await state
+      .server!.from("inventory_by_location")
+      .select("variant_id,reserved_qty")
+      .in("variant_id", [oldVariantId, cheapVariantId])
+      .eq("location_id", state.locationId);
+    const stock = new Map(
+      (inventory.data ?? []).map((row) => [row.variant_id, row.reserved_qty]),
+    );
+    expect(stock.get(oldVariantId)).toBe(1);
+    expect(stock.get(cheapVariantId)).toBe(0);
+  });
+
+  it("serializa dos sustituciones simultáneas y reserva un solo reemplazo", async () => {
+    const oldVariantId = await createVariant("Cambio simultáneo origen", 7000);
+    const replacementA = await createVariant("Cambio simultáneo A", 8000);
+    const replacementB = await createVariant("Cambio simultáneo B", 9000);
+    const created = await state.cashierA!.client.rpc("create_layaway", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_customer_id: state.customerId,
+      p_due_date: new Date(Date.now() + 30 * 86400000)
+        .toISOString()
+        .slice(0, 10),
+      p_items: [{ variant_id: oldVariantId, quantity: 1 }],
+      p_notes: null,
+    });
+    expect(created.error).toBeNull();
+    const item = await state
+      .server!.from("layaway_items")
+      .select("id")
+      .eq("layaway_id", created.data.id)
+      .single();
+    const secondAdminConnection = await clientInTimezone(
+      state.admin!.client,
+      "UTC",
+    );
+    const makeInput = (newVariantId: string) => ({
+      p_operation_key: crypto.randomUUID(),
+      p_layaway_id: created.data.id,
+      p_layaway_item_id: item.data!.id,
+      p_expected_variant_id: oldVariantId,
+      p_new_variant_id: newVariantId,
+      p_reason: "Prueba de sustitución simultánea",
+    });
+    const results = await Promise.all([
+      state.admin!.client.rpc(
+        "substitute_layaway_item",
+        makeInput(replacementA),
+      ),
+      secondAdminConnection.rpc(
+        "substitute_layaway_item",
+        makeInput(replacementB),
+      ),
+    ]);
+    expect(results.filter((result) => !result.error)).toHaveLength(1);
+    expect(results.find((result) => result.error)?.error?.message).toContain(
+      "LAYAWAY_ITEM_CHANGED",
+    );
+    const inventory = await state
+      .server!.from("inventory_by_location")
+      .select("variant_id,reserved_qty")
+      .in("variant_id", [oldVariantId, replacementA, replacementB])
+      .eq("location_id", state.locationId);
+    const stock = new Map(
+      (inventory.data ?? []).map((row) => [row.variant_id, row.reserved_qty]),
+    );
+    expect(stock.get(oldVariantId)).toBe(0);
+    expect(
+      Number(stock.get(replacementA)) + Number(stock.get(replacementB)),
+    ).toBe(1);
+  });
+
   it("mantiene comprobantes y asignaciones fuera del acceso directo", async () => {
     expect(
       (await state.admin!.client.from("customer_credit_payments").select("id"))
@@ -1001,5 +1265,12 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
     expect(forged.error?.message).toContain(
       "DIRECT_CREDIT_PAYMENT_WRITE_FORBIDDEN",
     );
+    expect(
+      (
+        await state
+          .cashierA!.client.from("layaway_item_substitutions")
+          .select("id")
+      ).error,
+    ).not.toBeNull();
   });
 });

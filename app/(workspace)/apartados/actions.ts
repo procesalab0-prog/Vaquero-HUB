@@ -125,3 +125,69 @@ export async function cancelOverdueLayaway(formData: FormData) {
     }`,
   );
 }
+
+export async function substituteLayawayItem(formData: FormData) {
+  let status = "sustitucion-error";
+  let total = "";
+  let balance = "";
+  try {
+    const { supabase } = await requirePermission("layaways.modify");
+    const layawayId = field(formData, "layaway_id");
+    const itemId = field(formData, "layaway_item_id");
+    const expectedVariantId = field(formData, "expected_variant_id");
+    const newVariantId = field(formData, "new_variant_id");
+    const reason = field(formData, "reason");
+    if (
+      !layawayId ||
+      !itemId ||
+      !expectedVariantId ||
+      !newVariantId ||
+      expectedVariantId === newVariantId ||
+      reason.length < 3 ||
+      reason.length > 500
+    ) {
+      status = "sustitucion-datos-invalidos";
+    } else {
+      const result = await supabase.rpc("substitute_layaway_item", {
+        p_operation_key: crypto.randomUUID(),
+        p_layaway_id: layawayId,
+        p_layaway_item_id: itemId,
+        p_expected_variant_id: expectedVariantId,
+        p_new_variant_id: newVariantId,
+        p_reason: reason,
+      });
+      if (result.error) throw result.error;
+      const outcome = result.data as {
+        new_total_cents?: number;
+        new_balance_cents?: number;
+      } | null;
+      total = String(Number(outcome?.new_total_cents ?? 0));
+      balance = String(Number(outcome?.new_balance_cents ?? 0));
+      status = "sustitucion-registrada";
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("INSUFFICIENT_STOCK")) {
+      status = "sustitucion-sin-existencia";
+    } else if (message.includes("LAYAWAY_SUBSTITUTION_REFUND_UNDEFINED")) {
+      status = "sustitucion-reembolso-pendiente";
+    } else if (message.includes("LAYAWAY_ITEM_CHANGED")) {
+      status = "sustitucion-desactualizada";
+    } else if (message.includes("LAYAWAY_DUPLICATE_VARIANT")) {
+      status = "sustitucion-variante-repetida";
+    } else if (message.includes("LAYAWAY_NOT_MODIFIABLE")) {
+      status = "sustitucion-no-disponible";
+    }
+    console.error("[apartados/substituteItem] failed", { status, message });
+  }
+  revalidatePath(path);
+  revalidatePath("/inventario");
+  revalidatePath("/pos");
+  redirect(
+    `${path}?status=${status}${
+      status === "sustitucion-registrada"
+        ? `&total=${encodeURIComponent(total)}&balance=${encodeURIComponent(balance)}`
+        : ""
+    }`,
+  );
+}

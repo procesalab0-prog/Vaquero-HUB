@@ -1249,8 +1249,9 @@ dice?** Que el código exista no significa que funcione.
       compensada conciliados y auditados.
 - [~] M7.3: crea apartados reales desde el carrito, reserva inventario de forma
   atómica, genera folio, permite buscar, recibe abonos mixtos con comprobante
-  inmutable y cancela vencidos reteniendo abonos y liberando reserva una vez.
-  Faltan sustitución, entrega y definir cancelaciones antes del vencimiento;
+  inmutable, cancela vencidos y sustituye líneas completas conservando abonos e
+  inventario. Faltan liquidación/entrega y definir cancelaciones antes del
+  vencimiento o sustituciones que requieran devolver dinero;
   antes de cerrar deben resolverse las decisiones puntuales que siguen
   abiertas en `specs/M7_APARTADOS.md` §6.
 - [ ] Lealtad: pospuesta por decisión del negocio; no bloquea M7.
