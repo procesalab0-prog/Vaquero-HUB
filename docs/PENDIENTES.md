@@ -64,9 +64,12 @@ atribuye los cambios de existencia a ventas por suposición.
 
 ### Decisiones de SICAR confirmadas el 16 de septiembre de 2026
 
-- **Tallas:** la talla viene incorporada en el código utilizado por SICAR. M9
-  debe documentar la regla exacta con muestras por familia antes de extraerla;
-  no debe convertir el código a número ni perder ceros iniciales.
+- **Tallas:** corrección confirmada: la talla viene como sufijo de la
+  descripción compacta, no dentro del código de barras. Ejemplo:
+  `BTILEGALPETCA27.5`, departamento `CABALLERO`, categoría
+  `BOTINES ILEGAL`, talla `27.5`. M9 puede proponer el sufijo numérico
+  decimal para calzado, pero debe validar muestras por familia y mandar a
+  excepción cualquier descripción que no cumpla la regla.
 - **Ubicación:** la exportación corresponde a una sola ubicación de origen. El
   saldo final se cargará únicamente en esa ubicación confirmada y nunca se
   repartirá por suposición entre sucursales.
@@ -291,9 +294,9 @@ compensatoria y pruebas contables; no se reinterpretará el historial.
 
 - Confirmar físicamente si `clave1` de la exportación SICAR es el código que
   lee la etiqueta y qué simbología usa actualmente.
-- Documentar con muestras cómo codifica SICAR la talla en sombreros, texanas,
-  cinturones y tallas decimales; la decisión general de que la talla vive en el
-  código ya está confirmada.
+- Documentar con muestras cómo expresa SICAR la talla dentro de la descripción
+  de sombreros, texanas, cinturones, ropa y calzado; sólo está confirmado el
+  patrón de sufijo numérico decimal del ejemplo de botín.
 - Reglas de puntos, crédito y apartados.
 - Forma definitiva de envío de tickets por SMS o correo.
 - Método de costo de compra.
