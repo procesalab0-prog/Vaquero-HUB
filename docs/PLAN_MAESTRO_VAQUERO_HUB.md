@@ -183,10 +183,12 @@ Hallazgos que M9 debe tratar como compuertas de importación:
 - Falta comprobar con una etiqueta física si `clave1` es el código que lee el
   escáner o sólo la clave interna de SICAR. `clave2` está vacía en 15,503
   renglones y no puede asumirse como fuente principal.
-- SICAR no entrega talla ni color en columnas separadas. Los atributos parecen
-  formar parte de `descripción`, por lo que el importador necesita reglas de
-  extracción, agrupación y una cola de excepciones revisable; nunca debe
-  adivinar silenciosamente el producto padre.
+- El negocio confirmó el 16 de septiembre de 2026 que **la talla viene
+  incorporada en el código usado por SICAR**, aunque no exista una columna
+  separada. Antes de automatizar la agrupación se documentará con muestras la
+  regla exacta por familia, incluidos ceros iniciales y tallas decimales. El
+  color y cualquier excepción seguirán una cola revisable; el importador nunca
+  adivinará silenciosamente el producto padre.
 - Hay 28 descripciones repetidas, equivalentes a 34 renglones adicionales.
   Una descripción repetida no prueba que sean duplicados: se debe comparar la
   clave, categoría y atributos antes de agrupar o rechazar.
@@ -204,8 +206,10 @@ Hallazgos que M9 debe tratar como compuertas de importación:
   están vacíos en todo el archivo. Las escalas mayoristas requieren otra
   exportación o confirmación del negocio.
 - La hoja trae una sola columna `existencia`; `localización 1`, `localización
-2` y `localización 3` están vacías. No se distribuirá ese saldo entre
-  sucursales sin una exportación por ubicación o una conciliación física.
+2` y `localización 3` están vacías. El negocio confirmó el 16 de septiembre
+  de 2026 que esta exportación corresponde a **una sola ubicación de origen**.
+  Ese saldo sólo podrá cargarse en la ubicación confirmada durante el corte; no
+  se repartirá entre sucursales presentes o futuras.
 - No vienen proveedores asociados por renglón, imágenes ni identificadores de
   WooCommerce. Esos datos se obtendrán de exportaciones separadas y se unirán
   mediante identificadores verificables, nunca sólo por nombre.
@@ -2254,9 +2258,12 @@ Corrección visible 0.14.1 — controles de catálogo aplicados donde importan:
   cero códigos externos dentro del rango reservado.
 - La interfaz traduce el rechazo del prefijo a una explicación clara y ninguna
   operación fallida cambia el código principal anterior.
-- Producción conserva 18 códigos generados durante el desarrollo; no se borran
-  ni se reinterpretan sin la exportación de SICAR. La compuerta para operación
-  real sigue abierta hasta demostrar que los códigos heredados no usan `20`–`29`.
+- El dueño confirmó el 16 de septiembre de 2026 que los 18 códigos
+  `GENERATED` creados durante el desarrollo son pruebas y no representan
+  mercancía real. Por su inmutabilidad no se borrarán: se darán de baja antes
+  del corte y quedarán excluidos de venta e importación. La compuerta para
+  operación real sigue abierta hasta demostrar que los códigos heredados no
+  usan `20`–`29`.
 - La revisión de Claude queda consolidada en `docs/PENDIENTES.md`, incluyendo
   responsables, decisiones bloqueadas y el orden de trabajo posterior.
 
