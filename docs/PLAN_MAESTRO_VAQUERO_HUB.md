@@ -183,12 +183,15 @@ Hallazgos que M9 debe tratar como compuertas de importación:
 - Falta comprobar con una etiqueta física si `clave1` es el código que lee el
   escáner o sólo la clave interna de SICAR. `clave2` está vacía en 15,503
   renglones y no puede asumirse como fuente principal.
-- El negocio confirmó el 16 de septiembre de 2026 que **la talla viene
-  incorporada en el código usado por SICAR**, aunque no exista una columna
-  separada. Antes de automatizar la agrupación se documentará con muestras la
-  regla exacta por familia, incluidos ceros iniciales y tallas decimales. El
-  color y cualquier excepción seguirán una cola revisable; el importador nunca
-  adivinará silenciosamente el producto padre.
+- El negocio aclaró el 16 de septiembre de 2026 que **la talla viene al
+  final de la descripción compacta**, no codificada en el código de barras. El
+  ejemplo confirmado es `BTILEGALPETCA27.5`: bota/botín, Ilegal, PET,
+  Caballero y talla `27.5`; además se conservan `CABALLERO` como
+  departamento y `BOTINES ILEGAL` como categoría. M9 podrá proponer la talla
+  a partir del sufijo numérico decimal y usar departamento/categoría como
+  contexto, pero deberá validar muestras por familia y enviar excepciones a
+  revisión. No asumirá que sombreros, cinturones, ropa o accesorios siguen la
+  misma regla ni adivinará silenciosamente el producto padre.
 - Hay 28 descripciones repetidas, equivalentes a 34 renglones adicionales.
   Una descripción repetida no prueba que sean duplicados: se debe comparar la
   clave, categoría y atributos antes de agrupar o rechazar.
