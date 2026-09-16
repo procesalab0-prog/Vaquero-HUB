@@ -12,8 +12,10 @@
 
 ## Respuestas nuevas — 16 de septiembre de 2026
 
-- SICAR incorpora la talla dentro del código. Falta obtener muestras suficientes
-  para documentar la regla exacta por familia, no volver a preguntar si existe.
+- SICAR incluye la talla al final de la descripción compacta, no dentro del
+  código de barras. Ejemplo confirmado: `BTILEGALPETCA27.5`, departamento
+  `CABALLERO`, categoría `BOTINES ILEGAL`, talla `27.5`. Falta obtener
+  muestras de otras familias para confirmar sus reglas.
 - La exportación actual corresponde a una sola ubicación de origen.
 - Los 18 productos/códigos creados en producción durante el desarrollo son
   pruebas y no representan mercancía real; deben darse de baja antes del corte.
