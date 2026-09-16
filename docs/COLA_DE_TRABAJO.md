@@ -1301,9 +1301,10 @@ dice?** Que el código exista no significa que funcione.
 - [~] M7.3: crea apartados reales desde el carrito, reserva inventario de forma
   atómica, genera folio, permite buscar, recibe abonos mixtos con comprobante
   inmutable, cancela vencidos, sustituye líneas completas conservando abonos e
-  inventario y entrega un apartado liquidado como una venta real sin volver a
-  mover caja. Faltan definir cancelaciones antes del vencimiento,
-  sustituciones que requieran devolver dinero y la entrega en otra sucursal;
+  inventario, permite a gerencia cancelar antes del vencimiento separando
+  devolución y penalización, y entrega un apartado liquidado como una venta
+  real sin volver a mover caja. Faltan sustituciones que requieran devolver
+  dinero y la entrega en otra sucursal;
   antes de cerrar deben resolverse las decisiones puntuales que siguen
   abiertas en `specs/M7_APARTADOS.md` §6.
 - [ ] Lealtad: pospuesta por decisión del negocio; no bloquea M7.

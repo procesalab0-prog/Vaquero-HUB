@@ -64,6 +64,7 @@ saltando lo bloqueado.
 | **M8.2 (0.33.0)**        | Cotizaciones reales con folio, vigencia opcional, búsqueda y conversión atómica mediante el POS          |
 | **M8.3 (0.45.0)**        | PDF local de venta/regalo, pagos desglosados, descarga auditable e historial privado en Mi Vaquero       |
 | **Corrección 0.45.1**    | El logotipo del ticket PDF conserva su proporción original y ajusta la altura sin deformarse             |
+| **M7.3 (0.46.0)**        | Cancelación anticipada autorizada, devolución por métodos originales, penalización explícita y reserva liberada |
 | **M7.1–M7.2 (0.35.0)**   | Crédito autorizado, límite global, venta total/mixta y abonos conciliados con caja                       |
 | **M7.2 (0.37.0)**        | Devolución reduce primero deuda; sólo dinero pagado vuelve por su método real                            |
 | **M7.2 (0.38.0)**        | Excepción ADMIN de un solo uso permite una venta vencida sin borrar atraso ni historial                  |
