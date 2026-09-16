@@ -166,46 +166,34 @@ export default async function LayawaysPage({
   ].includes(params.estado ?? "")
     ? params.estado!
     : null;
-  const [
-    modifyPermission,
-    deliverPermission,
-    cancelExceptionPermission,
-    result,
-    receiptResult,
-  ] = await Promise.all([
-    supabase
-      .from("role_permissions")
-      .select("permission_code")
-      .eq("role_id", roleId)
-      .eq("permission_code", "layaways.modify")
-      .maybeSingle(),
-    supabase
-      .from("role_permissions")
-      .select("permission_code")
-      .eq("role_id", roleId)
-      .eq("permission_code", "layaways.deliver")
-      .maybeSingle(),
-    supabase
-      .from("role_permissions")
-      .select("permission_code")
-      .eq("role_id", roleId)
-      .eq("permission_code", "layaways.cancel_exception")
-      .maybeSingle(),
-    supabase.rpc("list_layaways", {
-      p_location_id: location.id,
-      p_query: (params.busqueda ?? "").trim().slice(0, 100),
-      p_status: allowedStatus,
-      p_limit: 100,
-    }),
-    params.payment
-      ? supabase.rpc("get_layaway_payment_receipt", {
-          p_payment_id: params.payment,
-        })
-      : Promise.resolve({ data: null, error: null }),
-  ]);
+  const [modifyPermission, deliverPermission, result, receiptResult] =
+    await Promise.all([
+      supabase
+        .from("role_permissions")
+        .select("permission_code")
+        .eq("role_id", roleId)
+        .eq("permission_code", "layaways.modify")
+        .maybeSingle(),
+      supabase
+        .from("role_permissions")
+        .select("permission_code")
+        .eq("role_id", roleId)
+        .eq("permission_code", "layaways.deliver")
+        .maybeSingle(),
+      supabase.rpc("list_layaways", {
+        p_location_id: location.id,
+        p_query: (params.busqueda ?? "").trim().slice(0, 100),
+        p_status: allowedStatus,
+        p_limit: 100,
+      }),
+      params.payment
+        ? supabase.rpc("get_layaway_payment_receipt", {
+            p_payment_id: params.payment,
+          })
+        : Promise.resolve({ data: null, error: null }),
+    ]);
   const canModify = Boolean(modifyPermission.data);
   const canDeliver = Boolean(deliverPermission.data);
-  const canCancelException = Boolean(cancelExceptionPermission.data);
   const replacementQuery = (params.reemplazo ?? "").trim().slice(0, 100);
   const rows = (result.data ?? []) as LayawayRow[];
   const [itemsResult, selectedItemResult, catalogResult, inventoryResult] =
@@ -234,7 +222,6 @@ export default async function LayawaysPage({
   const dataError =
     modifyPermission.error ??
     deliverPermission.error ??
-    cancelExceptionPermission.error ??
     result.error ??
     receiptResult.error ??
     itemsResult.error ??
@@ -296,7 +283,6 @@ export default async function LayawaysPage({
       candidates={candidates}
       replacementQuery={replacementQuery}
       canDeliver={canDeliver}
-      canCancelException={canCancelException}
       deliveredSaleFolio={params.folio}
     />
   );
@@ -322,7 +308,6 @@ function LayawayPageContent({
   replacementQuery = "",
   preview = false,
   canDeliver = false,
-  canCancelException = false,
   deliveredSaleFolio,
 }: {
   rows: LayawayRow[];
@@ -344,7 +329,6 @@ function LayawayPageContent({
   replacementQuery?: string;
   preview?: boolean;
   canDeliver?: boolean;
-  canCancelException?: boolean;
   deliveredSaleFolio?: string;
 }) {
   const today = new Date().toISOString().slice(0, 10);
@@ -466,9 +450,21 @@ function LayawayPageContent({
                     : operationStatus === "cancelacion-excepcion-no-disponible"
                       ? "El apartado ya fue cancelado, entregado o no está disponible."
                       : operationStatus ===
-                          "cancelacion-excepcion-datos-invalidos"
-                        ? "Confirma la operación y revisa el monto y el motivo."
-                        : "No fue posible cancelar el apartado. No se modificó la caja ni el inventario."}
+                          "cancelacion-excepcion-pin-bloqueado"
+                        ? "El PIN quedó bloqueado 15 minutos por intentos fallidos."
+                        : operationStatus ===
+                            "cancelacion-excepcion-supervisor-sin-permiso"
+                          ? "Ese empleado no puede autorizar cancelaciones en esta sucursal."
+                          : operationStatus ===
+                              "cancelacion-excepcion-pin-invalido"
+                            ? "Código o PIN de gerente incorrecto."
+                            : operationStatus ===
+                                "cancelacion-excepcion-autorizacion-vencida"
+                              ? "La autorización venció o ya fue utilizada. Solicítala nuevamente."
+                              : operationStatus ===
+                                  "cancelacion-excepcion-datos-invalidos"
+                                ? "Confirma la operación y revisa monto, motivo y PIN de gerencia."
+                                : "No fue posible cancelar el apartado. No se modificó la caja ni el inventario."}
         </p>
       ) : null}
       {operationStatus?.startsWith("abono-") &&
@@ -909,7 +905,7 @@ function LayawayPageContent({
                     </form>
                   </details>
                 ) : null}
-                {active && timing !== "overdue" && canCancelException ? (
+                {active && timing !== "overdue" ? (
                   <details className="layaway-cancel-panel">
                     <summary>
                       <TriangleAlert aria-hidden="true" /> Cancelar antes de
@@ -918,10 +914,9 @@ function LayawayPageContent({
                     <form action={cancelActiveLayaway}>
                       <input type="hidden" name="layaway_id" value={row.id} />
                       <p>
-                        Administración o gerencia decide cuánto devolver. El
-                        resto de lo abonado queda como penalización y las piezas
-                        se liberan. La devolución conserva los métodos
-                        originales.
+                        La persona que tiene abierta esta caja ejecuta la
+                        devolución. Administración o gerencia la autoriza con su
+                        código y PIN; el resto queda como penalización.
                       </p>
                       <div className="credit-payment-grid">
                         <label>
@@ -966,6 +961,32 @@ function LayawayPageContent({
                           placeholder="Explica por qué se cancela y la penalización acordada"
                         />
                       </label>
+                      <div className="credit-payment-grid">
+                        <label>
+                          <span>Código de gerente o administrador</span>
+                          <input
+                            name="supervisor_code"
+                            autoCapitalize="characters"
+                            autoComplete="off"
+                            required
+                            placeholder="Ej. ADMIN0"
+                          />
+                        </label>
+                        <label>
+                          <span>PIN de autorización</span>
+                          <input
+                            name="supervisor_pin"
+                            type="password"
+                            inputMode="numeric"
+                            autoComplete="off"
+                            pattern="[0-9]{4,8}"
+                            minLength={4}
+                            maxLength={8}
+                            required
+                            placeholder="4 a 8 dígitos"
+                          />
+                        </label>
+                      </div>
                       <label className="layaway-delivery-confirmation">
                         <input
                           type="checkbox"

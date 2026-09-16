@@ -238,7 +238,7 @@ entrega entre sucursales no deben simularse mientras sigan abiertas.
 - La entrega directa en otra sucursal continúa bloqueada: deberá existir primero
   un traspaso confirmado conforme a la decisión pendiente de §6.
 
-## 13. Avance implementado en 0.46.0
+## 13. Avance implementado en 0.46.0 y 0.47.0
 
 - Administradores y gerentes reciben `layaways.cancel_exception`; una cajera no
   puede autorizar una cancelación anticipada llamando directamente al backend.
@@ -255,3 +255,13 @@ entrega entre sucursales no deben simularse mientras sigan abiertas.
   idempotente impide liberar o devolver dos veces.
 - El documento de cancelación y sus métodos son libros cerrados mediante RLS,
   sin lectura o escritura directa para empleados.
+- Desde 0.47.0, la persona que tiene abierta la caja ejecuta la cancelación y
+  el reembolso desde ese mismo cajón. Un gerente o administrador conserva la
+  autoridad: ingresa su código y PIN para emitir una capacidad de cinco minutos,
+  ligada a la cajera y consumible una sola vez.
+- El documento registra por separado `actor_user_id`, `authorized_by` y la
+  autorización utilizada. La bitácora permite responder quién operó la caja y
+  quién tomó la decisión, sin obligar al gerente a abrir una segunda caja.
+- El backend exige permiso operativo a la cajera, permiso excepcional al
+  supervisor, sucursal compartida, caja propia abierta, motivo y efectivo
+  suficiente. Ocultar o mostrar el formulario no sustituye estos controles.

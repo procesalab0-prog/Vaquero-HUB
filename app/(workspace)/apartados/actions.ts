@@ -187,10 +187,12 @@ export async function cancelActiveLayaway(formData: FormData) {
   let penalty = "";
   let released = "";
   try {
-    const { supabase } = await requirePermission("layaways.cancel_exception");
+    const { supabase } = await requirePermission("layaways.manage");
     const layawayId = field(formData, "layaway_id");
     const refundCents = amount(formData, "refund");
     const reason = field(formData, "reason");
+    const supervisorCode = field(formData, "supervisor_code");
+    const supervisorPin = field(formData, "supervisor_pin");
     const confirmed = field(formData, "confirmed") === "yes";
     const refundReferences: Array<Record<string, string>> = [];
     const cardReference = field(formData, "card_reference");
@@ -210,6 +212,8 @@ export async function cancelActiveLayaway(formData: FormData) {
     if (
       !layawayId ||
       !confirmed ||
+      !supervisorCode ||
+      !/^\d{4,8}$/.test(supervisorPin) ||
       !Number.isSafeInteger(refundCents) ||
       refundCents < 0 ||
       reason.length < 3 ||
@@ -222,24 +226,47 @@ export async function cancelActiveLayaway(formData: FormData) {
       if (session.error || !sessionId) {
         status = "cancelacion-excepcion-caja-requerida";
       } else {
-        const result = await supabase.rpc("cancel_active_layaway", {
-          p_operation_key: crypto.randomUUID(),
-          p_cash_session_id: sessionId,
-          p_layaway_id: layawayId,
-          p_refund_cents: refundCents,
-          p_refund_references: refundReferences,
-          p_reason: reason,
+        const authorization = await supabase.rpc("verify_supervisor_pin", {
+          p_employee_code: supervisorCode,
+          p_pin: supervisorPin,
+          p_permission: "layaways.cancel_exception",
         });
-        if (result.error) throw result.error;
-        const outcome = result.data as {
-          refund_cents?: number;
-          penalty_cents?: number;
-          released_balance_cents?: number;
+        if (authorization.error) throw authorization.error;
+        const authorized = authorization.data as {
+          status?: string;
+          authorization_token?: string;
         } | null;
-        refund = String(Number(outcome?.refund_cents ?? 0));
-        penalty = String(Number(outcome?.penalty_cents ?? 0));
-        released = String(Number(outcome?.released_balance_cents ?? 0));
-        status = "apartado-cancelado-excepcion";
+        if (authorized?.status !== "AUTHORIZED") {
+          status =
+            authorized?.status === "PIN_LOCKED"
+              ? "cancelacion-excepcion-pin-bloqueado"
+              : authorized?.status === "INSUFFICIENT_PERMISSION"
+                ? "cancelacion-excepcion-supervisor-sin-permiso"
+                : "cancelacion-excepcion-pin-invalido";
+        } else {
+          const result = await supabase.rpc(
+            "cancel_active_layaway_authorized",
+            {
+              p_operation_key: crypto.randomUUID(),
+              p_cash_session_id: sessionId,
+              p_layaway_id: layawayId,
+              p_refund_cents: refundCents,
+              p_refund_references: refundReferences,
+              p_authorization_token: authorized.authorization_token,
+              p_reason: reason,
+            },
+          );
+          if (result.error) throw result.error;
+          const outcome = result.data as {
+            refund_cents?: number;
+            penalty_cents?: number;
+            released_balance_cents?: number;
+          } | null;
+          refund = String(Number(outcome?.refund_cents ?? 0));
+          penalty = String(Number(outcome?.penalty_cents ?? 0));
+          released = String(Number(outcome?.released_balance_cents ?? 0));
+          status = "apartado-cancelado-excepcion";
+        }
       }
     }
   } catch (error) {
@@ -254,6 +281,8 @@ export async function cancelActiveLayaway(formData: FormData) {
       status = "cancelacion-excepcion-ya-vencido";
     } else if (message.includes("LAYAWAY_NOT_CANCELLABLE")) {
       status = "cancelacion-excepcion-no-disponible";
+    } else if (message.includes("LAYAWAY_AUTHORIZATION_REQUIRED")) {
+      status = "cancelacion-excepcion-autorizacion-vencida";
     }
     console.error("[apartados/cancelActive] failed", { status, message });
   }
