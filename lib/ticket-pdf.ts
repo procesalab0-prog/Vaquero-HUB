@@ -106,9 +106,11 @@ export async function createTicketPdf(data: TicketPdfData) {
   const receiptFolio =
     data.mode === "gift" ? giftFolio(data.folio) : data.folio;
   const logoBytes = await loadLogo(data);
+  const logoHeightAllowanceMm = logoBytes ? 11 : 0;
   const heightMm = Math.max(
-    150,
+    150 + logoHeightAllowanceMm,
     131 +
+      logoHeightAllowanceMm +
       data.lines.length * (data.mode === "sale" ? 15 : 11) +
       (data.payments?.length ?? 0) * 7,
   );
@@ -162,15 +164,14 @@ export async function createTicketPdf(data: TicketPdfData) {
 
   if (logoBytes) {
     const logo = await pdf.embedPng(logoBytes);
-    const logoWidth = 50 * MM;
-    const logoHeight = 19 * MM;
+    const logoSize = logo.scaleToFit(50 * MM, 30 * MM);
     page.drawImage(logo, {
-      x: (width - logoWidth) / 2,
-      y: y - logoHeight,
-      width: logoWidth,
-      height: logoHeight,
+      x: (width - logoSize.width) / 2,
+      y: y - logoSize.height,
+      width: logoSize.width,
+      height: logoSize.height,
     });
-    y -= 22 * MM;
+    y -= logoSize.height + 3 * MM;
   } else {
     centered("VAQUERO SM", 15, bold);
     y -= 19;
