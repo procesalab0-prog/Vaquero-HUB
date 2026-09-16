@@ -137,6 +137,11 @@ begin
     return jsonb_build_object(
       'id', v_existing.id,
       'layaway_id', v_existing.layaway_id,
+      'folio', (
+        select l.folio
+        from public.layaways l
+        where l.id = v_existing.layaway_id
+      ),
       'refund_cents', v_existing.refund_cents,
       'penalty_cents', v_existing.penalty_cents,
       'released_balance_cents', v_existing.cancelled_balance_cents,
