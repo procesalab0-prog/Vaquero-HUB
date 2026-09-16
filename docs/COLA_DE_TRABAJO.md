@@ -1281,6 +1281,58 @@ mínimo, ¿se puede confirmar un apartado con $0 abonados?** Si la respuesta es
 que sí, un apartado sin dinero de por medio aparta mercancía real y el caso de
 cancelación anticipada se vuelve más frecuente, no menos.
 
+### Revisión de la cancelación anticipada de apartados y de M8.3
+
+Verificado ejecutando contra una base reconstruida: 89 migraciones aplican
+limpio. **La lógica del dinero está bien.**
+
+La decisión que faltaba ya se tomó y se implementó con criterio: en vez de
+editar el historial de abonos, la cancelación anticipada levanta un
+**documento compensatorio** y deja los abonos intactos.
+
+| Prueba                                              | Resultado medido                       |
+| --------------------------------------------------- | ---------------------------------------- |
+| La cajera intenta cancelar un apartado vigente      | `NOT_AUTHORIZED`                         |
+| Devolver más de lo abonado                          | `REFUND_EXCEEDS_LAYAWAY_PAYMENTS`        |
+| Devolver $600 de $1,000 abonados (800 efectivo + 200 tarjeta) | $480 en efectivo y $120 a la tarjeta: **el mismo reparto proporcional que las devoluciones de venta** |
+| Penalización                                        | $400 retenidos y registrados aparte      |
+| Mercancía                                           | Liberada: la reserva quedó en cero       |
+| Cancelar dos veces                                  | `LAYAWAY_NOT_CANCELLABLE`                |
+| Historial de abonos                                 | Intacto: `paid_cents` sigue en $1,000    |
+
+También se revisó M8.3: el historial que ve el cliente se resuelve por
+`auth_user_id` contra su propia sesión, excluye clientes anonimizados y no
+devuelve costos. El PDF del ticket tampoco los lleva.
+
+### La trampa de la caja única ya no es un caso aislado
+
+Ayer se reportó que **con una sola caja por sucursal no se puede cancelar una
+venta a crédito** durante el turno. Hoy se comprobó que **la cancelación
+anticipada de un apartado tiene exactamente el mismo bloqueo**, por la misma
+razón: exige un permiso que sólo tienen ADMIN y MANAGER **y** que quien la
+ejecuta tenga su propia caja abierta.
+
+Ya son dos operaciones, y el patrón se va a repetir: cada vez que se construya
+una operación de dinero autorizada por gerencia, va a heredar la misma
+combinación. Conviene resolverlo de una vez y no operación por operación.
+
+Además hay un efecto que conviene tener presente aunque no sea un error: **el
+dinero sale de una caja distinta de la que entró.** En la prueba, los $800 del
+abono entraron al cajón de la cajera y los $480 del reembolso salieron del
+cajón del gerente. Cada corte cuadra por separado y todo queda auditado, pero
+el gerente necesita efectivo propio en su cajón para poder devolver.
+
+Las dos salidas siguen siendo las mismas, y la decisión es de negocio:
+
+1. **Dos cajas por sucursal.** Cero código, y responde de paso la pregunta 9.4.
+2. **Que la cajera ejecute con autorización de gerencia**, como ya ocurre con
+   descuentos y devoluciones. En el crédito la función ya exige token de
+   supervisor, así que ahí no se debilita nada; en apartados habría que
+   agregarlo.
+
+**Conviene decidirlo esta semana:** quedan cuatro semanas para octubre y son
+dos operaciones de mostrador con el cliente enfrente.
+
 ## Deuda pendiente
 
 | Qué                                                                                       | Dónde              |

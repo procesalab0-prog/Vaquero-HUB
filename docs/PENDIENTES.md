@@ -175,7 +175,24 @@ etiqueta y si el cajón de dinero está conectado a la BIXOLON.
 Antes de desinstalar SICAR: conseguir por separado el controlador de la
 impresora de etiquetas, que pudo haber llegado dentro de su instalador.
 
-## Decisión del dueño: cancelar una venta a crédito
+## Decisión del dueño: caja única y operaciones autorizadas
+
+**Ya son dos operaciones bloqueadas, no una.** Con una sola caja por sucursal
+no se puede cancelar una venta a crédito ni cancelar anticipadamente un
+apartado durante el turno: ambas exigen permiso de gerencia **y** caja propia
+abierta, y la cajera tiene la única caja.
+
+El patrón se repetirá en cada operación de dinero autorizada por gerencia, así
+que conviene resolverlo de una vez.
+
+Dos salidas: dos cajas por sucursal (cero código, y contesta la pregunta 9.4),
+o que la cajera ejecute con autorización de gerencia, como ya pasa con
+descuentos y devoluciones.
+
+Nota operativa: el dinero sale de una caja distinta de la que entró, así que
+el gerente necesita efectivo en su propio cajón para devolver.
+
+## Decisión anterior, ya contenida arriba: cancelar una venta a crédito
 
 Comprobado ejecutando: **con una sola caja por sucursal, una venta a crédito no
 se puede cancelar durante el turno.** La cajera tiene la caja abierta pero no
