@@ -1409,9 +1409,9 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
 
   it("cancela un apartado vigente con devolución proporcional e idempotente", async () => {
     const variantId = await createVariant("Cancelación anticipada", 10000);
-    const created = await state.admin!.client.rpc("create_layaway", {
+    const created = await state.cashierA!.client.rpc("create_layaway", {
       p_idempotency_key: crypto.randomUUID(),
-      p_cash_session_id: state.adminSession,
+      p_cash_session_id: state.sessionA,
       p_customer_id: state.customerId,
       p_due_date: new Date(Date.now() + 30 * 86400000)
         .toISOString()
@@ -1422,9 +1422,9 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
     expect(created.error).toBeNull();
     expect(
       (
-        await state.admin!.client.rpc("record_layaway_payment", {
+        await state.cashierA!.client.rpc("record_layaway_payment", {
           p_idempotency_key: crypto.randomUUID(),
-          p_cash_session_id: state.adminSession,
+          p_cash_session_id: state.sessionA,
           p_layaway_id: created.data.id,
           p_payments: [
             {
@@ -1443,22 +1443,37 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
       ).error,
     ).toBeNull();
 
+    const authorization = await state.cashierA!.client.rpc(
+      "verify_supervisor_pin",
+      {
+        p_employee_code: state.adminEmployeeCode,
+        p_pin: "7319",
+        p_permission: "layaways.cancel_exception",
+      },
+    );
+    expect(authorization.error).toBeNull();
+    expect(authorization.data.status).toBe("AUTHORIZED");
+
     const key = crypto.randomUUID();
     const input = {
       p_operation_key: key,
-      p_cash_session_id: state.adminSession,
+      p_cash_session_id: state.sessionA,
       p_layaway_id: created.data.id,
       p_refund_cents: 5000,
       p_refund_references: [
         { method_code: "CARD", reference: "DEV-TARJETA-1" },
       ],
+      p_authorization_token: authorization.data.authorization_token,
       p_reason: "Excepción autorizada por gerencia",
     };
-    const cancelled = await state.admin!.client.rpc(
-      "cancel_active_layaway",
+    const cancelled = await state.cashierA!.client.rpc(
+      "cancel_active_layaway_authorized",
       input,
     );
-    const retry = await state.admin!.client.rpc("cancel_active_layaway", input);
+    const retry = await state.cashierA!.client.rpc(
+      "cancel_active_layaway_authorized",
+      input,
+    );
     expect(cancelled.error).toBeNull();
     expect(retry.error).toBeNull();
     expect(retry.data).toEqual(cancelled.data);
@@ -1500,10 +1515,20 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
     const cash = await state
       .server!.from("cash_movements")
       .select("amount_cents")
-      .eq("session_id", state.adminSession)
+      .eq("session_id", state.sessionA)
       .eq("reference_type", "LAYAWAY_CANCELLATION")
       .eq("reference_id", cancelled.data.id);
     expect(cash.data).toEqual([{ amount_cents: -3000 }]);
+    const cancellation = await state
+      .server!.from("layaway_cancellations")
+      .select("actor_user_id,authorized_by,authorization_id")
+      .eq("id", cancelled.data.id)
+      .single();
+    expect(cancellation.data).toEqual({
+      actor_user_id: state.cashierA!.id,
+      authorized_by: state.admin!.id,
+      authorization_id: authorization.data.authorization_token,
+    });
   });
 
   it("rechaza permisos insuficientes y revierte si la caja no cubre el efectivo", async () => {
@@ -1536,15 +1561,19 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
         })
       ).error,
     ).toBeNull();
-    const denied = await state.cashierA!.client.rpc("cancel_active_layaway", {
-      p_operation_key: crypto.randomUUID(),
-      p_cash_session_id: state.sessionA,
-      p_layaway_id: created.data.id,
-      p_refund_cents: 1000,
-      p_refund_references: [],
-      p_reason: "La cajera no debe autorizar la excepción",
-    });
-    expect(denied.error?.message).toContain("NOT_AUTHORIZED");
+    const denied = await state.cashierA!.client.rpc(
+      "cancel_active_layaway_authorized",
+      {
+        p_operation_key: crypto.randomUUID(),
+        p_cash_session_id: state.sessionA,
+        p_layaway_id: created.data.id,
+        p_refund_cents: 1000,
+        p_refund_references: [],
+        p_authorization_token: crypto.randomUUID(),
+        p_reason: "La cajera no debe autorizar la excepción",
+      },
+    );
+    expect(denied.error?.message).toContain("LAYAWAY_AUTHORIZATION_REQUIRED");
 
     const insufficient = await state.admin!.client.rpc(
       "cancel_active_layaway",

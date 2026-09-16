@@ -2960,3 +2960,18 @@ Entrega visible 0.46.0 — cancelación anticipada de apartados:
 - M7.3 continúa abierto únicamente para sustituciones cuyo nuevo total quede
   debajo de lo ya abonado y para entrega en otra sucursal mediante un traspaso
   físicamente recibido. No se simula ninguno de esos dos recorridos.
+
+Entrega visible 0.47.0 — gerencia autoriza sin ocupar una segunda caja:
+
+- La regla general de mostrador queda confirmada: la persona dueña de la caja
+  ejecuta la operación monetaria y un gerente o administrador la autoriza con
+  código y PIN. No se mueve el dinero a un cajón administrativo ficticio.
+- La cancelación anticipada de apartados adopta el mismo patrón que la
+  cancelación de crédito. La autorización dura cinco minutos, está ligada al
+  ejecutor y se consume una sola vez dentro de la misma transacción.
+- El documento y la bitácora distinguen al ejecutor del autorizador. La caja
+  usada, el reembolso, la penalización, la liberación de mercancía y el consumo
+  de la autorización confirman juntos o se revierten juntos.
+- La interfaz muestra esta operación a quien administra apartados, pero el
+  backend exige tanto el permiso operativo como la capacidad excepcional de
+  gerencia; la seguridad no depende de esconder botones.
