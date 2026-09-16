@@ -2930,3 +2930,23 @@ Corrección visible 0.37.1 — administración global por sucursal:
   individual sólo a La Piedad, debe poder cambiar a La Piedad Prueba y recibir
   el traspaso enviado por Emmanuel sin crear asignaciones manuales para cada
   tienda nueva.
+
+Entrega visible 0.46.0 — cancelación anticipada de apartados:
+
+- Administradores y gerentes pueden cancelar un apartado antes de vencer con
+  permiso específico, motivo y una decisión explícita sobre devolución y
+  penalización. Una cajera conserva abonos, pero no obtiene esta autoridad.
+- Los abonos originales permanecen inmutables. Un documento compensatorio
+  separa cuánto se devuelve, cuánto se retiene y qué saldo pendiente se cancela.
+- El reembolso se reparte proporcionalmente entre los métodos efectivamente
+  abonados. Tarjeta y transferencia exigen referencia nueva; ningún pago
+  electrónico se convierte silenciosamente en efectivo.
+- La devolución en efectivo exige una caja propia y abierta. El candado de la
+  sesión y el control estructural de caja impiden que dos operaciones gasten el
+  mismo dinero o que el cajón quede negativo.
+- Liberación de reserva, documento financiero, movimiento de caja y auditoría
+  se confirman juntos. Un fallo revierte todo y la idempotencia impide repetir
+  la devolución o liberar las piezas una segunda vez.
+- M7.3 continúa abierto únicamente para sustituciones cuyo nuevo total quede
+  debajo de lo ya abonado y para entrega en otra sucursal mediante un traspaso
+  físicamente recibido. No se simula ninguno de esos dos recorridos.

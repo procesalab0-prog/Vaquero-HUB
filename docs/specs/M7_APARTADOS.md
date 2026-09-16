@@ -115,25 +115,32 @@ permiso decida cancelarlo.
 - Mantener formularios y confirmaciones utilizables con scroll en teléfono,
   iPad y computadora.
 
-## 6. Decisiones todavía pendientes
+## 6. Decisiones y pendientes
 
 Estas preguntas no invalidan lo confirmado, pero deben resolverse antes de
 cerrar M7:
 
-1. Sin enganche mínimo, ¿se permite confirmar un apartado con **$0 abonados** o
-   debe existir al menos un pago positivo?
-2. ¿Cuántos días antes del vencimiento comienza el color amarillo?
+1. **Resuelto:** se permite confirmar un apartado con **$0 abonados**.
+2. **Resuelto:** el color amarillo comienza siete días antes del vencimiento.
 3. Si se baja el precio por debajo de lo ya abonado, ¿el excedente se devuelve,
    queda como saldo a favor o se impide el cambio?
 4. Al sustituir por un producto de distinto precio, ¿la diferencia sólo ajusta
    el saldo o puede requerir devolución inmediata?
-5. ¿Qué excepciones permiten devolver abonos, por qué métodos y con qué permiso?
+5. **Resuelto en 0.46.0:** administrador o gerente puede autorizar una
+   cancelación antes del vencimiento, elegir cuánto devolver y cuánto retener
+   como penalización. La devolución conserva proporcionalmente los métodos de
+   los abonos reales; tarjeta y transferencia exigen una nueva referencia. La
+   persona autorizada ejecuta la operación con su propia caja abierta y no se
+   utiliza un PIN separado.
 6. Para entregar en otra sucursal, ¿quién solicita y quién autoriza el traspaso,
    y se permite recoger antes de que la mercancía sea recibida físicamente?
 7. ¿Cuántos apartados abiertos existen en SICAR y deben migrarse?
 
 La retención de abonos como penalización debe aparecer claramente en la política
 y en el comprobante aceptado por el cliente antes de recibir dinero.
+
+Las decisiones aún abiertas son 3, 4, 6 y 7. La sustitución con excedente y la
+entrega entre sucursales no deben simularse mientras sigan abiertas.
 
 ## 7. Criterios de aceptación
 
@@ -230,3 +237,21 @@ y en el comprobante aceptado por el cliente antes de recibir dinero.
   Tickets para revisar o imprimir el comprobante real.
 - La entrega directa en otra sucursal continúa bloqueada: deberá existir primero
   un traspaso confirmado conforme a la decisión pendiente de §6.
+
+## 13. Avance implementado en 0.46.0
+
+- Administradores y gerentes reciben `layaways.cancel_exception`; una cajera no
+  puede autorizar una cancelación anticipada llamando directamente al backend.
+- La persona autorizada captura de forma explícita el importe a devolver y el
+  motivo. El resto de lo abonado queda documentado como penalización; no existe
+  un valor automático que pueda mover dinero por accidente.
+- El reembolso se reparte proporcionalmente entre efectivo, tarjeta y
+  transferencia según los abonos originales. Los pagos electrónicos requieren
+  una referencia nueva y nunca se convierten silenciosamente en efectivo.
+- La operación exige la caja propia y abierta de quien la ejecuta. El disparador
+  de caja serializa el reembolso y lo rechaza si el efectivo no alcanza.
+- Cancelación, desglose financiero, salida de caja, liberación de reservas y
+  auditoría forman una sola transacción. Un error revierte todo y una llave
+  idempotente impide liberar o devolver dos veces.
+- El documento de cancelación y sus métodos son libros cerrados mediante RLS,
+  sin lectura o escritura directa para empleados.
