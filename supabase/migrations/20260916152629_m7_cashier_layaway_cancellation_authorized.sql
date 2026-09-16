@@ -129,6 +129,7 @@ begin
       'refund_cents', v_existing.refund_cents,
       'penalty_cents', v_existing.penalty_cents,
       'released_balance_cents', v_existing.cancelled_balance_cents,
+      'authorized_by', v_existing.authorized_by,
       'refunds', coalesce((
         select jsonb_agg(jsonb_build_object(
           'method_code', r.method_code,
