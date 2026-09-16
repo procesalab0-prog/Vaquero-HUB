@@ -62,6 +62,21 @@ También falta acordar cómo conciliar los saldos negativos. La herramienta ya
 los reporta como excepciones; no los convierte en cero, no inventa costos ni
 atribuye los cambios de existencia a ventas por suposición.
 
+### Decisiones de SICAR confirmadas el 16 de septiembre de 2026
+
+- **Tallas:** corrección confirmada: la talla viene como sufijo de la
+  descripción compacta, no dentro del código de barras. Ejemplo:
+  `BTILEGALPETCA27.5`, departamento `CABALLERO`, categoría
+  `BOTINES ILEGAL`, talla `27.5`. M9 puede proponer el sufijo numérico
+  decimal para calzado, pero debe validar muestras por familia y mandar a
+  excepción cualquier descripción que no cumpla la regla.
+- **Ubicación:** la exportación corresponde a una sola ubicación de origen. El
+  saldo final se cargará únicamente en esa ubicación confirmada y nunca se
+  repartirá por suposición entre sucursales.
+- **Datos de prueba:** los 18 códigos `GENERATED` de producción son pruebas y
+  no representan mercancía real. Deben darse de baja antes del corte, sin
+  borrarlos ni reutilizar sus identidades.
+
 La prueba transaccional de staging comprobó que repetir el mismo archivo no
 duplica productos, un costo cero no borra un costo positivo, la ausencia de un
 producto no lo da de baja, una colisión de código reservado revierte el archivo
@@ -69,10 +84,11 @@ completo y ninguna corrida de catálogo modifica inventario. Las tablas de
 preparación son privadas y sólo `service_role` puede usarlas; los avisos de RLS
 sin políticas son intencionales porque se aplica denegación total a usuarios.
 
-La base de producción contiene 18 códigos `GENERATED` creados durante el
-desarrollo. No son códigos externos ni se modificaron en esta corrección. Se
-deben identificar como pruebas o mercancía real contra la exportación; los
-códigos generados son inmutables y no se borran por suposición.
+El dueño confirmó el 16 de septiembre de 2026 que los 18 códigos
+`GENERATED` creados durante el desarrollo son únicamente pruebas y no
+representan mercancía existente. Los códigos son inmutables: la acción pendiente
+es dar de baja sus variantes antes del corte y comprobar que POS, inventario e
+importador no las traten como mercancía operable.
 
 ## Los 18 productos de prueba no se pueden borrar
 
@@ -103,7 +119,8 @@ regla dura en §2.2 de [`specs/M4_POS_Y_CAJA.md`](specs/M4_POS_Y_CAJA.md) con
 sus dos pruebas obligatorias. Sin eso, el primer día de operación se puede
 cobrar un artículo de prueba.
 
-Antes de abrir, conviene darlos de baja:
+Antes de abrir, **los 18 deben darse de baja**. La decisión ya no está
+pendiente; sólo falta ejecutar y verificar la baja:
 
 ```sql
 -- Primero mirarlos, y decidir cuáles son prueba y cuáles mercancía real.
@@ -176,21 +193,17 @@ Dos salidas:
 Recomendado: la opción 2 si va a haber una sola caja. Conviene decidirlo antes
 de octubre, porque es una operación de mostrador con el cliente enfrente.
 
-## Decisión del dueño: cancelar un apartado antes de que venza
+## Resuelto en 0.46.0: cancelar un apartado antes de que venza
 
-El sistema hoy se niega, a propósito: la spec dice qué pasa con un apartado
-**vencido** (lo abonado se retiene como penalización) pero no dice nada de
-cuando **el cliente se arrepiente antes de la fecha**. La función responde
-`LAYAWAY_CANCELLATION_POLICY_UNDEFINED` en vez de inventar una regla con el
-dinero de alguien.
+Administrador o gerente puede cancelar antes del vencimiento y captura de
+forma explícita cuánto se devuelve y cuánto queda como penalización. No usa un
+PIN separado: la persona que ejecuta necesita el permiso y su propia caja
+abierta. La devolución se reparte entre los métodos originales, exige
+referencia electrónica y nunca puede dejar negativo el efectivo esperado.
 
-En la tienda eso pasa, así que hay que decidir: ¿se puede cancelar antes de
-que venza? ¿se devuelve lo abonado, se retiene una parte, o lo autoriza el
-gerente? ¿y se devuelve por el mismo método de pago, como ya hacen las
-devoluciones de venta?
-
-Va junto con la pregunta 5.4: sin enganche mínimo, ¿se puede confirmar un
-apartado con $0 abonados?
+También quedó confirmado que un apartado puede iniciar con $0 abonados. Sigue
+pendiente definir la sustitución cuyo nuevo total quede debajo de lo ya pagado
+y la entrega en otra sucursal mediante traspaso recibido físicamente.
 
 ## Orden inmediato de implementación
 
@@ -281,7 +294,9 @@ compensatoria y pruebas contables; no se reinterpretará el historial.
 
 - Confirmar físicamente si `clave1` de la exportación SICAR es el código que
   lee la etiqueta y qué simbología usa actualmente.
-- Escalas de talla de sombreros, texanas y cinturones.
+- Documentar con muestras cómo expresa SICAR la talla dentro de la descripción
+  de sombreros, texanas, cinturones, ropa y calzado; sólo está confirmado el
+  patrón de sufijo numérico decimal del ejemplo de botín.
 - Reglas de puntos, crédito y apartados.
 - Forma definitiva de envío de tickets por SMS o correo.
 - Método de costo de compra.

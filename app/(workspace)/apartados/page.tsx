@@ -13,6 +13,7 @@ import { resolveActiveLocation } from "@/lib/auth/active-location";
 import { requirePermission } from "@/lib/auth/authorization";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
+  cancelActiveLayaway,
   cancelOverdueLayaway,
   fulfillLayaway,
   receiveLayawayPayment,
@@ -123,6 +124,7 @@ export default async function LayawaysPage({
     status?: string;
     payment?: string;
     penalty?: string;
+    refund?: string;
     released?: string;
     cambiar?: string;
     reemplazo?: string;
@@ -164,8 +166,13 @@ export default async function LayawaysPage({
   ].includes(params.estado ?? "")
     ? params.estado!
     : null;
-  const [modifyPermission, deliverPermission, result, receiptResult] =
-    await Promise.all([
+  const [
+    modifyPermission,
+    deliverPermission,
+    cancelExceptionPermission,
+    result,
+    receiptResult,
+  ] = await Promise.all([
     supabase
       .from("role_permissions")
       .select("permission_code")
@@ -178,6 +185,12 @@ export default async function LayawaysPage({
       .eq("role_id", roleId)
       .eq("permission_code", "layaways.deliver")
       .maybeSingle(),
+    supabase
+      .from("role_permissions")
+      .select("permission_code")
+      .eq("role_id", roleId)
+      .eq("permission_code", "layaways.cancel_exception")
+      .maybeSingle(),
     supabase.rpc("list_layaways", {
       p_location_id: location.id,
       p_query: (params.busqueda ?? "").trim().slice(0, 100),
@@ -189,9 +202,10 @@ export default async function LayawaysPage({
           p_payment_id: params.payment,
         })
       : Promise.resolve({ data: null, error: null }),
-    ]);
+  ]);
   const canModify = Boolean(modifyPermission.data);
   const canDeliver = Boolean(deliverPermission.data);
+  const canCancelException = Boolean(cancelExceptionPermission.data);
   const replacementQuery = (params.reemplazo ?? "").trim().slice(0, 100);
   const rows = (result.data ?? []) as LayawayRow[];
   const [itemsResult, selectedItemResult, catalogResult, inventoryResult] =
@@ -220,6 +234,7 @@ export default async function LayawaysPage({
   const dataError =
     modifyPermission.error ??
     deliverPermission.error ??
+    cancelExceptionPermission.error ??
     result.error ??
     receiptResult.error ??
     itemsResult.error ??
@@ -272,6 +287,7 @@ export default async function LayawaysPage({
       operationTotalCents={Number(params.total ?? 0)}
       operationBalanceCents={Number(params.balance ?? 0)}
       penaltyCents={Number(params.penalty ?? 0)}
+      refundCents={Number(params.refund ?? 0)}
       releasedBalanceCents={Number(params.released ?? 0)}
       receipt={receiptResult.data as PaymentReceipt | null}
       items={(itemsResult.data ?? []) as LayawayItemRow[]}
@@ -280,6 +296,7 @@ export default async function LayawaysPage({
       candidates={candidates}
       replacementQuery={replacementQuery}
       canDeliver={canDeliver}
+      canCancelException={canCancelException}
       deliveredSaleFolio={params.folio}
     />
   );
@@ -295,6 +312,7 @@ function LayawayPageContent({
   operationTotalCents = 0,
   operationBalanceCents = 0,
   penaltyCents = 0,
+  refundCents = 0,
   releasedBalanceCents = 0,
   receipt,
   items = [],
@@ -304,6 +322,7 @@ function LayawayPageContent({
   replacementQuery = "",
   preview = false,
   canDeliver = false,
+  canCancelException = false,
   deliveredSaleFolio,
 }: {
   rows: LayawayRow[];
@@ -315,6 +334,7 @@ function LayawayPageContent({
   operationTotalCents?: number;
   operationBalanceCents?: number;
   penaltyCents?: number;
+  refundCents?: number;
   releasedBalanceCents?: number;
   receipt?: PaymentReceipt | null;
   items?: LayawayItemRow[];
@@ -324,6 +344,7 @@ function LayawayPageContent({
   replacementQuery?: string;
   preview?: boolean;
   canDeliver?: boolean;
+  canCancelException?: boolean;
   deliveredSaleFolio?: string;
 }) {
   const today = new Date().toISOString().slice(0, 10);
@@ -388,6 +409,15 @@ function LayawayPageContent({
           estar disponible.
         </p>
       ) : null}
+      {operationStatus === "apartado-cancelado-excepcion" ? (
+        <p className="notice-banner" role="status">
+          Apartado cancelado por excepción. Se devolverán{" "}
+          {money.format(refundCents / 100)}, se conservarán{" "}
+          {money.format(penaltyCents / 100)} como penalización y se canceló el
+          saldo de {money.format(releasedBalanceCents / 100)}. La mercancía ya
+          volvió a estar disponible.
+        </p>
+      ) : null}
       {operationStatus === "sustitucion-registrada" ? (
         <p className="notice-banner" role="status">
           Producto sustituido. El nuevo total es{" "}
@@ -411,13 +441,34 @@ function LayawayPageContent({
                     : "No fue posible sustituir el producto. Revisa la selección y el motivo."}
         </p>
       ) : null}
-      {operationStatus?.startsWith("cancelacion-") ? (
+      {operationStatus?.startsWith("cancelacion-") &&
+      !operationStatus.startsWith("cancelacion-excepcion-") ? (
         <p className="inline-error operation-feedback" role="alert">
           {operationStatus === "cancelacion-no-vencido"
             ? "Este apartado todavía no vence. Su política de cancelación y devolución aún debe definirse."
             : operationStatus === "cancelacion-no-disponible"
               ? "El apartado ya fue cancelado, entregado o no está disponible."
               : "No fue posible cancelar el apartado. Revisa el motivo e intenta nuevamente."}
+        </p>
+      ) : null}
+      {operationStatus?.startsWith("cancelacion-excepcion-") ? (
+        <p className="inline-error operation-feedback" role="alert">
+          {operationStatus === "cancelacion-excepcion-caja-requerida"
+            ? "Abre tu propia caja en esta sucursal antes de registrar una devolución."
+            : operationStatus === "cancelacion-excepcion-efectivo-insuficiente"
+              ? "La caja no tiene efectivo suficiente para completar la devolución. No se canceló el apartado."
+              : operationStatus === "cancelacion-excepcion-referencia-requerida"
+                ? "Captura la referencia de devolución para cada pago electrónico."
+                : operationStatus === "cancelacion-excepcion-monto-invalido"
+                  ? "La devolución no puede superar lo que el cliente ha abonado."
+                  : operationStatus === "cancelacion-excepcion-ya-vencido"
+                    ? "Este apartado ya venció. Usa la cancelación de vencido, que aplica la penalización definida."
+                    : operationStatus === "cancelacion-excepcion-no-disponible"
+                      ? "El apartado ya fue cancelado, entregado o no está disponible."
+                      : operationStatus ===
+                          "cancelacion-excepcion-datos-invalidos"
+                        ? "Confirma la operación y revisa el monto y el motivo."
+                        : "No fue posible cancelar el apartado. No se modificó la caja ni el inventario."}
         </p>
       ) : null}
       {operationStatus?.startsWith("abono-") &&
@@ -854,6 +905,81 @@ function LayawayPageContent({
                       </label>
                       <button className="danger-button" type="submit">
                         Confirmar cancelación
+                      </button>
+                    </form>
+                  </details>
+                ) : null}
+                {active && timing !== "overdue" && canCancelException ? (
+                  <details className="layaway-cancel-panel">
+                    <summary>
+                      <TriangleAlert aria-hidden="true" /> Cancelar antes de
+                      vencer
+                    </summary>
+                    <form action={cancelActiveLayaway}>
+                      <input type="hidden" name="layaway_id" value={row.id} />
+                      <p>
+                        Administración o gerencia decide cuánto devolver. El
+                        resto de lo abonado queda como penalización y las piezas
+                        se liberan. La devolución conserva los métodos
+                        originales.
+                      </p>
+                      <div className="credit-payment-grid">
+                        <label>
+                          <span>Importe total a devolver</span>
+                          <input
+                            name="refund"
+                            type="number"
+                            inputMode="decimal"
+                            min="0"
+                            max={Number(row.paid_cents) / 100}
+                            step="0.01"
+                            required
+                            placeholder="0.00"
+                          />
+                          <small>
+                            Máximo {money.format(Number(row.paid_cents) / 100)}.
+                            Lo no devuelto quedará como penalización.
+                          </small>
+                        </label>
+                        <label>
+                          <span>Referencia devolución a tarjeta</span>
+                          <input
+                            name="card_reference"
+                            placeholder="Sólo si hubo pago con tarjeta"
+                          />
+                        </label>
+                        <label>
+                          <span>Referencia devolución por transferencia</span>
+                          <input
+                            name="transfer_reference"
+                            placeholder="Sólo si hubo transferencia"
+                          />
+                        </label>
+                      </div>
+                      <label>
+                        <span>Motivo y decisión autorizada</span>
+                        <textarea
+                          name="reason"
+                          minLength={3}
+                          maxLength={500}
+                          required
+                          placeholder="Explica por qué se cancela y la penalización acordada"
+                        />
+                      </label>
+                      <label className="layaway-delivery-confirmation">
+                        <input
+                          type="checkbox"
+                          name="confirmed"
+                          value="yes"
+                          required
+                        />
+                        <span>
+                          Confirmo la devolución, la penalización y la
+                          liberación de {Number(row.unit_count)} piezas.
+                        </span>
+                      </label>
+                      <button className="danger-button" type="submit">
+                        Confirmar cancelación excepcional
                       </button>
                     </form>
                   </details>

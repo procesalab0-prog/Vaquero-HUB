@@ -183,10 +183,15 @@ Hallazgos que M9 debe tratar como compuertas de importación:
 - Falta comprobar con una etiqueta física si `clave1` es el código que lee el
   escáner o sólo la clave interna de SICAR. `clave2` está vacía en 15,503
   renglones y no puede asumirse como fuente principal.
-- SICAR no entrega talla ni color en columnas separadas. Los atributos parecen
-  formar parte de `descripción`, por lo que el importador necesita reglas de
-  extracción, agrupación y una cola de excepciones revisable; nunca debe
-  adivinar silenciosamente el producto padre.
+- El negocio aclaró el 16 de septiembre de 2026 que **la talla viene al
+  final de la descripción compacta**, no codificada en el código de barras. El
+  ejemplo confirmado es `BTILEGALPETCA27.5`: bota/botín, Ilegal, PET,
+  Caballero y talla `27.5`; además se conservan `CABALLERO` como
+  departamento y `BOTINES ILEGAL` como categoría. M9 podrá proponer la talla
+  a partir del sufijo numérico decimal y usar departamento/categoría como
+  contexto, pero deberá validar muestras por familia y enviar excepciones a
+  revisión. No asumirá que sombreros, cinturones, ropa o accesorios siguen la
+  misma regla ni adivinará silenciosamente el producto padre.
 - Hay 28 descripciones repetidas, equivalentes a 34 renglones adicionales.
   Una descripción repetida no prueba que sean duplicados: se debe comparar la
   clave, categoría y atributos antes de agrupar o rechazar.
@@ -204,8 +209,10 @@ Hallazgos que M9 debe tratar como compuertas de importación:
   están vacíos en todo el archivo. Las escalas mayoristas requieren otra
   exportación o confirmación del negocio.
 - La hoja trae una sola columna `existencia`; `localización 1`, `localización
-2` y `localización 3` están vacías. No se distribuirá ese saldo entre
-  sucursales sin una exportación por ubicación o una conciliación física.
+2` y `localización 3` están vacías. El negocio confirmó el 16 de septiembre
+  de 2026 que esta exportación corresponde a **una sola ubicación de origen**.
+  Ese saldo sólo podrá cargarse en la ubicación confirmada durante el corte; no
+  se repartirá entre sucursales presentes o futuras.
 - No vienen proveedores asociados por renglón, imágenes ni identificadores de
   WooCommerce. Esos datos se obtendrán de exportaciones separadas y se unirán
   mediante identificadores verificables, nunca sólo por nombre.
@@ -648,14 +655,23 @@ Operación rápida del POS:
 
 Entrega digital de tickets:
 
-- Al terminar una venta, el empleado podrá imprimir el ticket, abrir su vista real, usar el menú nativo **Compartir** o enviarlo por WhatsApp.
-- WhatsApp abrirá una conversación con texto preparado y un enlace seguro al ticket; esta opción no dependerá de contratar un proveedor de SMS.
+- Al terminar una venta, el empleado podrá imprimir el ticket, abrir su vista
+  real o descargar un PDF de 80 mm equivalente al comprobante impreso.
+- En teléfono y iPad el PDF se compartirá después desde Archivos, Descargas o
+  la aplicación elegida por la persona. Mi Tienda SM no abrirá una conversación
+  ni enviará datos a WhatsApp por sí sola en la primera versión.
 - El envío automático por SMS o correo será opcional y quedará desacoplado mediante un proveedor externo por definir.
-- El ticket digital usará un identificador opaco y no enumerable. Nunca expondrá listados, datos de otros clientes, credenciales ni permitirá modificar la venta.
-- El ticket de regalo tendrá su propia vista compartible y seguirá ocultando los precios definidos por la política del negocio.
+- No habrá enlaces públicos de ticket en la primera versión. El PDF se genera
+  localmente y el sistema no guarda una copia pública ni el destinatario.
+- El ticket de regalo tendrá su propio PDF y seguirá ocultando precios, totales
+  y formas de pago.
+- Si la venta está ligada a un cliente con cuenta, aparecerá automáticamente en
+  su historial autenticado de Mi Vaquero y podrá descargarla desde ahí.
 - Una falla de WhatsApp, del menú Compartir, de SMS o de correo nunca deberá cancelar, duplicar ni revertir una venta ya cobrada.
 - El envío transaccional del comprobante y el consentimiento para promociones se tratarán como decisiones distintas. Compartir un ticket no habilita marketing.
-- Los intentos de entrega deberán dejar auditoría mínima de canal, estado, actor y fecha, sin copiar teléfonos, correos ni el contenido completo del ticket a los logs.
+- Las descargas iniciadas por empleados dejarán auditoría mínima de canal,
+  estado, actor y fecha, sin copiar teléfonos, correos, destinatarios ni el
+  contenido completo del ticket a los logs.
 - Cuando una venta se pague con varios métodos, el ticket impreso y digital
   mostrará cada método y el importe aplicado por separado; en pagos
   electrónicos también conservará su referencia según los permisos definidos.
@@ -1378,6 +1394,14 @@ Piloto paralelo.
 FASE 10
 Migración operacional.
 
+FASE 11
+Revisión visual posterior al piloto y rediseño moderno opcional.
+
+Esta fase no sustituye las auditorías de ergonomía que acompañan cada
+milestone. Se realizará cuando los flujos principales estén estables y exista
+evidencia del uso real, para decidir si conviene conservar, refrescar o
+rediseñar la interfaz sin poner en riesgo la operación.
+
 ⸻
 
 37. Cronograma conceptual
@@ -1657,6 +1681,37 @@ una capa decorativa agregada a todas las pantallas.
 - La aceptación se comprobará en teléfono, iPad y computadora, midiendo que no
   empeore el tiempo del recorrido, la claridad, el consumo ni la respuesta de
   la PWA. Si una animación estorba, se simplifica o se elimina.
+
+### Auditoría visual final y rediseño moderno opcional
+
+Después del piloto y de estabilizar la operación se hará una revisión integral
+del diseño para determinar, con empleados y responsables del negocio, si Mi
+Tienda SM necesita un ajuste visual o un rediseño más amplio.
+
+La revisión abarcará identidad de marca, jerarquía visual, tipografía, color,
+iconografía, densidad de información, navegación, componentes, estados vacíos,
+tema oscuro, accesibilidad y consistencia entre teléfono, iPad y computadora.
+También comparará la percepción de modernidad con la velocidad y claridad
+medidas durante el piloto.
+
+- Primero se documentarán los hallazgos y se separarán problemas funcionales,
+  ergonómicos y únicamente estéticos.
+- No se rediseñará por moda ni se reemplazarán recorridos que ya funcionen sin
+  una mejora demostrable para el usuario.
+- Se conservarán permisos, validaciones, auditoría, atajos, foco de teclado,
+  compatibilidad táctil y continuidad del carrito o captura en curso.
+- Las propuestas se probarán como prototipos y después de forma incremental;
+  las pantallas críticas de Venta, Caja, Inventario y Devoluciones requieren
+  comparación antes/después con usuarios reales.
+- Ningún cambio podrá empeorar tiempos, número de toques, legibilidad,
+  accesibilidad, respuesta de la PWA ni desempeño en equipos modestos.
+- Si un rediseño completo no aporta suficiente valor, se hará sólo un refresh
+  visual del sistema de diseño existente.
+
+**Entregable:** auditoría con capturas y métricas, propuesta aprobada, alcance
+priorizado y decisión explícita entre conservar, refrescar o rediseñar. Su
+implementación tendrá pruebas visuales y funcionales antes de llegar a
+producción.
 
 Principio humano:
 
@@ -2206,9 +2261,12 @@ Corrección visible 0.14.1 — controles de catálogo aplicados donde importan:
   cero códigos externos dentro del rango reservado.
 - La interfaz traduce el rechazo del prefijo a una explicación clara y ninguna
   operación fallida cambia el código principal anterior.
-- Producción conserva 18 códigos generados durante el desarrollo; no se borran
-  ni se reinterpretan sin la exportación de SICAR. La compuerta para operación
-  real sigue abierta hasta demostrar que los códigos heredados no usan `20`–`29`.
+- El dueño confirmó el 16 de septiembre de 2026 que los 18 códigos
+  `GENERATED` creados durante el desarrollo son pruebas y no representan
+  mercancía real. Por su inmutabilidad no se borrarán: se darán de baja antes
+  del corte y quedarán excluidos de venta e importación. La compuerta para
+  operación real sigue abierta hasta demostrar que los códigos heredados no
+  usan `20`–`29`.
 - La revisión de Claude queda consolidada en `docs/PENDIENTES.md`, incluyendo
   responsables, decisiones bloqueadas y el orden de trabajo posterior.
 
@@ -2596,8 +2654,9 @@ Entrega visible 0.32.0 — M8.1, reportes operativos reales:
 - Las vistas auxiliares permanecen en el esquema privado y sin permisos
   directos. Las funciones validan identidad, permiso, sucursal, rango máximo de
   366 días y longitud de búsqueda en el servidor.
-- M8 continúa después con cotizaciones y enlace digital seguro para compartir
-  el ticket. M7 ya tiene reglas de crédito cerradas; apartados conserva las
+- M8 continúa después con cotizaciones, PDF local de tickets e historial
+  privado para clientes autenticados en Mi Vaquero. M7 ya tiene reglas de
+  crédito cerradas; apartados conserva las
   decisiones puntuales enumeradas en su especificación.
 
 Entrega visible 0.33.0 — M8.2, cotizaciones reales:
@@ -2881,3 +2940,23 @@ Corrección visible 0.37.1 — administración global por sucursal:
   individual sólo a La Piedad, debe poder cambiar a La Piedad Prueba y recibir
   el traspaso enviado por Emmanuel sin crear asignaciones manuales para cada
   tienda nueva.
+
+Entrega visible 0.46.0 — cancelación anticipada de apartados:
+
+- Administradores y gerentes pueden cancelar un apartado antes de vencer con
+  permiso específico, motivo y una decisión explícita sobre devolución y
+  penalización. Una cajera conserva abonos, pero no obtiene esta autoridad.
+- Los abonos originales permanecen inmutables. Un documento compensatorio
+  separa cuánto se devuelve, cuánto se retiene y qué saldo pendiente se cancela.
+- El reembolso se reparte proporcionalmente entre los métodos efectivamente
+  abonados. Tarjeta y transferencia exigen referencia nueva; ningún pago
+  electrónico se convierte silenciosamente en efectivo.
+- La devolución en efectivo exige una caja propia y abierta. El candado de la
+  sesión y el control estructural de caja impiden que dos operaciones gasten el
+  mismo dinero o que el cajón quede negativo.
+- Liberación de reserva, documento financiero, movimiento de caja y auditoría
+  se confirman juntos. Un fallo revierte todo y la idempotencia impide repetir
+  la devolución o liberar las piezas una segunda vez.
+- M7.3 continúa abierto únicamente para sustituciones cuyo nuevo total quede
+  debajo de lo ya abonado y para entrega en otra sucursal mediante un traspaso
+  físicamente recibido. No se simula ninguno de esos dos recorridos.

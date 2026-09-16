@@ -1253,6 +1253,14 @@ export function PosWorkspace({
                           .join(" + ")
                       : receiptPaymentLabel
                   }
+                  paymentDetails={
+                    receiptMode === "sale"
+                      ? officialPayments.map((payment) => ({
+                          method: payment.method_name,
+                          amount: Number(payment.amount_cents) / 100,
+                        }))
+                      : []
+                  }
                   tendered={
                     storedReceipt
                       ? officialTendered
@@ -1680,7 +1688,9 @@ export function PosWorkspace({
             </button>
             <button
               type="button"
-              disabled={cart.length === 0 || !createLayawayAction || layawayBusy}
+              disabled={
+                cart.length === 0 || !createLayawayAction || layawayBusy
+              }
               title="Reserva la mercancía sin registrar una venta ni mover la caja."
               onClick={() => {
                 if (!selectedCustomer) {
@@ -1748,13 +1758,23 @@ export function PosWorkspace({
             <p className="kicker">Reserva real de inventario</p>
             <h2 id="layaway-title">Crear apartado</h2>
             <p>
-              La mercancía dejará de estar disponible para venta. En esta primera
-              entrega el apartado inicia sin enganche y no mueve la caja.
+              La mercancía dejará de estar disponible para venta. En esta
+              primera entrega el apartado inicia sin enganche y no mueve la
+              caja.
             </p>
             <div className="checkout-summary">
-              <span><small>Cliente</small><strong>{selectedCustomer?.full_name}</strong></span>
-              <span><small>Artículos</small><strong>{quantity}</strong></span>
-              <span><small>Total</small><strong>{money.format(total)}</strong></span>
+              <span>
+                <small>Cliente</small>
+                <strong>{selectedCustomer?.full_name}</strong>
+              </span>
+              <span>
+                <small>Artículos</small>
+                <strong>{quantity}</strong>
+              </span>
+              <span>
+                <small>Total</small>
+                <strong>{money.format(total)}</strong>
+              </span>
             </div>
             <label className="form-field">
               <span>Fecha de vencimiento</span>
@@ -1765,7 +1785,10 @@ export function PosWorkspace({
                 value={layawayDueDate}
                 onChange={(event) => setLayawayDueDate(event.target.value)}
               />
-              <small>Se propone un mes; puedes cambiarla. Vencer no cancela automáticamente.</small>
+              <small>
+                Se propone un mes; puedes cambiarla. Vencer no cancela
+                automáticamente.
+              </small>
             </label>
             <label className="form-field">
               <span>Nota opcional</span>
@@ -1776,12 +1799,24 @@ export function PosWorkspace({
                 placeholder="Acuerdo o indicación para el cliente"
               />
             </label>
-            {layawayError ? <p className="form-error" role="alert">{layawayError}</p> : null}
+            {layawayError ? (
+              <p className="form-error" role="alert">
+                {layawayError}
+              </p>
+            ) : null}
             <div className="modal-actions">
-              <button type="button" className="secondary-button" onClick={() => setLayawayOpen(false)}>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setLayawayOpen(false)}
+              >
                 Regresar
               </button>
-              <button type="submit" className="primary-button" disabled={layawayBusy}>
+              <button
+                type="submit"
+                className="primary-button"
+                disabled={layawayBusy}
+              >
                 {layawayBusy ? "Reservando…" : "Confirmar apartado"}
               </button>
             </div>

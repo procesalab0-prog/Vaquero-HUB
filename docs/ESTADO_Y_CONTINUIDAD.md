@@ -7,7 +7,7 @@
 > memoria del proyecto.** Todo lo que haga falta para continuar tiene que
 > estar aquí, no en un chat.
 >
-> Última actualización: 2026-09-14.
+> Última actualización: 2026-09-15.
 
 ## 1. Qué es esto
 
@@ -62,6 +62,9 @@ saltando lo bloqueado.
 | **Hardware 0.31.3**      | Prueba de ticket térmico sin registrar venta, mover inventario, caja ni folios                           |
 | **M8.1 (0.32.0)**        | Reportes reales de ventas e inventario con periodo, producto, variante, cajero y conciliación de cobros  |
 | **M8.2 (0.33.0)**        | Cotizaciones reales con folio, vigencia opcional, búsqueda y conversión atómica mediante el POS          |
+| **M8.3 (0.45.0)**        | PDF local de venta/regalo, pagos desglosados, descarga auditable e historial privado en Mi Vaquero       |
+| **Corrección 0.45.1**    | El logotipo del ticket PDF conserva su proporción original y ajusta la altura sin deformarse             |
+| **M7.3 (0.46.0)**        | Cancelación anticipada autorizada, devolución por métodos originales, penalización explícita y reserva liberada |
 | **M7.1–M7.2 (0.35.0)**   | Crédito autorizado, límite global, venta total/mixta y abonos conciliados con caja                       |
 | **M7.2 (0.37.0)**        | Devolución reduce primero deuda; sólo dinero pagado vuelve por su método real                            |
 | **M7.2 (0.38.0)**        | Excepción ADMIN de un solo uso permite una venta vencida sin borrar atraso ni historial                  |
@@ -70,7 +73,7 @@ saltando lo bloqueado.
 | **Corrección 0.32.2**    | Sucursal activa persistente, asignación de empleados, caja real y recepción de traspaso explicada        |
 | **Corrección 0.37.1**    | Administración global puede cambiar y operar todas las sucursales activas sin asignaciones individuales  |
 
-Ochenta y una migraciones versionadas del repositorio. El proyecto de Supabase
+Ochenta y ocho migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -127,7 +130,7 @@ existe en `us-east-1`, PostgreSQL 17, plan Pro.
 | **M5** — devoluciones, cambios, cancelaciones    | **Terminado en software en 0.28.0:** acceso desde Venta, PIN propio, mismos métodos y efectivo limitado al cajón          |
 | **M6** — compras, proveedores y recepción        | **Ampliado en 0.31.0:** alta rápida multivariante, foto opcional y lote exacto de etiquetas al recibir                    |
 | **Hardware físico** — tickets y etiquetas        | **Preparado en 0.31.3:** guía y muestra imprimible; falta ejecutar la validación con ambas impresoras reales              |
-| **M8** — reportes, cotizaciones y ticket digital | **Dos entregas listas:** reportes y cotizaciones reales; falta el enlace digital seguro y compartir por WhatsApp          |
+| **M8** — reportes, cotizaciones y ticket digital | **Completo en software:** reportes, cotizaciones, PDF local de venta/regalo e historial autenticado en Mi Vaquero         |
 | **M9** — importador y sincronizador de SICAR     | Sincronizador de catálogo listo en staging en 0.29.0; falta primer ensayo real tras limpiar tres precios y validar código |
 
 M7 comenzó en 0.34.0 con autorización y límite global de crédito por cliente.

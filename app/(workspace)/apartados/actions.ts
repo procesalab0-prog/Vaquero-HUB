@@ -181,6 +181,95 @@ export async function cancelOverdueLayaway(formData: FormData) {
   );
 }
 
+export async function cancelActiveLayaway(formData: FormData) {
+  let status = "cancelacion-excepcion-error";
+  let refund = "";
+  let penalty = "";
+  let released = "";
+  try {
+    const { supabase } = await requirePermission("layaways.cancel_exception");
+    const layawayId = field(formData, "layaway_id");
+    const refundCents = amount(formData, "refund");
+    const reason = field(formData, "reason");
+    const confirmed = field(formData, "confirmed") === "yes";
+    const refundReferences: Array<Record<string, string>> = [];
+    const cardReference = field(formData, "card_reference");
+    const transferReference = field(formData, "transfer_reference");
+    if (cardReference) {
+      refundReferences.push({
+        method_code: "CARD",
+        reference: cardReference,
+      });
+    }
+    if (transferReference) {
+      refundReferences.push({
+        method_code: "TRANSFER",
+        reference: transferReference,
+      });
+    }
+    if (
+      !layawayId ||
+      !confirmed ||
+      !Number.isSafeInteger(refundCents) ||
+      refundCents < 0 ||
+      reason.length < 3 ||
+      reason.length > 500
+    ) {
+      status = "cancelacion-excepcion-datos-invalidos";
+    } else {
+      const session = await supabase.rpc("get_my_cash_session");
+      const sessionId = (session.data as { id?: string } | null)?.id;
+      if (session.error || !sessionId) {
+        status = "cancelacion-excepcion-caja-requerida";
+      } else {
+        const result = await supabase.rpc("cancel_active_layaway", {
+          p_operation_key: crypto.randomUUID(),
+          p_cash_session_id: sessionId,
+          p_layaway_id: layawayId,
+          p_refund_cents: refundCents,
+          p_refund_references: refundReferences,
+          p_reason: reason,
+        });
+        if (result.error) throw result.error;
+        const outcome = result.data as {
+          refund_cents?: number;
+          penalty_cents?: number;
+          released_balance_cents?: number;
+        } | null;
+        refund = String(Number(outcome?.refund_cents ?? 0));
+        penalty = String(Number(outcome?.penalty_cents ?? 0));
+        released = String(Number(outcome?.released_balance_cents ?? 0));
+        status = "apartado-cancelado-excepcion";
+      }
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("INSUFFICIENT_CASH")) {
+      status = "cancelacion-excepcion-efectivo-insuficiente";
+    } else if (message.includes("REFUND_REFERENCE_REQUIRED")) {
+      status = "cancelacion-excepcion-referencia-requerida";
+    } else if (message.includes("REFUND_EXCEEDS_LAYAWAY_PAYMENTS")) {
+      status = "cancelacion-excepcion-monto-invalido";
+    } else if (message.includes("LAYAWAY_ALREADY_OVERDUE")) {
+      status = "cancelacion-excepcion-ya-vencido";
+    } else if (message.includes("LAYAWAY_NOT_CANCELLABLE")) {
+      status = "cancelacion-excepcion-no-disponible";
+    }
+    console.error("[apartados/cancelActive] failed", { status, message });
+  }
+  revalidatePath(path);
+  revalidatePath("/inventario");
+  revalidatePath("/pos");
+  revalidatePath("/caja");
+  redirect(
+    `${path}?status=${status}${
+      status === "apartado-cancelado-excepcion"
+        ? `&refund=${encodeURIComponent(refund)}&penalty=${encodeURIComponent(penalty)}&released=${encodeURIComponent(released)}`
+        : ""
+    }`,
+  );
+}
+
 export async function substituteLayawayItem(formData: FormData) {
   let status = "sustitucion-error";
   let total = "";
