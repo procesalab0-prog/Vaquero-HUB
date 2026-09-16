@@ -8,7 +8,15 @@
 > conversación, y cada pregunta indica **qué bloquea** y **para cuándo se
 > necesita**.
 >
-> Última actualización: 2026-09-09.
+> Última actualización: 2026-09-16.
+
+## Respuestas nuevas — 16 de septiembre de 2026
+
+- SICAR incorpora la talla dentro del código. Falta obtener muestras suficientes
+  para documentar la regla exacta por familia, no volver a preguntar si existe.
+- La exportación actual corresponde a una sola ubicación de origen.
+- Los 18 productos/códigos creados en producción durante el desarrollo son
+  pruebas y no representan mercancía real; deben darse de baja antes del corte.
 
 ## Cómo usar esta lista
 

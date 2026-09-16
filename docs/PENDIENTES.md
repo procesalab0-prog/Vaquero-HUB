@@ -62,6 +62,18 @@ También falta acordar cómo conciliar los saldos negativos. La herramienta ya
 los reporta como excepciones; no los convierte en cero, no inventa costos ni
 atribuye los cambios de existencia a ventas por suposición.
 
+### Decisiones de SICAR confirmadas el 16 de septiembre de 2026
+
+- **Tallas:** la talla viene incorporada en el código utilizado por SICAR. M9
+  debe documentar la regla exacta con muestras por familia antes de extraerla;
+  no debe convertir el código a número ni perder ceros iniciales.
+- **Ubicación:** la exportación corresponde a una sola ubicación de origen. El
+  saldo final se cargará únicamente en esa ubicación confirmada y nunca se
+  repartirá por suposición entre sucursales.
+- **Datos de prueba:** los 18 códigos `GENERATED` de producción son pruebas y
+  no representan mercancía real. Deben darse de baja antes del corte, sin
+  borrarlos ni reutilizar sus identidades.
+
 La prueba transaccional de staging comprobó que repetir el mismo archivo no
 duplica productos, un costo cero no borra un costo positivo, la ausencia de un
 producto no lo da de baja, una colisión de código reservado revierte el archivo
@@ -69,10 +81,11 @@ completo y ninguna corrida de catálogo modifica inventario. Las tablas de
 preparación son privadas y sólo `service_role` puede usarlas; los avisos de RLS
 sin políticas son intencionales porque se aplica denegación total a usuarios.
 
-La base de producción contiene 18 códigos `GENERATED` creados durante el
-desarrollo. No son códigos externos ni se modificaron en esta corrección. Se
-deben identificar como pruebas o mercancía real contra la exportación; los
-códigos generados son inmutables y no se borran por suposición.
+El dueño confirmó el 16 de septiembre de 2026 que los 18 códigos
+`GENERATED` creados durante el desarrollo son únicamente pruebas y no
+representan mercancía existente. Los códigos son inmutables: la acción pendiente
+es dar de baja sus variantes antes del corte y comprobar que POS, inventario e
+importador no las traten como mercancía operable.
 
 ## Los 18 productos de prueba no se pueden borrar
 
@@ -103,7 +116,8 @@ regla dura en §2.2 de [`specs/M4_POS_Y_CAJA.md`](specs/M4_POS_Y_CAJA.md) con
 sus dos pruebas obligatorias. Sin eso, el primer día de operación se puede
 cobrar un artículo de prueba.
 
-Antes de abrir, conviene darlos de baja:
+Antes de abrir, **los 18 deben darse de baja**. La decisión ya no está
+pendiente; sólo falta ejecutar y verificar la baja:
 
 ```sql
 -- Primero mirarlos, y decidir cuáles son prueba y cuáles mercancía real.
@@ -277,7 +291,9 @@ compensatoria y pruebas contables; no se reinterpretará el historial.
 
 - Confirmar físicamente si `clave1` de la exportación SICAR es el código que
   lee la etiqueta y qué simbología usa actualmente.
-- Escalas de talla de sombreros, texanas y cinturones.
+- Documentar con muestras cómo codifica SICAR la talla en sombreros, texanas,
+  cinturones y tallas decimales; la decisión general de que la talla vive en el
+  código ya está confirmada.
 - Reglas de puntos, crédito y apartados.
 - Forma definitiva de envío de tickets por SMS o correo.
 - Método de costo de compra.
