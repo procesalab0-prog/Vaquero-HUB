@@ -275,7 +275,16 @@ que dice?_ Que exista el código no significa que funcione.
   el mismo código de barras real y escaneable que identifica el comprobante.
 - El comprobante de abono adopta el formato térmico de 80 mm, logotipo,
   sucursal, datos de caja, folio y código de barras.
+
 - Al registrar un abono, la confirmación muestra el importe aplicado y el saldo
   restante devuelto por la transacción. No obliga a deducirlo del total.
 - Entregar un apartado abre directamente su venta exacta en Tickets, lista para
   imprimir o descargar en PDF; no deja al empleado buscando el folio generado.
+
+## Calidad 0.49.1 — el ticket de regalo encuentra la venta
+
+- El folio derivado del ticket de regalo (`R-…-1`) se traduce al folio original
+  antes de consultar la venta. Escanearlo o escribirlo en Tickets abre ahora el
+  comprobante correcto y muestra que se reconoció una copia de regalo.
+- La conversión de folios quedó compartida por el ticket térmico, el PDF y el
+  buscador, con pruebas para folios cortos y folios reales por sucursal.
