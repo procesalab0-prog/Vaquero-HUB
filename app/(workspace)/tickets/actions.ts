@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { requirePermission } from "@/lib/auth/authorization";
 import { databaseErrorText } from "@/lib/returns";
+import { saleFolioFromReceiptCode } from "@/lib/ticket-folios";
 import type { TicketDeliveryEventInput } from "@/lib/ticket-delivery";
 import type {
   CancelCreditSaleResult,
@@ -31,7 +32,7 @@ export async function recordTicketDelivery(
   input: TicketDeliveryEventInput,
 ): Promise<void> {
   try {
-    const { supabase } = await requirePermission("pos.sell");
+    const { supabase } = await requirePermission("returns.create");
     const { error } = await supabase.rpc("record_sale_ticket_delivery", {
       p_sale_id: input.saleId,
       p_channel: input.channel,
@@ -51,10 +52,10 @@ export async function findTicketByCode(input: {
   code: string;
 }): Promise<{ ok: true; ticket: Ticket } | { ok: false; message: string }> {
   try {
-    const code = input.code.trim().toLocaleUpperCase("es-MX").slice(0, 100);
+    const code = saleFolioFromReceiptCode(input.code).slice(0, 100);
     if (!code)
       return { ok: false, message: "Escanea o escribe un folio válido." };
-    const { supabase } = await requirePermission("returns.create");
+    const { supabase } = await requirePermission("pos.sell");
     const { data, error } = await supabase.rpc("get_sale_ticket_by_folio", {
       p_location_id: input.locationId,
       p_folio: code,

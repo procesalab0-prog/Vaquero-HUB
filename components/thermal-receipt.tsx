@@ -3,6 +3,7 @@ import type { WorkspaceLocation } from "@/lib/auth/types";
 import { BUSINESS_PROFILE, LA_PIEDAD_STORE } from "@/lib/business-profile";
 import { receiptPageStyle } from "@/lib/printing";
 import { LabelBarcode } from "@/components/label-barcode";
+import { giftFolioFromSale } from "@/lib/ticket-folios";
 
 export type ReceiptLine = {
   name: string;
@@ -56,10 +57,6 @@ export function formatReceiptDate(date = new Date()) {
     .replace(",", "");
 }
 
-function saleFolioToGift(folio: string) {
-  return `R-${folio.replace(/^V-/, "")}-1`;
-}
-
 export function ThermalReceipt({
   mode,
   folio,
@@ -78,7 +75,7 @@ export function ThermalReceipt({
   location,
   returnWindowDays = 15,
 }: ThermalReceiptProps) {
-  const receiptFolio = mode === "gift" ? saleFolioToGift(folio) : folio;
+  const receiptFolio = mode === "gift" ? giftFolioFromSale(folio) : folio;
   const receiptLocation = location ?? LA_PIEDAD_STORE;
   const receiptAddress = receiptLocation.address ?? "Dirección por configurar";
   const receiptPhone = receiptLocation.phone ?? "Teléfono por configurar";

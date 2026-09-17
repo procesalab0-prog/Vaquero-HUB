@@ -28,6 +28,7 @@ import {
 import { CreditCancellationDialog } from "./credit-cancellation-dialog";
 import { ReturnExchangeDialog } from "./return-exchange-dialog";
 import { BarcodeScanner } from "@/components/barcode-scanner";
+import { saleFolioFromReceiptCode } from "@/lib/ticket-folios";
 import type { TicketDeliveryEventInput } from "@/lib/ticket-delivery";
 
 type TicketItem = {
@@ -287,13 +288,19 @@ export function TicketsRealWorkspace({
 
   async function findScannedTicket(code: string) {
     const normalized = code.trim().toLocaleUpperCase("es-MX");
-    setQuery(normalized);
+    const saleFolio = saleFolioFromReceiptCode(normalized);
+    setQuery(saleFolio);
     const ticket = rows.find(
-      (row) => row.folio.toLocaleUpperCase("es-MX") === normalized,
+      (row) => row.folio.toLocaleUpperCase("es-MX") === saleFolio,
     );
-    if (ticket) selectTicket(ticket);
-    else if (findTicketAction && locationId) {
-      const result = await findTicketAction({ locationId, code: normalized });
+    if (ticket) {
+      selectTicket(ticket);
+      if (saleFolio !== normalized)
+        setNotice(
+          `Ticket de regalo reconocido. Venta original ${ticket.folio}.`,
+        );
+    } else if (findTicketAction && locationId) {
+      const result = await findTicketAction({ locationId, code: saleFolio });
       if (result.ok) {
         setRows((current) =>
           current.some((row) => row.id === result.ticket.id)
@@ -301,6 +308,10 @@ export function TicketsRealWorkspace({
             : [result.ticket, ...current],
         );
         selectTicket(result.ticket);
+        if (saleFolio !== normalized)
+          setNotice(
+            `Ticket de regalo reconocido. Venta original ${result.ticket.folio}.`,
+          );
       } else setError(result.message);
     } else setError("No encontramos ese ticket en esta sucursal.");
     setTicketScannerOpen(false);

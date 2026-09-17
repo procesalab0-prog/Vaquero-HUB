@@ -1334,6 +1334,13 @@ pueden convertirla en dos ventas.
 - [x] Mostrar inmediatamente importe abonado y saldo pendiente.
 - [x] Abrir el ticket exacto al terminar la entrega de un apartado.
 
+## Calidad 0.49.1 — escaneo de ticket de regalo
+
+- [x] Resolver el folio `R-…-1` hacia la venta original al escanear o capturar el
+      ticket de regalo.
+- [x] Cubrir la conversión con pruebas unitarias para folios de demostración y de
+      sucursal.
+
 ## Corrección operativa 0.32.2 — sucursal activa
 
 - [x] Conservar la sucursal elegida al navegar entre módulos y validar siempre

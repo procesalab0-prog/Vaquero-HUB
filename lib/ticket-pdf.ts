@@ -1,6 +1,8 @@
 "use client";
 
 import JsBarcode from "jsbarcode";
+
+import { giftFolioFromSale } from "./ticket-folios";
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 
 export type TicketPdfLine = {
@@ -53,10 +55,6 @@ function safeFilePart(value: string) {
   return value.replace(/[^A-Za-z0-9_-]+/g, "-").replace(/^-|-$/g, "");
 }
 
-function giftFolio(folio: string) {
-  return `R-${folio.replace(/^V-/, "")}-1`;
-}
-
 function money(cents = 0) {
   return `$${pesos.format(cents / 100)}`;
 }
@@ -104,7 +102,7 @@ function wrapText(text: string, font: PDFFont, size: number, maxWidth: number) {
 
 export async function createTicketPdf(data: TicketPdfData) {
   const receiptFolio =
-    data.mode === "gift" ? giftFolio(data.folio) : data.folio;
+    data.mode === "gift" ? giftFolioFromSale(data.folio) : data.folio;
   const logoBytes = await loadLogo(data);
   const logoHeightAllowanceMm = logoBytes ? 11 : 0;
   const heightMm = Math.max(
