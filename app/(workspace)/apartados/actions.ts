@@ -14,6 +14,8 @@ const amount = (data: FormData, name: string) =>
 export async function receiveLayawayPayment(formData: FormData) {
   let status = "abono-error";
   let paymentId = "";
+  let paymentTotal = "";
+  let paymentBalance = "";
   try {
     const { supabase } = await requirePermission("layaways.manage");
     const layawayId = field(formData, "layaway_id");
@@ -63,7 +65,14 @@ export async function receiveLayawayPayment(formData: FormData) {
           p_note: field(formData, "note") || null,
         });
         if (result.error) throw result.error;
-        paymentId = String((result.data as { id?: string } | null)?.id ?? "");
+        const outcome = result.data as {
+          id?: string;
+          total_cents?: number;
+          balance_cents?: number;
+        } | null;
+        paymentId = String(outcome?.id ?? "");
+        paymentTotal = String(Number(outcome?.total_cents ?? 0));
+        paymentBalance = String(Number(outcome?.balance_cents ?? 0));
         status = "abono-registrado";
       }
     }
@@ -76,14 +85,17 @@ export async function receiveLayawayPayment(formData: FormData) {
   revalidatePath(path);
   revalidatePath("/caja");
   redirect(
-    `${path}?status=${status}${paymentId ? `&payment=${encodeURIComponent(paymentId)}` : ""}`,
+    `${path}?status=${status}${
+      paymentId
+        ? `&payment=${encodeURIComponent(paymentId)}&abono=${encodeURIComponent(paymentTotal)}&saldo=${encodeURIComponent(paymentBalance)}`
+        : ""
+    }`,
   );
 }
 
 export async function fulfillLayaway(formData: FormData) {
   let status = "entrega-error";
   let saleId = "";
-  let saleFolio = "";
   try {
     const { supabase } = await requirePermission("layaways.deliver");
     const layawayId = field(formData, "layaway_id");
@@ -104,10 +116,8 @@ export async function fulfillLayaway(formData: FormData) {
         if (result.error) throw result.error;
         const outcome = result.data as {
           sale_id?: string;
-          sale_folio?: string;
         } | null;
         saleId = String(outcome?.sale_id ?? "");
-        saleFolio = String(outcome?.sale_folio ?? "");
         status = "entrega-registrada";
       }
     }
@@ -130,11 +140,10 @@ export async function fulfillLayaway(formData: FormData) {
   revalidatePath("/inventario");
   revalidatePath("/pos");
   revalidatePath("/tickets");
-  redirect(
-    `${path}?status=${status}${
-      saleId ? `&sale=${encodeURIComponent(saleId)}` : ""
-    }${saleFolio ? `&folio=${encodeURIComponent(saleFolio)}` : ""}`,
-  );
+  if (status === "entrega-registrada" && saleId) {
+    redirect(`/tickets?venta=${encodeURIComponent(saleId)}&origen=apartado`);
+  }
+  redirect(`${path}?status=${status}`);
 }
 
 export async function requestLayawayDeliveryTransfer(formData: FormData) {

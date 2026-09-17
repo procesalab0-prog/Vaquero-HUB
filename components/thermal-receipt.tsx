@@ -215,11 +215,7 @@ export function ThermalReceipt({
         ) : null}
 
         <footer className="thermal-footer">
-          {mode === "sale" ? (
-            <LabelBarcode code={receiptFolio} />
-          ) : (
-            <div className="receipt-qr" aria-hidden="true" />
-          )}
+          <LabelBarcode code={receiptFolio} />
           <code>{receiptFolio}</code>
           {mode === "sale" ? (
             <>

@@ -1304,8 +1304,8 @@ dice?** Que el código exista no significa que funcione.
   inventario, permite a gerencia cancelar antes del vencimiento separando
   devolución y penalización, y entrega un apartado liquidado como una venta
   real sin volver a mover caja. La cancelación anticipada ya funciona con caja
-  única: la cajera ejecuta y gerencia autoriza por PIN de un solo uso. Faltan
-  La entrega en otra sucursal quedó operativa en 0.48.0 mediante un traspaso
+  única: la cajera ejecuta y gerencia autoriza por PIN de un solo uso. La
+  entrega en otra sucursal quedó operativa en 0.48.0 mediante un traspaso
   completo: reserva y existencia viajan juntas y sólo se habilita la entrega
   después de la recepción física. Falta la sustitución que requiera devolver
   dinero; antes de cerrar debe resolverse esa decisión puntual en
@@ -1322,6 +1322,17 @@ negocio todavía no la ha definido. No se inventa: una cotización se cobra
 completa o se crea una nueva. El sistema vuelve a validar precio, producto,
 existencia, sucursal y estado dentro de la misma transacción; dos cajas no
 pueden convertirla en dos ventas.
+
+## Calidad 0.49.0 — revisión vertical y comprobantes
+
+- [x] Auditar a 390 × 844 las once rutas operativas principales: ancho de la
+      página limitado al viewport y desplazamiento comprobado hasta el final.
+- [x] Reemplazar el cuadro simulado del ticket de regalo por su código de barras
+      real.
+- [x] Dar al comprobante de abono el mismo lenguaje del ticket térmico: logo,
+      sucursal, caja, saldo y folio escaneable.
+- [x] Mostrar inmediatamente importe abonado y saldo pendiente.
+- [x] Abrir el ticket exacto al terminar la entrega de un apartado.
 
 ## Corrección operativa 0.32.2 — sucursal activa
 

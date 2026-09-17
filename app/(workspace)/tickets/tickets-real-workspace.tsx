@@ -98,6 +98,8 @@ export function TicketsRealWorkspace({
   createReturnExchangeAction,
   recordTicketDeliveryAction,
   initialReturnLookup = false,
+  initialSelectedTicketId,
+  initialNotice = "",
 }: {
   tickets: Ticket[];
   status?: string;
@@ -148,11 +150,17 @@ export function TicketsRealWorkspace({
     input: TicketDeliveryEventInput,
   ) => Promise<void>;
   initialReturnLookup?: boolean;
+  initialSelectedTicketId?: string;
+  initialNotice?: string;
 }) {
   const [rows, setRows] = useState(tickets);
   const [query, setQuery] = useState("");
   const [period, setPeriod] = useState<"today" | "week" | "month">("today");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(() =>
+    tickets.some((ticket) => ticket.id === initialSelectedTicketId)
+      ? (initialSelectedTicketId ?? null)
+      : null,
+  );
   const [receiptMode, setReceiptMode] = useState<"sale" | "gift">("sale");
   const [reprintDate, setReprintDate] = useState("");
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -160,7 +168,7 @@ export function TicketsRealWorkspace({
   const [busy, setBusy] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState(initialNotice);
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
   const [ticketScannerOpen, setTicketScannerOpen] =
     useState(initialReturnLookup);
@@ -227,9 +235,8 @@ export function TicketsRealWorkspace({
     setError("");
     setNotice("");
     try {
-      const { createTicketPdf, downloadTicketPdf } = await import(
-        "@/lib/ticket-pdf"
-      );
+      const { createTicketPdf, downloadTicketPdf } =
+        await import("@/lib/ticket-pdf");
       const { blob, fileName } = await createTicketPdf({
         mode: receiptMode,
         folio: selected.folio,
