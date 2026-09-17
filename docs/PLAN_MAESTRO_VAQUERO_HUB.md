@@ -2993,3 +2993,19 @@ Entrega visible 0.48.0 — apartados entregables entre sucursales:
 - M7.3 queda pendiente únicamente de la política financiera para sustituir por
   mercancía cuyo nuevo total sea menor que lo ya abonado; el sistema continúa
   bloqueando esa operación en vez de inventar un reembolso.
+
+Entrega visible 0.49.0 — comprobantes claros y operación vertical:
+
+- La operación diaria debe completarse en teléfono vertical. La prueba de
+  regresión recorre Inicio, Venta, Productos, Inventario, Clientes, Caja,
+  Tickets, Apartados, Reportes, Administración y Ajustes a 390 × 844; valida
+  ancho y desplazamiento completo de cada ruta.
+- El ticket de regalo usa un código de barras real. Se elimina cualquier cuadro
+  decorativo que parezca QR sin contener información verificable.
+- El comprobante de abono se imprime como ticket térmico de 80 mm con logotipo,
+  sucursal, caja, métodos, saldo pendiente, folio y código escaneable.
+- Registrar un abono confirma explícitamente el importe aplicado y el saldo
+  restante calculado dentro de la transacción.
+- Confirmar la entrega de un apartado abre directamente la venta generada en
+  Tickets para imprimirla o descargarla; el historial sigue siendo la fuente
+  permanente para reimpresiones.

@@ -2045,8 +2045,20 @@ code {
   display: grid;
   gap: 12px;
   margin: 0 auto 22px;
-  max-width: 460px;
+  max-width: 80mm;
   padding: 22px;
+}
+
+.layaway-receipt-brand {
+  padding-block: 4px 10px;
+  border-bottom: 1px dashed #777;
+}
+
+.layaway-receipt-brand + h2 {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  text-align: center;
 }
 
 .layaway-receipt > header,
@@ -2136,6 +2148,17 @@ code {
   .layaway-items a {
     grid-column: 1 / -1;
     justify-content: flex-end;
+  }
+
+  .layaway-payment-panel form,
+  .layaway-cancel-panel form {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .layaway-payment-panel summary,
+  .layaway-cancel-panel summary {
+    min-height: 52px;
   }
 
   .layaway-replacement-search {
@@ -4204,16 +4227,6 @@ code {
   max-width: 230px;
   height: 48px;
   color: #000;
-}
-.receipt-qr {
-  width: 96px;
-  height: 96px;
-  border: 6px solid #111;
-  padding: 6px;
-  background:
-    repeating-linear-gradient(90deg, #111 0 8px, transparent 8px 16px),
-    repeating-linear-gradient(0deg, #111 0 8px, transparent 8px 16px);
-  background-blend-mode: multiply;
 }
 .receipt-type-switch {
   display: grid;

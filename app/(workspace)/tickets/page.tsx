@@ -35,7 +35,12 @@ function storeDayStart(date: Date) {
 export default async function TicketsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ubicacion?: string; accion?: string }>;
+  searchParams: Promise<{
+    ubicacion?: string;
+    accion?: string;
+    venta?: string;
+    origen?: string;
+  }>;
 }) {
   if (!isSupabaseConfigured()) return <TicketsWorkspace />;
   const { supabase, roleId, profile } = await requirePermission("pos.sell");
@@ -117,6 +122,12 @@ export default async function TicketsPage({
       }
       recordTicketDeliveryAction={recordTicketDelivery}
       initialReturnLookup={params.accion === "devolver"}
+      initialSelectedTicketId={params.venta}
+      initialNotice={
+        params.origen === "apartado"
+          ? "Apartado entregado. Este es el ticket generado; ya puedes imprimirlo o descargarlo en PDF."
+          : undefined
+      }
     />
   );
 }

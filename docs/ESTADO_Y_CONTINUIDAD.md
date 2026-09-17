@@ -265,3 +265,17 @@ que dice?_ Que exista el código no significa que funcione.
   apartado queda bloqueado mientras la mercancía está en movimiento.
 - Para cerrar M7.3 sólo queda la sustitución cuyo nuevo total quede debajo de lo
   ya abonado; requiere una decisión financiera explícita del negocio.
+
+## Calidad 0.49.0 — tickets y apartados claros en teléfono
+
+- La auditoría automática recorre las rutas operativas principales a 390 px,
+  comprueba que ninguna ensanche la página y que se pueda llegar al final con
+  desplazamiento vertical, sin exigir girar el teléfono.
+- El ticket de regalo dejó de dibujar un cuadro que simulaba un QR. Ahora usa
+  el mismo código de barras real y escaneable que identifica el comprobante.
+- El comprobante de abono adopta el formato térmico de 80 mm, logotipo,
+  sucursal, datos de caja, folio y código de barras.
+- Al registrar un abono, la confirmación muestra el importe aplicado y el saldo
+  restante devuelto por la transacción. No obliga a deducirlo del total.
+- Entregar un apartado abre directamente su venta exacta en Tickets, lista para
+  imprimir o descargar en PDF; no deja al empleado buscando el folio generado.

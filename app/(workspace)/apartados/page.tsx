@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import {
   CalendarClock,
@@ -11,6 +12,8 @@ import {
 
 import { resolveActiveLocation } from "@/lib/auth/active-location";
 import { requirePermission } from "@/lib/auth/authorization";
+import { BUSINESS_PROFILE } from "@/lib/business-profile";
+import { LabelBarcode } from "@/components/label-barcode";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   cancelActiveLayaway,
@@ -49,6 +52,8 @@ type PaymentReceipt = {
   customer_name: string;
   member_number: string;
   location_name: string;
+  location_address?: string | null;
+  location_phone?: string | null;
   cashier_name: string;
   register_name: string;
   parts: Array<{
@@ -154,6 +159,8 @@ export default async function LayawaysPage({
     sale?: string;
     folio?: string;
     transfer?: string;
+    abono?: string;
+    saldo?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -322,6 +329,8 @@ export default async function LayawaysPage({
       operationStatus={params.status}
       operationTotalCents={Number(params.total ?? 0)}
       operationBalanceCents={Number(params.balance ?? 0)}
+      paymentTotalCents={Number(params.abono ?? 0)}
+      paymentBalanceCents={Number(params.saldo ?? 0)}
       penaltyCents={Number(params.penalty ?? 0)}
       refundCents={Number(params.refund ?? 0)}
       releasedBalanceCents={Number(params.released ?? 0)}
@@ -354,6 +363,8 @@ function LayawayPageContent({
   operationStatus,
   operationTotalCents = 0,
   operationBalanceCents = 0,
+  paymentTotalCents = 0,
+  paymentBalanceCents = 0,
   penaltyCents = 0,
   refundCents = 0,
   releasedBalanceCents = 0,
@@ -379,6 +390,8 @@ function LayawayPageContent({
   operationStatus?: string;
   operationTotalCents?: number;
   operationBalanceCents?: number;
+  paymentTotalCents?: number;
+  paymentBalanceCents?: number;
   penaltyCents?: number;
   refundCents?: number;
   releasedBalanceCents?: number;
@@ -425,7 +438,9 @@ function LayawayPageContent({
       </div>
       {operationStatus === "abono-registrado" ? (
         <p className="notice-banner" role="status">
-          Abono registrado. El saldo y la caja ya fueron actualizados.
+          Abono de {money.format(paymentTotalCents / 100)} registrado. Saldo
+          pendiente: <strong>{money.format(paymentBalanceCents / 100)}</strong>.
+          La caja y el apartado ya fueron actualizados.
         </p>
       ) : null}
       {operationStatus === "entrega-registrada" ? (
@@ -701,10 +716,32 @@ function LayawayPageContent({
             </div>
             <PrintButton />
           </header>
-          <h2>Mi Tienda SM</h2>
-          <p>
-            {receipt.location_name} · {receipt.register_name}
-          </p>
+          <div className="receipt-brand layaway-receipt-brand">
+            <Image
+              src="/brand/logo-vaquerosm-negro.png"
+              alt="Vaquero SM"
+              width={300}
+              height={200}
+              priority
+            />
+            <p>
+              {BUSINESS_PROFILE.name.toLocaleUpperCase("es-MX")} · SUCURSAL{" "}
+              {receipt.location_name.toLocaleUpperCase("es-MX")}
+              {receipt.location_address ? (
+                <>
+                  <br />
+                  {receipt.location_address}
+                </>
+              ) : null}
+              {receipt.location_phone ? (
+                <>
+                  <br />
+                  Tel. {receipt.location_phone}
+                </>
+              ) : null}
+            </p>
+          </div>
+          <h2>COMPROBANTE DE ABONO</h2>
           <dl>
             <div>
               <dt>Apartado</dt>
@@ -719,6 +756,10 @@ function LayawayPageContent({
             <div>
               <dt>Atendió</dt>
               <dd>{receipt.cashier_name}</dd>
+            </div>
+            <div>
+              <dt>Caja</dt>
+              <dd>{receipt.register_name}</dd>
             </div>
             <div>
               <dt>Fecha</dt>
@@ -748,6 +789,11 @@ function LayawayPageContent({
               {money.format(Number(receipt.balance_cents) / 100)}
             </strong>
           </p>
+          <footer className="thermal-footer">
+            <LabelBarcode code={receipt.folio} />
+            <code>{receipt.folio}</code>
+            <strong>Conserva este comprobante</strong>
+          </footer>
         </article>
       ) : null}
       <form className="layaway-filters" method="get">
