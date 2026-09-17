@@ -260,5 +260,8 @@ que dice?_ Que exista el código no significa que funcione.
 - La caja que entrega efectivo es la misma que opera la cancelación. El control
   de saldo impide reembolsos imposibles y la auditoría registra por separado a
   quien ejecutó y a quien autorizó.
-- Siguiente avance de M7.3: sustitución cuyo nuevo total quede debajo de lo ya
-  abonado; después, entrega en otra sucursal mediante traspaso recibido.
+- En 0.48.0 la entrega en otra sucursal ya usa un traspaso completo y recibido:
+  existencia y reserva viajan juntas por origen, tránsito y destino, y el
+  apartado queda bloqueado mientras la mercancía está en movimiento.
+- Para cerrar M7.3 sólo queda la sustitución cuyo nuevo total quede debajo de lo
+  ya abonado; requiere una decisión financiera explícita del negocio.

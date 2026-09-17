@@ -193,9 +193,11 @@ PIN de autorización de gerencia. La devolución se reparte entre los métodos
 originales, exige referencia electrónica y nunca puede dejar negativo el
 efectivo esperado.
 
-También quedó confirmado que un apartado puede iniciar con $0 abonados. Sigue
-pendiente definir la sustitución cuyo nuevo total quede debajo de lo ya pagado
-y la entrega en otra sucursal mediante traspaso recibido físicamente.
+También quedó confirmado que un apartado puede iniciar con $0 abonados. Desde
+0.48.0 la entrega en otra sucursal exige un traspaso completo y físicamente
+recibido; existencia y reserva nunca aparecen disponibles en dos tiendas.
+Sigue pendiente definir la sustitución cuyo nuevo total quede debajo de lo ya
+pagado.
 
 ## Orden inmediato de implementación
 
@@ -243,13 +245,13 @@ combinaciones.
 **Recalculado al cerrar M2 con las etiquetas.** El panorama mejoró de verdad,
 y conviene decirlo con números porque cambia una decisión.
 
-| Milestone       | Semanas del plan | Estado                                                                                      |
-| --------------- | ---------------- | ------------------------------------------------------------------------------------------- |
-| M0, M1, M1B     | —                | Terminados                                                                                  |
-| **M2**          | 1                | **Terminado**, a falta de la validación física                                              |
-| M3 inventario   | 1                | **Terminado en software**; queda la validación física conjunta de etiqueta, cámara y lector |
-| M4 POS y caja   | 2                | **Terminado en software 0.23.0**; falta validación física de impresora y operación táctil   |
-| M5 devoluciones | 1                | **Primera entrega 0.24.0 terminada**; reglas de dinero siguen pendientes                    |
+| Milestone       | Semanas del plan | Estado                                                                                             |
+| --------------- | ---------------- | -------------------------------------------------------------------------------------------------- |
+| M0, M1, M1B     | —                | Terminados                                                                                         |
+| **M2**          | 1                | **Terminado**, a falta de la validación física                                                     |
+| M3 inventario   | 1                | **Terminado en software**; queda la validación física conjunta de etiqueta, cámara y lector        |
+| M4 POS y caja   | 2                | **Terminado en software 0.23.0**; falta validación física de impresora y operación táctil          |
+| M5 devoluciones | 1                | **Primera entrega 0.24.0 terminada**; reglas de dinero siguen pendientes                           |
 | M9 importador   | 1                | Sincronizador de catálogo listo en staging; el ensayo real espera tres precios y el escaneo físico |
 
 Quedan aproximadamente **tres semanas de trabajo del alcance operativo de
