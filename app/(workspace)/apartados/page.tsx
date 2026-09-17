@@ -17,6 +17,7 @@ import {
   cancelOverdueLayaway,
   fulfillLayaway,
   receiveLayawayPayment,
+  requestLayawayDeliveryTransfer,
   substituteLayawayItem,
 } from "./actions";
 import { PrintButton } from "./print-button";
@@ -90,6 +91,26 @@ type CatalogRow = {
 
 type InventoryRow = { variant_id: string; available_qty: number };
 
+type DeliveryLocation = { id: string; code: string; name: string };
+
+type DeliveryTransfer = {
+  layaway_id: string;
+  transfer_id: string;
+  transfer_folio: number;
+  transfer_status:
+    | "REQUESTED"
+    | "APPROVED"
+    | "PREPARED"
+    | "IN_TRANSIT"
+    | "RECEIVED"
+    | "CANCELLED";
+  from_location_id: string;
+  from_location_name: string;
+  to_location_id: string;
+  to_location_name: string;
+  requested_at: string;
+};
+
 type ReplacementCandidate = CatalogRow & {
   available_qty: number;
   disabled_reason?: string;
@@ -132,6 +153,7 @@ export default async function LayawaysPage({
     balance?: string;
     sale?: string;
     folio?: string;
+    transfer?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -166,68 +188,95 @@ export default async function LayawaysPage({
   ].includes(params.estado ?? "")
     ? params.estado!
     : null;
-  const [modifyPermission, deliverPermission, result, receiptResult] =
-    await Promise.all([
-      supabase
-        .from("role_permissions")
-        .select("permission_code")
-        .eq("role_id", roleId)
-        .eq("permission_code", "layaways.modify")
-        .maybeSingle(),
-      supabase
-        .from("role_permissions")
-        .select("permission_code")
-        .eq("role_id", roleId)
-        .eq("permission_code", "layaways.deliver")
-        .maybeSingle(),
-      supabase.rpc("list_layaways", {
-        p_location_id: location.id,
-        p_query: (params.busqueda ?? "").trim().slice(0, 100),
-        p_status: allowedStatus,
-        p_limit: 100,
-      }),
-      params.payment
-        ? supabase.rpc("get_layaway_payment_receipt", {
-            p_payment_id: params.payment,
-          })
-        : Promise.resolve({ data: null, error: null }),
-    ]);
+  const [
+    modifyPermission,
+    deliverPermission,
+    transferPermission,
+    result,
+    receiptResult,
+  ] = await Promise.all([
+    supabase
+      .from("role_permissions")
+      .select("permission_code")
+      .eq("role_id", roleId)
+      .eq("permission_code", "layaways.modify")
+      .maybeSingle(),
+    supabase
+      .from("role_permissions")
+      .select("permission_code")
+      .eq("role_id", roleId)
+      .eq("permission_code", "layaways.deliver")
+      .maybeSingle(),
+    supabase
+      .from("role_permissions")
+      .select("permission_code")
+      .eq("role_id", roleId)
+      .eq("permission_code", "transfers.create")
+      .maybeSingle(),
+    supabase.rpc("list_layaways", {
+      p_location_id: location.id,
+      p_query: (params.busqueda ?? "").trim().slice(0, 100),
+      p_status: allowedStatus,
+      p_limit: 100,
+    }),
+    params.payment
+      ? supabase.rpc("get_layaway_payment_receipt", {
+          p_payment_id: params.payment,
+        })
+      : Promise.resolve({ data: null, error: null }),
+  ]);
   const canModify = Boolean(modifyPermission.data);
   const canDeliver = Boolean(deliverPermission.data);
+  const canRequestTransfer = canDeliver && Boolean(transferPermission.data);
   const replacementQuery = (params.reemplazo ?? "").trim().slice(0, 100);
   const rows = (result.data ?? []) as LayawayRow[];
-  const [itemsResult, selectedItemResult, catalogResult, inventoryResult] =
-    await Promise.all([
-      supabase.rpc("list_layaway_items", {
-        p_layaway_ids: rows.map((row) => row.id),
-      }),
-      params.cambiar && canModify
-        ? supabase.rpc("get_layaway_item", { p_item_id: params.cambiar })
-        : Promise.resolve({ data: null, error: null }),
-      params.cambiar && canModify
-        ? supabase.rpc("search_catalog", {
-            p_query: replacementQuery,
-            p_limit: 50,
-          })
-        : Promise.resolve({ data: [], error: null }),
-      params.cambiar && canModify
-        ? supabase.rpc("get_inventory_snapshot", {
-            p_location_id: location.id,
-            p_query: replacementQuery,
-            p_limit: 100,
-          })
-        : Promise.resolve({ data: [], error: null }),
-    ]);
+  const [
+    itemsResult,
+    selectedItemResult,
+    catalogResult,
+    inventoryResult,
+    deliveryTransfersResult,
+    deliveryLocationsResult,
+  ] = await Promise.all([
+    supabase.rpc("list_layaway_items", {
+      p_layaway_ids: rows.map((row) => row.id),
+    }),
+    params.cambiar && canModify
+      ? supabase.rpc("get_layaway_item", { p_item_id: params.cambiar })
+      : Promise.resolve({ data: null, error: null }),
+    params.cambiar && canModify
+      ? supabase.rpc("search_catalog", {
+          p_query: replacementQuery,
+          p_limit: 50,
+        })
+      : Promise.resolve({ data: [], error: null }),
+    params.cambiar && canModify
+      ? supabase.rpc("get_inventory_snapshot", {
+          p_location_id: location.id,
+          p_query: replacementQuery,
+          p_limit: 100,
+        })
+      : Promise.resolve({ data: [], error: null }),
+    supabase.rpc("list_layaway_delivery_transfers", {
+      p_layaway_ids: rows.map((row) => row.id),
+    }),
+    canRequestTransfer
+      ? supabase.rpc("list_transfer_locations")
+      : Promise.resolve({ data: [], error: null }),
+  ]);
   const selectedItem = selectedItemResult.data as SelectedLayawayItem | null;
   const dataError =
     modifyPermission.error ??
     deliverPermission.error ??
+    transferPermission.error ??
     result.error ??
     receiptResult.error ??
     itemsResult.error ??
     selectedItemResult.error ??
     catalogResult.error ??
-    inventoryResult.error;
+    inventoryResult.error ??
+    deliveryTransfersResult.error ??
+    deliveryLocationsResult.error;
   if (dataError) {
     console.error("[apartados] data unavailable", {
       message: dataError.message,
@@ -284,6 +333,14 @@ export default async function LayawaysPage({
       replacementQuery={replacementQuery}
       canDeliver={canDeliver}
       deliveredSaleFolio={params.folio}
+      requestedTransferFolio={params.transfer}
+      canRequestTransfer={canRequestTransfer}
+      deliveryLocations={
+        (deliveryLocationsResult.data ?? []) as DeliveryLocation[]
+      }
+      deliveryTransfers={
+        (deliveryTransfersResult.data ?? []) as DeliveryTransfer[]
+      }
     />
   );
 }
@@ -309,6 +366,10 @@ function LayawayPageContent({
   preview = false,
   canDeliver = false,
   deliveredSaleFolio,
+  requestedTransferFolio,
+  canRequestTransfer = false,
+  deliveryLocations = [],
+  deliveryTransfers = [],
 }: {
   rows: LayawayRow[];
   locationId: string;
@@ -330,6 +391,10 @@ function LayawayPageContent({
   preview?: boolean;
   canDeliver?: boolean;
   deliveredSaleFolio?: string;
+  requestedTransferFolio?: string;
+  canRequestTransfer?: boolean;
+  deliveryLocations?: DeliveryLocation[];
+  deliveryTransfers?: DeliveryTransfer[];
 }) {
   const today = new Date().toISOString().slice(0, 10);
   const warningDate = new Date();
@@ -341,6 +406,9 @@ function LayawayPageContent({
     grouped.push(item);
     itemsByLayaway.set(item.layaway_id, grouped);
   }
+  const transfersByLayaway = new Map(
+    deliveryTransfers.map((transfer) => [transfer.layaway_id, transfer]),
+  );
   return (
     <section className="module-page layaways-page">
       <div className="section-heading">
@@ -367,6 +435,29 @@ function LayawayPageContent({
           <Link href="/tickets">Ver e imprimir ticket</Link>
         </div>
       ) : null}
+      {operationStatus === "traspaso-entrega-solicitado" ? (
+        <p className="notice-banner" role="status">
+          Traspaso {requestedTransferFolio || "creado"} solicitado. La mercancía
+          seguirá reservada y no podrá entregarse hasta que la otra sucursal la
+          reciba físicamente.
+        </p>
+      ) : null}
+      {operationStatus?.startsWith("traspaso-entrega-") &&
+      operationStatus !== "traspaso-entrega-solicitado" ? (
+        <p className="inline-error operation-feedback" role="alert">
+          {operationStatus === "traspaso-entrega-no-liquidado"
+            ? "El apartado debe estar totalmente pagado antes de solicitar su traslado."
+            : operationStatus === "traspaso-entrega-duplicado"
+              ? "Este apartado ya tiene un traspaso activo. Revisa su avance en Inventario."
+              : operationStatus === "traspaso-entrega-misma-sucursal"
+                ? "El apartado ya está en la sucursal seleccionada."
+                : operationStatus === "traspaso-entrega-destino-invalido"
+                  ? "La sucursal de entrega no está disponible."
+                  : operationStatus === "traspaso-entrega-datos-invalidos"
+                    ? "Selecciona una sucursal de entrega válida."
+                    : "No fue posible solicitar el traslado. No se movió mercancía ni inventario."}
+        </p>
+      ) : null}
       {operationStatus?.startsWith("entrega-") &&
       operationStatus !== "entrega-registrada" ? (
         <p className="inline-error operation-feedback" role="alert">
@@ -378,11 +469,13 @@ function LayawayPageContent({
                 ? "La entrega debe registrarse en la sucursal donde se apartó la mercancía."
                 : operationStatus === "entrega-ya-registrada"
                   ? "Este apartado ya fue entregado."
-                  : operationStatus === "entrega-inventario-inconsistente"
-                    ? "La reserva no coincide con el inventario. No se creó ninguna venta; solicita una revisión."
-                    : operationStatus === "entrega-confirmacion-requerida"
-                      ? "Confirma que el cliente recibió toda la mercancía."
-                      : "No fue posible entregar el apartado. No se modificó la venta, la caja ni el inventario."}
+                  : operationStatus === "entrega-traspaso-activo"
+                    ? "La mercancía está en proceso de traspaso. Debe recibirse físicamente antes de entregarla."
+                    : operationStatus === "entrega-inventario-inconsistente"
+                      ? "La reserva no coincide con el inventario. No se creó ninguna venta; solicita una revisión."
+                      : operationStatus === "entrega-confirmacion-requerida"
+                        ? "Confirma que el cliente recibió toda la mercancía."
+                        : "No fue posible entregar el apartado. No se modificó la venta, la caja ni el inventario."}
         </p>
       ) : null}
       {operationStatus === "apartado-cancelado" ? (
@@ -422,7 +515,9 @@ function LayawayPageContent({
                   ? "Esa variante ya forma parte del mismo apartado."
                   : operationStatus === "sustitucion-no-disponible"
                     ? "El apartado ya no admite modificaciones."
-                    : "No fue posible sustituir el producto. Revisa la selección y el motivo."}
+                    : operationStatus === "sustitucion-traspaso-activo"
+                      ? "No se puede sustituir mercancía mientras su traspaso está activo."
+                      : "No fue posible sustituir el producto. Revisa la selección y el motivo."}
         </p>
       ) : null}
       {operationStatus?.startsWith("cancelacion-") &&
@@ -432,7 +527,9 @@ function LayawayPageContent({
             ? "Este apartado todavía no vence. Su política de cancelación y devolución aún debe definirse."
             : operationStatus === "cancelacion-no-disponible"
               ? "El apartado ya fue cancelado, entregado o no está disponible."
-              : "No fue posible cancelar el apartado. Revisa el motivo e intenta nuevamente."}
+              : operationStatus === "cancelacion-traspaso-activo"
+                ? "Cancela primero el traspaso o espera su recepción antes de cancelar el apartado."
+                : "No fue posible cancelar el apartado. Revisa el motivo e intenta nuevamente."}
         </p>
       ) : null}
       {operationStatus?.startsWith("cancelacion-excepcion-") ? (
@@ -450,21 +547,24 @@ function LayawayPageContent({
                     : operationStatus === "cancelacion-excepcion-no-disponible"
                       ? "El apartado ya fue cancelado, entregado o no está disponible."
                       : operationStatus ===
-                          "cancelacion-excepcion-pin-bloqueado"
-                        ? "El PIN quedó bloqueado 15 minutos por intentos fallidos."
+                          "cancelacion-excepcion-traspaso-activo"
+                        ? "Cancela primero el traspaso o espera su recepción antes de devolver dinero."
                         : operationStatus ===
-                            "cancelacion-excepcion-supervisor-sin-permiso"
-                          ? "Ese empleado no puede autorizar cancelaciones en esta sucursal."
+                            "cancelacion-excepcion-pin-bloqueado"
+                          ? "El PIN quedó bloqueado 15 minutos por intentos fallidos."
                           : operationStatus ===
-                              "cancelacion-excepcion-pin-invalido"
-                            ? "Código o PIN de gerente incorrecto."
+                              "cancelacion-excepcion-supervisor-sin-permiso"
+                            ? "Ese empleado no puede autorizar cancelaciones en esta sucursal."
                             : operationStatus ===
-                                "cancelacion-excepcion-autorizacion-vencida"
-                              ? "La autorización venció o ya fue utilizada. Solicítala nuevamente."
+                                "cancelacion-excepcion-pin-invalido"
+                              ? "Código o PIN de gerente incorrecto."
                               : operationStatus ===
-                                  "cancelacion-excepcion-datos-invalidos"
-                                ? "Confirma la operación y revisa monto, motivo y PIN de gerencia."
-                                : "No fue posible cancelar el apartado. No se modificó la caja ni el inventario."}
+                                  "cancelacion-excepcion-autorizacion-vencida"
+                                ? "La autorización venció o ya fue utilizada. Solicítala nuevamente."
+                                : operationStatus ===
+                                    "cancelacion-excepcion-datos-invalidos"
+                                  ? "Confirma la operación y revisa monto, motivo y PIN de gerencia."
+                                  : "No fue posible cancelar el apartado. No se modificó la caja ni el inventario."}
         </p>
       ) : null}
       {operationStatus?.startsWith("abono-") &&
@@ -698,6 +798,13 @@ function LayawayPageContent({
           rows.map((row) => {
             const active = activeStatuses.has(row.status);
             const rowItems = itemsByLayaway.get(row.id) ?? [];
+            const deliveryTransfer = transfersByLayaway.get(row.id);
+            const transferActive = Boolean(
+              deliveryTransfer &&
+              !["RECEIVED", "CANCELLED"].includes(
+                deliveryTransfer.transfer_status,
+              ),
+            );
             const timing = !active
               ? "closed"
               : row.due_date < today
@@ -754,7 +861,7 @@ function LayawayPageContent({
                         {Number(item.quantity)} ×{" "}
                         {money.format(Number(item.unit_price_cents) / 100)}
                       </span>
-                      {active && canModify ? (
+                      {active && canModify && !transferActive ? (
                         <Link
                           href={`/apartados?ubicacion=${encodeURIComponent(
                             locationId,
@@ -770,7 +877,31 @@ function LayawayPageContent({
                   Socio {row.member_number} · Total{" "}
                   {money.format(Number(row.total_cents) / 100)}
                 </footer>
-                {row.status === "PAID" && canDeliver ? (
+                {deliveryTransfer &&
+                deliveryTransfer.transfer_status !== "CANCELLED" ? (
+                  <div className="notice-banner layaway-transfer-status">
+                    <strong>
+                      Traspaso #{deliveryTransfer.transfer_folio} ·{" "}
+                      {deliveryTransfer.transfer_status === "REQUESTED"
+                        ? "Solicitado"
+                        : deliveryTransfer.transfer_status === "APPROVED"
+                          ? "Aprobado"
+                          : deliveryTransfer.transfer_status === "PREPARED"
+                            ? "Preparado"
+                            : deliveryTransfer.transfer_status === "IN_TRANSIT"
+                              ? "En tránsito"
+                              : "Recibido"}
+                    </strong>
+                    <span>
+                      {deliveryTransfer.from_location_name} →{" "}
+                      {deliveryTransfer.to_location_name}
+                    </span>
+                    {transferActive ? (
+                      <Link href="/inventario">Continuar en Inventario</Link>
+                    ) : null}
+                  </div>
+                ) : null}
+                {row.status === "PAID" && canDeliver && !transferActive ? (
                   <details className="layaway-payment-panel">
                     <summary>
                       <PackageCheck aria-hidden="true" /> Entregar apartado
@@ -796,6 +927,59 @@ function LayawayPageContent({
                       </label>
                       <button className="primary-button" type="submit">
                         Confirmar entrega y generar ticket
+                      </button>
+                    </form>
+                  </details>
+                ) : null}
+                {row.status === "PAID" &&
+                canRequestTransfer &&
+                !transferActive &&
+                deliveryTransfer?.transfer_status !== "RECEIVED" &&
+                deliveryLocations.some(
+                  (destination) => destination.id !== locationId,
+                ) ? (
+                  <details className="layaway-payment-panel">
+                    <summary>
+                      <PackageCheck aria-hidden="true" /> Entregar en otra
+                      sucursal
+                    </summary>
+                    <form action={requestLayawayDeliveryTransfer}>
+                      <input type="hidden" name="layaway_id" value={row.id} />
+                      <label>
+                        <span>Sucursal donde se entregará</span>
+                        <select name="to_location_id" required defaultValue="">
+                          <option value="" disabled>
+                            Selecciona la sucursal destino
+                          </option>
+                          {deliveryLocations
+                            .filter(
+                              (destination) => destination.id !== locationId,
+                            )
+                            .map((destination) => (
+                              <option
+                                key={destination.id}
+                                value={destination.id}
+                              >
+                                {destination.name} · {destination.code}
+                              </option>
+                            ))}
+                        </select>
+                      </label>
+                      <label>
+                        <span>Nota para la tienda destino</span>
+                        <textarea
+                          name="note"
+                          maxLength={500}
+                          placeholder="Ej. Cliente recogerá el viernes"
+                        />
+                      </label>
+                      <p>
+                        Se solicitará un traspaso por todas las piezas. El
+                        apartado quedará bloqueado mientras viaja y sólo podrá
+                        entregarse después de una recepción completa.
+                      </p>
+                      <button className="secondary-button" type="submit">
+                        Solicitar traslado completo
                       </button>
                     </form>
                   </details>
@@ -873,7 +1057,7 @@ function LayawayPageContent({
                     </form>
                   </details>
                 ) : null}
-                {timing === "overdue" ? (
+                {timing === "overdue" && !transferActive ? (
                   <details className="layaway-cancel-panel">
                     <summary>
                       <TriangleAlert aria-hidden="true" /> Cancelar vencido
@@ -905,7 +1089,7 @@ function LayawayPageContent({
                     </form>
                   </details>
                 ) : null}
-                {active && timing !== "overdue" ? (
+                {active && timing !== "overdue" && !transferActive ? (
                   <details className="layaway-cancel-panel">
                     <summary>
                       <TriangleAlert aria-hidden="true" /> Cancelar antes de

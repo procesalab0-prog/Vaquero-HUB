@@ -121,6 +121,8 @@ export async function fulfillLayaway(formData: FormData) {
       status = "entrega-ya-registrada";
     } else if (message.includes("RESERVATION_BALANCE_MISMATCH")) {
       status = "entrega-inventario-inconsistente";
+    } else if (message.includes("LAYAWAY_TRANSFER_ACTIVE")) {
+      status = "entrega-traspaso-activo";
     }
     console.error("[apartados/fulfill] failed", { status, message });
   }
@@ -132,6 +134,53 @@ export async function fulfillLayaway(formData: FormData) {
     `${path}?status=${status}${
       saleId ? `&sale=${encodeURIComponent(saleId)}` : ""
     }${saleFolio ? `&folio=${encodeURIComponent(saleFolio)}` : ""}`,
+  );
+}
+
+export async function requestLayawayDeliveryTransfer(formData: FormData) {
+  let status = "traspaso-entrega-error";
+  let transferFolio = "";
+  try {
+    const { supabase } = await requirePermission("transfers.create");
+    const layawayId = field(formData, "layaway_id");
+    const destinationId = field(formData, "to_location_id");
+    const note = field(formData, "note");
+    if (!layawayId || !destinationId || note.length > 500) {
+      status = "traspaso-entrega-datos-invalidos";
+    } else {
+      const result = await supabase.rpc("request_layaway_delivery_transfer", {
+        p_layaway_id: layawayId,
+        p_to_location_id: destinationId,
+        p_note: note || null,
+      });
+      if (result.error) throw result.error;
+      transferFolio = String(
+        Number((result.data as { folio?: number } | null)?.folio ?? 0),
+      );
+      status = "traspaso-entrega-solicitado";
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("LAYAWAY_NOT_READY")) {
+      status = "traspaso-entrega-no-liquidado";
+    } else if (message.includes("LAYAWAY_TRANSFER_ALREADY_EXISTS")) {
+      status = "traspaso-entrega-duplicado";
+    } else if (message.includes("LAYAWAY_ALREADY_AT_LOCATION")) {
+      status = "traspaso-entrega-misma-sucursal";
+    } else if (message.includes("LOCATION_NOT_FOUND")) {
+      status = "traspaso-entrega-destino-invalido";
+    }
+    console.error("[apartados/requestDeliveryTransfer] failed", {
+      status,
+      message,
+    });
+  }
+  revalidatePath(path);
+  revalidatePath("/inventario");
+  redirect(
+    `${path}?status=${status}${
+      transferFolio ? `&transfer=${encodeURIComponent(transferFolio)}` : ""
+    }`,
   );
 }
 
@@ -166,6 +215,8 @@ export async function cancelOverdueLayaway(formData: FormData) {
       status = "cancelacion-no-vencido";
     } else if (message.includes("LAYAWAY_NOT_CANCELLABLE")) {
       status = "cancelacion-no-disponible";
+    } else if (message.includes("LAYAWAY_TRANSFER_ACTIVE")) {
+      status = "cancelacion-traspaso-activo";
     }
     console.error("[apartados/cancelOverdue] failed", { status, message });
   }
@@ -281,6 +332,8 @@ export async function cancelActiveLayaway(formData: FormData) {
       status = "cancelacion-excepcion-ya-vencido";
     } else if (message.includes("LAYAWAY_NOT_CANCELLABLE")) {
       status = "cancelacion-excepcion-no-disponible";
+    } else if (message.includes("LAYAWAY_TRANSFER_ACTIVE")) {
+      status = "cancelacion-excepcion-traspaso-activo";
     } else if (message.includes("LAYAWAY_AUTHORIZATION_REQUIRED")) {
       status = "cancelacion-excepcion-autorizacion-vencida";
     }
@@ -350,6 +403,8 @@ export async function substituteLayawayItem(formData: FormData) {
       status = "sustitucion-variante-repetida";
     } else if (message.includes("LAYAWAY_NOT_MODIFIABLE")) {
       status = "sustitucion-no-disponible";
+    } else if (message.includes("LAYAWAY_TRANSFER_ACTIVE")) {
+      status = "sustitucion-traspaso-activo";
     }
     console.error("[apartados/substituteItem] failed", { status, message });
   }

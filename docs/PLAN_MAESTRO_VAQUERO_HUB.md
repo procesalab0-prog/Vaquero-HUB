@@ -2975,3 +2975,21 @@ Entrega visible 0.47.0 — gerencia autoriza sin ocupar una segunda caja:
 - La interfaz muestra esta operación a quien administra apartados, pero el
   backend exige tanto el permiso operativo como la capacidad excepcional de
   gerencia; la seguridad no depende de esconder botones.
+
+Entrega visible 0.48.0 — apartados entregables entre sucursales:
+
+- Desde un apartado liquidado, una persona con permisos de entrega y traspasos
+  puede solicitar que todas sus piezas viajen a otra tienda. La solicitud usa
+  el documento real de traspaso y aparece en Inventario para continuar su ciclo.
+- La tienda origen aprueba, prepara y despacha; la tienda destino recibe con la
+  separación de funciones ya establecida. No se acepta cantidad parcial para
+  mercancía prometida a un cliente.
+- Existencia y reserva se trasladan juntas del origen a tránsito y del tránsito
+  al destino. El apartado queda inmóvil mientras el traspaso está activo y su
+  sucursal sólo cambia después de una recepción física completa.
+- La venta final se genera en la sucursal destino desde su propia caja, conserva
+  los abonos históricos y no vuelve a cobrar. Auditoría enlaza apartado,
+  traspaso, actores, ubicaciones y ticket.
+- M7.3 queda pendiente únicamente de la política financiera para sustituir por
+  mercancía cuyo nuevo total sea menor que lo ya abonado; el sistema continúa
+  bloqueando esa operación en vez de inventar un reembolso.

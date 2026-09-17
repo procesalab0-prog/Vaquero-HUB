@@ -1602,6 +1602,236 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
     expect(stock.data?.reserved_qty).toBe(1);
   });
 
+  it("traslada un apartado completo y sólo permite entregarlo después de recibirlo", async () => {
+    const destination = await state
+      .server!.from("locations")
+      .insert({
+        code: `CD${runCode}`,
+        name: "Destino apartado",
+        type: "STORE",
+      })
+      .select("id")
+      .single();
+    expect(destination.error).toBeNull();
+    const destinationId = destination.data!.id;
+    const roles = await state.server!.from("roles").select("id,code");
+    const roleIds = Object.fromEntries(
+      (roles.data ?? []).map((role) => [role.code, role.id]),
+    );
+    const createDestinationUser = async (
+      label: string,
+      role: "WAREHOUSE" | "CASHIER",
+    ) => {
+      const email = `m7-transfer-${label}-${runCode}@vaquero.test`;
+      const auth = await state.server!.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      });
+      expect(auth.error).toBeNull();
+      const id = auth.data.user!.id;
+      expect(
+        (
+          await state.server!.from("app_users").insert({
+            id,
+            employee_code: `TR${label.toUpperCase()}${runCode}`,
+            full_name: `Traspaso ${label}`,
+            email,
+            role_id: roleIds[role],
+          })
+        ).error,
+      ).toBeNull();
+      expect(
+        (
+          await state.server!.from("user_locations").insert({
+            user_id: id,
+            location_id: destinationId,
+          })
+        ).error,
+      ).toBeNull();
+      const client = publicClient();
+      expect(
+        (await client.auth.signInWithPassword({ email, password })).error,
+      ).toBeNull();
+      return { id, client };
+    };
+    const receiver = await createDestinationUser("receptor", "WAREHOUSE");
+    const destinationCashier = await createDestinationUser("cajero", "CASHIER");
+    const register = await state.admin!.client.rpc("create_cash_register", {
+      p_location_id: destinationId,
+      p_code: "CAJA01",
+      p_name: "Caja destino",
+    });
+    expect(register.error).toBeNull();
+    const opened = await destinationCashier.client.rpc("open_cash_session", {
+      p_register_id: register.data.id,
+      p_opening_amount_cents: 5000,
+    });
+    expect(opened.error).toBeNull();
+
+    const variantId = await createVariant("Apartado entre sucursales", 12000);
+    const created = await state.cashierA!.client.rpc("create_layaway", {
+      p_idempotency_key: crypto.randomUUID(),
+      p_cash_session_id: state.sessionA,
+      p_customer_id: state.customerId,
+      p_due_date: new Date(Date.now() + 30 * 86400000)
+        .toISOString()
+        .slice(0, 10),
+      p_items: [{ variant_id: variantId, quantity: 1 }],
+      p_notes: null,
+    });
+    expect(created.error).toBeNull();
+    expect(
+      (
+        await state.cashierA!.client.rpc("record_layaway_payment", {
+          p_idempotency_key: crypto.randomUUID(),
+          p_cash_session_id: state.sessionA,
+          p_layaway_id: created.data.id,
+          p_payments: [
+            {
+              method_code: "CARD",
+              amount_cents: 12000,
+              reference: "LIQUIDADO-TRASPASO",
+            },
+          ],
+          p_note: null,
+        })
+      ).error,
+    ).toBeNull();
+
+    const requested = await state.admin!.client.rpc(
+      "request_layaway_delivery_transfer",
+      {
+        p_layaway_id: created.data.id,
+        p_to_location_id: destinationId,
+        p_note: "Cliente recogerá en destino",
+      },
+    );
+    expect(requested.error).toBeNull();
+    const transferId = requested.data.id as string;
+    const transferItems = [{ variant_id: variantId, qty: 1 }];
+    expect(
+      (
+        await state.admin!.client.rpc("approve_transfer", {
+          p_transfer_id: transferId,
+        })
+      ).error,
+    ).toBeNull();
+    expect(
+      (
+        await state.admin!.client.rpc("prepare_transfer", {
+          p_transfer_id: transferId,
+          p_items: transferItems,
+        })
+      ).error,
+    ).toBeNull();
+    expect(
+      (
+        await state.admin!.client.rpc("dispatch_transfer", {
+          p_transfer_id: transferId,
+        })
+      ).error,
+    ).toBeNull();
+
+    const blockedDelivery = await state.cashierA!.client.rpc(
+      "fulfill_layaway",
+      {
+        p_operation_key: crypto.randomUUID(),
+        p_cash_session_id: state.sessionA,
+        p_layaway_id: created.data.id,
+      },
+    );
+    expect(blockedDelivery.error?.message).toContain("LAYAWAY_TRANSFER_ACTIVE");
+    const partial = await receiver.client.rpc("receive_transfer", {
+      p_transfer_id: transferId,
+      p_items: [{ variant_id: variantId, qty: 0 }],
+    });
+    expect(partial.error?.message).toContain(
+      "LAYAWAY_TRANSFER_REQUIRES_FULL_RECEIPT",
+    );
+
+    const transitLocation = await state
+      .server!.from("locations")
+      .select("id")
+      .eq("type", "TRANSIT")
+      .eq("is_active", true)
+      .limit(1)
+      .single();
+    const beforeReceipt = await state
+      .server!.from("inventory_by_location")
+      .select("location_id,qty,reserved_qty")
+      .eq("variant_id", variantId)
+      .in("location_id", [state.locationId, transitLocation.data!.id]);
+    const beforeByLocation = new Map(
+      (beforeReceipt.data ?? []).map((row) => [row.location_id, row]),
+    );
+    expect(beforeByLocation.get(state.locationId)).toMatchObject({
+      qty: 1,
+      reserved_qty: 0,
+    });
+    expect(beforeByLocation.get(transitLocation.data!.id)).toMatchObject({
+      qty: 1,
+      reserved_qty: 1,
+    });
+
+    const received = await receiver.client.rpc("receive_transfer", {
+      p_transfer_id: transferId,
+      p_items: transferItems,
+    });
+    expect(received.error).toBeNull();
+    const relocated = await state
+      .server!.from("layaways")
+      .select("location_id,status")
+      .eq("id", created.data.id)
+      .single();
+    expect(relocated.data).toMatchObject({
+      location_id: destinationId,
+      status: "PAID",
+    });
+    const afterReceipt = await state
+      .server!.from("inventory_by_location")
+      .select("location_id,qty,reserved_qty")
+      .eq("variant_id", variantId)
+      .in("location_id", [transitLocation.data!.id, destinationId]);
+    const afterByLocation = new Map(
+      (afterReceipt.data ?? []).map((row) => [row.location_id, row]),
+    );
+    expect(afterByLocation.get(transitLocation.data!.id)).toMatchObject({
+      qty: 0,
+      reserved_qty: 0,
+    });
+    expect(afterByLocation.get(destinationId)).toMatchObject({
+      qty: 1,
+      reserved_qty: 1,
+    });
+
+    const fulfilled = await destinationCashier.client.rpc("fulfill_layaway", {
+      p_operation_key: crypto.randomUUID(),
+      p_cash_session_id: opened.data.id,
+      p_layaway_id: created.data.id,
+    });
+    expect(fulfilled.error).toBeNull();
+    const sale = await state
+      .server!.from("sales")
+      .select("location_id,total_cents")
+      .eq("id", fulfilled.data.sale_id)
+      .single();
+    expect(sale.data).toMatchObject({
+      location_id: destinationId,
+      total_cents: 12000,
+    });
+    const finalDestinationStock = await state
+      .server!.from("inventory_by_location")
+      .select("qty,reserved_qty")
+      .eq("variant_id", variantId)
+      .eq("location_id", destinationId)
+      .single();
+    expect(finalDestinationStock.data).toMatchObject({
+      qty: 0,
+      reserved_qty: 0,
+    });
+  }, 30_000);
+
   it("mantiene comprobantes y asignaciones fuera del acceso directo", async () => {
     expect(
       (await state.admin!.client.from("customer_credit_payments").select("id"))
@@ -1627,6 +1857,13 @@ describe.sequential("M7.2: ventas a crédito y abonos", () => {
     expect(
       (await state.cashierA!.client.from("layaway_cancellations").select("id"))
         .error,
+    ).not.toBeNull();
+    expect(
+      (
+        await state
+          .cashierA!.client.from("layaway_delivery_transfers")
+          .select("id")
+      ).error,
     ).not.toBeNull();
   });
 });
