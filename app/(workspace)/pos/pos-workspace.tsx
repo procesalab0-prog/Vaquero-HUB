@@ -37,6 +37,10 @@ import {
 import { CustomerLookup } from "@/components/customer-lookup";
 import { useWorkspace } from "@/components/workspace-context";
 import type { CustomerSummary } from "@/lib/customers";
+import {
+  ReceiptBoldToggle,
+  useReceiptBoldPreference,
+} from "@/components/receipt-print-options";
 
 type PosDraftItemInput = {
   variant_id: string;
@@ -266,6 +270,7 @@ export function PosWorkspace({
     draftId: string,
   ) => Promise<{ ok: true } | { ok: false; message: string }>;
 }) {
+  const { boldReceipt, setBoldReceipt } = useReceiptBoldPreference();
   const router = useRouter();
   const { identity, activeLocation } = useWorkspace();
   const variantsById = useMemo(
@@ -1278,8 +1283,13 @@ export function PosWorkspace({
                   cashierName={storedReceipt?.cashier_name ?? identity.name}
                   registerName={cashSession?.register_name ?? "Caja 01"}
                   location={officialLocation}
+                  boldText={boldReceipt}
                 />
               </div>
+              <ReceiptBoldToggle
+                checked={boldReceipt}
+                onChange={setBoldReceipt}
+              />
               <div className="receipt-modal-actions">
                 <button
                   className="secondary-button"

@@ -4097,6 +4097,34 @@ code {
   font-size: 13px;
   line-height: 1.4;
 }
+.thermal-receipt.receipt-all-bold,
+.thermal-receipt.receipt-all-bold * {
+  font-weight: 700 !important;
+}
+.receipt-bold-toggle {
+  min-height: 48px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+}
+.receipt-bold-toggle input {
+  width: 19px;
+  height: 19px;
+  accent-color: var(--accent);
+}
+.receipt-bold-toggle label {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.receipt-bold-toggle small {
+  color: var(--muted);
+}
 .receipt-brand {
   display: flex;
   flex-direction: column;
@@ -4498,12 +4526,20 @@ code {
   text-align: center;
   box-sizing: border-box;
 }
-.label-logo {
-  width: 36mm;
+.label-logo-frame {
+  width: 26mm;
   max-width: 82%;
-  height: 7.5mm;
+  height: 10mm;
   margin: -0.6mm 0 0.8mm;
-  flex: 0 0 7.5mm;
+  flex: 0 0 10mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.label-logo {
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 .label-product-name {
@@ -4546,7 +4582,7 @@ code {
   font-size: 11pt;
   white-space: normal;
 }
-.label-layout-product_focus .label-logo {
+.label-layout-product_focus .label-logo-frame {
   height: 7.5mm;
 }
 .label-layout-price_focus > b {
@@ -4554,11 +4590,77 @@ code {
   margin-bottom: 0.5mm;
   font-size: 14pt;
 }
-.label-layout-price_focus .label-logo {
+.label-layout-price_focus .label-logo-frame {
   height: 7.5mm;
 }
 .label-layout-price_focus .label-barcode-svg {
   height: 6mm;
+}
+.label-size-51x25 {
+  height: 25mm;
+  padding: 0.5mm 1.2mm;
+  display: grid;
+  grid-template-columns: 16mm minmax(0, 1fr);
+  grid-template-rows: 3.3mm 3.2mm 3.8mm 6.2mm 2.8mm;
+  column-gap: 1mm;
+  justify-items: center;
+  align-content: center;
+}
+.label-size-51x25 .label-logo-frame {
+  width: 16mm;
+  max-width: none;
+  height: 10.3mm;
+  margin: 0;
+  grid-column: 1;
+  grid-row: 1 / 4;
+}
+.label-size-51x25 .label-logo {
+  width: 16mm;
+  height: 10.3mm;
+  max-width: none;
+  transform: none;
+}
+.label-size-51x25 .label-product-name {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: end;
+  font-size: 7.5pt;
+  font-weight: 700;
+}
+.label-size-51x25 .label-product-brand,
+.label-size-51x25 .label-sku {
+  display: none;
+}
+.label-size-51x25 .label-variant {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: center;
+  font-size: 8.5pt;
+  font-weight: 700;
+  line-height: 1;
+}
+.label-size-51x25 .label-barcode-svg {
+  width: 86%;
+  height: 6.2mm;
+  margin: 0;
+  grid-column: 1 / -1;
+  grid-row: 4;
+}
+.label-size-51x25 > code {
+  grid-column: 1 / -1;
+  grid-row: 5;
+  align-self: center;
+  font-size: 7pt;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.04em;
+}
+.label-size-51x25 > b {
+  grid-column: 2;
+  grid-row: 3;
+  align-self: start;
+  font-size: 10.5pt;
+  line-height: 1;
 }
 .label-settings {
   margin: 0;
@@ -7840,6 +7942,9 @@ a:active {
   .print-product-label {
     margin: 0;
     border: 0;
+    overflow: hidden !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
     break-after: page;
     page-break-after: always;
   }

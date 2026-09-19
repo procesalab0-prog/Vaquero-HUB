@@ -65,6 +65,11 @@ La medida de la etiqueta quedó confirmada físicamente el 19 de septiembre de
 mm; esos 5 mm adicionales de alto hicieron que una impresión cruzara el troquel
 y quedara repartida entre dos etiquetas.
 
+La segunda impresión mostró además que el logotipo ocupaba un rectángulo con
+mucho espacio transparente: el dibujo quedaba pequeño y el código continuaba en
+la siguiente pieza. Desde 0.50.1 la plantilla recorta ese espacio sólo al
+presentarlo y fuerza todo el contenido dentro de 51 × 25 mm.
+
 ## La prueba física, frente al mostrador
 
 - [ ] Cobrar una venta e imprimir el ticket. Verificar que no alimente papel de

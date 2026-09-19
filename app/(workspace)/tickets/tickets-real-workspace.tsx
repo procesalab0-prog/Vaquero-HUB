@@ -31,6 +31,10 @@ import { BarcodeScanner } from "@/components/barcode-scanner";
 import { saleFolioFromReceiptCode } from "@/lib/ticket-folios";
 import type { TicketDeliveryEventInput } from "@/lib/ticket-delivery";
 import { useKeyboardBarcodeScanner } from "@/lib/use-keyboard-barcode-scanner";
+import {
+  ReceiptBoldToggle,
+  useReceiptBoldPreference,
+} from "@/components/receipt-print-options";
 
 type TicketItem = {
   line_number: number;
@@ -155,6 +159,7 @@ export function TicketsRealWorkspace({
   initialSelectedTicketId?: string;
   initialNotice?: string;
 }) {
+  const { boldReceipt, setBoldReceipt } = useReceiptBoldPreference();
   const [rows, setRows] = useState(tickets);
   const [query, setQuery] = useState("");
   const [period, setPeriod] = useState<"today" | "week" | "month">("today");
@@ -263,6 +268,7 @@ export function TicketsRealWorkspace({
           amountCents: Number(payment.amount_cents),
         })),
         returnWindowDays,
+        boldText: boldReceipt,
       });
       downloadTicketPdf(blob, fileName);
       setNotice(
@@ -500,6 +506,10 @@ export function TicketsRealWorkspace({
                   Regalo
                 </button>
               </div>
+              <ReceiptBoldToggle
+                checked={boldReceipt}
+                onChange={setBoldReceipt}
+              />
               <div className="receipt-paper-stage compact-stage">
                 <ThermalReceipt
                   mode={receiptMode}
@@ -532,6 +542,7 @@ export function TicketsRealWorkspace({
                   registerName={selected.register_name}
                   location={selected.location}
                   returnWindowDays={returnWindowDays}
+                  boldText={boldReceipt}
                 />
               </div>
               {selected.status === "CANCELLED" ? (

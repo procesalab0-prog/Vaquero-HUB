@@ -1355,6 +1355,21 @@ pueden convertirla en dos ventas.
 - [x] Hacer que, desde Tickets, el sufijo Enter o Tab del lector abra
       inmediatamente el comprobante escaneado aunque el buscador no tenga foco.
 
+## Calidad 0.50.1 — segunda calibración física
+
+- [x] Recortar visualmente el espacio transparente del logotipo sin modificar
+      el archivo de marca.
+- [x] Dar a la plantilla 51 × 25 mm tamaños específicos para logotipo, talla,
+      barras y código legible, y evitar desbordes entre páginas.
+- [x] Añadir la opción persistente **Todo en negritas** al ticket inmediato, al
+      historial, a la prueba de impresión y al PDF descargable de mostrador.
+- [ ] Reimprimir una etiqueta con la EVA58 en papel 51 × 25 mm, horizontal,
+      escala 100 % y sin «Ajustar a la página»; confirmar que logotipo, barras y
+      número quedan en una sola pieza.
+- [ ] Imprimir ambos modos del ticket en la BIXOLON y conservar el que dé mejor
+      lectura real; si ambos salen borrosos, aumentar oscuridad o densidad desde
+      las preferencias del controlador.
+
 ## Corrección operativa 0.32.2 — sucursal activa
 
 - [x] Conservar la sucursal elegida al navegar entre módulos y validar siempre

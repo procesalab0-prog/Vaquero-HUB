@@ -70,6 +70,10 @@ Se configura una vez y queda para siempre.
 
 ### Qué revisar en el ticket impreso
 
+En la pantalla puedes activar **Todo en negritas** antes de imprimir. La
+preferencia queda guardada en esa computadora y también se aplica al PDF que
+descargue el personal desde Tickets.
+
 - [ ] El logo se ve, no sale como mancha.
 - [ ] Los nombres largos no se cortan a la derecha.
 - [ ] Los acentos salen bien (el ticket de muestra trae «Cinturón» a
@@ -90,11 +94,14 @@ sólo dibuja etiquetas y las manda a imprimir.
    **SICAR EVA58**, márgenes en Ninguno y escala 100 %.
 3. La plantilla por omisión es de **51 × 25 mm**, la medida confirmada con el
    troquel real. En el controlador también debe existir papel de 51 × 25 mm;
-   usa márgenes en Ninguno y escala 100 %.
+   usa márgenes en Ninguno, escala 100 %, orientación horizontal y desactiva
+   «Ajustar a la página».
 
-La prueba inicial a 50 × 30 mm cruzó el corte entre dos etiquetas. No se debe
-compensar moviendo el contenido a mano: el papel del controlador y la plantilla
-de Mi Tienda SM deben coincidir ambos en 51 × 25 mm.
+La primera prueba a 50 × 30 mm y la segunda prueba con el logotipo sin recorte
+cruzaron el corte entre dos etiquetas. La plantilla ahora recorta visualmente el
+espacio transparente del PNG. No se debe compensar con una escala distinta de
+100 %: el papel del controlador y la plantilla de Mi Tienda SM deben coincidir
+ambos en 51 × 25 mm.
 
 ### Y ahora la prueba que cierra el riesgo del proyecto
 

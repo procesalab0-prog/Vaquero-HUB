@@ -45,9 +45,12 @@ function ProductLabel({
   template: LabelTemplate;
   printable?: boolean;
 }) {
+  const isPhysical51x25 =
+    Math.abs(template.widthMm - 51) < 0.1 &&
+    Math.abs(template.heightMm - 25) < 0.1;
   return (
     <article
-      className={`product-label label-layout-${template.layout.toLowerCase()}${printable ? " print-product-label" : ""}`}
+      className={`product-label label-layout-${template.layout.toLowerCase()}${isPhysical51x25 ? " label-size-51x25" : ""}${printable ? " print-product-label" : ""}`}
       style={
         {
           "--label-width": `${template.widthMm}mm`,
@@ -57,13 +60,15 @@ function ProductLabel({
       aria-label={`Etiqueta de ${variant.productName}, ${variant.color}, talla ${variant.size}`}
     >
       {template.showLogo ? (
-        <Image
-          className="label-logo"
-          src="/brand/logo-vaquerosm-negro.png"
-          alt="Vaquero SM"
-          width={300}
-          height={200}
-        />
+        <span className="label-logo-frame">
+          <Image
+            className="label-logo"
+            src="/brand/logo-vaquerosm-negro.png"
+            alt="Vaquero SM"
+            width={300}
+            height={200}
+          />
+        </span>
       ) : null}
       {template.showProductName ? (
         <strong className="label-product-name">{variant.productName}</strong>
@@ -276,6 +281,10 @@ export function LabelsWorkspace({
           <strong>Imprime desde la computadora de trastienda</strong> Esta
           pantalla genera códigos escaneables; la medida física debe probarse
           con la impresora y rollo reales.
+          <br />
+          Para la SICAR EVA58 elige papel <strong>51 × 25 mm</strong>, escala
+          <strong> 100 %</strong>, orientación horizontal y desactiva «Ajustar a
+          la página».
         </span>
       </div>
 
