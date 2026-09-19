@@ -1341,6 +1341,20 @@ pueden convertirla en dos ventas.
 - [x] Cubrir la conversión con pruebas unitarias para folios de demostración y de
       sucursal.
 
+## Calidad 0.50.0 — calibración física de impresión
+
+- [x] Sustituir la medida supuesta de 50 × 30 mm por la medida real de la
+      etiqueta: 51 × 25 mm.
+- [x] Aumentar el logotipo y compactar el contenido para que cada impresión
+      quede dentro de un solo troquel.
+- [x] Aumentar la letra del ticket térmico y del PDF, conservando el código de
+      barras propio.
+- [ ] Repetir en mostrador una impresión con papel 51 × 25 mm, márgenes Ninguno
+      y escala 100 %; después escanear el código con el lector USB y la cámara.
+- [x] Confirmar que el lector USB funciona como teclado con los códigos físicos.
+- [x] Hacer que, desde Tickets, el sufijo Enter o Tab del lector abra
+      inmediatamente el comprobante escaneado aunque el buscador no tenga foco.
+
 ## Corrección operativa 0.32.2 — sucursal activa
 
 - [x] Conservar la sucursal elegida al navegar entre módulos y validar siempre

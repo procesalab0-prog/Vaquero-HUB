@@ -109,8 +109,8 @@ export async function createTicketPdf(data: TicketPdfData) {
     150 + logoHeightAllowanceMm,
     131 +
       logoHeightAllowanceMm +
-      data.lines.length * (data.mode === "sale" ? 15 : 11) +
-      (data.payments?.length ?? 0) * 7,
+      data.lines.length * (data.mode === "sale" ? 17 : 13) +
+      (data.payments?.length ?? 0) * 8,
   );
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([PAGE_WIDTH, heightMm * MM]);
@@ -133,7 +133,7 @@ export async function createTicketPdf(data: TicketPdfData) {
   const leftRight = (
     left: string,
     right: string,
-    size = 7.5,
+    size = 8.5,
     font = regular,
   ) => {
     const leftValue = printable(left);
@@ -174,16 +174,16 @@ export async function createTicketPdf(data: TicketPdfData) {
     centered("VAQUERO SM", 15, bold);
     y -= 19;
   }
-  centered(`SUCURSAL ${data.locationName.toLocaleUpperCase("es-MX")}`, 8, bold);
-  y -= 12;
-  if (data.mode === "sale" && data.address) wrappedCentered(data.address, 7);
+  centered(`SUCURSAL ${data.locationName.toLocaleUpperCase("es-MX")}`, 9, bold);
+  y -= 14;
+  if (data.mode === "sale" && data.address) wrappedCentered(data.address, 8);
   if (data.mode === "sale" && data.phone) {
-    centered(`Tel. ${data.phone}`, 7);
-    y -= 11;
+    centered(`Tel. ${data.phone}`, 8);
+    y -= 13;
   }
   if (data.mode === "gift") {
-    centered("TICKET DE REGALO", 10, bold);
-    y -= 17;
+    centered("TICKET DE REGALO", 12, bold);
+    y -= 19;
   }
 
   rule();
@@ -191,14 +191,14 @@ export async function createTicketPdf(data: TicketPdfData) {
   page.drawText(`Folio: ${printable(receiptFolio)}`, {
     x: MARGIN,
     y,
-    size: 7.5,
+    size: 8.5,
     font: regular,
   });
   y -= 11;
   page.drawText(`Fecha: ${printable(data.soldAt)}`, {
     x: MARGIN,
     y,
-    size: 7.5,
+    size: 8.5,
     font: regular,
   });
   y -= 11;
@@ -206,7 +206,7 @@ export async function createTicketPdf(data: TicketPdfData) {
     page.drawText(`Cajero: ${printable(data.cashierName)}`, {
       x: MARGIN,
       y,
-      size: 7.5,
+      size: 8.5,
       font: regular,
     });
     y -= 11;
@@ -215,7 +215,7 @@ export async function createTicketPdf(data: TicketPdfData) {
     page.drawText(`Caja: ${printable(data.registerName)}`, {
       x: MARGIN,
       y,
-      size: 7.5,
+      size: 8.5,
       font: regular,
     });
     y -= 11;
@@ -227,23 +227,23 @@ export async function createTicketPdf(data: TicketPdfData) {
     for (const row of wrapText(
       `${line.name.toLocaleUpperCase("es-MX")} - ${line.variant.toLocaleUpperCase("es-MX")}`,
       bold,
-      7.5,
+      8.5,
       width - MARGIN * 2,
     )) {
-      page.drawText(row, { x: MARGIN, y, size: 7.5, font: bold });
-      y -= 10;
+      page.drawText(row, { x: MARGIN, y, size: 8.5, font: bold });
+      y -= 12;
     }
     if (data.mode === "sale") {
       leftRight(
         `${line.quantity} x ${money(line.unitPriceCents)}  ${line.code}`,
         money(line.quantity * line.unitPriceCents),
-        7,
+        8,
       );
     } else {
       page.drawText(`${line.quantity} pza.  ${printable(line.code)}`, {
         x: MARGIN,
         y,
-        size: 7,
+        size: 8,
         font: regular,
       });
     }
@@ -257,8 +257,8 @@ export async function createTicketPdf(data: TicketPdfData) {
     y -= 12;
     leftRight("Descuento", `-${money(data.discountCents)}`);
     y -= 15;
-    leftRight("TOTAL", money(data.totalCents), 11, bold);
-    y -= 16;
+    leftRight("TOTAL", money(data.totalCents), 12.5, bold);
+    y -= 18;
     for (const payment of data.payments ?? []) {
       leftRight(payment.methodName, money(payment.amountCents));
       y -= 10;
@@ -266,7 +266,7 @@ export async function createTicketPdf(data: TicketPdfData) {
         page.drawText(`Referencia: ${printable(payment.reference)}`, {
           x: MARGIN + 5,
           y,
-          size: 6.5,
+          size: 7.5,
           font: regular,
         });
         y -= 10;
@@ -293,11 +293,11 @@ export async function createTicketPdf(data: TicketPdfData) {
     }
     y -= 17 * MM;
   }
-  const folioWidth = mono.widthOfTextAtSize(receiptFolio, 8);
+  const folioWidth = mono.widthOfTextAtSize(receiptFolio, 9);
   page.drawText(receiptFolio, {
     x: (width - folioWidth) / 2,
     y,
-    size: 8,
+    size: 9,
     font: mono,
   });
   y -= 16;
@@ -305,9 +305,9 @@ export async function createTicketPdf(data: TicketPdfData) {
     data.mode === "gift"
       ? `Presenta este ticket para cambio de talla o modelo dentro de ${data.returnWindowDays} días. No incluye importes ni forma de pago.`
       : `Cambios y devoluciones dentro de ${data.returnWindowDays} días con este ticket y etiqueta original. No aplica en oferta.`;
-  wrappedCentered(policy, 6.8);
+  wrappedCentered(policy, 7.6);
   y -= 3;
-  centered("GRACIAS POR SU COMPRA", 8, bold);
+  centered("GRACIAS POR SU COMPRA", 9.5, bold);
 
   const bytes = await pdf.save({ useObjectStreams: true });
   const blob = new Blob([new Uint8Array(bytes)], { type: "application/pdf" });

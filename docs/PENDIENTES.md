@@ -161,16 +161,18 @@ Ambas reglas quedaron implementadas y probadas en staging en 0.22.0.
 que imprime corre en la computadora del mostrador. Ver
 [`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md).
 
-Falta: la medida de la etiqueta troquelada, confirmar el rollo de tickets y si
-el cajón de dinero está conectado a la BIXOLON.
+La etiqueta troquelada quedó confirmada físicamente en **51 × 25 mm**. La
+plantilla y el papel del controlador deben usar exactamente esa medida para no
+imprimir sobre dos etiquetas. Falta confirmar el rollo de tickets y si el cajón
+de dinero está conectado a la BIXOLON.
 
 Antes de desinstalar SICAR: conseguir por separado el controlador de la EVA58,
 que pudo haber llegado dentro de su instalador.
 
 BIXOLON para tickets, marca SICAR para etiquetas, las dos ya en el mostrador.
-Ver [`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md). Falta confirmar el
-modelo exacto de cada una, el ancho del rollo de tickets, la medida de la
-etiqueta y si el cajón de dinero está conectado a la BIXOLON.
+Ver [`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md). Los modelos y la
+etiqueta de 51 × 25 mm ya están confirmados; falta el ancho del rollo comprado
+para tickets y si el cajón de dinero está conectado a la BIXOLON.
 
 Antes de desinstalar SICAR: conseguir por separado el controlador de la
 impresora de etiquetas, que pudo haber llegado dentro de su instalador.
