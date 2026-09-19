@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.49.1";
-export const APP_RELEASE = "El ticket de regalo ahora sí encuentra su venta";
+export const APP_VERSION = "0.50.0";
+export const APP_RELEASE = "Impresión calibrada en la tienda";

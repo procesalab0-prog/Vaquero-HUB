@@ -1237,6 +1237,15 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
   });
 
   it("guarda plantillas con permiso y conserva lectura de mínimo privilegio", async () => {
+    const calibrated = await state
+      .manager!.client.from("label_templates")
+      .select("width_mm, height_mm")
+      .eq("is_default", true)
+      .single();
+    expect(calibrated.error).toBeNull();
+    expect(Number(calibrated.data?.width_mm)).toBe(51);
+    expect(Number(calibrated.data?.height_mm)).toBe(25);
+
     const name = `Etiqueta prueba ${runCode}`;
     const saved = await state.manager!.client.rpc("save_label_template", {
       p_id: null,

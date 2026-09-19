@@ -288,3 +288,16 @@ que dice?_ Que exista el código no significa que funcione.
   comprobante correcto y muestra que se reconoció una copia de regalo.
 - La conversión de folios quedó compartida por el ticket térmico, el PDF y el
   buscador, con pruebas para folios cortos y folios reales por sucursal.
+
+## Calibración física 0.50.0 — impresión medida en tienda
+
+- La etiqueta real fue medida en **51 × 25 mm**. Una migración hacia delante
+  actualiza la plantilla predeterminada; no se reescribe ninguna migración ya
+  aplicada.
+- La etiqueta reduce márgenes, aumenta el logotipo y conserva producto, talla,
+  código de barras, código legible y precio dentro de un solo troquel.
+- El ticket térmico y su PDF usan tipografía mayor, más cercana a la muestra
+  de SICAR aceptada en mostrador, sin quitar el código de barras de Mi Tienda
+  SM.
+- La siguiente prueba física debe usar papel 51 × 25 mm, márgenes Ninguno y
+  escala 100 % en el controlador de la EVA58.

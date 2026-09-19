@@ -2,14 +2,14 @@
 
 ## Equipo confirmado, con modelo y placa a la vista
 
-| Uso       | Modelo                  | Papel  | Interfaz    | Origen         |
-| --------- | ----------------------- | ------ | ----------- | -------------- |
-| Tickets   | **BIXOLON SRP-330II**   | 80 mm  | USB         | Made in Korea  |
-| Etiquetas | **SICAR EVA58**         | 58 mm  | USB, RS232  | Made in China  |
+| Uso       | Modelo                | Papel | Interfaz   | Origen        |
+| --------- | --------------------- | ----- | ---------- | ------------- |
+| Tickets   | **BIXOLON SRP-330II** | 80 mm | USB        | Made in Korea |
+| Etiquetas | **SICAR EVA58**       | 58 mm | USB, RS232 | Made in China |
 
 Datos leídos de la placa de cada equipo, septiembre de 2026. La EVA58 la
 fabrica «Ahora Resulta SA de CV», que es la empresa detrás de SICAR, y su
-placa la describe como *Thermal Label & Receipt Printer* a 100 mm/s.
+placa la describe como _Thermal Label & Receipt Printer_ a 100 mm/s.
 
 **No se compra impresora: el sistema funciona con estas dos.**
 
@@ -19,8 +19,9 @@ placa la describe como *Thermal Label & Receipt Printer* a 100 mm/s.
    `lib/printing.ts`. Confirmado, no adivinado. La SRP-330II admite también
    rollo de 58 mm con una guía; si alguna vez se le pone, `RECEIPT_WIDTH_MM`
    es lo único que cambia.
-2. **La etiqueta no puede pasar de 58 mm de ancho.** La plantilla por omisión
-   es de 50 × 30 mm y cabe holgada. La base admite hasta 120 mm a propósito,
+2. **La etiqueta no puede pasar de 58 mm de ancho.** La medida física confirmada
+   en tienda es **51 × 25 mm** y ésa es la plantilla por omisión. La base admite
+   hasta 120 mm a propósito,
    para no amarrar el sistema a la impresora de hoy, pero la pantalla de
    etiquetas avisa cuando la medida se pasa del rollo real.
 3. **Ninguna de las dos es de red.** La EVA58 lo dice en la placa: USB y
@@ -56,10 +57,13 @@ siga siendo buena.
 
 1. **Ancho del rollo de tickets que compran hoy.** La impresora es de 80 mm y
    es lo esperable, pero conviene verlo en el rollo.
-2. **Medida exacta de la etiqueta troquelada** que usan, en milímetros, y si
-   viene de una o dos por fila.
-3. **Cajón de dinero:** si está conectado al puerto de la BIXOLON, se abre
+2. **Cajón de dinero:** si está conectado al puerto de la BIXOLON, se abre
    configurando el controlador, no programando.
+
+La medida de la etiqueta quedó confirmada físicamente el 19 de septiembre de
+2026: **51 × 25 mm, una etiqueta por avance**. La prueba anterior usó 50 × 30
+mm; esos 5 mm adicionales de alto hicieron que una impresión cruzara el troquel
+y quedara repartida entre dos etiquetas.
 
 ## La prueba física, frente al mostrador
 
@@ -71,5 +75,8 @@ siga siendo buena.
 - [ ] Imprimir una etiqueta y **escanearla con la cámara del teléfono**. Es la
       misma prueba que cierra M2 y la que M9 pide como referencia: el código
       generado tiene que leerse impreso, no sólo en pantalla.
-- [ ] Escanear esa etiqueta con el lector del mostrador.
+- [x] Escanear esa etiqueta con el lector USB del mostrador. **Funcionó en la
+      prueba física del 19 de septiembre de 2026.**
+- [ ] Escanear el código de un ticket desde Tickets y confirmar que su detalle
+      se abre inmediatamente, sin enfocar un campo ni pulsar Buscar.
 - [ ] Si el cajón está conectado, confirmar que abre al cobrar en efectivo.

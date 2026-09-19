@@ -30,6 +30,7 @@ import { ReturnExchangeDialog } from "./return-exchange-dialog";
 import { BarcodeScanner } from "@/components/barcode-scanner";
 import { saleFolioFromReceiptCode } from "@/lib/ticket-folios";
 import type { TicketDeliveryEventInput } from "@/lib/ticket-delivery";
+import { useKeyboardBarcodeScanner } from "@/lib/use-keyboard-barcode-scanner";
 
 type TicketItem = {
   line_number: number;
@@ -316,6 +317,11 @@ export function TicketsRealWorkspace({
     } else setError("No encontramos ese ticket en esta sucursal.");
     setTicketScannerOpen(false);
   }
+
+  useKeyboardBarcodeScanner(
+    (code) => void findScannedTicket(code),
+    !ticketScannerOpen && !returnDialogOpen && !cancelOpen,
+  );
 
   async function cancelTicket() {
     if (!selected || !cancelSaleAction || cancelReason.trim().length < 3)
