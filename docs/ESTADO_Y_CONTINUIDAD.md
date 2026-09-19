@@ -301,3 +301,16 @@ que dice?_ Que exista el código no significa que funcione.
   SM.
 - La siguiente prueba física debe usar papel 51 × 25 mm, márgenes Ninguno y
   escala 100 % en el controlador de la EVA58.
+
+## Corrección física 0.50.1 — etiqueta completa y contraste térmico
+
+- La segunda prueba reveló que el PNG del logotipo conservaba un área
+  transparente grande: el dibujo visible quedaba pequeño y desplazaba código y
+  barras fuera del troquel. La plantilla 51 × 25 mm ahora recorta visualmente
+  ese espacio, aumenta la información útil y fuerza recorte dentro de una sola
+  página física.
+- Tickets, reimpresiones y PDF de mostrador ofrecen **Todo en negritas**. La
+  preferencia queda guardada en esa computadora y mejora los trazos que la
+  BIXOLON pierde sin alterar importes, folios ni código de barras.
+- La siguiente validación física debe comprobar una etiqueta completa en un
+  solo troquel y comparar el ticket normal contra el de alto contraste.

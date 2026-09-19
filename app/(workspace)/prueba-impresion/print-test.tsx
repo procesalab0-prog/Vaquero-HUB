@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { Printer, Tags } from "lucide-react";
 import Link from "next/link";
-import {
-  formatReceiptDate,
-  ThermalReceipt,
-  type ReceiptLine,
-} from "@/components/thermal-receipt";
+import { ThermalReceipt, type ReceiptLine } from "@/components/thermal-receipt";
 import { useWorkspace } from "@/components/workspace-context";
 import { RECEIPT_WIDTH_MM } from "@/lib/printing";
+import {
+  ReceiptBoldToggle,
+  useReceiptBoldPreference,
+} from "@/components/receipt-print-options";
 
 // Renglones inventados a propósito: nombres largos y un acento, que es donde
 // se nota si el ancho o la fuente quedaron mal calibrados.
@@ -35,9 +35,10 @@ const subtotal = sampleLines.reduce(
   0,
 );
 
-export function PrintTest() {
+export function PrintTest({ sampleDate }: { sampleDate: string }) {
   const { identity, activeLocation } = useWorkspace();
   const [mode, setMode] = useState<"sale" | "gift">("sale");
+  const { boldReceipt, setBoldReceipt } = useReceiptBoldPreference();
 
   return (
     <section className="module-page">
@@ -102,6 +103,7 @@ export function PrintTest() {
             Ticket de regalo
           </button>
         </div>
+        <ReceiptBoldToggle checked={boldReceipt} onChange={setBoldReceipt} />
         <button
           className="primary-button"
           type="button"
@@ -120,7 +122,7 @@ export function PrintTest() {
         <ThermalReceipt
           mode={mode}
           folio="PRUEBA-000000"
-          date={formatReceiptDate()}
+          date={sampleDate}
           items={sampleLines}
           subtotal={subtotal}
           discount={0}
@@ -130,6 +132,7 @@ export function PrintTest() {
           change={5000 - subtotal}
           cashierName={identity.name}
           location={activeLocation}
+          boldText={boldReceipt}
         />
       </div>
     </section>

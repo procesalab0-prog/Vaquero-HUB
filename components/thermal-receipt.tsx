@@ -36,6 +36,7 @@ type ThermalReceiptProps = {
   registerName?: string;
   location?: WorkspaceLocation | null;
   returnWindowDays?: number;
+  boldText?: boolean;
 };
 
 const number = new Intl.NumberFormat("es-MX", {
@@ -74,6 +75,7 @@ export function ThermalReceipt({
   registerName = "Caja 01",
   location,
   returnWindowDays = 15,
+  boldText = false,
 }: ThermalReceiptProps) {
   const receiptFolio = mode === "gift" ? giftFolioFromSale(folio) : folio;
   const receiptLocation = location ?? LA_PIEDAD_STORE;
@@ -83,7 +85,7 @@ export function ThermalReceipt({
     <>
       <style media="print">{receiptPageStyle}</style>
       <article
-        className={`thermal-receipt print-receipt ${mode === "gift" ? "gift-receipt" : "sale-receipt"}`}
+        className={`thermal-receipt print-receipt ${mode === "gift" ? "gift-receipt" : "sale-receipt"}${boldText ? " receipt-all-bold" : ""}`}
         aria-label={
           mode === "gift"
             ? "Vista previa del ticket de regalo"

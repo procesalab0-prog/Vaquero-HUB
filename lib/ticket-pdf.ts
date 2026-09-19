@@ -35,6 +35,7 @@ export type TicketPdfData = {
   payments?: TicketPdfPayment[];
   returnWindowDays: number;
   logoPng?: Uint8Array;
+  boldText?: boolean;
 };
 
 const MM = 72 / 25.4;
@@ -117,10 +118,13 @@ export async function createTicketPdf(data: TicketPdfData) {
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const mono = await pdf.embedFont(StandardFonts.Courier);
+  const monoBold = await pdf.embedFont(StandardFonts.CourierBold);
+  const bodyFont = data.boldText ? bold : regular;
+  const codeFont = data.boldText ? monoBold : mono;
   const width = page.getWidth();
   let y = page.getHeight() - 8 * MM;
 
-  const centered = (text: string, size: number, font = regular) => {
+  const centered = (text: string, size: number, font = bodyFont) => {
     const value = printable(text);
     page.drawText(value, {
       x: (width - font.widthOfTextAtSize(value, size)) / 2,
@@ -134,7 +138,7 @@ export async function createTicketPdf(data: TicketPdfData) {
     left: string,
     right: string,
     size = 8.5,
-    font = regular,
+    font = bodyFont,
   ) => {
     const leftValue = printable(left);
     const rightValue = printable(right);
@@ -153,7 +157,7 @@ export async function createTicketPdf(data: TicketPdfData) {
       thickness: 0.5,
       color: rgb(0.3, 0.3, 0.3),
     });
-  const wrappedCentered = (text: string, size: number, font = regular) => {
+  const wrappedCentered = (text: string, size: number, font = bodyFont) => {
     for (const row of wrapText(text, font, size, width - MARGIN * 2)) {
       centered(row, size, font);
       y -= size + 2;
@@ -192,14 +196,14 @@ export async function createTicketPdf(data: TicketPdfData) {
     x: MARGIN,
     y,
     size: 8.5,
-    font: regular,
+    font: bodyFont,
   });
   y -= 11;
   page.drawText(`Fecha: ${printable(data.soldAt)}`, {
     x: MARGIN,
     y,
     size: 8.5,
-    font: regular,
+    font: bodyFont,
   });
   y -= 11;
   if (data.mode === "sale" && data.cashierName) {
@@ -207,7 +211,7 @@ export async function createTicketPdf(data: TicketPdfData) {
       x: MARGIN,
       y,
       size: 8.5,
-      font: regular,
+      font: bodyFont,
     });
     y -= 11;
   }
@@ -216,7 +220,7 @@ export async function createTicketPdf(data: TicketPdfData) {
       x: MARGIN,
       y,
       size: 8.5,
-      font: regular,
+      font: bodyFont,
     });
     y -= 11;
   }
@@ -244,7 +248,7 @@ export async function createTicketPdf(data: TicketPdfData) {
         x: MARGIN,
         y,
         size: 8,
-        font: regular,
+        font: bodyFont,
       });
     }
     y -= 13;
@@ -267,7 +271,7 @@ export async function createTicketPdf(data: TicketPdfData) {
           x: MARGIN + 5,
           y,
           size: 7.5,
-          font: regular,
+          font: bodyFont,
         });
         y -= 10;
       }
@@ -293,12 +297,12 @@ export async function createTicketPdf(data: TicketPdfData) {
     }
     y -= 17 * MM;
   }
-  const folioWidth = mono.widthOfTextAtSize(receiptFolio, 9);
+  const folioWidth = codeFont.widthOfTextAtSize(receiptFolio, 9);
   page.drawText(receiptFolio, {
     x: (width - folioWidth) / 2,
     y,
     size: 9,
-    font: mono,
+    font: codeFont,
   });
   y -= 16;
   const policy =

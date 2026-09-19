@@ -3027,3 +3027,16 @@ Entrega visible 0.50.0 — calibración física de tickets y etiquetas:
 - El lector USB ya fue validado físicamente. En la pantalla Tickets, el código
   escaneado abre de inmediato el comprobante correspondiente, incluso si el
   buscador no tenía el foco; Enter y Tab se aceptan como terminadores del lector.
+
+Entrega visible 0.50.1 — segunda calibración con evidencia física:
+
+- La plantilla de 51 × 25 mm debe optimizar el área visible del logotipo, no el
+  rectángulo transparente del archivo PNG. Logotipo, variante, barras y código
+  legible deben quedar contenidos en una sola etiqueta; el área imprimible no
+  puede continuar en el siguiente troquel.
+- La impresión térmica de tickets ofrece un modo opcional **Todo en negritas**
+  para equipos cuyo cabezal pierde trazos delgados. Se aplica igual a vista,
+  impresión y PDF de mostrador, y se recuerda por computadora.
+- El modo en negritas no sustituye la calibración de densidad del controlador:
+  si los trazos gruesos también salen incompletos, se corrige la oscuridad de la
+  BIXOLON y se revisa el cabezal antes de seguir cambiando el diseño.
