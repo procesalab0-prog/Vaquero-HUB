@@ -23,11 +23,11 @@ conviene verificarlas antes.
 
 - [ ] **Tienes un usuario tuyo**, con contraseña, que no sea el de pruebas.
 - [ ] **La sucursal está dada de alta** y tu usuario tiene acceso a ella.
-- [ ] **Existe una caja registrada en esa sucursal.** Entra a *Caja*: si no
+- [ ] **Existe una caja registrada en esa sucursal.** Entra a _Caja_: si no
       aparece ninguna, un administrador la crea ahí mismo con el botón de
       agregar caja. Sin caja no se puede abrir turno, y sin turno abierto la
       pantalla de Venta se bloquea.
-- [ ] **La sucursal tiene dirección y teléfono capturados**, en *Ajustes*. Si
+- [ ] **La sucursal tiene dirección y teléfono capturados**, en _Ajustes_. Si
       están vacíos, el ticket imprime literalmente «Dirección por configurar» y
       «Teléfono por configurar». Es el detalle que arruina la primera
       impresión que le enseñas a alguien.
@@ -39,7 +39,7 @@ tienda cuesta el viaje.
 
 ## Parte 2 — El ticket, sin vender nada
 
-**Entra a *Más* → *Prueba de impresión*.** Esa pantalla imprime un ticket de
+**Entra a _Más_ → _Prueba de impresión_.** Esa pantalla imprime un ticket de
 muestra y **no registra ninguna venta**: no toca inventario, ni caja, ni
 folios. Es el lugar correcto para calibrar.
 
@@ -47,12 +47,12 @@ folios. Es el lugar correcto para calibrar.
 
 Cuando se abra el diálogo de impresión:
 
-| Ajuste                      | Cómo debe quedar                    |
-| --------------------------- | ------------------------------------- |
-| Impresora                   | **BIXOLON SRP-330II**                 |
-| Márgenes                    | **Ninguno**                           |
-| Escala                      | **100 %**, no «Ajustar a la página»   |
-| Encabezados y pies de página| **Desactivados**                      |
+| Ajuste                       | Cómo debe quedar                    |
+| ---------------------------- | ----------------------------------- |
+| Impresora                    | **BIXOLON SRP-330II**               |
+| Márgenes                     | **Ninguno**                         |
+| Escala                       | **100 %**, no «Ajustar a la página» |
+| Encabezados y pies de página | **Desactivados**                    |
 
 Si dejas los encabezados, el ticket sale con la dirección web y la fecha
 impresas arriba. Chrome recuerda estos ajustes.
@@ -61,8 +61,8 @@ impresas arriba. Chrome recuerda estos ajustes.
 
 **Eso no se arregla desde el sistema.** Es el tamaño de papel del controlador:
 
-1. Windows → *Dispositivos e impresoras*
-2. Clic derecho en **BIXOLON SRP-330II** → *Preferencias de impresión*
+1. Windows → _Dispositivos e impresoras_
+2. Clic derecho en **BIXOLON SRP-330II** → _Preferencias de impresión_
 3. Tamaño de papel → el de **rollo continuo de 80 mm**
 4. Aplicar y guardar
 
@@ -82,15 +82,19 @@ Se configura una vez y queda para siempre.
 
 ## Parte 3 — La etiqueta, y la prueba que de verdad importa
 
-**Entra a *Más* → *Etiquetas y códigos*.** Esa pantalla tampoco registra nada:
+**Entra a _Más_ → _Etiquetas y códigos_.** Esa pantalla tampoco registra nada:
 sólo dibuja etiquetas y las manda a imprimir.
 
 1. Busca cualquier producto que ya exista.
 2. Imprime **una sola etiqueta** para empezar. En el diálogo elige la
    **SICAR EVA58**, márgenes en Ninguno y escala 100 %.
-3. La plantilla por omisión es de **50 × 30 mm** y cabe en el rollo de 58 mm.
-   Si la etiqueta que compran es de otra medida, cámbiala en la misma pantalla
-   y vuelve a imprimir hasta que coincida con el troquel.
+3. La plantilla por omisión es de **51 × 25 mm**, la medida confirmada con el
+   troquel real. En el controlador también debe existir papel de 51 × 25 mm;
+   usa márgenes en Ninguno y escala 100 %.
+
+La prueba inicial a 50 × 30 mm cruzó el corte entre dos etiquetas. No se debe
+compensar moviendo el contenido a mano: el papel del controlador y la plantilla
+de Mi Tienda SM deben coincidir ambos en 51 × 25 mm.
 
 ### Y ahora la prueba que cierra el riesgo del proyecto
 
@@ -118,7 +122,7 @@ folio y deja el dinero esperado en la caja. Si la haces:
 1. Abre caja con el fondo real.
 2. Cobra un artículo de prueba.
 3. Imprime el ticket.
-4. **Cancela la venta** desde *Tickets*. El inventario regresa y la caja se
+4. **Cancela la venta** desde _Tickets_. El inventario regresa y la caja se
    ajusta sola.
 5. Cierra el turno para no dejar una caja abierta colgada.
 
@@ -128,13 +132,13 @@ folio y deja el dinero esperado en la caja. Si la haces:
 
 Son las respuestas que siguen bloqueando decisiones del proyecto:
 
-| Dato                                                  | Dónde se ve                        |
-| ------------------------------------------------------ | ------------------------------------ |
-| Medida de la etiqueta troquelada, en milímetros       | En la caja del rollo, o midiéndola  |
-| Ancho real del rollo de tickets                       | En la caja del rollo                 |
-| Si el cajón de dinero está conectado a la BIXOLON     | Mirando el cable atrás de la impresora |
-| Si la BIXOLON tiene puerto de red (RJ45)              | Mirando atrás; abre la puerta a imprimir desde iPad más adelante |
-| Foto de una etiqueta impresa por SICAR                | Para comparar simbología con la nuestra |
+| Dato                                              | Dónde se ve                                                      |
+| ------------------------------------------------- | ---------------------------------------------------------------- |
+| Medida de la etiqueta troquelada, en milímetros   | En la caja del rollo, o midiéndola                               |
+| Ancho real del rollo de tickets                   | En la caja del rollo                                             |
+| Si el cajón de dinero está conectado a la BIXOLON | Mirando el cable atrás de la impresora                           |
+| Si la BIXOLON tiene puerto de red (RJ45)          | Mirando atrás; abre la puerta a imprimir desde iPad más adelante |
+| Foto de una etiqueta impresa por SICAR            | Para comparar simbología con la nuestra                          |
 
 ---
 

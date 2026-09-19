@@ -10,10 +10,10 @@ import { LabelsWorkspace } from "./labels-workspace";
 export const metadata: Metadata = { title: "Etiquetas y códigos" };
 
 const previewTemplate: LabelTemplate = {
-  id: "preview-50x30",
-  name: "Vaquero 50 × 30 mm",
-  widthMm: 50,
-  heightMm: 30,
+  id: "preview-51x25",
+  name: "Vaquero 51 × 25 mm",
+  widthMm: 51,
+  heightMm: 25,
   layout: "BALANCED",
   showLogo: true,
   showProductName: true,

@@ -3009,3 +3009,21 @@ Entrega visible 0.49.0 — comprobantes claros y operación vertical:
 - Confirmar la entrega de un apartado abre directamente la venta generada en
   Tickets para imprimirla o descargarla; el historial sigue siendo la fuente
   permanente para reimpresiones.
+
+Entrega visible 0.50.0 — calibración física de tickets y etiquetas:
+
+- La medida real de la etiqueta del mostrador es **51 × 25 mm**. Esa medida se
+  convierte en la plantilla predeterminada tanto en instalaciones nuevas como
+  en bases existentes mediante una migración hacia delante.
+- La etiqueta usa menos margen y un logotipo mayor, pero conserva producto,
+  variante, código de barras, código legible y precio dentro de un único
+  troquel. La configuración de la EVA58 debe usar también 51 × 25 mm, sin
+  márgenes y a escala 100 %.
+- Los tickets impresos y los PDF aumentan su tipografía y la presencia del
+  logotipo para acercarse al comprobante de SICAR validado en la tienda. El
+  código de barras propio permanece para búsqueda y reimpresión.
+- La evidencia física prevalece sobre tamaños supuestos: si cambia el insumo,
+  se mide primero y se calibra la plantilla antes de imprimir un lote.
+- El lector USB ya fue validado físicamente. En la pantalla Tickets, el código
+  escaneado abre de inmediato el comprobante correspondiente, incluso si el
+  buscador no tenía el foco; Enter y Tab se aceptan como terminadores del lector.

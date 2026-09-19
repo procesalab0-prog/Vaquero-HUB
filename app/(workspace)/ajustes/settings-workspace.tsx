@@ -537,7 +537,8 @@ function LabelSettings() {
         </label>
         <label>
           <span>Tamaño de etiqueta</span>
-          <select name="labelSize" defaultValue="50x30">
+          <select name="labelSize" defaultValue="51x25">
+            <option value="51x25">51 × 25 mm · medida confirmada</option>
             <option value="50x30">50 × 30 mm</option>
             <option value="40x25">40 × 25 mm</option>
           </select>
