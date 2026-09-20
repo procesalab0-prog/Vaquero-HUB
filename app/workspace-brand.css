@@ -491,6 +491,45 @@ button.primary-button:hover {
   }
 }
 
+/* La tipografía editorial ocupa un poco más de alto que la anterior. Todas las
+   ventanas deben conservar su propio viewport y scroll, sin quedar centradas
+   con la cabecera o las acciones fuera de la pantalla. */
+.modal-backdrop > :is(
+    [role="dialog"],
+    .checkout-modal,
+    .purchase-modal,
+    .receipt-modal,
+    .exchange-modal
+  ) {
+  min-height: 0;
+  max-height: calc(100dvh - 40px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 600px) {
+  .modal-backdrop {
+    place-items: end center;
+  }
+
+  .modal-backdrop > :is(
+      [role="dialog"],
+      .checkout-modal,
+      .purchase-modal,
+      .receipt-modal,
+      .exchange-modal
+    ) {
+    width: 100%;
+    height: calc(100dvh - 16px);
+    max-height: calc(100dvh - 16px);
+    margin: 0;
+    border-radius: 18px 18px 0 0;
+    overflow-y: scroll;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .content-card,
   .metric-card,
