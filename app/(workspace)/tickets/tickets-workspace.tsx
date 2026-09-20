@@ -105,12 +105,28 @@ const money = new Intl.NumberFormat("es-MX", {
   currency: "MXN",
 });
 
-export function TicketsWorkspace() {
+export function TicketsWorkspace({
+  initialReturnLookup = false,
+  initialScannedCode,
+}: {
+  initialReturnLookup?: boolean;
+  initialScannedCode?: string;
+} = {}) {
   const { identity, activeLocation } = useWorkspace();
-  const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<Ticket | null>(null);
+  const initialSaleFolio = initialScannedCode
+    ? saleFolioFromReceiptCode(initialScannedCode)
+    : "";
+  const initialTicket = tickets.find(
+    (ticket) => ticket.id.toLocaleUpperCase("es-MX") === initialSaleFolio,
+  );
+  const [query, setQuery] = useState(initialSaleFolio);
+  const [selected, setSelected] = useState<Ticket | null>(
+    initialTicket ?? null,
+  );
   const [receiptMode, setReceiptMode] = useState<"sale" | "gift">("sale");
-  const [reprintDate, setReprintDate] = useState("");
+  const [reprintDate, setReprintDate] = useState(() =>
+    initialTicket ? formatReceiptDate() : "",
+  );
   const deferredQuery = useDeferredValue(query);
   const filtered = useMemo(() => {
     const term = deferredQuery.trim().toLowerCase();
@@ -169,6 +185,12 @@ export function TicketsWorkspace() {
           </p>
         </div>
       </div>
+      {initialReturnLookup ? (
+        <div className="admin-status" role="status">
+          Escanea el ticket del cliente o escribe su folio para iniciar el
+          cambio o la devolución.
+        </div>
+      ) : null}
       <div className="toolbar-card">
         <label className="module-search">
           <Search aria-hidden="true" />

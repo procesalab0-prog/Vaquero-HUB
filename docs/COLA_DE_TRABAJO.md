@@ -1392,6 +1392,17 @@ pueden convertirla en dos ventas.
       efectivo USD separado y conciliación/ticket. Requiere migración y pruebas
       concurrentes antes de producción.
 
+## Corrección 0.51.1 — logotipo y lector de tickets
+
+- [x] Cargar el logotipo de etiqueta sin optimización diferida y esperar su
+      decodificación antes de abrir el diálogo de impresión.
+- [x] Mantener activo el lector USB dentro de la ventana de escaneo de Tickets,
+      incluyendo el acceso desde Cambios / devoluciones.
+- [x] Probar en navegador el logo listo al imprimir y la apertura del ticket
+      desde Venta y desde el flujo de devoluciones.
+- [ ] Confirmar físicamente en la EVA58 que el logotipo aparece en una etiqueta
+      51 × 25 mm con escala 100 %, horizontal y márgenes desactivados.
+
 ## Corrección operativa 0.32.2 — sucursal activa
 
 - [x] Conservar la sucursal elegida al navegar entre módulos y validar siempre

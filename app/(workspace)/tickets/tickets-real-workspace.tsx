@@ -373,7 +373,7 @@ export function TicketsRealWorkspace({
 
   useKeyboardBarcodeScanner(
     (code) => void findScannedTicket(code),
-    !ticketScannerOpen && !returnDialogOpen && !cancelOpen,
+    !returnDialogOpen && !cancelOpen,
   );
 
   async function cancelTicket() {

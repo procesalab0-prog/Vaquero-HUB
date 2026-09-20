@@ -339,3 +339,14 @@ que dice?_ Que exista el código no significa que funcione.
   último dato válido. Cada cobro deberá guardar tasa, fecha, origen, USD
   recibidos, equivalente MXN y cambio; cualquier ajuste comercial requiere
   gerencia y auditoría. No se habilita sólo con lógica de interfaz.
+
+## Corrección física 0.51.1 — logotipo y escaneo de tickets
+
+- El logotipo de la etiqueta usa el archivo estático directo y carga de forma
+  inmediata. Antes de `window.print()`, la interfaz espera su decodificación y
+  la disponibilidad de tipografías para evitar una impresión parcial.
+- La ventana de cámara ya no silencia el lector USB: en Tickets y en el acceso
+  de Cambios / devoluciones se puede leer el folio físico y abrir la compra.
+- Compilación productiva y cuatro pruebas específicas quedan en verde. Falta la
+  confirmación material en la EVA58, porque el navegador no sustituye la prueba
+  del cabezal, controlador y rollo reales.

@@ -3063,6 +3063,17 @@ Entrega visible 0.51.0 — aprendizaje presencial y documentos comerciales:
   teclado físico para efectivo y una acción Regresar consistente. Estas
   preferencias de lectura no alteran documentos impresos.
 
+Entrega visible 0.51.1 — impresión y lectura física confiables:
+
+- Etiquetas carga el archivo directo del logotipo con prioridad y espera a que
+  imagen y tipografías estén listas antes de abrir el diálogo de impresión. La
+  hoja térmica no puede adelantarse y dejar el espacio del logotipo en blanco.
+- El lector USB permanece activo mientras está abierta la ventana de cámara de
+  Tickets. Desde Venta, un folio navega al comprobante; desde Cambios /
+  devoluciones, el mismo escaneo abre la compra sin exigir cerrar la ventana.
+- Las pruebas de navegador verifican que el logotipo tenga dimensiones reales
+  al imprimir y que el folio abra el ticket desde ambos puntos de operación.
+
 Subfase financiera aprobada — recepción de dólares:
 
 - La referencia automática será el tipo FIX **SF43718** publicado por Banco de

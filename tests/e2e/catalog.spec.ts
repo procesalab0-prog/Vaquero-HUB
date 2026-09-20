@@ -264,12 +264,25 @@ test("lleva una selección de Productos a un lote de etiquetas escaneables", asy
     page.locator(".label-preview-stage .label-barcode-svg rect").first(),
   ).toBeVisible();
   await page.evaluate(() => {
-    window.print = () => document.body.setAttribute("data-print-called", "yes");
+    window.print = () => {
+      const logo = document.querySelector<HTMLImageElement>(
+        ".print-label-sheet .label-logo",
+      );
+      document.body.setAttribute("data-print-called", "yes");
+      document.body.setAttribute(
+        "data-print-logo-loaded",
+        String(Boolean(logo?.complete && logo.naturalWidth > 0)),
+      );
+    };
   });
   await page.getByRole("button", { name: "Imprimir 1 etiquetas" }).click();
   await expect(page.locator("body")).toHaveAttribute(
     "data-print-called",
     "yes",
+  );
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-print-logo-loaded",
+    "true",
   );
   await expect(
     page.locator(".print-label-sheet .print-product-label"),
