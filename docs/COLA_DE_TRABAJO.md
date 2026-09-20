@@ -1311,12 +1311,14 @@ dice?** Que el código exista no significa que funcione.
   dinero; antes de cerrar debe resolverse esa decisión puntual en
   `specs/M7_APARTADOS.md` §6.
 - [ ] Lealtad: pospuesta por decisión del negocio; no bloquea M7.
-- [~] Rediseño basado en Mi Vaquero SM: la dirección visual ya fue aprobada y
-      la primera capa compartida cubre acceso, navegación, tokens, tarjetas,
-      botones y jerarquía tipográfica. Continuar por módulos y comparar POS,
-      Productos, Inventario, Caja y Devoluciones con usuarios reales. No puede
-      empeorar velocidad, accesibilidad ni controles operativos. Véase
-      `specs/REDISENO_MI_TIENDA.md`.
+- [ ] Fase final de diseño: después del piloto y con los recorridos estables,
+      ejecutar la auditoría visual descrita en el plan maestro y decidir con
+      evidencia entre conservar, refrescar o rediseñar. No sustituye las
+      revisiones ergonómicas de cada entrega ni puede empeorar velocidad,
+      accesibilidad o controles operativos. Mi Vaquero SM puede inspirar esa
+      revisión, pero no se copia automáticamente en Mi Tienda SM: son productos
+      distintos y la interfaz de sucursal conserva su diseño hasta aprobar la
+      auditoría.
 
 La conversión parcial de una cotización permanece fuera de M8.2 porque el
 negocio todavía no la ha definido. No se inventa: una cotización se cobra

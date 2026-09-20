@@ -1682,17 +1682,17 @@ una capa decorativa agregada a todas las pantallas.
   empeore el tiempo del recorrido, la claridad, el consumo ni la respuesta de
   la PWA. Si una animación estorba, se simplifica o se elimina.
 
-### Rediseño visual basado en Mi Vaquero SM
+### Auditoría visual final y rediseño moderno opcional
 
-La PWA terminada de **Mi Vaquero SM** quedó aprobada como referencia visual de
-Mi Tienda SM. La migración será incremental y comienza por el sistema visual,
-el acceso y la navegación; los módulos operativos se validarán uno por uno sin
-esperar al final del proyecto. La especificación y los límites están en
-[`specs/REDISENO_MI_TIENDA.md`](specs/REDISENO_MI_TIENDA.md).
+Después del piloto y de estabilizar la operación se hará una revisión integral
+del diseño para determinar, con empleados y responsables del negocio, si Mi
+Tienda SM necesita un ajuste visual o un rediseño más amplio.
 
-Después del piloto se mantendrá una revisión integral para comprobar con
-empleados y responsables del negocio si la nueva dirección necesita ajustes,
-no para volver a decidir desde cero la identidad.
+La PWA de clientes **Mi Vaquero SM es un producto distinto**. Puede servir
+como referencia de identidad durante esa auditoría, pero su diseño no se aplica
+automáticamente a Mi Tienda SM ni sustituye la interfaz operativa de sucursal.
+Todo cambio del sistema interno requiere aprobación y pruebas específicas con
+cajeros, gerentes y almacén antes de llegar a producción.
 
 La revisión abarcará identidad de marca, jerarquía visual, tipografía, color,
 iconografía, densidad de información, navegación, componentes, estados vacíos,
@@ -1711,12 +1711,13 @@ medidas durante el piloto.
   comparación antes/después con usuarios reales.
 - Ningún cambio podrá empeorar tiempos, número de toques, legibilidad,
   accesibilidad, respuesta de la PWA ni desempeño en equipos modestos.
-- La identidad de Mi Vaquero se comparte como sistema de diseño; no se copian
-  sus pantallas de cliente dentro de los flujos internos.
+- Si un rediseño completo no aporta suficiente valor, se hará sólo un refresh
+  visual del sistema de diseño existente.
 
-**Entregable:** migración incremental con capturas y métricas, alcance
-priorizado y comparación antes/después. Cada bloque tendrá pruebas visuales y
-funcionales antes de llegar a producción.
+**Entregable:** auditoría con capturas y métricas, propuesta aprobada, alcance
+priorizado y decisión explícita entre conservar, refrescar o rediseñar. Su
+implementación tendrá pruebas visuales y funcionales antes de llegar a
+producción.
 
 Principio humano:
 

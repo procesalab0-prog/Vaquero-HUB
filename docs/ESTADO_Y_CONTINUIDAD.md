@@ -72,8 +72,8 @@ saltando lo bloqueado.
 | **Corrección 0.32.1**    | Traspasos visibles y alta atómica de sucursal con acceso administrativo y primera caja                          |
 | **Corrección 0.32.2**    | Sucursal activa persistente, asignación de empleados, caja real y recepción de traspaso explicada               |
 | **Corrección 0.37.1**    | Administración global puede cambiar y operar todas las sucursales activas sin asignaciones individuales         |
-| **Diseño 0.52.0**        | Base visual de Mi Vaquero aplicada a acceso, navegación y componentes compartidos sin cambiar reglas operativas |
 | **Etiquetas 0.52.1**     | Clave corta por sucursal (`VSM1`, `VSM2`…) personalizable sin alterar códigos ni folios históricos              |
+| **Corrección 0.52.2**    | Mi Tienda conserva su interfaz operativa; Mi Vaquero permanece como PWA separada para clientes                  |
 
 Ochenta y nueve migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
