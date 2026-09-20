@@ -6,7 +6,7 @@
 > Para entender el proyecto antes de tocarlo, empezar por
 > [`ESTADO_Y_CONTINUIDAD.md`](ESTADO_Y_CONTINUIDAD.md).
 >
-> Última actualización: 2026-09-09, al validar M8.2 cotizaciones.
+> Última actualización: 2026-09-20, al reparar la hoja de estilos minificada.
 
 ## Cómo usar esta cola
 
@@ -1491,6 +1491,53 @@ pueden convertirla en dos ventas.
       autorización de gerencia para ajuste, instantánea inmutable en venta,
       efectivo USD separado y conciliación/ticket. Requiere migración y pruebas
       concurrentes antes de producción.
+
+## Revisión 0.51.1 — la hoja de estilos quedó minificada y perdió reglas vivas
+
+Los tres commits que siguieron a `800b4e1` dejaron `app/globals.css` en **una
+sola línea de 141 157 bytes**. La primera corrección de codificación
+(`8281ba2`) redujo el archivo a 90 059 bytes todavía inválidos; la segunda
+(`157c708`) recuperó UTF-8 válido pero entregó el archivo minificado. Nadie lo
+detectó porque `format:check` no cubre `app/`, así que CI siguió en verde.
+
+Al comparar regla por regla contra `800b4e1` **no se perdió ninguna regla de
+CSS**: las 1 533 reglas y las 5 346 declaraciones corresponden exactamente a la
+línea base más los cambios de La Piedad. Lo que sí se perdió fue whitespace
+significativo, y en CSS eso no es cosmético:
+
+- **La consulta `@media (min-width: 601px) and (max-width: 820px)` quedó como
+  `and(max-width:820px)`.** Sin el espacio, `and(` se tokeniza como función y
+  la consulta entera es inválida. Comprobado en Chromium: el navegador la
+  reporta como `not all`, y en el `next build` el bloque **no aparece en el CSS
+  emitido**. Eran 13 reglas muertas: el carrito como cajón táctil del iPad, su
+  fondo, el botón flotante y el contador de piezas. Justo el rango de pantalla
+  del iPad del mostrador.
+- **17 declaraciones con `calc()` quedaron sin espacio a la izquierda del
+  operador** (`var(--mobile-nav-height)+ env(safe-area-inset-bottom)`). En
+  `calc()` los operadores `+` y `-` exigen espacio de ambos lados; sin él la
+  declaración se descarta. Comprobado en Chromium: `calc(var(--a)+ var(--b))`
+  calcula 0. Afectaba a `.sale-panel`, `.workspace-main`, `.nav-rail`,
+  `.mobile-cart-toggle`, `.mobile-cart-backdrop`, `.customer-create[open]` y los
+  modales: toda la aritmética de barra inferior y área segura en teléfono e
+  iPad.
+- **Dos combinadores descendentes se volvieron compuestos**:
+  `:where(.checkout-modal, …) :where(input, select, textarea, button)` y
+  `.customer-create[open] .admin-form`. Sin el espacio dejan de describir «lo
+  que está dentro de» y pasan a describir «lo que es ambas cosas a la vez», que
+  no existe.
+
+Corregido en 0.51.1: archivo devuelto a formato Prettier (8 838 líneas), los 19
+comentarios explicativos restaurados desde `800b4e1`, y las tres clases de daño
+reparadas. Verificado con `next build`: la consulta `@media` compuesta, los
+`calc()` y el selector descendente aparecen en el CSS emitido.
+
+- [x] Restaurar `app/globals.css` a formato legible y recuperar sus comentarios.
+- [x] Reparar la consulta `@media` compuesta, los 17 `calc()` y los dos
+      combinadores descendentes.
+- [ ] Extender `format:check` a `app/`, `components/` y `lib/` para que un
+      archivo minificado o mal codificado rompa CI en lugar de pasar inadvertido.
+      Es un cambio de alcance amplio (reformatea archivos que hoy nadie formatea)
+      y debe ir en su propio PR, no mezclado con una corrección.
 
 ## Corrección operativa 0.32.2 — sucursal activa
 

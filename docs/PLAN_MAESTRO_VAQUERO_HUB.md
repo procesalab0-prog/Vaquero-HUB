@@ -3078,3 +3078,27 @@ Subfase financiera aprobada — recepción de dólares:
 - Esta subfase exige migración hacia delante, RLS/permisos, operación atómica de
   caja y pruebas de concurrencia. Hasta cumplirlas no se presenta como método de
   pago activo.
+
+Entrega visible 0.51.1 — hoja de estilos legible y reglas móviles vivas:
+
+- La reparación de codificación que siguió a 0.51.0 dejó `app/globals.css`
+  minificado en una sola línea. No se perdió ninguna regla, pero sí el
+  whitespace que en CSS es significativo, y con él tres cosas que el navegador
+  descarta en silencio: la consulta `@media (min-width: 601px) and
+  (max-width: 820px)` completa, 17 declaraciones con `calc()` y dos
+  combinadores descendentes.
+- El bloque muerto era exactamente el del iPad del mostrador: carrito como
+  cajón táctil, fondo, botón flotante y contador de piezas. Las declaraciones
+  `calc()` descartadas eran la aritmética de barra inferior y área segura en
+  teléfono e iPad.
+- Regla operativa que deja esta revisión: una corrección de codificación no
+  puede reescribir el formato del archivo. Si un archivo sale de una corrección
+  con otra forma, se compara regla por regla contra la última versión buena
+  antes de darlo por bueno.
+- `format:check` no cubre `app/`, así que CI siguió en verde con la hoja de
+  estilos rota. Extender la cobertura queda registrado en la cola de trabajo
+  como tarea propia; reformatear archivos que hoy nadie formatea no debe
+  mezclarse con una corrección.
+- Verificado ejecutando: Chromium reporta `not all` para la consulta sin
+  espacio y calcula 0 para `calc(var(--a)+ var(--b))`; `next build` omitía el
+  bloque `@media` compuesto del CSS emitido y ahora lo incluye.
