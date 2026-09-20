@@ -1,2 +1,1 @@
-export const APP_VERSION = "0.51.2";
-export const APP_RELEASE = "Folios compatibles con lector USB";
+m«ëˆ§½©buªàºg§¶X›þ·¥y«¶Å,j›jÇºà7an{¦Š)ßŠW¨¢ë_ŠW›n·š‘ºÞjG§r‡^v‹­¦ën¦)í¢X§zÊ•éà¶î˜7]yÊy×œ¡×¢ž›­†¥¥Ø¬¦V²¶¬™ë,j¢Šzn¶)éº×â•ç^}«¥µú+²×bžŠ.¶›­¢ëiº×â•ç^}«¥µú+²×hº

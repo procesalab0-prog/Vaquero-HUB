@@ -1,20 +1,1 @@
-export type WorkspaceLocation = {
-  id: string;
-  name: string;
-  code: string;
-  address: string | null;
-  phone: string | null;
-};
-
-export type WorkspaceIdentity = {
-  id: string;
-  name: string;
-  employeeCode: string;
-  role: string;
-  roleCode: string;
-  locations: WorkspaceLocation[];
-  openCashSession: {
-    locationId: string;
-    registerName: string;
-  } | null;
-};
+m«ëˆ§½©buªàºg§¶X›ı«­‡ûr¥ë-±KæÚ±î¸Ø[é¢Šwâ•ê(º×â•æÛ­æ¤n·š‘éÜ¡×¢ëiºÛ©Š{h–)Ş²‡åzx-†{¦×^r‡^uç(uè§¦ëa…éiv+)•¬­†+&zËè¢›­Šznµø¥y×Ÿjém~ŠìµØ§¢‹­¦ëhºÚnµø¥y×Ÿjém~ŠìµÚ.

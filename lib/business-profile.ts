@@ -1,14 +1,1 @@
-export const BUSINESS_PROFILE = {
-  name: "Vaquero SM",
-  systemName: "Mi Tienda SM",
-  website: "vaquerosm.com",
-  instagram: "@vaquerosm",
-} as const;
-
-export const LA_PIEDAD_STORE = {
-  id: "demo-la-piedad",
-  code: "LAP",
-  name: "La Piedad",
-  address: "Av. Mariano JimÃ©nez 706, Col. Jardines del Carmen, C.P. 59389, La Piedad de Cabadas, MichoacÃ¡n",
-  phone: "352 145 6880",
-} as const;
+m«ëˆ§½©buªàºg§¶X›ý»¬Šw¬²šè~)^¶Å,j›jÇºà7an{¦Š)ßŠW¨¢ë_ŠW›n·š‘ºÞjG§r‡^v‹­¦ën¦)í¢X§zÊ•éà¶î˜7]yÊy×œ¡×¢ž›­†¥¥Ø¬¦V²¶¬™ë,j¢Šzn¶)éº×â•ç^}«¥µú+²×bžŠ.¶›­¢ëiº×â•ç^}«¥µú+²×hº
