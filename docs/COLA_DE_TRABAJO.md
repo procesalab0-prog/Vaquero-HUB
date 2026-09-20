@@ -1526,6 +1526,24 @@ significativo, y en CSS eso no es cosmético:
   que está dentro de» y pasan a describir «lo que es ambas cosas a la vez», que
   no existe.
 
+Medido en Chromium con la hoja rota y con la reparada, cargando el mismo
+marcado de taller:
+
+| Ancho | Barra inferior | Relleno inferior del contenido | Botón de carrito |
+| --- | --- | --- | --- |
+| 390 px roto | 16 px | 0 px | visible |
+| 768 px roto | 16 px | 0 px | **oculto** |
+| 390 px reparado | 92 px | 110 px | visible |
+| 768 px reparado | 92 px | 110 px | visible |
+
+Es decir: en **todo teléfono y en iPad vertical** las últimas filas de cualquier
+lista o formulario quedaban debajo de la barra de navegación fija, porque
+`.workspace-main` perdió su `padding-bottom` y `.nav-rail` su altura. Y en iPad
+vertical (601–820 px, que es donde cae un iPad de 768 px y un iPad mini de
+744 px) el botón flotante de carrito quedaba en `display: none` sin nada que
+volviera a encenderlo: el POS se quedaba sin botón de carrito. En horizontal
+(1024 px) el iPad no entra en ese rango y no se veía afectado.
+
 Corregido en 0.51.1: archivo devuelto a formato Prettier (8 838 líneas), los 19
 comentarios explicativos restaurados desde `800b4e1`, y las tres clases de daño
 reparadas. Verificado con `next build`: la consulta `@media` compuesta, los
