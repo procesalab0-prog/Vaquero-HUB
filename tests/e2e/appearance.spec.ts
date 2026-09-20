@@ -13,7 +13,10 @@ test("el tamaño de texto y el color se aplican de inmediato y persisten", async
   );
 
   await select.selectOption("xlarge");
-  await expect(page.locator("html")).toHaveAttribute("data-text-size", "xlarge");
+  await expect(page.locator("html")).toHaveAttribute(
+    "data-text-size",
+    "xlarge",
+  );
   await expect
     .poll(() =>
       sample.evaluate((element) =>
@@ -25,19 +28,26 @@ test("el tamaño de texto y el color se aplican de inmediato y persisten", async
   await page.getByRole("button", { name: /Cuero/ }).click();
   await expect
     .poll(() =>
-      page.locator("html").evaluate((element) =>
-        getComputedStyle(element).getPropertyValue("--accent").trim(),
-      ),
+      page
+        .locator("html")
+        .evaluate((element) =>
+          getComputedStyle(element).getPropertyValue("--accent").trim(),
+        ),
     )
     .toBe("#9A5D32");
 
   await page.reload();
-  await expect(page.locator("html")).toHaveAttribute("data-text-size", "xlarge");
+  await expect(page.locator("html")).toHaveAttribute(
+    "data-text-size",
+    "xlarge",
+  );
   await expect
     .poll(() =>
-      page.locator("html").evaluate((element) =>
-        getComputedStyle(element).getPropertyValue("--accent").trim(),
-      ),
+      page
+        .locator("html")
+        .evaluate((element) =>
+          getComputedStyle(element).getPropertyValue("--accent").trim(),
+        ),
     )
     .toBe("#9A5D32");
 });
@@ -51,7 +61,10 @@ test("el texto muy grande no crea desplazamiento horizontal en teléfono", async
   });
   await page.goto("/inicio");
 
-  await expect(page.locator("html")).toHaveAttribute("data-text-size", "xlarge");
+  await expect(page.locator("html")).toHaveAttribute(
+    "data-text-size",
+    "xlarge",
+  );
   const dimensions = await page.evaluate(() => ({
     viewport: window.innerWidth,
     page: document.documentElement.scrollWidth,
