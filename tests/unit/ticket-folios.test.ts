@@ -27,9 +27,7 @@ describe("folios de ticket de regalo", () => {
 
   it("corrige los apóstrofes que envía un lector USB en lugar de guiones", () => {
     expect(saleFolioFromReceiptCode("LAP'V'000016")).toBe("LAP-V-000016");
-    expect(saleFolioFromReceiptCode("R'LAP'V'000016'1")).toBe(
-      "LAP-V-000016",
-    );
+    expect(saleFolioFromReceiptCode("R'LAP'V'000016'1")).toBe("LAP-V-000016");
     expect(isTicketReceiptCode("LAP'V'000016")).toBe(true);
   });
 
