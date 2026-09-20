@@ -23,10 +23,32 @@ export default async function LoginPage({
 
   return (
     <main className="login-screen">
+      <aside className="login-editorial-panel" aria-hidden="true">
+        <Image
+          className="login-editorial-logo"
+          src="/brand/logo-vaquerosm-blanco.png"
+          alt=""
+          width={520}
+          height={226}
+          priority
+        />
+        <div>
+          <p>OPERACIÓN · PUNTO DE VENTA</p>
+          <strong>La tienda completa,<br />en un solo lugar.</strong>
+          <span>Diseñado alrededor de la operación real de Vaqueros SM.</span>
+        </div>
+      </aside>
       <section className="login-card">
         <div className="login-brand">
-          <Image src="/icons/icon-192.png" alt="Mi Tienda SM" width={104} height={104} priority />
-          <p className="eyebrow">Vaquero SM</p>
+          <Image
+            className="login-form-logo"
+            src="/brand/logo-vaquerosm-negro.png"
+            alt="Vaquero SM"
+            width={240}
+            height={105}
+            priority
+          />
+          <p className="eyebrow">Mi Tienda SM</p>
           <h1>Bienvenido a Mi Tienda SM</h1>
           <p>Tu punto de venta, inventario y operación en un solo lugar.</p>
         </div>
