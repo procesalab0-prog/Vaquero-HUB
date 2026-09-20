@@ -29,6 +29,58 @@
   --shadow-3: 0 24px 64px rgb(15 10 6 / 20%);
 }
 
+/* El ajuste de accesibilidad debe ser perceptible incluso en componentes que
+   históricamente declararon su tipografía en píxeles. Conserva la jerarquía:
+   los títulos que ya son mayores no se reducen. */
+:root[data-text-size="large"] {
+  --ui-text-size: 18px;
+  --ui-content-text-min: 18px;
+}
+
+:root[data-text-size="xlarge"] {
+  --ui-text-size: 20px;
+  --ui-content-text-min: 22px;
+}
+
+:root[data-text-size="large"]
+  .workspace-main
+  :where(
+    a,
+    button,
+    code,
+    input,
+    label,
+    li,
+    p,
+    select,
+    small,
+    span,
+    strong,
+    td,
+    textarea,
+    th
+  ),
+:root[data-text-size="xlarge"]
+  .workspace-main
+  :where(
+    a,
+    button,
+    code,
+    input,
+    label,
+    li,
+    p,
+    select,
+    small,
+    span,
+    strong,
+    td,
+    textarea,
+    th
+  ) {
+  font-size: max(1em, var(--ui-content-text-min));
+}
+
 body {
   background:
     radial-gradient(circle at 85% 4%, rgb(155 123 87 / 8%), transparent 28rem),
@@ -47,8 +99,7 @@ body {
 
 .nav-rail {
   background:
-    linear-gradient(180deg, rgb(255 255 255 / 4%), transparent 20%),
-    #000;
+    linear-gradient(180deg, rgb(255 255 255 / 4%), transparent 20%), #000;
   border-right: 1px solid rgb(255 255 255 / 10%);
 }
 
@@ -291,9 +342,9 @@ button.primary-button:hover {
 @media (max-width: 860px) {
   .login-screen {
     grid-template-columns: 1fr;
-    padding: max(18px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom));
-    background:
-      linear-gradient(180deg, #000 0 200px, var(--bg) 200px 100%);
+    padding: max(18px, env(safe-area-inset-top)) 16px
+      max(18px, env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, #000 0 200px, var(--bg) 200px 100%);
   }
 
   .login-editorial-panel {
@@ -347,8 +398,12 @@ button.primary-button:hover {
   }
 
   .workspace-main {
-    padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 18px);
-    scroll-padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 18px);
+    padding-bottom: calc(
+      var(--mobile-nav-height) + env(safe-area-inset-bottom) + 18px
+    );
+    scroll-padding-bottom: calc(
+      var(--mobile-nav-height) + env(safe-area-inset-bottom) + 18px
+    );
   }
 
   .nav-rail {
@@ -368,10 +423,18 @@ button.primary-button:hover {
 
 @media (max-width: 600px) {
   .sale-panel {
-    bottom: calc(var(--mobile-nav-height) + var(--mobile-nav-gap) + env(safe-area-inset-bottom));
-    max-height: calc(100dvh - var(--mobile-nav-height) - var(--mobile-nav-gap) - env(safe-area-inset-bottom) - 16px);
+    bottom: calc(
+      var(--mobile-nav-height) + var(--mobile-nav-gap) +
+        env(safe-area-inset-bottom)
+    );
+    max-height: calc(
+      100dvh - var(--mobile-nav-height) - var(--mobile-nav-gap) -
+        env(safe-area-inset-bottom) - 16px
+    );
     pointer-events: none;
-    transform: translateY(calc(100% + var(--mobile-nav-height) + var(--mobile-nav-gap)));
+    transform: translateY(
+      calc(100% + var(--mobile-nav-height) + var(--mobile-nav-gap))
+    );
   }
 
   .sale-panel.mobile-open {
@@ -380,7 +443,9 @@ button.primary-button:hover {
   }
 
   .mobile-cart-backdrop {
-    inset-block-end: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom));
+    inset-block-end: calc(
+      var(--mobile-nav-height) + env(safe-area-inset-bottom)
+    );
   }
 
   .mobile-cart-toggle {
@@ -400,15 +465,23 @@ button.primary-button:hover {
     z-index: 82;
     left: 14px;
     right: 14px;
-    bottom: calc(var(--mobile-nav-height) + var(--mobile-nav-gap) + env(safe-area-inset-bottom));
-    max-height: calc(100dvh - var(--mobile-nav-height) - var(--mobile-nav-gap) - env(safe-area-inset-bottom) - 22px);
+    bottom: calc(
+      var(--mobile-nav-height) + var(--mobile-nav-gap) +
+        env(safe-area-inset-bottom)
+    );
+    max-height: calc(
+      100dvh - var(--mobile-nav-height) - var(--mobile-nav-gap) -
+        env(safe-area-inset-bottom) - 22px
+    );
     min-height: 0;
     border: 1px solid var(--border);
     border-radius: 22px;
     box-shadow: var(--shadow-3);
     overscroll-behavior: contain;
     pointer-events: none;
-    transform: translateY(calc(100% + var(--mobile-nav-height) + var(--mobile-nav-gap)));
+    transform: translateY(
+      calc(100% + var(--mobile-nav-height) + var(--mobile-nav-gap))
+    );
     transition: transform 180ms ease-out;
   }
 
@@ -494,7 +567,8 @@ button.primary-button:hover {
 /* La tipografía editorial ocupa un poco más de alto que la anterior. Todas las
    ventanas deben conservar su propio viewport y scroll, sin quedar centradas
    con la cabecera o las acciones fuera de la pantalla. */
-.modal-backdrop > :is(
+.modal-backdrop
+  > :is(
     [role="dialog"],
     .checkout-modal,
     .purchase-modal,
@@ -514,7 +588,8 @@ button.primary-button:hover {
     place-items: end center;
   }
 
-  .modal-backdrop > :is(
+  .modal-backdrop
+    > :is(
       [role="dialog"],
       .checkout-modal,
       .purchase-modal,
@@ -535,6 +610,10 @@ button.primary-button:hover {
   .metric-card,
   .quick-actions a,
   .primary-button {
-    transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 160ms ease;
+    transition:
+      border-color 160ms ease,
+      background-color 160ms ease,
+      color 160ms ease,
+      transform 160ms ease;
   }
 }

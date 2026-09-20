@@ -103,7 +103,11 @@ export function SettingsWorkspace({
     },
   ];
   const [saved, setSaved] = useState(false);
-  const [accent, setAccent] = useState("vino");
+  const [accent, setAccent] = useState(() =>
+    typeof window === "undefined"
+      ? "vino"
+      : (window.localStorage.getItem("mi-tienda:accent:v1") ?? "vino"),
+  );
   const [preferences, setPreferences] = useState<
     Record<string, string | boolean>
   >({});
@@ -165,7 +169,11 @@ export function SettingsWorkspace({
 
   function chooseAccent(value: string) {
     setAccent(value);
+    window.localStorage.setItem("mi-tienda:accent:v1", value);
     document.documentElement.style.setProperty("--accent", accentColors[value]);
+    window.dispatchEvent(
+      new CustomEvent("mi-tienda:accent", { detail: value }),
+    );
   }
 
   async function savePolicy() {

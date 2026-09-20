@@ -5,7 +5,20 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { APP_RELEASE, APP_VERSION } from "@/lib/release";
-import { Bell, ArrowLeft, Boxes, CircleDollarSign, Grid2X2, House, LogOut, MapPin, Menu, Package, ShoppingCart, X } from "lucide-react";
+import {
+  Bell,
+  ArrowLeft,
+  Boxes,
+  CircleDollarSign,
+  Grid2X2,
+  House,
+  LogOut,
+  MapPin,
+  Menu,
+  Package,
+  ShoppingCart,
+  X,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { WorkspaceIdentity } from "@/lib/auth/types";
 import { WorkspaceContext } from "@/components/workspace-context";
@@ -54,7 +67,15 @@ function moduleTitle(pathname: string) {
   return "Punto de venta";
 }
 
-export function WorkspaceShell({ children, identity, initialLocationId = "" }: { children: React.ReactNode; identity: WorkspaceIdentity | null; initialLocationId?: string }) {
+export function WorkspaceShell({
+  children,
+  identity,
+  initialLocationId = "",
+}: {
+  children: React.ReactNode;
+  identity: WorkspaceIdentity | null;
+  initialLocationId?: string;
+}) {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -62,10 +83,20 @@ export function WorkspaceShell({ children, identity, initialLocationId = "" }: {
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(true);
   const activeIdentity = identity ?? demoIdentity;
-  const [activeLocationId, setActiveLocationId] = useState(initialLocationId || activeIdentity.locations[0]?.id || "");
-  const activeLocation = activeIdentity.locations.find((location) => location.id === activeLocationId);
-  const cashLocation = activeIdentity.locations.find((location) => location.id === activeIdentity.openCashSession?.locationId);
-  const cashLabel = activeIdentity.openCashSession ? (activeIdentity.openCashSession.locationId === activeLocationId ? activeIdentity.openCashSession.registerName : `${activeIdentity.openCashSession.registerName} en ${cashLocation?.name ?? "otra sucursal"}`) : "Sin caja abierta";
+  const [activeLocationId, setActiveLocationId] = useState(
+    initialLocationId || activeIdentity.locations[0]?.id || "",
+  );
+  const activeLocation = activeIdentity.locations.find(
+    (location) => location.id === activeLocationId,
+  );
+  const cashLocation = activeIdentity.locations.find(
+    (location) => location.id === activeIdentity.openCashSession?.locationId,
+  );
+  const cashLabel = activeIdentity.openCashSession
+    ? activeIdentity.openCashSession.locationId === activeLocationId
+      ? activeIdentity.openCashSession.registerName
+      : `${activeIdentity.openCashSession.registerName} en ${cashLocation?.name ?? "otra sucursal"}`
+    : "Sin caja abierta";
   const workspaceContext = useMemo(
     () => ({
       identity: activeIdentity,
@@ -76,14 +107,32 @@ export function WorkspaceShell({ children, identity, initialLocationId = "" }: {
   const initial = activeIdentity.name.trim().charAt(0).toUpperCase() || "V";
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("mi-tienda:text-size:v1") ?? "normal";
+    const saved =
+      window.localStorage.getItem("mi-tienda:text-size:v1") ?? "normal";
     document.documentElement.dataset.textSize = saved;
-    const sync = (event: Event) => {
+    const syncTextSize = (event: Event) => {
       const value = (event as CustomEvent<string>).detail;
       if (value) document.documentElement.dataset.textSize = value;
     };
-    window.addEventListener("mi-tienda:text-size", sync);
-    return () => window.removeEventListener("mi-tienda:text-size", sync);
+    const accentColors: Record<string, string> = {
+      vino: "#8E2A1C",
+      cuero: "#9A5D32",
+      noche: "#241E1B",
+    };
+    const applyAccent = (value: string) => {
+      const color = accentColors[value];
+      if (color) document.documentElement.style.setProperty("--accent", color);
+    };
+    applyAccent(window.localStorage.getItem("mi-tienda:accent:v1") ?? "vino");
+    const syncAccent = (event: Event) => {
+      applyAccent((event as CustomEvent<string>).detail);
+    };
+    window.addEventListener("mi-tienda:text-size", syncTextSize);
+    window.addEventListener("mi-tienda:accent", syncAccent);
+    return () => {
+      window.removeEventListener("mi-tienda:text-size", syncTextSize);
+      window.removeEventListener("mi-tienda:accent", syncAccent);
+    };
   }, []);
 
   function locationHref(href: string) {
@@ -105,14 +154,27 @@ export function WorkspaceShell({ children, identity, initialLocationId = "" }: {
   if (!identity && !loggedIn) {
     return (
       <main className="mock-login">
-        <Image className="login-app-icon" src="/icons/icon-192.png" alt="Mi Tienda SM" width={120} height={120} priority />
+        <Image
+          className="login-app-icon"
+          src="/icons/icon-192.png"
+          alt="Mi Tienda SM"
+          width={120}
+          height={120}
+          priority
+        />
         <p className="eyebrow">Mi Tienda SM</p>
         <h1>Sesión cerrada</h1>
         <p>La sesión local de {activeIdentity.name} terminó correctamente.</p>
-        <button className="primary-button" type="button" onClick={() => setLoggedIn(true)}>
+        <button
+          className="primary-button"
+          type="button"
+          onClick={() => setLoggedIn(true)}
+        >
           Entrar como Salomon
         </button>
-        <small>La autenticación segura se conectará con usuarios y permisos.</small>
+        <small>
+          La autenticación segura se conectará con usuarios y permisos.
+        </small>
       </main>
     );
   }
@@ -120,22 +182,52 @@ export function WorkspaceShell({ children, identity, initialLocationId = "" }: {
   return (
     <div className="workspace-shell">
       <aside className="nav-rail" aria-label="Navegación principal">
-        <Link className="rail-brand" href={locationHref("/pos")} aria-label="Mi Tienda SM">
-          <Image src="/brand/emblema-blanco.png" alt="" width={64} height={42} priority />
+        <Link
+          className="rail-brand"
+          href={locationHref("/pos")}
+          aria-label="Mi Tienda SM"
+        >
+          <Image
+            src="/brand/emblema-blanco.png"
+            alt=""
+            width={64}
+            height={42}
+            priority
+          />
         </Link>
         <nav className="rail-links">
           {navigation.map(({ href, label, icon: Icon }) => {
-            const morePath = ["/mas", "/tickets", "/cotizaciones", "/apartados", "/etiquetas", "/ajustes", "/administracion", "/clientes"];
-            const active = href === "/mas" ? morePath.some((path) => pathname.startsWith(path)) : pathname.startsWith(href);
+            const morePath = [
+              "/mas",
+              "/tickets",
+              "/cotizaciones",
+              "/apartados",
+              "/etiquetas",
+              "/ajustes",
+              "/administracion",
+              "/clientes",
+            ];
+            const active =
+              href === "/mas"
+                ? morePath.some((path) => pathname.startsWith(path))
+                : pathname.startsWith(href);
             return (
-              <Link className={active ? "rail-link active" : "rail-link"} href={locationHref(href)} key={label}>
+              <Link
+                className={active ? "rail-link active" : "rail-link"}
+                href={locationHref(href)}
+                key={label}
+              >
                 <Icon aria-hidden="true" strokeWidth={1.8} />
                 <span>{label}</span>
               </Link>
             );
           })}
         </nav>
-        <button className="rail-link rail-logout" type="button" onClick={() => setLogoutOpen(true)}>
+        <button
+          className="rail-link rail-logout"
+          type="button"
+          onClick={() => setLogoutOpen(true)}
+        >
           <LogOut aria-hidden="true" strokeWidth={1.8} />
           <span>Salir</span>
         </button>
@@ -156,14 +248,25 @@ export function WorkspaceShell({ children, identity, initialLocationId = "" }: {
               <ArrowLeft aria-hidden="true" />
             </button>
           ) : null}
-          <Link className="mobile-menu" href={locationHref("/mas")} aria-label="Abrir más módulos">
+          <Link
+            className="mobile-menu"
+            href={locationHref("/mas")}
+            aria-label="Abrir más módulos"
+          >
             <Menu aria-hidden="true" />
           </Link>
           <h1>{moduleTitle(pathname)}</h1>
-          <div className="location-pill" title={`${activeLocation?.name ?? "Sin sucursal"} · ${cashLabel}`}>
+          <div
+            className="location-pill"
+            title={`${activeLocation?.name ?? "Sin sucursal"} · ${cashLabel}`}
+          >
             <MapPin aria-hidden="true" strokeWidth={1.8} />
             {activeIdentity.locations.length > 1 ? (
-              <select aria-label="Sucursal activa" value={activeLocationId} onChange={(event) => changeLocation(event.target.value)}>
+              <select
+                aria-label="Sucursal activa"
+                value={activeLocationId}
+                onChange={(event) => changeLocation(event.target.value)}
+              >
                 {activeIdentity.locations.map((location) => (
                   <option value={location.id} key={location.id}>
                     {location.name}
@@ -171,7 +274,9 @@ export function WorkspaceShell({ children, identity, initialLocationId = "" }: {
                 ))}
               </select>
             ) : (
-              <span className="location-name">{activeLocation?.name ?? "Sin sucursal"}</span>
+              <span className="location-name">
+                {activeLocation?.name ?? "Sin sucursal"}
+              </span>
             )}
             <i>·</i>
             <strong className="cash-name">{cashLabel}</strong>
@@ -217,7 +322,11 @@ export function WorkspaceShell({ children, identity, initialLocationId = "" }: {
         <aside className="notifications-popover" aria-label="Notificaciones">
           <header>
             <strong>Notificaciones</strong>
-            <button type="button" aria-label="Cerrar notificaciones" onClick={() => setNotificationsOpen(false)}>
+            <button
+              type="button"
+              aria-label="Cerrar notificaciones"
+              onClick={() => setNotificationsOpen(false)}
+            >
               <X aria-hidden="true" />
             </button>
           </header>
@@ -237,13 +346,19 @@ export function WorkspaceShell({ children, identity, initialLocationId = "" }: {
             </div>
             <small>14:32</small>
           </article>
-          <Link href={locationHref("/inventario")} onClick={() => setNotificationsOpen(false)}>
+          <Link
+            href={locationHref("/inventario")}
+            onClick={() => setNotificationsOpen(false)}
+          >
             Ver inventario
           </Link>
         </aside>
       ) : null}
       {profileOpen ? (
-        <aside className="profile-popover" aria-label="Información de usuario y versión">
+        <aside
+          className="profile-popover"
+          aria-label="Información de usuario y versión"
+        >
           <header>
             <span>{initial}</span>
             <div>
@@ -252,7 +367,11 @@ export function WorkspaceShell({ children, identity, initialLocationId = "" }: {
                 {activeIdentity.role} · {activeLocation?.name ?? "Sin sucursal"}
               </small>
             </div>
-            <button type="button" aria-label="Cerrar información" onClick={() => setProfileOpen(false)}>
+            <button
+              type="button"
+              aria-label="Cerrar información"
+              onClick={() => setProfileOpen(false)}
+            >
               <X aria-hidden="true" />
             </button>
           </header>
@@ -265,17 +384,29 @@ export function WorkspaceShell({ children, identity, initialLocationId = "" }: {
               Creado por <strong>ProcesaLab</strong>
             </div>
           </div>
-          <p>Este número cambia con cada entrega visible para identificar exactamente qué versión está instalada.</p>
+          <p>
+            Este número cambia con cada entrega visible para identificar
+            exactamente qué versión está instalada.
+          </p>
         </aside>
       ) : null}
       {logoutOpen ? (
         <div className="modal-backdrop">
-          <section className="checkout-modal compact-modal" role="dialog" aria-modal="true" aria-labelledby="logout-title">
+          <section
+            className="checkout-modal compact-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="logout-title"
+          >
             <p className="eyebrow">Seguridad</p>
             <h2 id="logout-title">¿Cerrar sesión?</h2>
             <p>Las operaciones guardadas permanecerán en el sistema.</p>
             <div className="modal-actions">
-              <button className="secondary-button" type="button" onClick={() => setLogoutOpen(false)}>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => setLogoutOpen(false)}
+              >
                 Cancelar
               </button>
               {identity ? (

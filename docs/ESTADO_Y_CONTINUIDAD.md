@@ -74,6 +74,7 @@ saltando lo bloqueado.
 | **Corrección 0.37.1**    | Administración global puede cambiar y operar todas las sucursales activas sin asignaciones individuales         |
 | **Diseño 0.52.0**        | Base visual de Mi Vaquero aplicada a acceso, navegación y componentes compartidos sin cambiar reglas operativas |
 | **Etiquetas 0.52.1**     | Clave corta por sucursal (`VSM1`, `VSM2`…) personalizable sin alterar códigos ni folios históricos              |
+| **Apariencia 0.52.2**    | Color persistente y escalas de texto grande/muy grande claramente perceptibles                                  |
 
 Ochenta y nueve migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
