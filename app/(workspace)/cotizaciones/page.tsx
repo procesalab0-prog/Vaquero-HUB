@@ -21,23 +21,23 @@ type CatalogRow = {
 export default async function QuotesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ubicacion?: string; estado?: string; busqueda?: string }>;
+  searchParams: Promise<{
+    ubicacion?: string;
+    estado?: string;
+    busqueda?: string;
+  }>;
 }) {
   const params = await searchParams;
   if (!isSupabaseConfigured()) {
     return <QuotesWorkspace locationId="preview" variants={[]} quotes={[]} preview />;
   }
   const { supabase, profile } = await requirePermission("quotes.manage");
-  const locations = (profile?.user_locations ?? []).flatMap((entry) =>
-    Array.isArray(entry.locations) ? entry.locations : entry.locations ? [entry.locations] : [],
-  );
+  const locations = (profile?.user_locations ?? []).flatMap((entry) => (Array.isArray(entry.locations) ? entry.locations : entry.locations ? [entry.locations] : []));
   const activeLocation = await resolveActiveLocation(locations, params.ubicacion);
   if (!activeLocation) {
     return <QuotesWorkspace locationId="" variants={[]} quotes={[]} status="No tienes una sucursal asignada." />;
   }
-  const allowedStatus = ["DRAFT", "SENT", "CONVERTED", "EXPIRED"].includes(params.estado ?? "")
-    ? params.estado!
-    : null;
+  const allowedStatus = ["DRAFT", "SENT", "CONVERTED", "EXPIRED"].includes(params.estado ?? "") ? params.estado! : null;
   const [quotesResult, catalogResult] = await Promise.all([
     supabase.rpc("list_quotes", {
       p_location_id: activeLocation.id,
@@ -57,15 +57,5 @@ export default async function QuotesPage({
       description: [row.attributes?.COLOR, row.attributes?.TALLA].filter(Boolean).join(" · ") || "Única",
       priceCents: Number(row.price_cents),
     }));
-  return (
-    <QuotesWorkspace
-      locationId={activeLocation.id}
-      variants={variants}
-      quotes={(quotesResult.data ?? []) as QuotePayload[]}
-      status={quotesResult.error?.message ?? catalogResult.error?.message}
-      createAction={createQuote}
-      sendAction={markQuoteSent}
-      loadAction={loadQuoteForSale}
-    />
-  );
+  return <QuotesWorkspace locationId={activeLocation.id} locationName={activeLocation.name} locationAddress={activeLocation.address} locationPhone={activeLocation.phone} variants={variants} quotes={(quotesResult.data ?? []) as QuotePayload[]} status={quotesResult.error?.message ?? catalogResult.error?.message} createAction={createQuote} sendAction={markQuoteSent} loadAction={loadQuoteForSale} />;
 }

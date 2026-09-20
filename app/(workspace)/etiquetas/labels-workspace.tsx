@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { LabelBarcode } from "@/components/label-barcode";
+import { useWorkspace } from "@/components/workspace-context";
 import type { LabelTemplate, ProductVariant } from "@/lib/domain";
 import { LABEL_MAX_WIDTH_MM } from "@/lib/printing";
 
@@ -39,10 +40,12 @@ const statusMessages: Record<string, string> = {
 function ProductLabel({
   variant,
   template,
+  storeCode,
   printable = false,
 }: {
   variant: ProductVariant;
   template: LabelTemplate;
+  storeCode: string;
   printable?: boolean;
 }) {
   const isPhysical51x25 =
@@ -92,6 +95,9 @@ function ProductLabel({
         <span className="label-sku">SKU {variant.sku}</span>
       ) : null}
       {template.showPrice ? <b>{money.format(variant.price)}</b> : null}
+      <span className="label-store-code" aria-label={`Sucursal ${storeCode}`}>
+        {storeCode}
+      </span>
     </article>
   );
 }
@@ -113,6 +119,9 @@ export function LabelsWorkspace({
   status?: string;
   fromProducts?: boolean;
 }) {
+  const { activeLocation } = useWorkspace();
+  const storeCode =
+    activeLocation?.code?.trim().toLocaleUpperCase("es-MX") || "T1";
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Record<string, number>>({});
   const [templateId, setTemplateId] = useState(
@@ -365,7 +374,11 @@ export function LabelsWorkspace({
             </select>
           </label>
           <div className="label-preview-stage">
-            <ProductLabel variant={previewVariant} template={activeTemplate} />
+            <ProductLabel
+              variant={previewVariant}
+              template={activeTemplate}
+              storeCode={storeCode}
+            />
           </div>
           <dl className="label-settings">
             <div>
@@ -522,6 +535,7 @@ export function LabelsWorkspace({
             key={key}
             variant={variant}
             template={activeTemplate}
+            storeCode={storeCode}
             printable
           />
         ))}

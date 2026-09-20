@@ -3,28 +3,21 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { APP_RELEASE, APP_VERSION } from "@/lib/release";
-import {
-  Bell,
-  Boxes,
-  CircleDollarSign,
-  Grid2X2,
-  House,
-  LogOut,
-  MapPin,
-  Menu,
-  Package,
-  ShoppingCart,
-  X,
-} from "lucide-react";
+import { Bell, ArrowLeft, Boxes, CircleDollarSign, Grid2X2, House, LogOut, MapPin, Menu, Package, ShoppingCart, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { WorkspaceIdentity } from "@/lib/auth/types";
 import { WorkspaceContext } from "@/components/workspace-context";
 import { LA_PIEDAD_STORE } from "@/lib/business-profile";
 import { saveActiveLocationPreference } from "@/lib/location-preference";
 
-const navigation: Array<{ href: string; label: string; icon: LucideIcon; secondary?: boolean }> = [
+const navigation: Array<{
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  secondary?: boolean;
+}> = [
   { href: "/inicio", label: "Inicio", icon: House },
   { href: "/pos", label: "Venta", icon: ShoppingCart },
   { href: "/productos", label: "Productos", icon: Package },
@@ -72,13 +65,26 @@ export function WorkspaceShell({ children, identity, initialLocationId = "" }: {
   const [activeLocationId, setActiveLocationId] = useState(initialLocationId || activeIdentity.locations[0]?.id || "");
   const activeLocation = activeIdentity.locations.find((location) => location.id === activeLocationId);
   const cashLocation = activeIdentity.locations.find((location) => location.id === activeIdentity.openCashSession?.locationId);
-  const cashLabel = activeIdentity.openCashSession
-    ? activeIdentity.openCashSession.locationId === activeLocationId
-      ? activeIdentity.openCashSession.registerName
-      : `${activeIdentity.openCashSession.registerName} en ${cashLocation?.name ?? "otra sucursal"}`
-    : "Sin caja abierta";
-  const workspaceContext = useMemo(() => ({ identity: activeIdentity, activeLocation: activeLocation ?? null }), [activeIdentity, activeLocation]);
+  const cashLabel = activeIdentity.openCashSession ? (activeIdentity.openCashSession.locationId === activeLocationId ? activeIdentity.openCashSession.registerName : `${activeIdentity.openCashSession.registerName} en ${cashLocation?.name ?? "otra sucursal"}`) : "Sin caja abierta";
+  const workspaceContext = useMemo(
+    () => ({
+      identity: activeIdentity,
+      activeLocation: activeLocation ?? null,
+    }),
+    [activeIdentity, activeLocation],
+  );
   const initial = activeIdentity.name.trim().charAt(0).toUpperCase() || "V";
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem("mi-tienda:text-size:v1") ?? "normal";
+    document.documentElement.dataset.textSize = saved;
+    const sync = (event: Event) => {
+      const value = (event as CustomEvent<string>).detail;
+      if (value) document.documentElement.dataset.textSize = value;
+    };
+    window.addEventListener("mi-tienda:text-size", sync);
+    return () => window.removeEventListener("mi-tienda:text-size", sync);
+  }, []);
 
   function locationHref(href: string) {
     if (!activeLocationId) return href;
@@ -100,8 +106,12 @@ export function WorkspaceShell({ children, identity, initialLocationId = "" }: {
     return (
       <main className="mock-login">
         <Image className="login-app-icon" src="/icons/icon-192.png" alt="Mi Tienda SM" width={120} height={120} priority />
-        <p className="eyebrow">Mi Tienda SM</p><h1>Sesión cerrada</h1><p>La sesión local de {activeIdentity.name} terminó correctamente.</p>
-        <button className="primary-button" type="button" onClick={() => setLoggedIn(true)}>Entrar como Salomon</button>
+        <p className="eyebrow">Mi Tienda SM</p>
+        <h1>Sesión cerrada</h1>
+        <p>La sesión local de {activeIdentity.name} terminó correctamente.</p>
+        <button className="primary-button" type="button" onClick={() => setLoggedIn(true)}>
+          Entrar como Salomon
+        </button>
         <small>La autenticación segura se conectará con usuarios y permisos.</small>
       </main>
     );
@@ -116,9 +126,7 @@ export function WorkspaceShell({ children, identity, initialLocationId = "" }: {
         <nav className="rail-links">
           {navigation.map(({ href, label, icon: Icon }) => {
             const morePath = ["/mas", "/tickets", "/cotizaciones", "/apartados", "/etiquetas", "/ajustes", "/administracion", "/clientes"];
-            const active = href === "/mas"
-              ? morePath.some((path) => pathname.startsWith(path))
-              : pathname.startsWith(href);
+            const active = href === "/mas" ? morePath.some((path) => pathname.startsWith(path)) : pathname.startsWith(href);
             return (
               <Link className={active ? "rail-link active" : "rail-link"} href={locationHref(href)} key={label}>
                 <Icon aria-hidden="true" strokeWidth={1.8} />
@@ -135,6 +143,19 @@ export function WorkspaceShell({ children, identity, initialLocationId = "" }: {
 
       <div className="workspace-content">
         <header className="app-topbar">
+          {pathname !== "/inicio" ? (
+            <button
+              className="topbar-back"
+              type="button"
+              aria-label="Regresar"
+              onClick={() => {
+                if (window.history.length > 1) router.back();
+                else router.push(locationHref("/inicio"));
+              }}
+            >
+              <ArrowLeft aria-hidden="true" />
+            </button>
+          ) : null}
           <Link className="mobile-menu" href={locationHref("/mas")} aria-label="Abrir más módulos">
             <Menu aria-hidden="true" />
           </Link>
@@ -143,18 +164,49 @@ export function WorkspaceShell({ children, identity, initialLocationId = "" }: {
             <MapPin aria-hidden="true" strokeWidth={1.8} />
             {activeIdentity.locations.length > 1 ? (
               <select aria-label="Sucursal activa" value={activeLocationId} onChange={(event) => changeLocation(event.target.value)}>
-                {activeIdentity.locations.map((location) => <option value={location.id} key={location.id}>{location.name}</option>)}
+                {activeIdentity.locations.map((location) => (
+                  <option value={location.id} key={location.id}>
+                    {location.name}
+                  </option>
+                ))}
               </select>
-            ) : <span className="location-name">{activeLocation?.name ?? "Sin sucursal"}</span>}
-            <i>·</i><strong className="cash-name">{cashLabel}</strong>
+            ) : (
+              <span className="location-name">{activeLocation?.name ?? "Sin sucursal"}</span>
+            )}
+            <i>·</i>
+            <strong className="cash-name">{cashLabel}</strong>
           </div>
-          <div className="online-pill"><span />En línea</div>
+          <div className="online-pill">
+            <span />
+            En línea
+          </div>
           <div className="topbar-actions">
-            <button className="icon-button notification-trigger" type="button" aria-label="Notificaciones" aria-expanded={notificationsOpen} onClick={() => { setProfileOpen(false); setNotificationsOpen((current) => !current); }}>
+            <button
+              className="icon-button notification-trigger"
+              type="button"
+              aria-label="Notificaciones"
+              aria-expanded={notificationsOpen}
+              onClick={() => {
+                setProfileOpen(false);
+                setNotificationsOpen((current) => !current);
+              }}
+            >
               <Bell aria-hidden="true" strokeWidth={1.8} />
               <span aria-hidden="true" />
             </button>
-            <button className="active-user" type="button" aria-label={`Abrir información de ${activeIdentity.name} y versión`} aria-expanded={profileOpen} onClick={() => { setNotificationsOpen(false); setProfileOpen((current) => !current); }}><span>{initial}</span><strong>{activeIdentity.name}</strong></button>
+            <button
+              className="active-user"
+              type="button"
+              aria-label={`Abrir información de ${activeIdentity.name} y versión`}
+              aria-expanded={profileOpen}
+              onClick={() => {
+                setNotificationsOpen(false);
+                setProfileOpen((current) => !current);
+              }}
+            >
+              <span>{initial}</span>
+              <strong>{activeIdentity.name}</strong>
+            </button>
           </div>
         </header>
         <WorkspaceContext.Provider value={workspaceContext}>
@@ -163,24 +215,88 @@ export function WorkspaceShell({ children, identity, initialLocationId = "" }: {
       </div>
       {notificationsOpen ? (
         <aside className="notifications-popover" aria-label="Notificaciones">
-          <header><strong>Notificaciones</strong><button type="button" aria-label="Cerrar notificaciones" onClick={() => setNotificationsOpen(false)}><X aria-hidden="true" /></button></header>
-          <article><span className="notification-dot warning" /><div><strong>Última pieza</strong><p>Bota Cuadra café, talla 26.</p></div><small>Ahora</small></article>
-          <article><span className="notification-dot" /><div><strong>Caja en orden</strong><p>La sesión lleva 8 ventas registradas.</p></div><small>14:32</small></article>
-          <Link href={locationHref("/inventario")} onClick={() => setNotificationsOpen(false)}>Ver inventario</Link>
+          <header>
+            <strong>Notificaciones</strong>
+            <button type="button" aria-label="Cerrar notificaciones" onClick={() => setNotificationsOpen(false)}>
+              <X aria-hidden="true" />
+            </button>
+          </header>
+          <article>
+            <span className="notification-dot warning" />
+            <div>
+              <strong>Última pieza</strong>
+              <p>Bota Cuadra café, talla 26.</p>
+            </div>
+            <small>Ahora</small>
+          </article>
+          <article>
+            <span className="notification-dot" />
+            <div>
+              <strong>Caja en orden</strong>
+              <p>La sesión lleva 8 ventas registradas.</p>
+            </div>
+            <small>14:32</small>
+          </article>
+          <Link href={locationHref("/inventario")} onClick={() => setNotificationsOpen(false)}>
+            Ver inventario
+          </Link>
         </aside>
       ) : null}
       {profileOpen ? (
         <aside className="profile-popover" aria-label="Información de usuario y versión">
-          <header><span>{initial}</span><div><strong>{activeIdentity.name}</strong><small>{activeIdentity.role} · {activeLocation?.name ?? "Sin sucursal"}</small></div><button type="button" aria-label="Cerrar información" onClick={() => setProfileOpen(false)}><X aria-hidden="true" /></button></header>
-          <div className="version-easter-egg"><span>MI TIENDA SM</span><strong>Versión {APP_VERSION}</strong><small>{APP_RELEASE}</small><code>Siempre al día 🤠</code><div className="version-credit">Creado por <strong>ProcesaLab</strong></div></div>
+          <header>
+            <span>{initial}</span>
+            <div>
+              <strong>{activeIdentity.name}</strong>
+              <small>
+                {activeIdentity.role} · {activeLocation?.name ?? "Sin sucursal"}
+              </small>
+            </div>
+            <button type="button" aria-label="Cerrar información" onClick={() => setProfileOpen(false)}>
+              <X aria-hidden="true" />
+            </button>
+          </header>
+          <div className="version-easter-egg">
+            <span>MI TIENDA SM</span>
+            <strong>Versión {APP_VERSION}</strong>
+            <small>{APP_RELEASE}</small>
+            <code>Siempre al día 🤠</code>
+            <div className="version-credit">
+              Creado por <strong>ProcesaLab</strong>
+            </div>
+          </div>
           <p>Este número cambia con cada entrega visible para identificar exactamente qué versión está instalada.</p>
         </aside>
       ) : null}
       {logoutOpen ? (
         <div className="modal-backdrop">
           <section className="checkout-modal compact-modal" role="dialog" aria-modal="true" aria-labelledby="logout-title">
-            <p className="eyebrow">Seguridad</p><h2 id="logout-title">¿Cerrar sesión?</h2><p>Las operaciones guardadas permanecerán en el sistema.</p>
-            <div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setLogoutOpen(false)}>Cancelar</button>{identity ? <form action="/auth/signout" method="post"><button className="primary-button" type="submit">Cerrar sesión</button></form> : <button className="primary-button" type="button" onClick={() => { setLogoutOpen(false); setLoggedIn(false); }}>Cerrar sesión</button>}</div>
+            <p className="eyebrow">Seguridad</p>
+            <h2 id="logout-title">¿Cerrar sesión?</h2>
+            <p>Las operaciones guardadas permanecerán en el sistema.</p>
+            <div className="modal-actions">
+              <button className="secondary-button" type="button" onClick={() => setLogoutOpen(false)}>
+                Cancelar
+              </button>
+              {identity ? (
+                <form action="/auth/signout" method="post">
+                  <button className="primary-button" type="submit">
+                    Cerrar sesión
+                  </button>
+                </form>
+              ) : (
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() => {
+                    setLogoutOpen(false);
+                    setLoggedIn(false);
+                  }}
+                >
+                  Cerrar sesión
+                </button>
+              )}
+            </div>
           </section>
         </div>
       ) : null}

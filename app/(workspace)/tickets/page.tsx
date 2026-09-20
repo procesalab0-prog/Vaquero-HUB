@@ -40,6 +40,7 @@ export default async function TicketsPage({
     accion?: string;
     venta?: string;
     origen?: string;
+    escanear?: string;
   }>;
 }) {
   if (!isSupabaseConfigured()) return <TicketsWorkspace />;
@@ -128,6 +129,7 @@ export default async function TicketsPage({
           ? "Apartado entregado. Este es el ticket generado; ya puedes imprimirlo o descargarlo en PDF."
           : undefined
       }
+      initialScannedCode={params.escanear}
     />
   );
 }

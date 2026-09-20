@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   giftFolioFromSale,
+  isTicketReceiptCode,
   saleFolioFromReceiptCode,
 } from "../../lib/ticket-folios";
 
@@ -22,5 +23,12 @@ describe("folios de ticket de regalo", () => {
 
   it("conserva sin cambios el folio de una venta normal", () => {
     expect(saleFolioFromReceiptCode(" lap-v-000142 ")).toBe("LAP-V-000142");
+  });
+
+  it("distingue tickets normales y de regalo de códigos de producto", () => {
+    expect(isTicketReceiptCode("LAP-V-000142")).toBe(true);
+    expect(isTicketReceiptCode("R-LAP-V-000142-1")).toBe(true);
+    expect(isTicketReceiptCode("17996")).toBe(false);
+    expect(isTicketReceiptCode("2000010000265")).toBe(false);
   });
 });

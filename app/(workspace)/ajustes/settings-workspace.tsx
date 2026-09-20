@@ -116,6 +116,19 @@ export function SettingsWorkspace({
   const [policyStatus, setPolicyStatus] = useState("");
   const [myPin, setMyPin] = useState("");
   const [pinStatus, setPinStatus] = useState("");
+  const [textSize, setTextSize] = useState(() =>
+    typeof window === "undefined"
+      ? "normal"
+      : (window.localStorage.getItem("mi-tienda:text-size:v1") ?? "normal"),
+  );
+
+  function chooseTextSize(value: string) {
+    setTextSize(value);
+    window.localStorage.setItem("mi-tienda:text-size:v1", value);
+    window.dispatchEvent(
+      new CustomEvent("mi-tienda:text-size", { detail: value }),
+    );
+  }
 
   function saveSettings() {
     const payload = {
@@ -254,14 +267,19 @@ export function SettingsWorkspace({
               <div className="demo-data-notice">
                 <Store aria-hidden="true" />
                 <span>
-                  <strong>Las sucursales se dan de alta en Administración.</strong>{" "}
+                  <strong>
+                    Las sucursales se dan de alta en Administración.
+                  </strong>{" "}
                   Ahí se captura nombre, clave, dirección y teléfono, y la
                   sucursal nace con acceso y con su primera caja. La dirección y
                   el teléfono salen impresos en el ticket, así que conviene
                   capturarlos completos.
                 </span>
               </div>
-              <Link className="secondary-button" href="/administracion?tab=sucursales">
+              <Link
+                className="secondary-button"
+                href="/administracion?tab=sucursales"
+              >
                 Administrar sucursales
               </Link>
             </SettingsSection>
@@ -290,6 +308,8 @@ export function SettingsWorkspace({
               onSavePin={() => void savePin()}
               pinStatus={pinStatus}
               canSavePin={Boolean(saveMySupervisorPinAction)}
+              textSize={textSize}
+              setTextSize={chooseTextSize}
             />
           </div>
         </div>
@@ -581,6 +601,8 @@ function AppearanceSettings({
   onSavePin,
   pinStatus,
   canSavePin,
+  textSize,
+  setTextSize,
 }: {
   accent: string;
   setAccent: (value: string) => void;
@@ -589,6 +611,8 @@ function AppearanceSettings({
   onSavePin: () => void;
   pinStatus: string;
   canSavePin: boolean;
+  textSize: string;
+  setTextSize: (value: string) => void;
 }) {
   return (
     <SettingsSection
@@ -626,6 +650,22 @@ function AppearanceSettings({
         </button>
       </div>
       <div className="settings-form">
+        <label>
+          <span>Tamaño del texto del programa</span>
+          <select
+            value={textSize}
+            onChange={(event) => setTextSize(event.target.value)}
+          >
+            <option value="small">Pequeño</option>
+            <option value="normal">Normal</option>
+            <option value="large">Grande</option>
+            <option value="xlarge">Muy grande</option>
+          </select>
+          <small>
+            Se aplica de inmediato en este dispositivo; no cambia tickets ni
+            etiquetas.
+          </small>
+        </label>
         <label>
           <span>Mi PIN de supervisor</span>
           <input

@@ -314,3 +314,28 @@ que dice?_ Que exista el código no significa que funcione.
   BIXOLON pierde sin alterar importes, folios ni código de barras.
 - La siguiente validación física debe comprobar una etiqueta completa en un
   solo troquel y comparar el ticket normal contra el de alto contraste.
+
+## Operación física 0.51.0 — hallazgos de La Piedad
+
+- La prueba física confirmó que **`clave1` de SICAR es el número que debe
+  codificar la etiqueta heredada**. Etiquetas prioriza `legacy_sicar_code`
+  sobre el código propio; si no existe dato heredado conserva el código propio
+  como respaldo. Esta decisión no cambia el SKU interno de Mi Tienda SM.
+- La plantilla 51 × 25 mm muestra clave de sucursal y amplía las barras. Los
+  datos que salieron tenues en el ticket —detalle de cantidad/precio/código y
+  política de cambios— siempre usan trazo fuerte, aunque el resto del ticket
+  conserve el modo normal.
+- El lector USB distingue producto de comprobante. Escanear `LAP-V-…` o
+  `R-LAP-V-…` desde Venta abre inmediatamente la compra; un valor como `17996`
+  continúa siendo una búsqueda de producto.
+- Cobro en efectivo acepta teclado físico, Enter y Escape sin quitar el teclado
+  táctil. Las pantallas interiores incorporan Regresar y Ajustes permite elegir
+  texto pequeño, normal, grande o extra grande en esa computadora.
+- Cotizaciones y ventas ofrecen un PDF comercial A4 separado del ticket
+  térmico: sucursal, cliente, partidas, descuento, total, observaciones y
+  vigencia cuando corresponde.
+- Próximo bloque seguro: pago en USD. La referencia será Banxico FIX
+  `SF43718`, consultada sólo desde servidor con token secreto, conservando el
+  último dato válido. Cada cobro deberá guardar tasa, fecha, origen, USD
+  recibidos, equivalente MXN y cambio; cualquier ajuste comercial requiere
+  gerencia y auditoría. No se habilita sólo con lógica de interfaz.

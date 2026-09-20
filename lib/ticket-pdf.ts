@@ -242,6 +242,7 @@ export async function createTicketPdf(data: TicketPdfData) {
         `${line.quantity} x ${money(line.unitPriceCents)}  ${line.code}`,
         money(line.quantity * line.unitPriceCents),
         8,
+        bold,
       );
     } else {
       page.drawText(`${line.quantity} pza.  ${printable(line.code)}`, {
@@ -309,7 +310,7 @@ export async function createTicketPdf(data: TicketPdfData) {
     data.mode === "gift"
       ? `Presenta este ticket para cambio de talla o modelo dentro de ${data.returnWindowDays} días. No incluye importes ni forma de pago.`
       : `Cambios y devoluciones dentro de ${data.returnWindowDays} días con este ticket y etiqueta original. No aplica en oferta.`;
-  wrappedCentered(policy, 7.6);
+  wrappedCentered(policy, 7.8, bold);
   y -= 3;
   centered("GRACIAS POR SU COMPRA", 9.5, bold);
 

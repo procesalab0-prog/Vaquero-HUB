@@ -157,7 +157,7 @@ export function ThermalReceipt({
                 {item.variant.toLocaleUpperCase("es-MX")}
               </strong>
               {mode === "sale" ? (
-                <div>
+                <div className="receipt-critical-copy">
                   <span>
                     {item.quantity} × {number.format(item.unitPrice)} ·{" "}
                     <code>{item.code}</code>
@@ -218,7 +218,7 @@ export function ThermalReceipt({
           <code>{receiptFolio}</code>
           {mode === "sale" ? (
             <>
-              <p>
+              <p className="receipt-critical-copy">
                 Cambios y devoluciones dentro de {returnWindowDays} días con
                 este ticket
                 <br />y etiqueta original. No aplica en oferta.
@@ -228,7 +228,7 @@ export function ThermalReceipt({
             </>
           ) : (
             <>
-              <p>
+              <p className="receipt-critical-copy">
                 Presenta este ticket para cambio de talla o modelo dentro de{" "}
                 {returnWindowDays} días. No incluye importes ni forma de pago.
                 Sujeto a existencia en la sucursal.

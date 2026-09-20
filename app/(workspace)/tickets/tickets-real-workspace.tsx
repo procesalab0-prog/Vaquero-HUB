@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   ArrowRightLeft,
   Download,
@@ -106,6 +106,7 @@ export function TicketsRealWorkspace({
   initialReturnLookup = false,
   initialSelectedTicketId,
   initialNotice = "",
+  initialScannedCode = "",
 }: {
   tickets: Ticket[];
   status?: string;
@@ -158,6 +159,7 @@ export function TicketsRealWorkspace({
   initialReturnLookup?: boolean;
   initialSelectedTicketId?: string;
   initialNotice?: string;
+  initialScannedCode?: string;
 }) {
   const { boldReceipt, setBoldReceipt } = useReceiptBoldPreference();
   const [rows, setRows] = useState(tickets);
@@ -293,6 +295,40 @@ export function TicketsRealWorkspace({
     }
   }
 
+  async function downloadFormalPdf() {
+    if (!selected) return;
+    setPdfBusy(true);
+    setError("");
+    try {
+      const { createCommercialPdf, downloadCommercialPdf } =
+        await import("@/lib/commercial-pdf");
+      const { blob, fileName } = await createCommercialPdf({
+        kind: "SALE",
+        folio: selected.folio,
+        date: formatReceiptDate(new Date(selected.sold_at)),
+        locationName: selected.location.name,
+        address: selected.location.address,
+        phone: selected.location.phone,
+        lines: selected.items.map((item) => ({
+          description: `${item.product_name} - ${item.variant_description || "Unica"}`,
+          code: item.sku,
+          quantity: Number(item.quantity),
+          unitPriceCents: Number(item.unit_price_cents),
+          lineTotalCents: Number(item.line_total_cents),
+        })),
+        subtotalCents: Number(selected.subtotal_cents),
+        discountCents: Number(selected.discount_cents),
+        totalCents: Number(selected.total_cents),
+      });
+      downloadCommercialPdf(blob, fileName);
+      setNotice("Comprobante formal descargado y listo para compartir.");
+    } catch {
+      setError("No fue posible crear el comprobante formal.");
+    } finally {
+      setPdfBusy(false);
+    }
+  }
+
   async function findScannedTicket(code: string) {
     const normalized = code.trim().toLocaleUpperCase("es-MX");
     const saleFolio = saleFolioFromReceiptCode(normalized);
@@ -323,6 +359,17 @@ export function TicketsRealWorkspace({
     } else setError("No encontramos ese ticket en esta sucursal.");
     setTicketScannerOpen(false);
   }
+
+  useEffect(() => {
+    if (!initialScannedCode) return;
+    const lookupTimer = window.setTimeout(
+      () => void findScannedTicket(initialScannedCode),
+      0,
+    );
+    return () => window.clearTimeout(lookupTimer);
+    // Sólo se procesa al entrar desde el lector físico del POS.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialScannedCode]);
 
   useKeyboardBarcodeScanner(
     (code) => void findScannedTicket(code),
@@ -577,6 +624,15 @@ export function TicketsRealWorkspace({
                 >
                   <Download aria-hidden="true" />
                   {pdfBusy ? "Preparando PDF…" : "Descargar PDF"}
+                </button>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  disabled={pdfBusy}
+                  onClick={() => void downloadFormalPdf()}
+                >
+                  <FileText aria-hidden="true" />
+                  PDF formal
                 </button>
                 {prepareExchangeAction &&
                 searchExchangeVariantsAction &&

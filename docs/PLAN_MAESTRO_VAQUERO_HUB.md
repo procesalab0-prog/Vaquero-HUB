@@ -3040,3 +3040,41 @@ Entrega visible 0.50.1 — segunda calibración con evidencia física:
 - El modo en negritas no sustituye la calibración de densidad del controlador:
   si los trazos gruesos también salen incompletos, se corrige la oscuridad de la
   BIXOLON y se revisa el cabezal antes de seguir cambiando el diseño.
+
+Entrega visible 0.51.0 — aprendizaje presencial y documentos comerciales:
+
+- La validación en La Piedad confirma que `clave1` del archivo SICAR es el
+  valor impreso en las etiquetas actuales. Mi Tienda SM lo conserva como
+  `legacy_sicar_code` y lo usa en etiqueta cuando existe; su SKU y código
+  propio siguen siendo independientes para no quedar atados a SICAR.
+- La etiqueta física es 51 × 25 mm, incluye clave de tienda, logotipo,
+  descripción, talla/color, precio, barras grandes y `clave1` legible. La
+  sucursal debe poder reconocerse sin consultar la base.
+- Un lector USB actúa como teclado: códigos de producto buscan/agregan producto;
+  folios `…-V-…` y tickets de regalo `R-…-1` abren la venta original. La
+  distinción se valida antes de navegar para no confundir `17996` con un folio.
+- Ticket térmico y PDF de mostrador refuerzan siempre las líneas críticas que
+  el cabezal perdió. El modo **Todo en negritas** queda disponible para el resto
+  del contenido.
+- Venta y Cotizaciones disponen además de un PDF formal, separado del ticket de
+  rollo, con identidad, cliente, partidas, descuentos, totales, vigencia y
+  observaciones para compartir con empresas.
+- La interfaz permite escala de texto pequeña, normal, grande y extra grande,
+  teclado físico para efectivo y una acción Regresar consistente. Estas
+  preferencias de lectura no alteran documentos impresos.
+
+Subfase financiera aprobada — recepción de dólares:
+
+- La referencia automática será el tipo FIX **SF43718** publicado por Banco de
+  México en SIE. La consulta se hace exclusivamente en servidor y el token de
+  Banxico nunca llega al navegador.
+- Fines de semana, días inhábiles o indisponibilidad usan el último valor válido
+  almacenado, mostrando fecha y origen. No se inventa ni sustituye en silencio.
+- Gerencia puede definir un ajuste comercial sobre la referencia; el sistema
+  conserva quién lo autorizó, motivo, referencia, ajuste y tasa final.
+- Cada venta guarda una instantánea inmutable: dólares recibidos, tasa aplicada,
+  equivalente MXN y cambio. Efectivo USD y MXN se concilian por separado; el
+  cambio se entrega en MXN salvo una política futura explícita.
+- Esta subfase exige migración hacia delante, RLS/permisos, operación atómica de
+  caja y pruebas de concurrencia. Hasta cumplirlas no se presenta como método de
+  pago activo.

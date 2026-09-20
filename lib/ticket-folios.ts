@@ -14,3 +14,8 @@ export function saleFolioFromReceiptCode(value: string) {
 
   return `V-${embeddedSaleFolio}`;
 }
+
+export function isTicketReceiptCode(value: string) {
+  const normalized = saleFolioFromReceiptCode(value);
+  return /^(?:[A-Z0-9]+-)*V-[A-Z0-9-]+$/.test(normalized);
+}

@@ -37,6 +37,8 @@ import {
 import { CustomerLookup } from "@/components/customer-lookup";
 import { useWorkspace } from "@/components/workspace-context";
 import type { CustomerSummary } from "@/lib/customers";
+import { isTicketReceiptCode } from "@/lib/ticket-folios";
+import { useKeyboardBarcodeScanner } from "@/lib/use-keyboard-barcode-scanner";
 import {
   ReceiptBoldToggle,
   useReceiptBoldPreference,
@@ -382,6 +384,7 @@ export function PosWorkspace({
         : "",
   );
   const toastTimer = useRef<number | null>(null);
+  const cashInputRef = useRef<HTMLInputElement | null>(null);
   const draftTimer = useRef<number | null>(null);
   const draftSaveChain = useRef<Promise<void>>(Promise.resolve());
   const draftRevision = useRef(0);
@@ -389,6 +392,28 @@ export function PosWorkspace({
   const submittingRef = useRef(false);
   const idempotencyKey = useRef(crypto.randomUUID());
   const layawayIdempotencyKey = useRef(crypto.randomUUID());
+
+  useKeyboardBarcodeScanner(
+    (rawCode) => {
+      const code = rawCode.trim().toLocaleUpperCase("es-MX");
+      if (isTicketReceiptCode(code)) {
+        router.push(`/tickets?escanear=${encodeURIComponent(code)}`);
+        return;
+      }
+      setQuery(code);
+      setShowCatalog(true);
+    },
+    !checkoutOpen && !completed && !layawayOpen && !heldTicketsOpen,
+  );
+
+  useEffect(() => {
+    if (!cashMode) return;
+    const focusTimer = window.setTimeout(
+      () => cashInputRef.current?.focus(),
+      0,
+    );
+    return () => window.clearTimeout(focusTimer);
+  }, [cashMode]);
 
   async function submitLayaway() {
     if (draftOperationRef.current || layawayBusy) return;
@@ -535,7 +560,7 @@ export function PosWorkspace({
   const total = subtotal - discountAmount;
   const quantity = cart.reduce((sum, line) => sum + line.quantity, 0);
   const giftCount = cart.filter((line) => line.giftReceipt).length;
-  const cashTendered = Number(cashInput || 0);
+  const cashTendered = Number(cashInput.replace(",", ".") || 0);
   const change = Math.max(0, cashTendered - total);
   const receiptLines: ReceiptLine[] = cart.map((line) => ({
     name: line.variant.productName,
@@ -1015,6 +1040,12 @@ export function PosWorkspace({
     });
   }
 
+  function updateCashInput(value: string) {
+    const normalized = value.replace(/[^0-9.,]/g, "").replace(",", ".");
+    if (!/^\d{0,7}(?:\.\d{0,2})?$/.test(normalized)) return;
+    setCashInput(normalized);
+  }
+
   async function applyDiscount() {
     const value = Math.min(100, Math.max(0, Number(discountInput)));
     if (!Number.isFinite(value)) return;
@@ -1375,6 +1406,13 @@ export function PosWorkspace({
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter") return;
+                const code = query.trim().toLocaleUpperCase("es-MX");
+                if (!isTicketReceiptCode(code)) return;
+                event.preventDefault();
+                router.push(`/tickets?escanear=${encodeURIComponent(code)}`);
+              }}
               onFocus={() => setShowCatalog(true)}
               placeholder="Escanea el código o busca por nombre, SKU o marca"
               aria-label="Buscar o escanear producto"
@@ -2082,7 +2120,29 @@ export function PosWorkspace({
               <div className="cash-keypad-flow">
                 <div className="cash-display">
                   <span>Recibido</span>
-                  <strong>{money.format(cashTendered)}</strong>
+                  <input
+                    ref={cashInputRef}
+                    className="cash-received-input"
+                    inputMode="decimal"
+                    aria-label="Efectivo recibido"
+                    value={cashInput}
+                    onChange={(event) => updateCashInput(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (
+                        event.key === "Enter" &&
+                        cashTendered >= total &&
+                        !submitting
+                      ) {
+                        event.preventDefault();
+                        void completeSale("cash");
+                      }
+                      if (event.key === "Escape") {
+                        event.preventDefault();
+                        setCashMode(false);
+                      }
+                    }}
+                    placeholder="0.00"
+                  />
                   <small className={cashTendered >= total ? "enough" : ""}>
                     {cashTendered >= total
                       ? `Cambio: ${money.format(change)}`

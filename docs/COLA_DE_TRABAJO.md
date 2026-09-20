@@ -1370,6 +1370,28 @@ pueden convertirla en dos ventas.
       lectura real; si ambos salen borrosos, aumentar oscuridad o densidad desde
       las preferencias del controlador.
 
+## Operación 0.51.0 — observaciones presenciales de La Piedad
+
+- [x] Imprimir en etiqueta 51 × 25 el valor `clave1` de SICAR cuando exista,
+      con clave de sucursal, barras grandes y número legible.
+- [x] Reforzar permanentemente detalle y política del ticket térmico/PDF.
+- [x] Abrir la compra al escanear ticket normal o de regalo desde Venta, sin
+      confundir un código corto de producto.
+- [x] Permitir captura física del efectivo, Enter para confirmar y Escape para
+      cerrar, conservando el teclado táctil.
+- [x] Añadir Regresar en pantallas interiores y tamaño de texto local desde
+      Ajustes, sin modificar impresión.
+- [x] Descargar cotización y venta como documento formal A4 separado del
+      comprobante térmico.
+- [ ] Probar nuevamente etiqueta y ticket en EVA58/BIXOLON: 51 × 25 mm,
+      horizontal, escala 100 %, márgenes Ninguno; conservar fotografía y
+      escaneo de `clave1`.
+- [ ] Implementar cobro USD como bloque financiero independiente: API oficial
+      SIE Banxico, serie FIX `SF43718`, token sólo servidor, último dato válido,
+      autorización de gerencia para ajuste, instantánea inmutable en venta,
+      efectivo USD separado y conciliación/ticket. Requiere migración y pruebas
+      concurrentes antes de producción.
+
 ## Corrección operativa 0.32.2 — sucursal activa
 
 - [x] Conservar la sucursal elegida al navegar entre módulos y validar siempre
