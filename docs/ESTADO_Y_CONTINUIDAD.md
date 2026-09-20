@@ -35,43 +35,43 @@ saltando lo bloqueado.
 
 ### Terminado y en `main`
 
-| Milestone                | Qué quedó                                                                                                |
-| ------------------------ | -------------------------------------------------------------------------------------------------------- |
-| **M0**                   | Next.js, Supabase local, migraciones versionadas, Vitest, Playwright, CI                                 |
-| **M1**                   | Sucursales, empleados, roles, permisos granulares, RLS, bitácora, PIN de supervisor                      |
-| **M1B**                  | Clientes, número de socio con dígito verificador, tarjeta digital, acceso sin contraseña, PWA de cliente |
-| **M2 (segunda entrega)** | Catálogo real, alta atómica, búsqueda, matriz color × talla e identidad automática protegida             |
-| **M2 (revisión)**        | Una sola variante por combinación de atributos, protegida también ante concurrencia                      |
-| **M2 (tercera entrega)** | Agregar tallas o colores a un producto sin cambiar identidades existentes                                |
-| **M2 (cuarta entrega)**  | Códigos de proveedor y reimpresión seguros; los códigos anteriores siguen escaneando                     |
-| **Calidad 0.14.0**       | Navegación con sesión deduplicada, carga inmediata y scroll verificado en teléfono, iPad y computadora   |
-| **Corrección 0.14.1**    | Candado concurrente aplicado y prefijo interno 20–29 bloqueado para códigos externos                     |
-| **Componente 0.15.0**    | Cámara en Productos, detección nativa/ZXing, búsqueda real y recuperación de permisos                    |
-| **M2 (quinta entrega)**  | Edición segura de producto, costo/estado y precio con permisos separados e identidad inmutable           |
-| **M2 (sexta entrega)**   | Carga masiva CSV/XLSX con validación en seco, confirmación atómica y códigos propios protegidos          |
-| **M2.5 (0.18.0)**        | Selección y precios en lote auditados; plantillas persistentes e impresión real de etiquetas             |
-| **M3.1 (0.19.0)**        | Saldos por sucursal, libro inmutable, ajustes auditados y pantalla de inventario con datos reales        |
-| **M3 (0.20.0)**          | Conteos formales y traspasos con aprobación, tránsito explícito, recepción parcial y auditoría           |
-| **M4 (0.23.0)**          | Ventas atómicas, pagos mixtos, cajas, corte ciego, tickets reales, cancelación y tickets en espera       |
-| **M5 (0.28.0)**          | Devolución parcial, reembolso por método original, caja nunca negativa, plazo y PIN de gerente           |
-| **M5.5 (0.25.0)**        | Alta por rangos, conteo continuo de 20 variantes y traspasos buscables, auditados en tres tamaños        |
-| **M9 (0.29.0)**          | Sincronizador idempotente de catálogo restringido a staging; conserva SHA, aprobación y conciliación     |
-| **Calidad 0.31.0**       | Proveedor y cliente con scroll táctil; carrito de Venta como cajón en teléfono e iPad                    |
-| **Corrección 0.31.1**    | Al abrir una ventana móvil se bloquea el fondo y sólo el cuadro recibe el gesto vertical                 |
-| **Hardware 0.31.2**      | Modelos reales documentados: BIXOLON SRP-330II para tickets y SICAR EVA58 para etiquetas                 |
-| **Hardware 0.31.3**      | Prueba de ticket térmico sin registrar venta, mover inventario, caja ni folios                           |
-| **M8.1 (0.32.0)**        | Reportes reales de ventas e inventario con periodo, producto, variante, cajero y conciliación de cobros  |
-| **M8.2 (0.33.0)**        | Cotizaciones reales con folio, vigencia opcional, búsqueda y conversión atómica mediante el POS          |
-| **M8.3 (0.45.0)**        | PDF local de venta/regalo, pagos desglosados, descarga auditable e historial privado en Mi Vaquero       |
-| **Corrección 0.45.1**    | El logotipo del ticket PDF conserva su proporción original y ajusta la altura sin deformarse             |
+| Milestone                | Qué quedó                                                                                                       |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| **M0**                   | Next.js, Supabase local, migraciones versionadas, Vitest, Playwright, CI                                        |
+| **M1**                   | Sucursales, empleados, roles, permisos granulares, RLS, bitácora, PIN de supervisor                             |
+| **M1B**                  | Clientes, número de socio con dígito verificador, tarjeta digital, acceso sin contraseña, PWA de cliente        |
+| **M2 (segunda entrega)** | Catálogo real, alta atómica, búsqueda, matriz color × talla e identidad automática protegida                    |
+| **M2 (revisión)**        | Una sola variante por combinación de atributos, protegida también ante concurrencia                             |
+| **M2 (tercera entrega)** | Agregar tallas o colores a un producto sin cambiar identidades existentes                                       |
+| **M2 (cuarta entrega)**  | Códigos de proveedor y reimpresión seguros; los códigos anteriores siguen escaneando                            |
+| **Calidad 0.14.0**       | Navegación con sesión deduplicada, carga inmediata y scroll verificado en teléfono, iPad y computadora          |
+| **Corrección 0.14.1**    | Candado concurrente aplicado y prefijo interno 20–29 bloqueado para códigos externos                            |
+| **Componente 0.15.0**    | Cámara en Productos, detección nativa/ZXing, búsqueda real y recuperación de permisos                           |
+| **M2 (quinta entrega)**  | Edición segura de producto, costo/estado y precio con permisos separados e identidad inmutable                  |
+| **M2 (sexta entrega)**   | Carga masiva CSV/XLSX con validación en seco, confirmación atómica y códigos propios protegidos                 |
+| **M2.5 (0.18.0)**        | Selección y precios en lote auditados; plantillas persistentes e impresión real de etiquetas                    |
+| **M3.1 (0.19.0)**        | Saldos por sucursal, libro inmutable, ajustes auditados y pantalla de inventario con datos reales               |
+| **M3 (0.20.0)**          | Conteos formales y traspasos con aprobación, tránsito explícito, recepción parcial y auditoría                  |
+| **M4 (0.23.0)**          | Ventas atómicas, pagos mixtos, cajas, corte ciego, tickets reales, cancelación y tickets en espera              |
+| **M5 (0.28.0)**          | Devolución parcial, reembolso por método original, caja nunca negativa, plazo y PIN de gerente                  |
+| **M5.5 (0.25.0)**        | Alta por rangos, conteo continuo de 20 variantes y traspasos buscables, auditados en tres tamaños               |
+| **M9 (0.29.0)**          | Sincronizador idempotente de catálogo restringido a staging; conserva SHA, aprobación y conciliación            |
+| **Calidad 0.31.0**       | Proveedor y cliente con scroll táctil; carrito de Venta como cajón en teléfono e iPad                           |
+| **Corrección 0.31.1**    | Al abrir una ventana móvil se bloquea el fondo y sólo el cuadro recibe el gesto vertical                        |
+| **Hardware 0.31.2**      | Modelos reales documentados: BIXOLON SRP-330II para tickets y SICAR EVA58 para etiquetas                        |
+| **Hardware 0.31.3**      | Prueba de ticket térmico sin registrar venta, mover inventario, caja ni folios                                  |
+| **M8.1 (0.32.0)**        | Reportes reales de ventas e inventario con periodo, producto, variante, cajero y conciliación de cobros         |
+| **M8.2 (0.33.0)**        | Cotizaciones reales con folio, vigencia opcional, búsqueda y conversión atómica mediante el POS                 |
+| **M8.3 (0.45.0)**        | PDF local de venta/regalo, pagos desglosados, descarga auditable e historial privado en Mi Vaquero              |
+| **Corrección 0.45.1**    | El logotipo del ticket PDF conserva su proporción original y ajusta la altura sin deformarse                    |
 | **M7.3 (0.46.0)**        | Cancelación anticipada autorizada, devolución por métodos originales, penalización explícita y reserva liberada |
-| **M7.1–M7.2 (0.35.0)**   | Crédito autorizado, límite global, venta total/mixta y abonos conciliados con caja                       |
-| **M7.2 (0.37.0)**        | Devolución reduce primero deuda; sólo dinero pagado vuelve por su método real                            |
-| **M7.2 (0.38.0)**        | Excepción ADMIN de un solo uso permite una venta vencida sin borrar atraso ni historial                  |
-| **M7.2 (0.39.0)**        | Cancelación de crédito crea devolución completa, extingue deuda y sólo reembolsa dinero real             |
-| **Corrección 0.32.1**    | Traspasos visibles y alta atómica de sucursal con acceso administrativo y primera caja                   |
-| **Corrección 0.32.2**    | Sucursal activa persistente, asignación de empleados, caja real y recepción de traspaso explicada        |
-| **Corrección 0.37.1**    | Administración global puede cambiar y operar todas las sucursales activas sin asignaciones individuales  |
+| **M7.1–M7.2 (0.35.0)**   | Crédito autorizado, límite global, venta total/mixta y abonos conciliados con caja                              |
+| **M7.2 (0.37.0)**        | Devolución reduce primero deuda; sólo dinero pagado vuelve por su método real                                   |
+| **M7.2 (0.38.0)**        | Excepción ADMIN de un solo uso permite una venta vencida sin borrar atraso ni historial                         |
+| **M7.2 (0.39.0)**        | Cancelación de crédito crea devolución completa, extingue deuda y sólo reembolsa dinero real                    |
+| **Corrección 0.32.1**    | Traspasos visibles y alta atómica de sucursal con acceso administrativo y primera caja                          |
+| **Corrección 0.32.2**    | Sucursal activa persistente, asignación de empleados, caja real y recepción de traspaso explicada               |
+| **Corrección 0.37.1**    | Administración global puede cambiar y operar todas las sucursales activas sin asignaciones individuales         |
 
 Ochenta y ocho migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
@@ -249,3 +249,93 @@ función que confiaba en el id de usuario que le pasaban por parámetro.
 
 Conviene revisar con esa pregunta encima: _¿este control de verdad hace lo
 que dice?_ Que exista el código no significa que funcione.
+
+## Avance 0.47.0 — autorización de gerencia con caja única
+
+- La cancelación anticipada de un apartado ya no obliga al gerente a abrir una
+  segunda caja: la persona dueña del turno ejecuta y el gerente o administrador
+  autoriza con su código y PIN.
+- La autorización está ligada al ejecutor, vence en cinco minutos y se consume
+  una sola vez. Caja, mercancía y documento se mantienen en una sola transacción.
+- La caja que entrega efectivo es la misma que opera la cancelación. El control
+  de saldo impide reembolsos imposibles y la auditoría registra por separado a
+  quien ejecutó y a quien autorizó.
+- En 0.48.0 la entrega en otra sucursal ya usa un traspaso completo y recibido:
+  existencia y reserva viajan juntas por origen, tránsito y destino, y el
+  apartado queda bloqueado mientras la mercancía está en movimiento.
+- Para cerrar M7.3 sólo queda la sustitución cuyo nuevo total quede debajo de lo
+  ya abonado; requiere una decisión financiera explícita del negocio.
+
+## Calidad 0.49.0 — tickets y apartados claros en teléfono
+
+- La auditoría automática recorre las rutas operativas principales a 390 px,
+  comprueba que ninguna ensanche la página y que se pueda llegar al final con
+  desplazamiento vertical, sin exigir girar el teléfono.
+- El ticket de regalo dejó de dibujar un cuadro que simulaba un QR. Ahora usa
+  el mismo código de barras real y escaneable que identifica el comprobante.
+- El comprobante de abono adopta el formato térmico de 80 mm, logotipo,
+  sucursal, datos de caja, folio y código de barras.
+
+- Al registrar un abono, la confirmación muestra el importe aplicado y el saldo
+  restante devuelto por la transacción. No obliga a deducirlo del total.
+- Entregar un apartado abre directamente su venta exacta en Tickets, lista para
+  imprimir o descargar en PDF; no deja al empleado buscando el folio generado.
+
+## Calidad 0.49.1 — el ticket de regalo encuentra la venta
+
+- El folio derivado del ticket de regalo (`R-…-1`) se traduce al folio original
+  antes de consultar la venta. Escanearlo o escribirlo en Tickets abre ahora el
+  comprobante correcto y muestra que se reconoció una copia de regalo.
+- La conversión de folios quedó compartida por el ticket térmico, el PDF y el
+  buscador, con pruebas para folios cortos y folios reales por sucursal.
+
+## Calibración física 0.50.0 — impresión medida en tienda
+
+- La etiqueta real fue medida en **51 × 25 mm**. Una migración hacia delante
+  actualiza la plantilla predeterminada; no se reescribe ninguna migración ya
+  aplicada.
+- La etiqueta reduce márgenes, aumenta el logotipo y conserva producto, talla,
+  código de barras, código legible y precio dentro de un solo troquel.
+- El ticket térmico y su PDF usan tipografía mayor, más cercana a la muestra
+  de SICAR aceptada en mostrador, sin quitar el código de barras de Mi Tienda
+  SM.
+- La siguiente prueba física debe usar papel 51 × 25 mm, márgenes Ninguno y
+  escala 100 % en el controlador de la EVA58.
+
+## Corrección física 0.50.1 — etiqueta completa y contraste térmico
+
+- La segunda prueba reveló que el PNG del logotipo conservaba un área
+  transparente grande: el dibujo visible quedaba pequeño y desplazaba código y
+  barras fuera del troquel. La plantilla 51 × 25 mm ahora recorta visualmente
+  ese espacio, aumenta la información útil y fuerza recorte dentro de una sola
+  página física.
+- Tickets, reimpresiones y PDF de mostrador ofrecen **Todo en negritas**. La
+  preferencia queda guardada en esa computadora y mejora los trazos que la
+  BIXOLON pierde sin alterar importes, folios ni código de barras.
+- La siguiente validación física debe comprobar una etiqueta completa en un
+  solo troquel y comparar el ticket normal contra el de alto contraste.
+
+## Operación física 0.51.0 — hallazgos de La Piedad
+
+- La prueba física confirmó que **`clave1` de SICAR es el número que debe
+  codificar la etiqueta heredada**. Etiquetas prioriza `legacy_sicar_code`
+  sobre el código propio; si no existe dato heredado conserva el código propio
+  como respaldo. Esta decisión no cambia el SKU interno de Mi Tienda SM.
+- La plantilla 51 × 25 mm muestra clave de sucursal y amplía las barras. Los
+  datos que salieron tenues en el ticket —detalle de cantidad/precio/código y
+  política de cambios— siempre usan trazo fuerte, aunque el resto del ticket
+  conserve el modo normal.
+- El lector USB distingue producto de comprobante. Escanear `LAP-V-…` o
+  `R-LAP-V-…` desde Venta abre inmediatamente la compra; un valor como `17996`
+  continúa siendo una búsqueda de producto.
+- Cobro en efectivo acepta teclado físico, Enter y Escape sin quitar el teclado
+  táctil. Las pantallas interiores incorporan Regresar y Ajustes permite elegir
+  texto pequeño, normal, grande o extra grande en esa computadora.
+- Cotizaciones y ventas ofrecen un PDF comercial A4 separado del ticket
+  térmico: sucursal, cliente, partidas, descuento, total, observaciones y
+  vigencia cuando corresponde.
+- Próximo bloque seguro: pago en USD. La referencia será Banxico FIX
+  `SF43718`, consultada sólo desde servidor con token secreto, conservando el
+  último dato válido. Cada cobro deberá guardar tasa, fecha, origen, USD
+  recibidos, equivalente MXN y cambio; cualquier ajuste comercial requiere
+  gerencia y auditoría. No se habilita sólo con lógica de interfaz.

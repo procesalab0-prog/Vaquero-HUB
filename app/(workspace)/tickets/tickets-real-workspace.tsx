@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   ArrowRightLeft,
   Download,
@@ -28,7 +28,13 @@ import {
 import { CreditCancellationDialog } from "./credit-cancellation-dialog";
 import { ReturnExchangeDialog } from "./return-exchange-dialog";
 import { BarcodeScanner } from "@/components/barcode-scanner";
+import { saleFolioFromReceiptCode } from "@/lib/ticket-folios";
 import type { TicketDeliveryEventInput } from "@/lib/ticket-delivery";
+import { useKeyboardBarcodeScanner } from "@/lib/use-keyboard-barcode-scanner";
+import {
+  ReceiptBoldToggle,
+  useReceiptBoldPreference,
+} from "@/components/receipt-print-options";
 
 type TicketItem = {
   line_number: number;
@@ -98,6 +104,9 @@ export function TicketsRealWorkspace({
   createReturnExchangeAction,
   recordTicketDeliveryAction,
   initialReturnLookup = false,
+  initialSelectedTicketId,
+  initialNotice = "",
+  initialScannedCode = "",
 }: {
   tickets: Ticket[];
   status?: string;
@@ -148,11 +157,19 @@ export function TicketsRealWorkspace({
     input: TicketDeliveryEventInput,
   ) => Promise<void>;
   initialReturnLookup?: boolean;
+  initialSelectedTicketId?: string;
+  initialNotice?: string;
+  initialScannedCode?: string;
 }) {
+  const { boldReceipt, setBoldReceipt } = useReceiptBoldPreference();
   const [rows, setRows] = useState(tickets);
   const [query, setQuery] = useState("");
   const [period, setPeriod] = useState<"today" | "week" | "month">("today");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(() =>
+    tickets.some((ticket) => ticket.id === initialSelectedTicketId)
+      ? (initialSelectedTicketId ?? null)
+      : null,
+  );
   const [receiptMode, setReceiptMode] = useState<"sale" | "gift">("sale");
   const [reprintDate, setReprintDate] = useState("");
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -160,7 +177,7 @@ export function TicketsRealWorkspace({
   const [busy, setBusy] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState(initialNotice);
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
   const [ticketScannerOpen, setTicketScannerOpen] =
     useState(initialReturnLookup);
@@ -227,9 +244,8 @@ export function TicketsRealWorkspace({
     setError("");
     setNotice("");
     try {
-      const { createTicketPdf, downloadTicketPdf } = await import(
-        "@/lib/ticket-pdf"
-      );
+      const { createTicketPdf, downloadTicketPdf } =
+        await import("@/lib/ticket-pdf");
       const { blob, fileName } = await createTicketPdf({
         mode: receiptMode,
         folio: selected.folio,
@@ -254,6 +270,7 @@ export function TicketsRealWorkspace({
           amountCents: Number(payment.amount_cents),
         })),
         returnWindowDays,
+        boldText: boldReceipt,
       });
       downloadTicketPdf(blob, fileName);
       setNotice(
@@ -278,15 +295,55 @@ export function TicketsRealWorkspace({
     }
   }
 
+  async function downloadFormalPdf() {
+    if (!selected) return;
+    setPdfBusy(true);
+    setError("");
+    try {
+      const { createCommercialPdf, downloadCommercialPdf } =
+        await import("@/lib/commercial-pdf");
+      const { blob, fileName } = await createCommercialPdf({
+        kind: "SALE",
+        folio: selected.folio,
+        date: formatReceiptDate(new Date(selected.sold_at)),
+        locationName: selected.location.name,
+        address: selected.location.address,
+        phone: selected.location.phone,
+        lines: selected.items.map((item) => ({
+          description: `${item.product_name} - ${item.variant_description || "Unica"}`,
+          code: item.sku,
+          quantity: Number(item.quantity),
+          unitPriceCents: Number(item.unit_price_cents),
+          lineTotalCents: Number(item.line_total_cents),
+        })),
+        subtotalCents: Number(selected.subtotal_cents),
+        discountCents: Number(selected.discount_cents),
+        totalCents: Number(selected.total_cents),
+      });
+      downloadCommercialPdf(blob, fileName);
+      setNotice("Comprobante formal descargado y listo para compartir.");
+    } catch {
+      setError("No fue posible crear el comprobante formal.");
+    } finally {
+      setPdfBusy(false);
+    }
+  }
+
   async function findScannedTicket(code: string) {
     const normalized = code.trim().toLocaleUpperCase("es-MX");
-    setQuery(normalized);
+    const saleFolio = saleFolioFromReceiptCode(normalized);
+    setQuery(saleFolio);
     const ticket = rows.find(
-      (row) => row.folio.toLocaleUpperCase("es-MX") === normalized,
+      (row) => row.folio.toLocaleUpperCase("es-MX") === saleFolio,
     );
-    if (ticket) selectTicket(ticket);
-    else if (findTicketAction && locationId) {
-      const result = await findTicketAction({ locationId, code: normalized });
+    if (ticket) {
+      selectTicket(ticket);
+      if (saleFolio !== normalized)
+        setNotice(
+          `Ticket de regalo reconocido. Venta original ${ticket.folio}.`,
+        );
+    } else if (findTicketAction && locationId) {
+      const result = await findTicketAction({ locationId, code: saleFolio });
       if (result.ok) {
         setRows((current) =>
           current.some((row) => row.id === result.ticket.id)
@@ -294,10 +351,30 @@ export function TicketsRealWorkspace({
             : [result.ticket, ...current],
         );
         selectTicket(result.ticket);
+        if (saleFolio !== normalized)
+          setNotice(
+            `Ticket de regalo reconocido. Venta original ${result.ticket.folio}.`,
+          );
       } else setError(result.message);
     } else setError("No encontramos ese ticket en esta sucursal.");
     setTicketScannerOpen(false);
   }
+
+  useEffect(() => {
+    if (!initialScannedCode) return;
+    const lookupTimer = window.setTimeout(
+      () => void findScannedTicket(initialScannedCode),
+      0,
+    );
+    return () => window.clearTimeout(lookupTimer);
+    // Sólo se procesa al entrar desde el lector físico del POS.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialScannedCode]);
+
+  useKeyboardBarcodeScanner(
+    (code) => void findScannedTicket(code),
+    !ticketScannerOpen && !returnDialogOpen && !cancelOpen,
+  );
 
   async function cancelTicket() {
     if (!selected || !cancelSaleAction || cancelReason.trim().length < 3)
@@ -476,6 +553,10 @@ export function TicketsRealWorkspace({
                   Regalo
                 </button>
               </div>
+              <ReceiptBoldToggle
+                checked={boldReceipt}
+                onChange={setBoldReceipt}
+              />
               <div className="receipt-paper-stage compact-stage">
                 <ThermalReceipt
                   mode={receiptMode}
@@ -508,6 +589,7 @@ export function TicketsRealWorkspace({
                   registerName={selected.register_name}
                   location={selected.location}
                   returnWindowDays={returnWindowDays}
+                  boldText={boldReceipt}
                 />
               </div>
               {selected.status === "CANCELLED" ? (
@@ -542,6 +624,15 @@ export function TicketsRealWorkspace({
                 >
                   <Download aria-hidden="true" />
                   {pdfBusy ? "Preparando PDF…" : "Descargar PDF"}
+                </button>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  disabled={pdfBusy}
+                  onClick={() => void downloadFormalPdf()}
+                >
+                  <FileText aria-hidden="true" />
+                  PDF formal
                 </button>
                 {prepareExchangeAction &&
                 searchExchangeVariantsAction &&

@@ -132,15 +132,18 @@ cerrar M7:
    los abonos reales; tarjeta y transferencia exigen una nueva referencia. La
    persona autorizada ejecuta la operación con su propia caja abierta y no se
    utiliza un PIN separado.
-6. Para entregar en otra sucursal, ¿quién solicita y quién autoriza el traspaso,
-   y se permite recoger antes de que la mercancía sea recibida físicamente?
+6. **Resuelto en 0.48.0:** quien tenga `layaways.deliver` y
+   `transfers.create` solicita el traslado desde la ficha del apartado. La
+   tienda origen conserva la aprobación, preparación y despacho del flujo de
+   traspasos; una persona distinta del aprobador o despachador lo recibe en el
+   destino. Nunca se permite recoger antes de la recepción física completa.
 7. ¿Cuántos apartados abiertos existen en SICAR y deben migrarse?
 
 La retención de abonos como penalización debe aparecer claramente en la política
 y en el comprobante aceptado por el cliente antes de recibir dinero.
 
-Las decisiones aún abiertas son 3, 4, 6 y 7. La sustitución con excedente y la
-entrega entre sucursales no deben simularse mientras sigan abiertas.
+Las decisiones aún abiertas son 3, 4 y 7. La sustitución con excedente no debe
+simularse mientras siga abierta.
 
 ## 7. Criterios de aceptación
 
@@ -238,7 +241,7 @@ entrega entre sucursales no deben simularse mientras sigan abiertas.
 - La entrega directa en otra sucursal continúa bloqueada: deberá existir primero
   un traspaso confirmado conforme a la decisión pendiente de §6.
 
-## 13. Avance implementado en 0.46.0
+## 13. Avance implementado en 0.46.0 y 0.47.0
 
 - Administradores y gerentes reciben `layaways.cancel_exception`; una cajera no
   puede autorizar una cancelación anticipada llamando directamente al backend.
@@ -255,3 +258,33 @@ entrega entre sucursales no deben simularse mientras sigan abiertas.
   idempotente impide liberar o devolver dos veces.
 - El documento de cancelación y sus métodos son libros cerrados mediante RLS,
   sin lectura o escritura directa para empleados.
+- Desde 0.47.0, la persona que tiene abierta la caja ejecuta la cancelación y
+  el reembolso desde ese mismo cajón. Un gerente o administrador conserva la
+  autoridad: ingresa su código y PIN para emitir una capacidad de cinco minutos,
+  ligada a la cajera y consumible una sola vez.
+- El documento registra por separado `actor_user_id`, `authorized_by` y la
+  autorización utilizada. La bitácora permite responder quién operó la caja y
+  quién tomó la decisión, sin obligar al gerente a abrir una segunda caja.
+- El backend exige permiso operativo a la cajera, permiso excepcional al
+  supervisor, sucursal compartida, caja propia abierta, motivo y efectivo
+  suficiente. Ocultar o mostrar el formulario no sustituye estos controles.
+
+## 14. Avance implementado en 0.48.0
+
+- Un apartado liquidado puede solicitar desde su propia ficha una entrega en
+  otra tienda. La solicitud crea un traspaso real con todas las variantes y
+  cantidades del documento; no mueve inventario al momento de solicitar.
+- Aprobación, preparación, despacho y recepción reutilizan el flujo de M3 y su
+  separación de funciones. Los apartados no aceptan preparación parcial ni
+  recepción parcial: todas las piezas comprometidas deben viajar y recibirse.
+- En el despacho, existencia física y reserva salen juntas del origen y quedan
+  juntas en la ubicación de tránsito. En la recepción pasan juntas al destino;
+  sólo entonces cambia la sucursal del apartado.
+- Mientras el traspaso está activo se bloquean entrega, sustitución,
+  cancelación y cualquier cambio del apartado. Una falla revierte los dos
+  libros y nunca deja mercancía disponible simultáneamente en dos tiendas.
+- Después de la recepción completa, la caja de la sucursal destino puede
+  entregar normalmente y generar el ticket real sin volver a cobrar abonos.
+- La sustitución cuyo nuevo total sea menor que lo ya abonado continúa
+  bloqueada hasta que el negocio defina si el excedente se devuelve, se conserva
+  como saldo o impide la operación.

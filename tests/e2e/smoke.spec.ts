@@ -92,6 +92,61 @@ test("mantiene accesibles los seis destinos táctiles en teléfono vertical", as
   }
 });
 
+for (const route of [
+  "/inicio",
+  "/pos",
+  "/productos",
+  "/inventario",
+  "/clientes",
+  "/caja",
+  "/tickets",
+  "/apartados",
+  "/reportes",
+  "/administracion",
+  "/ajustes",
+]) {
+  test(`conserva ${route} dentro del teléfono vertical`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(route);
+    await expect(page.locator("main")).toBeVisible();
+    expect(
+      await page.locator("html").evaluate((element) => element.scrollWidth),
+    ).toBeLessThanOrEqual(390);
+    const workspace = page.locator(".workspace-main");
+    await workspace.evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
+    await expect
+      .poll(async () =>
+        workspace.evaluate((element) =>
+          Math.abs(
+            element.scrollHeight - element.clientHeight - element.scrollTop,
+          ),
+        ),
+      )
+      .toBeLessThanOrEqual(1);
+  });
+}
+
+test("el ticket de regalo usa un código real y no un cuadro simulado", async ({
+  page,
+}) => {
+  await page.goto("/prueba-impresion");
+  await page.locator(".receipt-type-switch button.gift").click();
+  await expect(page.locator(".gift-receipt .label-barcode-svg")).toBeVisible();
+  await expect(page.locator(".receipt-qr")).toHaveCount(0);
+});
+
+test("el lector USB abre el ticket inmediatamente", async ({ page }) => {
+  await page.goto("/tickets");
+  await page.getByRole("heading", { name: "Tickets y comprobantes" }).click();
+  await page.keyboard.type("V-000842");
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("heading", { name: "V-000842", exact: true }),
+  ).toBeVisible();
+});
+
 for (const viewport of [
   { name: "teléfono", width: 390, height: 844 },
   { name: "iPad", width: 820, height: 1180 },

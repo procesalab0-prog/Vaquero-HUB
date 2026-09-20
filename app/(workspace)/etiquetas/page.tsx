@@ -4,16 +4,17 @@ import { requirePermission } from "@/lib/auth/authorization";
 import type { LabelTemplate, ProductVariant } from "@/lib/domain";
 import { mockVariants } from "@/lib/mock-data";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { printableLabelCode } from "@/lib/label-code";
 import { saveLabelTemplate } from "./actions";
 import { LabelsWorkspace } from "./labels-workspace";
 
 export const metadata: Metadata = { title: "Etiquetas y códigos" };
 
 const previewTemplate: LabelTemplate = {
-  id: "preview-50x30",
-  name: "Vaquero 50 × 30 mm",
-  widthMm: 50,
-  heightMm: 30,
+  id: "preview-51x25",
+  name: "Vaquero 51 × 25 mm",
+  widthMm: 51,
+  heightMm: 25,
   layout: "BALANCED",
   showLogo: true,
   showProductName: true,
@@ -72,7 +73,9 @@ export default async function LabelsPage({
         variants={mockVariants}
         templates={[previewTemplate]}
         preview
-        fromProducts={params.desde === "productos" || params.desde === "recepcion"}
+        fromProducts={
+          params.desde === "productos" || params.desde === "recepcion"
+        }
       />
     );
   }
@@ -125,7 +128,10 @@ export default async function LabelsPage({
       productId: row.product_id,
       productName: row.product_name,
       brand: row.brand_name,
-      legacyCode: row.primary_barcode ?? row.legacy_sicar_code ?? "Sin código",
+      legacyCode: printableLabelCode({
+        legacySicarCode: row.legacy_sicar_code,
+        primaryBarcode: row.primary_barcode,
+      }),
       sku: row.sku,
       color: row.attributes?.COLOR ?? "Sin color",
       size: row.attributes?.TALLA ?? "Única",
@@ -161,7 +167,9 @@ export default async function LabelsPage({
       canManageTemplates={(permissionsResult.data ?? []).length > 0}
       saveTemplateAction={saveLabelTemplate}
       status={params.status}
-      fromProducts={params.desde === "productos" || params.desde === "recepcion"}
+      fromProducts={
+        params.desde === "productos" || params.desde === "recepcion"
+      }
     />
   );
 }

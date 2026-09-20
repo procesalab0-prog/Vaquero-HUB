@@ -3,6 +3,7 @@ import type { WorkspaceLocation } from "@/lib/auth/types";
 import { BUSINESS_PROFILE, LA_PIEDAD_STORE } from "@/lib/business-profile";
 import { receiptPageStyle } from "@/lib/printing";
 import { LabelBarcode } from "@/components/label-barcode";
+import { giftFolioFromSale } from "@/lib/ticket-folios";
 
 export type ReceiptLine = {
   name: string;
@@ -35,6 +36,7 @@ type ThermalReceiptProps = {
   registerName?: string;
   location?: WorkspaceLocation | null;
   returnWindowDays?: number;
+  boldText?: boolean;
 };
 
 const number = new Intl.NumberFormat("es-MX", {
@@ -56,10 +58,6 @@ export function formatReceiptDate(date = new Date()) {
     .replace(",", "");
 }
 
-function saleFolioToGift(folio: string) {
-  return `R-${folio.replace(/^V-/, "")}-1`;
-}
-
 export function ThermalReceipt({
   mode,
   folio,
@@ -77,8 +75,9 @@ export function ThermalReceipt({
   registerName = "Caja 01",
   location,
   returnWindowDays = 15,
+  boldText = false,
 }: ThermalReceiptProps) {
-  const receiptFolio = mode === "gift" ? saleFolioToGift(folio) : folio;
+  const receiptFolio = mode === "gift" ? giftFolioFromSale(folio) : folio;
   const receiptLocation = location ?? LA_PIEDAD_STORE;
   const receiptAddress = receiptLocation.address ?? "Dirección por configurar";
   const receiptPhone = receiptLocation.phone ?? "Teléfono por configurar";
@@ -86,7 +85,7 @@ export function ThermalReceipt({
     <>
       <style media="print">{receiptPageStyle}</style>
       <article
-        className={`thermal-receipt print-receipt ${mode === "gift" ? "gift-receipt" : "sale-receipt"}`}
+        className={`thermal-receipt print-receipt ${mode === "gift" ? "gift-receipt" : "sale-receipt"}${boldText ? " receipt-all-bold" : ""}`}
         aria-label={
           mode === "gift"
             ? "Vista previa del ticket de regalo"
@@ -158,7 +157,7 @@ export function ThermalReceipt({
                 {item.variant.toLocaleUpperCase("es-MX")}
               </strong>
               {mode === "sale" ? (
-                <div>
+                <div className="receipt-critical-copy">
                   <span>
                     {item.quantity} × {number.format(item.unitPrice)} ·{" "}
                     <code>{item.code}</code>
@@ -215,15 +214,11 @@ export function ThermalReceipt({
         ) : null}
 
         <footer className="thermal-footer">
-          {mode === "sale" ? (
-            <LabelBarcode code={receiptFolio} />
-          ) : (
-            <div className="receipt-qr" aria-hidden="true" />
-          )}
+          <LabelBarcode code={receiptFolio} />
           <code>{receiptFolio}</code>
           {mode === "sale" ? (
             <>
-              <p>
+              <p className="receipt-critical-copy">
                 Cambios y devoluciones dentro de {returnWindowDays} días con
                 este ticket
                 <br />y etiqueta original. No aplica en oferta.
@@ -233,7 +228,7 @@ export function ThermalReceipt({
             </>
           ) : (
             <>
-              <p>
+              <p className="receipt-critical-copy">
                 Presenta este ticket para cambio de talla o modelo dentro de{" "}
                 {returnWindowDays} días. No incluye importes ni forma de pago.
                 Sujeto a existencia en la sucursal.

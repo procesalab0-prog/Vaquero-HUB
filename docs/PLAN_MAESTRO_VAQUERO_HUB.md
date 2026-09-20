@@ -2960,3 +2960,121 @@ Entrega visible 0.46.0 — cancelación anticipada de apartados:
 - M7.3 continúa abierto únicamente para sustituciones cuyo nuevo total quede
   debajo de lo ya abonado y para entrega en otra sucursal mediante un traspaso
   físicamente recibido. No se simula ninguno de esos dos recorridos.
+
+Entrega visible 0.47.0 — gerencia autoriza sin ocupar una segunda caja:
+
+- La regla general de mostrador queda confirmada: la persona dueña de la caja
+  ejecuta la operación monetaria y un gerente o administrador la autoriza con
+  código y PIN. No se mueve el dinero a un cajón administrativo ficticio.
+- La cancelación anticipada de apartados adopta el mismo patrón que la
+  cancelación de crédito. La autorización dura cinco minutos, está ligada al
+  ejecutor y se consume una sola vez dentro de la misma transacción.
+- El documento y la bitácora distinguen al ejecutor del autorizador. La caja
+  usada, el reembolso, la penalización, la liberación de mercancía y el consumo
+  de la autorización confirman juntos o se revierten juntos.
+- La interfaz muestra esta operación a quien administra apartados, pero el
+  backend exige tanto el permiso operativo como la capacidad excepcional de
+  gerencia; la seguridad no depende de esconder botones.
+
+Entrega visible 0.48.0 — apartados entregables entre sucursales:
+
+- Desde un apartado liquidado, una persona con permisos de entrega y traspasos
+  puede solicitar que todas sus piezas viajen a otra tienda. La solicitud usa
+  el documento real de traspaso y aparece en Inventario para continuar su ciclo.
+- La tienda origen aprueba, prepara y despacha; la tienda destino recibe con la
+  separación de funciones ya establecida. No se acepta cantidad parcial para
+  mercancía prometida a un cliente.
+- Existencia y reserva se trasladan juntas del origen a tránsito y del tránsito
+  al destino. El apartado queda inmóvil mientras el traspaso está activo y su
+  sucursal sólo cambia después de una recepción física completa.
+- La venta final se genera en la sucursal destino desde su propia caja, conserva
+  los abonos históricos y no vuelve a cobrar. Auditoría enlaza apartado,
+  traspaso, actores, ubicaciones y ticket.
+- M7.3 queda pendiente únicamente de la política financiera para sustituir por
+  mercancía cuyo nuevo total sea menor que lo ya abonado; el sistema continúa
+  bloqueando esa operación en vez de inventar un reembolso.
+
+Entrega visible 0.49.0 — comprobantes claros y operación vertical:
+
+- La operación diaria debe completarse en teléfono vertical. La prueba de
+  regresión recorre Inicio, Venta, Productos, Inventario, Clientes, Caja,
+  Tickets, Apartados, Reportes, Administración y Ajustes a 390 × 844; valida
+  ancho y desplazamiento completo de cada ruta.
+- El ticket de regalo usa un código de barras real. Se elimina cualquier cuadro
+  decorativo que parezca QR sin contener información verificable.
+- El comprobante de abono se imprime como ticket térmico de 80 mm con logotipo,
+  sucursal, caja, métodos, saldo pendiente, folio y código escaneable.
+- Registrar un abono confirma explícitamente el importe aplicado y el saldo
+  restante calculado dentro de la transacción.
+- Confirmar la entrega de un apartado abre directamente la venta generada en
+  Tickets para imprimirla o descargarla; el historial sigue siendo la fuente
+  permanente para reimpresiones.
+
+Entrega visible 0.50.0 — calibración física de tickets y etiquetas:
+
+- La medida real de la etiqueta del mostrador es **51 × 25 mm**. Esa medida se
+  convierte en la plantilla predeterminada tanto en instalaciones nuevas como
+  en bases existentes mediante una migración hacia delante.
+- La etiqueta usa menos margen y un logotipo mayor, pero conserva producto,
+  variante, código de barras, código legible y precio dentro de un único
+  troquel. La configuración de la EVA58 debe usar también 51 × 25 mm, sin
+  márgenes y a escala 100 %.
+- Los tickets impresos y los PDF aumentan su tipografía y la presencia del
+  logotipo para acercarse al comprobante de SICAR validado en la tienda. El
+  código de barras propio permanece para búsqueda y reimpresión.
+- La evidencia física prevalece sobre tamaños supuestos: si cambia el insumo,
+  se mide primero y se calibra la plantilla antes de imprimir un lote.
+- El lector USB ya fue validado físicamente. En la pantalla Tickets, el código
+  escaneado abre de inmediato el comprobante correspondiente, incluso si el
+  buscador no tenía el foco; Enter y Tab se aceptan como terminadores del lector.
+
+Entrega visible 0.50.1 — segunda calibración con evidencia física:
+
+- La plantilla de 51 × 25 mm debe optimizar el área visible del logotipo, no el
+  rectángulo transparente del archivo PNG. Logotipo, variante, barras y código
+  legible deben quedar contenidos en una sola etiqueta; el área imprimible no
+  puede continuar en el siguiente troquel.
+- La impresión térmica de tickets ofrece un modo opcional **Todo en negritas**
+  para equipos cuyo cabezal pierde trazos delgados. Se aplica igual a vista,
+  impresión y PDF de mostrador, y se recuerda por computadora.
+- El modo en negritas no sustituye la calibración de densidad del controlador:
+  si los trazos gruesos también salen incompletos, se corrige la oscuridad de la
+  BIXOLON y se revisa el cabezal antes de seguir cambiando el diseño.
+
+Entrega visible 0.51.0 — aprendizaje presencial y documentos comerciales:
+
+- La validación en La Piedad confirma que `clave1` del archivo SICAR es el
+  valor impreso en las etiquetas actuales. Mi Tienda SM lo conserva como
+  `legacy_sicar_code` y lo usa en etiqueta cuando existe; su SKU y código
+  propio siguen siendo independientes para no quedar atados a SICAR.
+- La etiqueta física es 51 × 25 mm, incluye clave de tienda, logotipo,
+  descripción, talla/color, precio, barras grandes y `clave1` legible. La
+  sucursal debe poder reconocerse sin consultar la base.
+- Un lector USB actúa como teclado: códigos de producto buscan/agregan producto;
+  folios `…-V-…` y tickets de regalo `R-…-1` abren la venta original. La
+  distinción se valida antes de navegar para no confundir `17996` con un folio.
+- Ticket térmico y PDF de mostrador refuerzan siempre las líneas críticas que
+  el cabezal perdió. El modo **Todo en negritas** queda disponible para el resto
+  del contenido.
+- Venta y Cotizaciones disponen además de un PDF formal, separado del ticket de
+  rollo, con identidad, cliente, partidas, descuentos, totales, vigencia y
+  observaciones para compartir con empresas.
+- La interfaz permite escala de texto pequeña, normal, grande y extra grande,
+  teclado físico para efectivo y una acción Regresar consistente. Estas
+  preferencias de lectura no alteran documentos impresos.
+
+Subfase financiera aprobada — recepción de dólares:
+
+- La referencia automática será el tipo FIX **SF43718** publicado por Banco de
+  México en SIE. La consulta se hace exclusivamente en servidor y el token de
+  Banxico nunca llega al navegador.
+- Fines de semana, días inhábiles o indisponibilidad usan el último valor válido
+  almacenado, mostrando fecha y origen. No se inventa ni sustituye en silencio.
+- Gerencia puede definir un ajuste comercial sobre la referencia; el sistema
+  conserva quién lo autorizó, motivo, referencia, ajuste y tasa final.
+- Cada venta guarda una instantánea inmutable: dólares recibidos, tasa aplicada,
+  equivalente MXN y cambio. Efectivo USD y MXN se concilian por separado; el
+  cambio se entrega en MXN salvo una política futura explícita.
+- Esta subfase exige migración hacia delante, RLS/permisos, operación atómica de
+  caja y pruebas de concurrencia. Hasta cumplirlas no se presenta como método de
+  pago activo.

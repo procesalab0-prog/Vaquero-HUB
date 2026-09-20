@@ -1,6 +1,8 @@
 "use client";
 
 import JsBarcode from "jsbarcode";
+
+import { giftFolioFromSale } from "./ticket-folios";
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 
 export type TicketPdfLine = {
@@ -33,6 +35,7 @@ export type TicketPdfData = {
   payments?: TicketPdfPayment[];
   returnWindowDays: number;
   logoPng?: Uint8Array;
+  boldText?: boolean;
 };
 
 const MM = 72 / 25.4;
@@ -51,10 +54,6 @@ function printable(value: string) {
 
 function safeFilePart(value: string) {
   return value.replace(/[^A-Za-z0-9_-]+/g, "-").replace(/^-|-$/g, "");
-}
-
-function giftFolio(folio: string) {
-  return `R-${folio.replace(/^V-/, "")}-1`;
 }
 
 function money(cents = 0) {
@@ -104,25 +103,28 @@ function wrapText(text: string, font: PDFFont, size: number, maxWidth: number) {
 
 export async function createTicketPdf(data: TicketPdfData) {
   const receiptFolio =
-    data.mode === "gift" ? giftFolio(data.folio) : data.folio;
+    data.mode === "gift" ? giftFolioFromSale(data.folio) : data.folio;
   const logoBytes = await loadLogo(data);
   const logoHeightAllowanceMm = logoBytes ? 11 : 0;
   const heightMm = Math.max(
     150 + logoHeightAllowanceMm,
     131 +
       logoHeightAllowanceMm +
-      data.lines.length * (data.mode === "sale" ? 15 : 11) +
-      (data.payments?.length ?? 0) * 7,
+      data.lines.length * (data.mode === "sale" ? 17 : 13) +
+      (data.payments?.length ?? 0) * 8,
   );
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([PAGE_WIDTH, heightMm * MM]);
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const mono = await pdf.embedFont(StandardFonts.Courier);
+  const monoBold = await pdf.embedFont(StandardFonts.CourierBold);
+  const bodyFont = data.boldText ? bold : regular;
+  const codeFont = data.boldText ? monoBold : mono;
   const width = page.getWidth();
   let y = page.getHeight() - 8 * MM;
 
-  const centered = (text: string, size: number, font = regular) => {
+  const centered = (text: string, size: number, font = bodyFont) => {
     const value = printable(text);
     page.drawText(value, {
       x: (width - font.widthOfTextAtSize(value, size)) / 2,
@@ -135,8 +137,8 @@ export async function createTicketPdf(data: TicketPdfData) {
   const leftRight = (
     left: string,
     right: string,
-    size = 7.5,
-    font = regular,
+    size = 8.5,
+    font = bodyFont,
   ) => {
     const leftValue = printable(left);
     const rightValue = printable(right);
@@ -155,7 +157,7 @@ export async function createTicketPdf(data: TicketPdfData) {
       thickness: 0.5,
       color: rgb(0.3, 0.3, 0.3),
     });
-  const wrappedCentered = (text: string, size: number, font = regular) => {
+  const wrappedCentered = (text: string, size: number, font = bodyFont) => {
     for (const row of wrapText(text, font, size, width - MARGIN * 2)) {
       centered(row, size, font);
       y -= size + 2;
@@ -176,16 +178,16 @@ export async function createTicketPdf(data: TicketPdfData) {
     centered("VAQUERO SM", 15, bold);
     y -= 19;
   }
-  centered(`SUCURSAL ${data.locationName.toLocaleUpperCase("es-MX")}`, 8, bold);
-  y -= 12;
-  if (data.mode === "sale" && data.address) wrappedCentered(data.address, 7);
+  centered(`SUCURSAL ${data.locationName.toLocaleUpperCase("es-MX")}`, 9, bold);
+  y -= 14;
+  if (data.mode === "sale" && data.address) wrappedCentered(data.address, 8);
   if (data.mode === "sale" && data.phone) {
-    centered(`Tel. ${data.phone}`, 7);
-    y -= 11;
+    centered(`Tel. ${data.phone}`, 8);
+    y -= 13;
   }
   if (data.mode === "gift") {
-    centered("TICKET DE REGALO", 10, bold);
-    y -= 17;
+    centered("TICKET DE REGALO", 12, bold);
+    y -= 19;
   }
 
   rule();
@@ -193,23 +195,23 @@ export async function createTicketPdf(data: TicketPdfData) {
   page.drawText(`Folio: ${printable(receiptFolio)}`, {
     x: MARGIN,
     y,
-    size: 7.5,
-    font: regular,
+    size: 8.5,
+    font: bodyFont,
   });
   y -= 11;
   page.drawText(`Fecha: ${printable(data.soldAt)}`, {
     x: MARGIN,
     y,
-    size: 7.5,
-    font: regular,
+    size: 8.5,
+    font: bodyFont,
   });
   y -= 11;
   if (data.mode === "sale" && data.cashierName) {
     page.drawText(`Cajero: ${printable(data.cashierName)}`, {
       x: MARGIN,
       y,
-      size: 7.5,
-      font: regular,
+      size: 8.5,
+      font: bodyFont,
     });
     y -= 11;
   }
@@ -217,8 +219,8 @@ export async function createTicketPdf(data: TicketPdfData) {
     page.drawText(`Caja: ${printable(data.registerName)}`, {
       x: MARGIN,
       y,
-      size: 7.5,
-      font: regular,
+      size: 8.5,
+      font: bodyFont,
     });
     y -= 11;
   }
@@ -229,24 +231,25 @@ export async function createTicketPdf(data: TicketPdfData) {
     for (const row of wrapText(
       `${line.name.toLocaleUpperCase("es-MX")} - ${line.variant.toLocaleUpperCase("es-MX")}`,
       bold,
-      7.5,
+      8.5,
       width - MARGIN * 2,
     )) {
-      page.drawText(row, { x: MARGIN, y, size: 7.5, font: bold });
-      y -= 10;
+      page.drawText(row, { x: MARGIN, y, size: 8.5, font: bold });
+      y -= 12;
     }
     if (data.mode === "sale") {
       leftRight(
         `${line.quantity} x ${money(line.unitPriceCents)}  ${line.code}`,
         money(line.quantity * line.unitPriceCents),
-        7,
+        8,
+        bold,
       );
     } else {
       page.drawText(`${line.quantity} pza.  ${printable(line.code)}`, {
         x: MARGIN,
         y,
-        size: 7,
-        font: regular,
+        size: 8,
+        font: bodyFont,
       });
     }
     y -= 13;
@@ -259,8 +262,8 @@ export async function createTicketPdf(data: TicketPdfData) {
     y -= 12;
     leftRight("Descuento", `-${money(data.discountCents)}`);
     y -= 15;
-    leftRight("TOTAL", money(data.totalCents), 11, bold);
-    y -= 16;
+    leftRight("TOTAL", money(data.totalCents), 12.5, bold);
+    y -= 18;
     for (const payment of data.payments ?? []) {
       leftRight(payment.methodName, money(payment.amountCents));
       y -= 10;
@@ -268,8 +271,8 @@ export async function createTicketPdf(data: TicketPdfData) {
         page.drawText(`Referencia: ${printable(payment.reference)}`, {
           x: MARGIN + 5,
           y,
-          size: 6.5,
-          font: regular,
+          size: 7.5,
+          font: bodyFont,
         });
         y -= 10;
       }
@@ -295,21 +298,21 @@ export async function createTicketPdf(data: TicketPdfData) {
     }
     y -= 17 * MM;
   }
-  const folioWidth = mono.widthOfTextAtSize(receiptFolio, 8);
+  const folioWidth = codeFont.widthOfTextAtSize(receiptFolio, 9);
   page.drawText(receiptFolio, {
     x: (width - folioWidth) / 2,
     y,
-    size: 8,
-    font: mono,
+    size: 9,
+    font: codeFont,
   });
   y -= 16;
   const policy =
     data.mode === "gift"
       ? `Presenta este ticket para cambio de talla o modelo dentro de ${data.returnWindowDays} días. No incluye importes ni forma de pago.`
       : `Cambios y devoluciones dentro de ${data.returnWindowDays} días con este ticket y etiqueta original. No aplica en oferta.`;
-  wrappedCentered(policy, 6.8);
+  wrappedCentered(policy, 7.8, bold);
   y -= 3;
-  centered("GRACIAS POR SU COMPRA", 8, bold);
+  centered("GRACIAS POR SU COMPRA", 9.5, bold);
 
   const bytes = await pdf.save({ useObjectStreams: true });
   const blob = new Blob([new Uint8Array(bytes)], { type: "application/pdf" });

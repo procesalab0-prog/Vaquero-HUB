@@ -1403,10 +1403,13 @@ dice?** Que el código exista no significa que funcione.
   inmutable, cancela vencidos, sustituye líneas completas conservando abonos e
   inventario, permite a gerencia cancelar antes del vencimiento separando
   devolución y penalización, y entrega un apartado liquidado como una venta
-  real sin volver a mover caja. Faltan sustituciones que requieran devolver
-  dinero y la entrega en otra sucursal;
-  antes de cerrar deben resolverse las decisiones puntuales que siguen
-  abiertas en `specs/M7_APARTADOS.md` §6.
+  real sin volver a mover caja. La cancelación anticipada ya funciona con caja
+  única: la cajera ejecuta y gerencia autoriza por PIN de un solo uso. La
+  entrega en otra sucursal quedó operativa en 0.48.0 mediante un traspaso
+  completo: reserva y existencia viajan juntas y sólo se habilita la entrega
+  después de la recepción física. Falta la sustitución que requiera devolver
+  dinero; antes de cerrar debe resolverse esa decisión puntual en
+  `specs/M7_APARTADOS.md` §6.
 - [ ] Lealtad: pospuesta por decisión del negocio; no bloquea M7.
 - [ ] Fase final de diseño: después del piloto y con los recorridos estables,
       ejecutar la auditoría visual descrita en el plan maestro y decidir con
@@ -1419,6 +1422,75 @@ negocio todavía no la ha definido. No se inventa: una cotización se cobra
 completa o se crea una nueva. El sistema vuelve a validar precio, producto,
 existencia, sucursal y estado dentro de la misma transacción; dos cajas no
 pueden convertirla en dos ventas.
+
+## Calidad 0.49.0 — revisión vertical y comprobantes
+
+- [x] Auditar a 390 × 844 las once rutas operativas principales: ancho de la
+      página limitado al viewport y desplazamiento comprobado hasta el final.
+- [x] Reemplazar el cuadro simulado del ticket de regalo por su código de barras
+      real.
+- [x] Dar al comprobante de abono el mismo lenguaje del ticket térmico: logo,
+      sucursal, caja, saldo y folio escaneable.
+- [x] Mostrar inmediatamente importe abonado y saldo pendiente.
+- [x] Abrir el ticket exacto al terminar la entrega de un apartado.
+
+## Calidad 0.49.1 — escaneo de ticket de regalo
+
+- [x] Resolver el folio `R-…-1` hacia la venta original al escanear o capturar el
+      ticket de regalo.
+- [x] Cubrir la conversión con pruebas unitarias para folios de demostración y de
+      sucursal.
+
+## Calidad 0.50.0 — calibración física de impresión
+
+- [x] Sustituir la medida supuesta de 50 × 30 mm por la medida real de la
+      etiqueta: 51 × 25 mm.
+- [x] Aumentar el logotipo y compactar el contenido para que cada impresión
+      quede dentro de un solo troquel.
+- [x] Aumentar la letra del ticket térmico y del PDF, conservando el código de
+      barras propio.
+- [ ] Repetir en mostrador una impresión con papel 51 × 25 mm, márgenes Ninguno
+      y escala 100 %; después escanear el código con el lector USB y la cámara.
+- [x] Confirmar que el lector USB funciona como teclado con los códigos físicos.
+- [x] Hacer que, desde Tickets, el sufijo Enter o Tab del lector abra
+      inmediatamente el comprobante escaneado aunque el buscador no tenga foco.
+
+## Calidad 0.50.1 — segunda calibración física
+
+- [x] Recortar visualmente el espacio transparente del logotipo sin modificar
+      el archivo de marca.
+- [x] Dar a la plantilla 51 × 25 mm tamaños específicos para logotipo, talla,
+      barras y código legible, y evitar desbordes entre páginas.
+- [x] Añadir la opción persistente **Todo en negritas** al ticket inmediato, al
+      historial, a la prueba de impresión y al PDF descargable de mostrador.
+- [ ] Reimprimir una etiqueta con la EVA58 en papel 51 × 25 mm, horizontal,
+      escala 100 % y sin «Ajustar a la página»; confirmar que logotipo, barras y
+      número quedan en una sola pieza.
+- [ ] Imprimir ambos modos del ticket en la BIXOLON y conservar el que dé mejor
+      lectura real; si ambos salen borrosos, aumentar oscuridad o densidad desde
+      las preferencias del controlador.
+
+## Operación 0.51.0 — observaciones presenciales de La Piedad
+
+- [x] Imprimir en etiqueta 51 × 25 el valor `clave1` de SICAR cuando exista,
+      con clave de sucursal, barras grandes y número legible.
+- [x] Reforzar permanentemente detalle y política del ticket térmico/PDF.
+- [x] Abrir la compra al escanear ticket normal o de regalo desde Venta, sin
+      confundir un código corto de producto.
+- [x] Permitir captura física del efectivo, Enter para confirmar y Escape para
+      cerrar, conservando el teclado táctil.
+- [x] Añadir Regresar en pantallas interiores y tamaño de texto local desde
+      Ajustes, sin modificar impresión.
+- [x] Descargar cotización y venta como documento formal A4 separado del
+      comprobante térmico.
+- [ ] Probar nuevamente etiqueta y ticket en EVA58/BIXOLON: 51 × 25 mm,
+      horizontal, escala 100 %, márgenes Ninguno; conservar fotografía y
+      escaneo de `clave1`.
+- [ ] Implementar cobro USD como bloque financiero independiente: API oficial
+      SIE Banxico, serie FIX `SF43718`, token sólo servidor, último dato válido,
+      autorización de gerencia para ajuste, instantánea inmutable en venta,
+      efectivo USD separado y conciliación/ticket. Requiere migración y pruebas
+      concurrentes antes de producción.
 
 ## Corrección operativa 0.32.2 — sucursal activa
 

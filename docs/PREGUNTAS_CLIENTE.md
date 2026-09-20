@@ -45,7 +45,7 @@ usa**. Esta lista es el índice, no la fuente de verdad.
 | 1.5  | ¿Manejan el mismo modelo en varios anchos, o el ancho no aplica?                                                                                                                  | M2          | 🔴       |
 | 1.6  | ¿Quieren ver el margen en la pantalla de producto, o sólo el precio?                                                                                                              | M2          | 🟡       |
 | 1.7  | La carga masiva, ¿parte del Excel exportado de SICAR o de una plantilla propia de Mi Tienda SM?                                                                                   | M2          | 🟡       |
-| 1.8  | ~~¿Qué impresora de etiquetas usan hoy?~~ **Contestado: SICAR EVA58, rollo de 58 mm, USB/RS232.** Ver `hardware/IMPRESORAS.md`. Falta la medida de la etiqueta troquelada         | M2          | ✅       |
+| 1.8  | ~~¿Qué impresora y etiqueta usan hoy?~~ **Contestado: SICAR EVA58, rollo de 58 mm, USB/RS232; etiqueta física de 51 × 25 mm.** Ver `hardware/IMPRESORAS.md`                       | M2          | ✅       |
 | 1.9  | ¿Quieren el SKU impreso en la etiqueta además del código de barras? Ayuda a buscar a mano cuando el código no escanea                                                             | M2          | 🟡       |
 | 1.10 | ¿Hoy reetiquetan todo lo que llega, o aprovechan el código del fabricante cuando ya viene impreso?                                                                                | M2, M6      | 🟡       |
 
@@ -173,6 +173,6 @@ en las próximas tres semanas:
 5. Quién autoriza un traspaso (2.1).
 6. Qué lector de códigos se va a comprar (9.2). Las impresoras ya están
    confirmadas con modelo y placa: BIXOLON SRP-330II de 80 mm y SICAR EVA58
-   de 58 mm. Falta la medida de la etiqueta troquelada y si el cajón está
-   conectado (1.8, 9.3).
+   de 58 mm. La etiqueta troquelada ya se confirmó en 51 × 25 mm; falta saber
+   si el cajón está conectado (1.8, 9.3).
 7. Lista de sucursales, cajas y empleados con su rol (10.1).

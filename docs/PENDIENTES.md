@@ -161,66 +161,45 @@ Ambas reglas quedaron implementadas y probadas en staging en 0.22.0.
 que imprime corre en la computadora del mostrador. Ver
 [`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md).
 
-Falta: la medida de la etiqueta troquelada, confirmar el rollo de tickets y si
-el cajón de dinero está conectado a la BIXOLON.
+La etiqueta troquelada quedó confirmada físicamente en **51 × 25 mm**. La
+plantilla y el papel del controlador deben usar exactamente esa medida para no
+imprimir sobre dos etiquetas. Falta confirmar el rollo de tickets y si el cajón
+de dinero está conectado a la BIXOLON.
 
 Antes de desinstalar SICAR: conseguir por separado el controlador de la EVA58,
 que pudo haber llegado dentro de su instalador.
 
 BIXOLON para tickets, marca SICAR para etiquetas, las dos ya en el mostrador.
-Ver [`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md). Falta confirmar el
-modelo exacto de cada una, el ancho del rollo de tickets, la medida de la
-etiqueta y si el cajón de dinero está conectado a la BIXOLON.
+Ver [`hardware/IMPRESORAS.md`](hardware/IMPRESORAS.md). Los modelos y la
+etiqueta de 51 × 25 mm ya están confirmados; falta el ancho del rollo comprado
+para tickets y si el cajón de dinero está conectado a la BIXOLON.
 
 Antes de desinstalar SICAR: conseguir por separado el controlador de la
 impresora de etiquetas, que pudo haber llegado dentro de su instalador.
 
-## Decisión del dueño: caja única y operaciones autorizadas
+## Resuelto en 0.40.0 y 0.47.0: operaciones autorizadas con caja única
 
-**Ya son dos operaciones bloqueadas, no una.** Con una sola caja por sucursal
-no se puede cancelar una venta a crédito ni cancelar anticipadamente un
-apartado durante el turno: ambas exigen permiso de gerencia **y** caja propia
-abierta, y la cajera tiene la única caja.
-
-El patrón se repetirá en cada operación de dinero autorizada por gerencia, así
-que conviene resolverlo de una vez.
-
-Dos salidas: dos cajas por sucursal (cero código, y contesta la pregunta 9.4),
-o que la cajera ejecute con autorización de gerencia, como ya pasa con
-descuentos y devoluciones.
-
-Nota operativa: el dinero sale de una caja distinta de la que entró, así que
-el gerente necesita efectivo en su propio cajón para devolver.
-
-## Decisión anterior, ya contenida arriba: cancelar una venta a crédito
-
-Comprobado ejecutando: **con una sola caja por sucursal, una venta a crédito no
-se puede cancelar durante el turno.** La cajera tiene la caja abierta pero no
-el permiso; el gerente tiene el permiso pero no puede abrir sesión en la única
-caja.
-
-Dos salidas:
-
-1. **Dos cajas por sucursal.** Cero código. De paso contesta la pregunta 9.4,
-   que sigue abierta.
-2. **Que la cajera cancele con PIN del gerente.** La función ya exige token de
-   supervisor, así que no se debilita el control: cambia quién aprieta el
-   botón, no quién autoriza.
-
-Recomendado: la opción 2 si va a haber una sola caja. Conviene decidirlo antes
-de octubre, porque es una operación de mostrador con el cliente enfrente.
+La regla confirmada es: **quien tiene abierta la caja ejecuta y gerencia
+autoriza con código y PIN**. La cancelación de venta a crédito la aplica desde
+0.40.0 y la cancelación anticipada de apartado desde 0.47.0. La capacidad dura
+cinco minutos, pertenece a la persona que la solicitó y se consume una sola
+vez. El efectivo sale de esa misma caja; auditoría conserva por separado al
+ejecutor y al autorizador. Ya no se requiere una segunda caja sólo para estas
+operaciones.
 
 ## Resuelto en 0.46.0: cancelar un apartado antes de que venza
 
-Administrador o gerente puede cancelar antes del vencimiento y captura de
-forma explícita cuánto se devuelve y cuánto queda como penalización. No usa un
-PIN separado: la persona que ejecuta necesita el permiso y su propia caja
-abierta. La devolución se reparte entre los métodos originales, exige
-referencia electrónica y nunca puede dejar negativo el efectivo esperado.
+Administrador o gerente decide cuánto se devuelve y cuánto queda como
+penalización. Desde 0.47.0 la cajera puede ejecutar desde su propia caja con el
+PIN de autorización de gerencia. La devolución se reparte entre los métodos
+originales, exige referencia electrónica y nunca puede dejar negativo el
+efectivo esperado.
 
-También quedó confirmado que un apartado puede iniciar con $0 abonados. Sigue
-pendiente definir la sustitución cuyo nuevo total quede debajo de lo ya pagado
-y la entrega en otra sucursal mediante traspaso recibido físicamente.
+También quedó confirmado que un apartado puede iniciar con $0 abonados. Desde
+0.48.0 la entrega en otra sucursal exige un traspaso completo y físicamente
+recibido; existencia y reserva nunca aparecen disponibles en dos tiendas.
+Sigue pendiente definir la sustitución cuyo nuevo total quede debajo de lo ya
+pagado.
 
 ## Orden inmediato de implementación
 
@@ -268,13 +247,13 @@ combinaciones.
 **Recalculado al cerrar M2 con las etiquetas.** El panorama mejoró de verdad,
 y conviene decirlo con números porque cambia una decisión.
 
-| Milestone       | Semanas del plan | Estado                                                                                      |
-| --------------- | ---------------- | ------------------------------------------------------------------------------------------- |
-| M0, M1, M1B     | —                | Terminados                                                                                  |
-| **M2**          | 1                | **Terminado**, a falta de la validación física                                              |
-| M3 inventario   | 1                | **Terminado en software**; queda la validación física conjunta de etiqueta, cámara y lector |
-| M4 POS y caja   | 2                | **Terminado en software 0.23.0**; falta validación física de impresora y operación táctil   |
-| M5 devoluciones | 1                | **Primera entrega 0.24.0 terminada**; reglas de dinero siguen pendientes                    |
+| Milestone       | Semanas del plan | Estado                                                                                             |
+| --------------- | ---------------- | -------------------------------------------------------------------------------------------------- |
+| M0, M1, M1B     | —                | Terminados                                                                                         |
+| **M2**          | 1                | **Terminado**, a falta de la validación física                                                     |
+| M3 inventario   | 1                | **Terminado en software**; queda la validación física conjunta de etiqueta, cámara y lector        |
+| M4 POS y caja   | 2                | **Terminado en software 0.23.0**; falta validación física de impresora y operación táctil          |
+| M5 devoluciones | 1                | **Primera entrega 0.24.0 terminada**; reglas de dinero siguen pendientes                           |
 | M9 importador   | 1                | Sincronizador de catálogo listo en staging; el ensayo real espera tres precios y el escaneo físico |
 
 Quedan aproximadamente **tres semanas de trabajo del alcance operativo de

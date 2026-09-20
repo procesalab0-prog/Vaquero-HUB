@@ -51,4 +51,17 @@ describe("ticket PDF", () => {
     expect(document.getPageCount()).toBe(1);
     expect(result.fileName).toBe("ticket-regalo-R-TEST-0001-1.pdf");
   });
+
+  it("genera una versión de alto contraste con todo el texto en negritas", async () => {
+    const result = await createTicketPdf({
+      ...ticket,
+      mode: "sale",
+      boldText: true,
+    });
+    const bytes = new Uint8Array(await result.blob.arrayBuffer());
+    const document = await PDFDocument.load(bytes);
+
+    expect(document.getPageCount()).toBe(1);
+    expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-");
+  });
 });
