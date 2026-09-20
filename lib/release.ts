@@ -1,1 +1,2 @@
-m«ëˆ§½©buªàºg§¶X›þ·¥y«¶Å,j›jÇºà7an{¦Š)ßŠW¨¢ë_ŠW›n·š‘ºÞjG§r‡^v‹­¦ën¦)í¢X§zÊ•éà¶î˜7]yÊy×œ¡×¢ž›­†¥¥Ø¬¦V²¶¬™ë,j¢Šzn¶)éº×â•ç^}«¥µú+²×bžŠ.¶›­¢ëiº×â•ç^}«¥µú+²×hº
+export const APP_VERSION = "0.52.1";
+export const APP_RELEASE = "Clave corta por sucursal en etiquetas";

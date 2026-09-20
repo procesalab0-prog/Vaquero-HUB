@@ -1,1 +1,79 @@
-m«ëˆ§½©buªàºg§µªiþZ Šéj­³,j›jÇºà7an{¦Š)ßŠW¨¢ë_ŠW›n·š‘ºÞjG§r‡^v‹­¦ën¦)í¢X§zÊ•éà¶î˜7]yÊy×œ¡×¢ž›­†¥¥Ø¬¦V²¶¬™ë,j¢Šzn¶)éº×â•ç^}«¥µú+²×bžŠ.¶›­¢ëiº×â•ç^}«¥µú+²×hº
+import type { Metadata } from "next";
+import Image from "next/image";
+
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { login } from "./actions";
+import { LoginButton } from "./login-button";
+
+export const metadata: Metadata = { title: "Iniciar sesiÃ³n" };
+
+const messages: Record<string, string> = {
+  campos: "Escribe tu correo y contraseÃ±a.",
+  credenciales: "El correo o la contraseÃ±a no coinciden.",
+  "sin-acceso": "Este usuario no estÃ¡ activo como empleado.",
+};
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+  const configured = isSupabaseConfigured();
+
+  return (
+    <main className="login-screen">
+      <aside className="login-editorial-panel" aria-hidden="true">
+        <Image
+          className="login-editorial-logo"
+          src="/brand/logo-vaquerosm-blanco.png"
+          alt=""
+          width={520}
+          height={226}
+          priority
+        />
+        <div>
+          <p>OPERACIÃ“N Â· PUNTO DE VENTA</p>
+          <strong>La tienda completa,<br />en un solo lugar.</strong>
+          <span>DiseÃ±ado alrededor de la operaciÃ³n real de Vaqueros SM.</span>
+        </div>
+      </aside>
+      <section className="login-card">
+        <div className="login-brand">
+          <Image
+            className="login-form-logo"
+            src="/brand/logo-vaquerosm-negro.png"
+            alt="Vaquero SM"
+            width={240}
+            height={105}
+            priority
+          />
+          <p className="eyebrow">Mi Tienda SM</p>
+          <h1>Bienvenido a Mi Tienda SM</h1>
+          <p>Tu punto de venta, inventario y operaciÃ³n en un solo lugar.</p>
+        </div>
+        {configured ? (
+          <form action={login} className="login-form">
+            <label>
+              <span>Correo del empleado</span>
+              <input name="email" type="email" inputMode="email" autoComplete="username" required />
+            </label>
+            <label>
+              <span>ContraseÃ±a</span>
+              <input name="password" type="password" autoComplete="current-password" required />
+            </label>
+            {error ? <p className="form-error" role="alert">{messages[error] ?? "No fue posible iniciar sesiÃ³n."}</p> : null}
+            <LoginButton />
+          </form>
+        ) : (
+          <div className="login-preview-note">
+            <strong>Vista de diseÃ±o activa</strong>
+            <p>La autenticaciÃ³n real aparecerÃ¡ en la vista previa conectada a staging. La web pÃºblica conserva por ahora la demostraciÃ³n actual.</p>
+            <a className="primary-button" href="/inicio">Continuar a la demostraciÃ³n</a>
+          </div>
+        )}
+        <small className="login-security">Acceso protegido por rol y sucursal Â· Creado por ProcesaLab</small>
+      </section>
+    </main>
+  );
+}

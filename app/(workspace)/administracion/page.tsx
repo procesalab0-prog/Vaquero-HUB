@@ -1,2 +1,739 @@
-m´ÎàßΩ©bu™‡∫gßµ™iˇ
-+í ZqÔ⁄vhßäÀki»®ü˙ZÅÎl≈KÅÊ⁄±Ó∏ÿ[ûÈ¢äw‚ïÍ(∫◊‚ïÊ€≠Ê§n∑öëÈ‹°◊ù¢Îi∫€©ä{hñ)ﬁ≤áÂzx-Ü{¶◊^rá^uÁ(uËß¶ÎaÖÈiv+)ï¨≠Ü+&zÀÅË¢ûõ≠äznµ¯•y◊üjÈm~äÏµÿß¢ã≠¶Îh∫⁄nµ¯•y◊üjÈm~äÏµ⁄.
+import type { Metadata } from "next";
+import Link from "next/link";
+import {
+  ClipboardList,
+  MapPin,
+  Plus,
+  ShieldCheck,
+  Store,
+  UserRoundCog,
+  Users,
+} from "lucide-react";
+
+import { requirePermission } from "@/lib/auth/authorization";
+import {
+  isSupabaseAdminConfigured,
+  isSupabaseConfigured,
+} from "@/lib/supabase/config";
+import { createEmployee, saveLocation, updateEmployee } from "./actions";
+
+export const metadata: Metadata = { title: "Administraci√≥n" };
+
+type Tab = "empleados" | "sucursales" | "roles" | "bitacora";
+type Role = {
+  id: string;
+  code: string;
+  name: string;
+  role_permissions?: Array<{
+    permissions: { code: string; category: string; description: string } | null;
+  }>;
+};
+type Location = {
+  id: string;
+  code: string;
+  label_code: string | null;
+  name: string;
+  type: string;
+  address: string | null;
+  phone: string | null;
+  is_active: boolean;
+};
+type Employee = {
+  id: string;
+  employee_code: string;
+  full_name: string;
+  email: string | null;
+  is_active: boolean;
+  roles: { id: string; code: string; name: string } | null;
+  user_locations: Array<{ locations: { id: string; name: string } | null }>;
+};
+type Audit = {
+  id: number;
+  occurred_at: string;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  app_users: { full_name: string } | null;
+  locations: { name: string } | null;
+};
+
+const tabs: Array<{ id: Tab; label: string; icon: typeof Users }> = [
+  { id: "empleados", label: "Empleados", icon: Users },
+  { id: "sucursales", label: "Sucursales", icon: Store },
+  { id: "roles", label: "Roles y permisos", icon: ShieldCheck },
+  { id: "bitacora", label: "Bit√°cora", icon: ClipboardList },
+];
+
+const statusMessages: Record<string, string> = {
+  "empleado-creado": "Empleado creado y listo para iniciar sesi√≥n.",
+  "empleado-actualizado": "Empleado actualizado correctamente.",
+  "empleado-pin-actualizado":
+    "Tu PIN de supervisor qued√≥ guardado. Ya puedes autorizar operaciones.",
+  "empleado-pin-invalido": "El PIN debe tener de 4 a 8 n√∫meros.",
+  "empleado-pin-vacio": "Escribe un PIN de 4 a 8 n√∫meros para guardarlo.",
+  "empleado-error":
+    "No fue posible guardar el empleado. Revisa datos, permisos y configuraci√≥n.",
+  "empleado-configuracion-error":
+    "La creaci√≥n de accesos no est√° configurada en este ambiente.",
+  "empleado-datos-invalidos":
+    "Revisa los datos: todos son obligatorios y la contrase√±a debe tener al menos 12 caracteres.",
+  "empleado-relacion-invalida":
+    "El rol o la sucursal seleccionados ya no est√°n disponibles.",
+  "empleado-correo-existe":
+    "Ese correo ya tiene un acceso registrado. Busca al empleado o solicita recuperar su cuenta.",
+  "empleado-acceso-error":
+    "Supabase no pudo crear el acceso del empleado. Int√©ntalo nuevamente.",
+  "empleado-perfil-error":
+    "El acceso no se complet√≥ porque el c√≥digo o correo del empleado ya est√°n en uso.",
+  "empleado-sucursal-error":
+    "El acceso se cre√≥, pero falta asignar una sucursal. El empleado qued√≥ inactivo para proteger la operaci√≥n.",
+  "empleado-sucursales-vacias":
+    "Selecciona por lo menos una sucursal para el empleado.",
+  "empleado-sucursales-error":
+    "No fue posible actualizar las sucursales del empleado.",
+  "sucursal-creada": "Sucursal creada correctamente.",
+  "sucursal-actualizada": "Sucursal actualizada correctamente.",
+  "sucursal-error": "No fue posible guardar la sucursal.",
+};
+
+export default async function AdministrationPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string; status?: string }>;
+}) {
+  const params = await searchParams;
+  const tab: Tab = tabs.some((item) => item.id === params.tab)
+    ? (params.tab as Tab)
+    : "empleados";
+  const statusIsError = Boolean(
+    params.status &&
+    (params.status.includes("error") ||
+      params.status === "empleado-correo-existe" ||
+      params.status === "empleado-pin-invalido" ||
+      params.status === "empleado-pin-vacio" ||
+      params.status === "empleado-sucursales-vacias"),
+  );
+  if (!isSupabaseConfigured()) return <AdministrationPreview tab={tab} />;
+  const { supabase, userId } = await requirePermission(
+    tab === "bitacora"
+      ? "audit.read"
+      : tab === "sucursales"
+        ? "locations.manage"
+        : tab === "roles"
+          ? "roles.manage"
+          : "users.manage",
+  );
+
+  let employees: Employee[] = [];
+  let roles: Role[] = [];
+  let locations: Location[] = [];
+  let audit: Audit[] = [];
+
+  if (tab === "empleados") {
+    const [employeesResult, rolesResult, locationsResult] = await Promise.all([
+      supabase
+        .from("app_users")
+        .select(
+          "id, employee_code, full_name, email, is_active, roles(id, code, name), user_locations(locations(id, name))",
+        )
+        .order("full_name"),
+      supabase.from("roles").select("id, code, name").order("name"),
+      supabase
+        .from("locations")
+        .select("id, code, label_code, name, type, address, phone, is_active")
+        .order("name"),
+    ]);
+    employees = (employeesResult.data ?? []) as unknown as Employee[];
+    roles = (rolesResult.data ?? []) as unknown as Role[];
+    locations = (locationsResult.data ?? []) as unknown as Location[];
+  } else if (tab === "sucursales") {
+    const { data } = await supabase
+      .from("locations")
+      .select("id, code, label_code, name, type, address, phone, is_active")
+      .order("name");
+    locations = (data ?? []) as unknown as Location[];
+  } else if (tab === "roles") {
+    const { data } = await supabase
+      .from("roles")
+      .select(
+        "id, code, name, role_permissions(permissions(code, category, description))",
+      )
+      .order("name");
+    roles = (data ?? []) as unknown as Role[];
+  } else {
+    const { data } = await supabase
+      .from("audit_log")
+      .select(
+        "id, occurred_at, action, entity_type, entity_id, app_users!audit_log_actor_user_id_fkey(full_name), locations(name)",
+      )
+      .order("occurred_at", { ascending: false })
+      .limit(60);
+    audit = (data ?? []) as unknown as Audit[];
+  }
+  const activeLocations = locations.filter(
+    (location) => location.is_active && location.type !== "TRANSIT",
+  );
+
+  return (
+    <section className="module-page admin-page">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Control seguro</p>
+          <h1>Personas, tiendas y permisos</h1>
+          <p className="heading-copy">
+            Administra qui√©n puede hacer qu√© y conserva evidencia de los
+            cambios.
+          </p>
+        </div>
+        <span className="security-badge">
+          <ShieldCheck aria-hidden="true" />
+          Protegido por RLS
+        </span>
+      </div>
+      {params.status ? (
+        <div
+          className={statusIsError ? "admin-status error" : "admin-status"}
+          role="status"
+        >
+          {statusMessages[params.status] ?? "Operaci√≥n terminada."}
+        </div>
+      ) : null}
+      <nav className="admin-tabs" aria-label="Administraci√≥n">
+        {tabs.map(({ id, label, icon: Icon }) => (
+          <Link
+            className={tab === id ? "active" : ""}
+            href={`/administracion?tab=${id}`}
+            key={id}
+          >
+            <Icon aria-hidden="true" />
+            {label}
+          </Link>
+        ))}
+      </nav>
+
+      {tab === "empleados" ? (
+        <EmployeesPanel
+          employees={employees}
+          roles={roles}
+          locations={activeLocations}
+          canCreate={isSupabaseAdminConfigured()}
+          currentUserId={userId}
+        />
+      ) : null}
+      {tab === "sucursales" ? <LocationsPanel locations={locations} /> : null}
+      {tab === "roles" ? <RolesPanel roles={roles} /> : null}
+      {tab === "bitacora" ? <AuditPanel rows={audit} /> : null}
+    </section>
+  );
+}
+
+function AdministrationPreview({ tab }: { tab: Tab }) {
+  return (
+    <section className="module-page admin-page">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Control seguro</p>
+          <h1>Personas, tiendas y permisos</h1>
+          <p className="heading-copy">
+            Administra qui√©n puede hacer qu√© y conserva evidencia de los
+            cambios.
+          </p>
+        </div>
+        <span className="security-badge">
+          <ShieldCheck aria-hidden="true" />
+          Listo para staging
+        </span>
+      </div>
+      <div className="admin-status">
+        La interfaz est√° lista. Los datos reales aparecer√°n al conectar esta
+        publicaci√≥n con la base de staging.
+      </div>
+      <nav className="admin-tabs" aria-label="Administraci√≥n">
+        {tabs.map(({ id, label, icon: Icon }) => (
+          <Link
+            className={tab === id ? "active" : ""}
+            href={`/administracion?tab=${id}`}
+            key={id}
+          >
+            <Icon aria-hidden="true" />
+            {label}
+          </Link>
+        ))}
+      </nav>
+      <div className="admin-panel">
+        <div className="admin-empty">
+          <ShieldCheck aria-hidden="true" />
+          <strong>Producci√≥n sigue protegida</strong>
+          <span>
+            Esta vista p√∫blica no usa datos reales. La prueba de empleados y
+            sucursales se har√° contra staging.
+          </span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function EmployeesPanel({
+  employees,
+  roles,
+  locations,
+  canCreate,
+  currentUserId,
+}: {
+  employees: Employee[];
+  roles: Role[];
+  locations: Location[];
+  canCreate: boolean;
+  currentUserId: string;
+}) {
+  return (
+    <div className="admin-panel">
+      <div className="admin-panel-heading">
+        <div>
+          <h2>Empleados</h2>
+          <p>
+            {employees.length} personas registradas ¬∑ desactivar conserva su
+            historial.
+          </p>
+        </div>
+      </div>
+      <details className="admin-create" open={employees.length === 0}>
+        <summary>
+          <Plus aria-hidden="true" />
+          Agregar empleado
+        </summary>
+        {canCreate ? (
+          <form action={createEmployee} className="admin-form">
+            <label>
+              <span>Nombre completo</span>
+              <input name="full_name" required />
+            </label>
+            <label>
+              <span>C√≥digo de empleado</span>
+              <input name="employee_code" required placeholder="SALOMON01" />
+            </label>
+            <label>
+              <span>Correo</span>
+              <input name="email" type="email" required />
+            </label>
+            <label>
+              <span>Contrase√±a temporal</span>
+              <input name="password" type="password" minLength={12} required />
+            </label>
+            <label>
+              <span>Rol</span>
+              <select name="role_id" required>
+                {roles.map((role) => (
+                  <option value={role.id} key={role.id}>
+                    {role.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>Sucursal inicial</span>
+              <select name="location_id" required>
+                {locations.map((location) => (
+                  <option value={location.id} key={location.id}>
+                    {location.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button className="primary-button" type="submit">
+              Crear acceso
+            </button>
+          </form>
+        ) : (
+          <div className="admin-inline-warning">
+            <strong>
+              Falta la clave secreta del servidor en esta vista previa.
+            </strong>
+            <span>
+              Podr√°s consultar y editar empleados; crear accesos se habilita al
+              conectar la variable segura.
+            </span>
+          </div>
+        )}
+      </details>
+      <div className="admin-list">
+        {employees.map((employee) => (
+          <details className="employee-card" key={employee.id}>
+            <summary>
+              <span
+                className={
+                  employee.is_active
+                    ? "employee-avatar"
+                    : "employee-avatar inactive"
+                }
+              >
+                {employee.full_name.charAt(0)}
+              </span>
+              <span>
+                <strong>{employee.full_name}</strong>
+                <small>
+                  {employee.employee_code} ¬∑ {employee.roles?.name ?? "Sin rol"}
+                </small>
+              </span>
+              <span
+                className={
+                  employee.is_active ? "status-chip good" : "status-chip"
+                }
+              >
+                {employee.is_active ? "Activo" : "Inactivo"}
+              </span>
+            </summary>
+            <form action={updateEmployee} className="admin-form compact">
+              <input name="id" type="hidden" value={employee.id} />
+              {employee.id === currentUserId ? (
+                <div className="admin-inline-warning wide-field">
+                  <strong>Esta es tu cuenta</strong>
+                  <span>
+                    Por seguridad, aqu√≠ s√≥lo puedes cambiar tu PIN. Tu rol y
+                    estado no se modifican desde tu propia sesi√≥n.
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <label>
+                    <span>Nombre</span>
+                    <input
+                      name="full_name"
+                      defaultValue={employee.full_name}
+                      required
+                    />
+                  </label>
+                  <label>
+                    <span>Rol</span>
+                    <select name="role_id" defaultValue={employee.roles?.id}>
+                      {roles.map((role) => (
+                        <option value={role.id} key={role.id}>
+                          {role.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <fieldset className="admin-location-access wide-field">
+                    <legend>Sucursales permitidas</legend>
+                    <small>
+                      El empleado podr√° cambiar √∫nicamente entre las tiendas
+                      seleccionadas.
+                    </small>
+                    <div>
+                      {locations.map((location) => (
+                        <label key={location.id}>
+                          <input
+                            name="location_ids"
+                            type="checkbox"
+                            value={location.id}
+                            defaultChecked={employee.user_locations.some(
+                              (item) => item.locations?.id === location.id,
+                            )}
+                          />
+                          <span>{location.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                </>
+              )}
+              <label>
+                <span>Nuevo PIN de supervisor</span>
+                <input
+                  name="supervisor_pin"
+                  type="password"
+                  inputMode="numeric"
+                  pattern="[0-9]{4,8}"
+                  minLength={4}
+                  maxLength={8}
+                  placeholder="D√©jalo vac√≠o para conservarlo"
+                />
+                <small>De 4 a 8 n√∫meros. Nunca se vuelve a mostrar.</small>
+              </label>
+              {employee.id !== currentUserId ? (
+                <label className="admin-switch">
+                  <span>Empleado activo</span>
+                  <input
+                    name="is_active"
+                    type="checkbox"
+                    defaultChecked={employee.is_active}
+                  />
+                </label>
+              ) : null}
+              <div className="employee-meta">
+                <span>
+                  <MapPin aria-hidden="true" />
+                  {employee.user_locations
+                    .map((item) => item.locations?.name)
+                    .filter(Boolean)
+                    .join(", ") || "Sin sucursal"}
+                </span>
+                <span>{employee.email ?? "Sin correo"}</span>
+              </div>
+              <button className="primary-button" type="submit">
+                {employee.id === currentUserId
+                  ? "Guardar mi PIN"
+                  : "Guardar empleado"}
+              </button>
+            </form>
+          </details>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LocationsPanel({ locations }: { locations: Location[] }) {
+  return (
+    <div className="admin-panel">
+      <div className="admin-panel-heading">
+        <div>
+          <h2>Sucursales y ubicaciones</h2>
+          <p>
+            El inventario, empleados y reportes quedar√°n separados por
+            ubicaci√≥n.
+          </p>
+        </div>
+      </div>
+      <details className="admin-create">
+        <summary>
+          <Plus aria-hidden="true" />
+          Agregar tienda o bodega
+        </summary>
+        <LocationForm />
+      </details>
+      <div className="admin-list">
+        {locations.map((location) => (
+          <details className="location-card" key={location.id}>
+            <summary>
+              <span className="branch-mark">
+                <Store aria-hidden="true" />
+              </span>
+              <span>
+                <strong>{location.name}</strong>
+                <small>
+                  {location.code} ¬∑ Etiqueta {location.label_code ?? "autom√°tica"} ¬∑{" "}
+                  {location.type === "STORE"
+                    ? "Tienda"
+                    : location.type === "WAREHOUSE"
+                      ? "Bodega"
+                      : "Sistema"}
+                </small>
+              </span>
+              <span
+                className={
+                  location.is_active ? "status-chip good" : "status-chip"
+                }
+              >
+                {location.is_active ? "Activa" : "Inactiva"}
+              </span>
+            </summary>
+            {location.type === "TRANSIT" ? (
+              <div className="admin-inline-warning">
+                <strong>Ubicaci√≥n protegida del sistema</strong>
+                <span>
+                  Se usa para traspasos y no se edita desde la interfaz.
+                </span>
+              </div>
+            ) : (
+              <LocationForm location={location} />
+            )}
+          </details>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LocationForm({ location }: { location?: Location }) {
+  return (
+    <form action={saveLocation} className="admin-form compact">
+      {location ? <input name="id" type="hidden" value={location.id} /> : null}
+      <label>
+        <span>C√≥digo operativo</span>
+        <input
+          name="code"
+          defaultValue={location?.code}
+          readOnly={Boolean(location)}
+          required
+        />
+        <small>
+          {location
+            ? "Forma parte de los folios hist√≥ricos y no se puede cambiar."
+            : "De 2 a 10 letras o n√∫meros; se usar√° en los folios."}
+        </small>
+      </label>
+      <label>
+        <span>C√≥digo en etiquetas</span>
+        <input
+          name="label_code"
+          defaultValue={location?.label_code ?? ""}
+          maxLength={4}
+          pattern="[A-Za-z0-9]{1,4}"
+          placeholder={location ? "VSM1" : "Autom√°tico: VSM1, VSM2‚Ä¶"}
+        />
+        <small>Personalizable: m√°ximo 4 letras o n√∫meros.</small>
+      </label>
+      <label>
+        <span>Nombre</span>
+        <input name="name" defaultValue={location?.name} required />
+      </label>
+      <label>
+        <span>Tipo</span>
+        <select name="type" defaultValue={location?.type ?? "STORE"}>
+          <option value="STORE">Tienda</option>
+          <option value="WAREHOUSE">Bodega</option>
+        </select>
+      </label>
+      <label>
+        <span>Tel√©fono</span>
+        <input name="phone" defaultValue={location?.phone ?? ""} />
+      </label>
+      <label className="wide-field">
+        <span>Direcci√≥n</span>
+        <input name="address" defaultValue={location?.address ?? ""} />
+      </label>
+      <label className="admin-switch">
+        <span>Ubicaci√≥n activa</span>
+        <input
+          name="is_active"
+          type="checkbox"
+          defaultChecked={location?.is_active ?? true}
+        />
+      </label>
+      <button className="primary-button" type="submit">
+        {location ? "Guardar sucursal" : "Crear sucursal"}
+      </button>
+    </form>
+  );
+}
+
+function RolesPanel({ roles }: { roles: Role[] }) {
+  return (
+    <div className="admin-panel">
+      <div className="admin-panel-heading">
+        <div>
+          <h2>Roles y permisos</h2>
+          <p>
+            La matriz muestra exactamente las acciones autorizadas en el
+            backend.
+          </p>
+        </div>
+      </div>
+      <div className="role-grid">
+        {roles.map((role) => (
+          <article key={role.id}>
+            <header>
+              <span>
+                <UserRoundCog aria-hidden="true" />
+              </span>
+              <div>
+                <strong>{role.name}</strong>
+                <code>{role.code}</code>
+              </div>
+              <b>{role.role_permissions?.length ?? 0}</b>
+            </header>
+            <div>
+              {Object.entries(groupPermissions(role)).map(
+                ([category, permissions]) => (
+                  <section key={category}>
+                    <h3>{category}</h3>
+                    {permissions.map((permission) => (
+                      <p key={permission.code}>
+                        <ShieldCheck aria-hidden="true" />
+                        <span>
+                          <strong>{permission.description}</strong>
+                          <code>{permission.code}</code>
+                        </span>
+                      </p>
+                    ))}
+                  </section>
+                ),
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+      <p className="admin-footnote">
+        La edici√≥n masiva se habilitar√° con una operaci√≥n at√≥mica para evitar
+        dejar un rol a medias.
+      </p>
+    </div>
+  );
+}
+
+function groupPermissions(role: Role) {
+  const groups: Record<
+    string,
+    Array<{ code: string; category: string; description: string }>
+  > = {};
+  for (const item of role.role_permissions ?? []) {
+    const permission = item.permissions;
+    if (!permission) continue;
+    (groups[permission.category] ??= []).push(permission);
+  }
+  return groups;
+}
+
+function AuditPanel({ rows }: { rows: Audit[] }) {
+  return (
+    <div className="admin-panel">
+      <div className="admin-panel-heading">
+        <div>
+          <h2>Bit√°cora</h2>
+          <p>
+            √öltimos {rows.length} eventos. Estos registros no se pueden editar
+            ni borrar.
+          </p>
+        </div>
+      </div>
+      <div className="audit-list">
+        {rows.map((row) => (
+          <article key={row.id}>
+            <span className="audit-mark">
+              <ClipboardList aria-hidden="true" />
+            </span>
+            <div>
+              <strong>{humanAction(row.action)}</strong>
+              <small>
+                {row.entity_type}
+                {row.entity_id ? ` ¬∑ ${row.entity_id.slice(0, 8)}` : ""}
+              </small>
+            </div>
+            <div>
+              <strong>{row.app_users?.full_name ?? "Sistema"}</strong>
+              <small>
+                {new Intl.DateTimeFormat("es-MX", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                  timeZone: "America/Mexico_City",
+                }).format(new Date(row.occurred_at))}
+              </small>
+            </div>
+          </article>
+        ))}
+      </div>
+      {rows.length === 0 ? (
+        <div className="admin-empty">
+          <ClipboardList aria-hidden="true" />
+          <strong>A√∫n no hay eventos visibles</strong>
+          <span>Los cambios administrativos aparecer√°n aqu√≠.</span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function humanAction(action: string) {
+  const labels: Record<string, string> = {
+    "app_users.insert": "Empleado creado",
+    "app_users.update": "Empleado actualizado",
+    "locations.insert": "Sucursal creada",
+    "locations.update": "Sucursal actualizada",
+    "roles.update": "Rol actualizado",
+    "role_permissions.insert": "Permiso agregado",
+    "role_permissions.delete": "Permiso retirado",
+  };
+  return labels[action] ?? action.replaceAll(".", " ¬∑ ");
+}

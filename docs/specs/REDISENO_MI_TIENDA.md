@@ -1,1 +1,67 @@
-m«ëˆ§½©buªàºg§µÚ³û)yË?D@ÈHCN0„ÈĞÀ™Õ,j›jÇºà7an{¦Š)ßŠW¨¢ë_ŠW›n·š‘ºŞjG§r‡^v‹­¦ën¦)í¢X§zÊ•éà¶î˜7]yÊy×œ¡×¢›­†¥¥Ø¬¦V²¶¬™ë,j¢Šzn¶)éº×â•ç^}«¥µú+²×bŠ.¶›­¢ëiº×â•ç^}«¥µú+²×hº
+# RediseÃ±o de Mi Tienda SM basado en Mi Vaquero SM
+
+## DecisiÃ³n
+
+La versiÃ³n terminada de la PWA **Mi Vaquero SM** es la referencia visual para
+el rediseÃ±o de **Mi Tienda SM**. Ambas aplicaciones deben reconocerse como un
+mismo ecosistema, sin confundir la experiencia del cliente con la operaciÃ³n
+interna de la tienda.
+
+La referencia revisada incluye:
+
+- paleta corporativa negra, blanca, hueso, cafÃ© y arena;
+- tipografÃ­a editorial para tÃ­tulos y PT Sans para interfaz;
+- navegaciÃ³n sobria, superficies limpias y alto contraste;
+- movimiento discreto, respetando `prefers-reduced-motion`;
+- diseÃ±o responsive y zonas seguras de la PWA;
+- identidad Vaquero SM sin inventar reglas de lealtad.
+
+El **MANUAL DE IDENTIDAD VSM**, ediciÃ³n mayo de 2025, sigue siendo el documento
+rector: el logotipo no se deforma, se conserva su Ã¡rea de respeto y no se
+introducen colores, efectos o composiciones incompatibles con la marca.
+
+## AdaptaciÃ³n para el sistema interno
+
+Mi Tienda SM no copiarÃ¡ las pantallas de cliente. Reutiliza el lenguaje visual
+y lo adapta a una aplicaciÃ³n operativa que necesita mayor densidad, rapidez y
+claridad:
+
+- permisos, sucursal, caja y estados crÃ­ticos permanecen visibles;
+- POS, inventario, caja y conteos conservan teclado, lector y operaciÃ³n tÃ¡ctil;
+- tablas y formularios no pierden informaciÃ³n para parecer mÃ¡s decorativos;
+- confirmaciones se reservan para consecuencias importantes;
+- telÃ©fono vertical, iPad y computadora deben seguir siendo completamente
+  utilizables;
+- impresiÃ³n de tickets y etiquetas conserva sus medidas y alto contraste, sin
+  heredar el tema de pantalla.
+
+El rediseÃ±o no puede modificar reglas de negocio, permisos, auditorÃ­a,
+cÃ¡lculos de dinero ni movimientos de inventario.
+
+## ImplementaciÃ³n incremental
+
+La primera entrega se implementÃ³ como una capa de sistema visual compartido:
+
+1. tokens corporativos de color, radios, bordes y sombras;
+2. PT Sans para interfaz y Cormorant como respaldo editorial autorizado
+   mientras se resuelve la licencia digital de Minion Pro Display;
+3. acceso con composiciÃ³n editorial de la PWA;
+4. navegaciÃ³n negra, estado activo hueso y jerarquÃ­a tipogrÃ¡fica compartida;
+5. botones, tarjetas, mÃ©tricas, tablas y acciones rÃ¡pidas con la nueva voz;
+6. adaptaciÃ³n responsive sin tocar la lÃ³gica de los mÃ³dulos.
+
+Las siguientes entregas migrarÃ¡n por mÃ³dulo. POS, Productos, Inventario, Caja
+y Devoluciones requieren comparaciÃ³n antes/despuÃ©s con usuarios reales antes
+de retirar definitivamente su presentaciÃ³n anterior.
+
+## Criterios de aceptaciÃ³n
+
+- No existe pÃ©rdida funcional ni debilitamiento de permisos o auditorÃ­a.
+- Las tareas frecuentes requieren los mismos pasos o menos.
+- Texto, contraste y objetivos tÃ¡ctiles son legibles para el personal.
+- No hay controles encimados ni contenido inaccesible en 390 Ã— 844,
+  768 Ã— 1024, 1024 Ã— 1366 y escritorio.
+- No se agregan videos ni animaciones que retrasen cobro, conteo o recepciÃ³n.
+- El rendimiento no empeora de forma perceptible.
+- Cada mÃ³dulo migrado conserva pruebas funcionales y una comprobaciÃ³n visual.
+
