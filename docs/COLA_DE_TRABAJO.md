@@ -1403,6 +1403,14 @@ pueden convertirla en dos ventas.
 - [ ] Confirmar físicamente en la EVA58 que el logotipo aparece en una etiqueta
       51 × 25 mm con escala 100 %, horizontal y márgenes desactivados.
 
+## Corrección 0.51.2 — folio leído con apóstrofes
+
+- [x] Normalizar `LAP'V'000016` a `LAP-V-000016` antes de buscar el ticket.
+- [x] Aplicar la misma regla al acceso desde Venta y Cambios / devoluciones.
+- [x] Mantener intactos los códigos de producto y cubrir el caso físico con
+      pruebas unitarias y de navegador.
+- [ ] Repetir el escaneo del ticket físico en producción después del despliegue.
+
 ## Corrección operativa 0.32.2 — sucursal activa
 
 - [x] Conservar la sucursal elegida al navegar entre módulos y validar siempre

@@ -3074,6 +3074,14 @@ Entrega visible 0.51.1 — impresión y lectura física confiables:
 - Las pruebas de navegador verifican que el logotipo tenga dimensiones reales
   al imprimir y que el folio abra el ticket desde ambos puntos de operación.
 
+Corrección visible 0.51.2 — lector USB con distribución distinta:
+
+- La lectura física observada `LAP'V'000016` se interpreta como el folio real
+  `LAP-V-000016` antes de consultar la venta. La normalización también cubre
+  tickets de regalo y se aplica desde Tickets, Venta y Cambios / devoluciones.
+- La sustitución de apóstrofes se restringe al analizador de folios; códigos de
+  producto como `clave1` conservan su contenido original.
+
 Subfase financiera aprobada — recepción de dólares:
 
 - La referencia automática será el tipo FIX **SF43718** publicado por Banco de

@@ -350,3 +350,13 @@ que dice?_ Que exista el código no significa que funcione.
 - Compilación productiva y cuatro pruebas específicas quedan en verde. Falta la
   confirmación material en la EVA58, porque el navegador no sustituye la prueba
   del cabezal, controlador y rollo reales.
+
+## Corrección operativa 0.51.2 — distribución de teclado del lector
+
+- La prueba física mostró que el lector USB enviaba `LAP'V'000016` aunque el
+  código impreso representa `LAP-V-000016`, por una diferencia de distribución
+  de teclado.
+- Tickets normaliza esos apóstrofes como guiones antes de consultar la venta,
+  también desde Venta y Cambios / devoluciones. La corrección se limita a
+  folios: no transforma claves ni códigos de producto.
+- La prueba automatizada reproduce exactamente el valor leído en La Piedad.
