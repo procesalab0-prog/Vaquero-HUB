@@ -8,6 +8,7 @@ export const BUSINESS_PROFILE = {
 export const LA_PIEDAD_STORE = {
   id: "demo-la-piedad",
   code: "LAP",
+  labelCode: "VSM1",
   name: "La Piedad",
   address: "Av. Mariano Jiménez 706, Col. Jardines del Carmen, C.P. 59389, La Piedad de Cabadas, Michoacán",
   phone: "352 145 6880",

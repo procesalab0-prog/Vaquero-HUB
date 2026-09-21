@@ -1682,11 +1682,17 @@ una capa decorativa agregada a todas las pantallas.
   empeore el tiempo del recorrido, la claridad, el consumo ni la respuesta de
   la PWA. Si una animación estorba, se simplifica o se elimina.
 
-### Auditoría visual final y rediseño moderno opcional
+### Rediseño visual basado en Mi Vaquero SM
 
-Después del piloto y de estabilizar la operación se hará una revisión integral
-del diseño para determinar, con empleados y responsables del negocio, si Mi
-Tienda SM necesita un ajuste visual o un rediseño más amplio.
+La PWA terminada de **Mi Vaquero SM** quedó aprobada como referencia visual de
+Mi Tienda SM. La migración será incremental y comienza por el sistema visual,
+el acceso y la navegación; los módulos operativos se validarán uno por uno sin
+esperar al final del proyecto. La especificación y los límites están en
+[`specs/REDISENO_MI_TIENDA.md`](specs/REDISENO_MI_TIENDA.md).
+
+Después del piloto se mantendrá una revisión integral para comprobar con
+empleados y responsables del negocio si la nueva dirección necesita ajustes,
+no para volver a decidir desde cero la identidad.
 
 La revisión abarcará identidad de marca, jerarquía visual, tipografía, color,
 iconografía, densidad de información, navegación, componentes, estados vacíos,
@@ -1705,13 +1711,12 @@ medidas durante el piloto.
   comparación antes/después con usuarios reales.
 - Ningún cambio podrá empeorar tiempos, número de toques, legibilidad,
   accesibilidad, respuesta de la PWA ni desempeño en equipos modestos.
-- Si un rediseño completo no aporta suficiente valor, se hará sólo un refresh
-  visual del sistema de diseño existente.
+- La identidad de Mi Vaquero se comparte como sistema de diseño; no se copian
+  sus pantallas de cliente dentro de los flujos internos.
 
-**Entregable:** auditoría con capturas y métricas, propuesta aprobada, alcance
-priorizado y decisión explícita entre conservar, refrescar o rediseñar. Su
-implementación tendrá pruebas visuales y funcionales antes de llegar a
-producción.
+**Entregable:** migración incremental con capturas y métricas, alcance
+priorizado y comparación antes/después. Cada bloque tendrá pruebas visuales y
+funcionales antes de llegar a producción.
 
 Principio humano:
 
@@ -3063,6 +3068,37 @@ Entrega visible 0.51.0 — aprendizaje presencial y documentos comerciales:
   teclado físico para efectivo y una acción Regresar consistente. Estas
   preferencias de lectura no alteran documentos impresos.
 
+Corrección visible 0.52.1 — clave corta de sucursal en etiquetas:
+
+- El código operativo de una sucursal (`LAP`, por ejemplo) permanece inmutable
+  porque ya forma parte de folios históricos. No se reutiliza como dato visual.
+- Cada tienda o bodega tiene una clave exclusiva para etiquetas, de una a cuatro
+  letras o números. Las existentes reciben `VSM1`, `VSM2`, `VSM3` y así
+  sucesivamente; Administración permite personalizarla sin alterar ventas.
+- La etiqueta imprime esa clave corta y la sesión la obtiene de la sucursal
+  activa. El backend normaliza mayúsculas, evita duplicados, audita los cambios
+  y asigna una clave segura a las sucursales nuevas si el administrador la deja
+  vacía.
+
+Entrega visible 0.51.1 — impresión y lectura física confiables:
+
+- Etiquetas carga el archivo directo del logotipo con prioridad y espera a que
+  imagen y tipografías estén listas antes de abrir el diálogo de impresión. La
+  hoja térmica no puede adelantarse y dejar el espacio del logotipo en blanco.
+- El lector USB permanece activo mientras está abierta la ventana de cámara de
+  Tickets. Desde Venta, un folio navega al comprobante; desde Cambios /
+  devoluciones, el mismo escaneo abre la compra sin exigir cerrar la ventana.
+- Las pruebas de navegador verifican que el logotipo tenga dimensiones reales
+  al imprimir y que el folio abra el ticket desde ambos puntos de operación.
+
+Corrección visible 0.51.2 — lector USB con distribución distinta:
+
+- La lectura física observada `LAP'V'000016` se interpreta como el folio real
+  `LAP-V-000016` antes de consultar la venta. La normalización también cubre
+  tickets de regalo y se aplica desde Tickets, Venta y Cambios / devoluciones.
+- La sustitución de apóstrofes se restringe al analizador de folios; códigos de
+  producto como `clave1` conservan su contenido original.
+
 Subfase financiera aprobada — recepción de dólares:
 
 - La referencia automática será el tipo FIX **SF43718** publicado por Banco de
@@ -3079,7 +3115,7 @@ Subfase financiera aprobada — recepción de dólares:
   caja y pruebas de concurrencia. Hasta cumplirlas no se presenta como método de
   pago activo.
 
-Entrega visible 0.51.1 — hoja de estilos legible y reglas móviles vivas:
+Entrega visible 0.52.3 — hoja de estilos legible y reglas móviles vivas:
 
 - La reparación de codificación que siguió a 0.51.0 dejó `app/globals.css`
   minificado en una sola línea. No se perdió ninguna regla, pero sí el

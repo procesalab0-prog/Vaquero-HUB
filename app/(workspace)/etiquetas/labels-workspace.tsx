@@ -37,6 +37,37 @@ const statusMessages: Record<string, string> = {
     "La vista de diseño está disponible; falta aplicar la migración de etiquetas en este entorno.",
 };
 
+async function waitForPrintableAssets() {
+  await new Promise<void>((resolve) =>
+    window.requestAnimationFrame(() => resolve()),
+  );
+
+  const images = Array.from(
+    document.querySelectorAll<HTMLImageElement>(".print-label-sheet img"),
+  );
+
+  await Promise.all(
+    images.map(async (image) => {
+      if (!image.complete) {
+        await new Promise<void>((resolve) => {
+          const finish = () => resolve();
+          image.addEventListener("load", finish, { once: true });
+          image.addEventListener("error", finish, { once: true });
+        });
+      }
+
+      if (image.naturalWidth > 0) {
+        await image.decode().catch(() => undefined);
+      }
+    }),
+  );
+
+  await document.fonts?.ready;
+  await new Promise<void>((resolve) =>
+    window.requestAnimationFrame(() => resolve()),
+  );
+}
+
 function ProductLabel({
   variant,
   template,
@@ -70,6 +101,9 @@ function ProductLabel({
             alt="Vaquero SM"
             width={300}
             height={200}
+            loading="eager"
+            decoding="sync"
+            unoptimized
           />
         </span>
       ) : null}
@@ -121,7 +155,7 @@ export function LabelsWorkspace({
 }) {
   const { activeLocation } = useWorkspace();
   const storeCode =
-    activeLocation?.code?.trim().toLocaleUpperCase("es-MX") || "T1";
+    activeLocation?.labelCode?.trim().toLocaleUpperCase("es-MX") || "VSM1";
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Record<string, number>>({});
   const [templateId, setTemplateId] = useState(
@@ -216,10 +250,11 @@ export function LabelsWorkspace({
     });
   }
 
-  function printLabels() {
+  async function printLabels() {
     if (!totalLabels) return;
     setPrinted(true);
-    window.requestAnimationFrame(() => window.print());
+    await waitForPrintableAssets();
+    window.print();
   }
 
   if (!activeTemplate || !previewVariant) {
@@ -242,7 +277,18 @@ export function LabelsWorkspace({
 
   return (
     <section className="module-page labels-page">
-      <style media="print">{`@page { size: ${activeTemplate.widthMm}mm ${activeTemplate.heightMm}mm; margin: 0; }`}</style>
+      <style media="print">{`
+        @page { size: ${activeTemplate.widthMm}mm ${activeTemplate.heightMm}mm; margin: 0; }
+        .print-product-label,
+        .print-product-label .label-logo {
+          print-color-adjust: exact;
+          -webkit-print-color-adjust: exact;
+        }
+        .print-product-label .label-logo {
+          opacity: 1 !important;
+          visibility: visible !important;
+        }
+      `}</style>
       <div className="section-heading">
         <div>
           <p className="eyebrow">M2.5 · Catálogo</p>

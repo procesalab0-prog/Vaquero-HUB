@@ -43,9 +43,15 @@ export default async function TicketsPage({
     escanear?: string;
   }>;
 }) {
-  if (!isSupabaseConfigured()) return <TicketsWorkspace />;
-  const { supabase, roleId, profile } = await requirePermission("pos.sell");
   const params = await searchParams;
+  if (!isSupabaseConfigured())
+    return (
+      <TicketsWorkspace
+        initialReturnLookup={params.accion === "devolver"}
+        initialScannedCode={params.escanear}
+      />
+    );
+  const { supabase, roleId, profile } = await requirePermission("pos.sell");
   const locations = (profile?.user_locations ?? []).flatMap((entry) =>
     Array.isArray(entry.locations)
       ? entry.locations

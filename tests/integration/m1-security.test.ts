@@ -177,9 +177,10 @@ describe.sequential("M1: matriz de identidad, permisos y RLS", () => {
     // Insertar la fila a mano dejaba una sucursal que se veía en la lista de
     // traspasos y donde nadie podía recibir mercancía ni abrir caja.
     const code = `Z${runCode}`.slice(0, 10).toUpperCase();
-    const creada = await state.admin!.client.rpc("upsert_location", {
+    const creada = await state.admin!.client.rpc("upsert_location_v2", {
       p_id: null,
       p_code: code,
+      p_label_code: null,
       p_name: `Sucursal ${runCode}`,
       p_type: "STORE",
       p_address: "Av. de prueba 100",
@@ -189,6 +190,7 @@ describe.sequential("M1: matriz de identidad, permisos y RLS", () => {
     expect(creada.error).toBeNull();
     expect(creada.data.created).toBe(true);
     expect(creada.data.register_created).toBe(true);
+    expect(creada.data.label_code).toMatch(/^(VSM[1-9]|V\d{3})$/);
     const locationId = creada.data.id as string;
 
     const serverApi = createClient(url, secretKey, {
@@ -207,13 +209,33 @@ describe.sequential("M1: matriz de identidad, permisos y RLS", () => {
     expect((cajas.data ?? []).length).toBe(1);
 
     // La clave viaja dentro del folio de cada venta, así que no se puede mover.
-    const reCode = await state.admin!.client.rpc("upsert_location", {
+    const reCode = await state.admin!.client.rpc("upsert_location_v2", {
       p_id: locationId,
       p_code: `${code}X`,
+      p_label_code: "TST1",
       p_name: `Sucursal ${runCode}`,
       p_type: "STORE",
     });
     expect(reCode.error?.message).toContain("LOCATION_CODE_IMMUTABLE");
+
+    const reLabel = await state.admin!.client.rpc("upsert_location_v2", {
+      p_id: locationId,
+      p_code: code,
+      p_label_code: "TST1",
+      p_name: `Sucursal ${runCode}`,
+      p_type: "STORE",
+    });
+    expect(reLabel.error).toBeNull();
+    expect(reLabel.data.label_code).toBe("TST1");
+
+    const invalidLabel = await state.admin!.client.rpc("upsert_location_v2", {
+      p_id: locationId,
+      p_code: code,
+      p_label_code: "CINCO",
+      p_name: `Sucursal ${runCode}`,
+      p_type: "STORE",
+    });
+    expect(invalidLabel.error?.message).toContain("INVALID_LOCATION");
 
     // Y la escritura directa a la tabla quedó cerrada.
     const directa = await state.admin!.client.from("locations").insert({

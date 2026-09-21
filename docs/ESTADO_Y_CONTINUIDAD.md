@@ -7,7 +7,7 @@
 > memoria del proyecto.** Todo lo que haga falta para continuar tiene que
 > estar aquí, no en un chat.
 >
-> Última actualización: 2026-09-15.
+> Última actualización: 2026-09-20.
 
 ## 1. Qué es esto
 
@@ -72,8 +72,11 @@ saltando lo bloqueado.
 | **Corrección 0.32.1**    | Traspasos visibles y alta atómica de sucursal con acceso administrativo y primera caja                          |
 | **Corrección 0.32.2**    | Sucursal activa persistente, asignación de empleados, caja real y recepción de traspaso explicada               |
 | **Corrección 0.37.1**    | Administración global puede cambiar y operar todas las sucursales activas sin asignaciones individuales         |
+| **Diseño 0.52.0**        | Base visual de Mi Vaquero aplicada a acceso, navegación y componentes compartidos sin cambiar reglas operativas |
+| **Etiquetas 0.52.1**     | Clave corta por sucursal (`VSM1`, `VSM2`…) personalizable sin alterar códigos ni folios históricos              |
+| **Apariencia 0.52.2**    | Color persistente y escalas de texto grande/muy grande claramente perceptibles                                  |
 
-Ochenta y ocho migraciones versionadas del repositorio. El proyecto de Supabase
+Ochenta y nueve migraciones versionadas del repositorio. El proyecto de Supabase
 existe en `us-east-1`, PostgreSQL 17, plan Pro.
 
 ### Entornos alojados
@@ -339,3 +342,24 @@ que dice?_ Que exista el código no significa que funcione.
   último dato válido. Cada cobro deberá guardar tasa, fecha, origen, USD
   recibidos, equivalente MXN y cambio; cualquier ajuste comercial requiere
   gerencia y auditoría. No se habilita sólo con lógica de interfaz.
+
+## Corrección física 0.51.1 — logotipo y escaneo de tickets
+
+- El logotipo de la etiqueta usa el archivo estático directo y carga de forma
+  inmediata. Antes de `window.print()`, la interfaz espera su decodificación y
+  la disponibilidad de tipografías para evitar una impresión parcial.
+- La ventana de cámara ya no silencia el lector USB: en Tickets y en el acceso
+  de Cambios / devoluciones se puede leer el folio físico y abrir la compra.
+- Compilación productiva y cuatro pruebas específicas quedan en verde. Falta la
+  confirmación material en la EVA58, porque el navegador no sustituye la prueba
+  del cabezal, controlador y rollo reales.
+
+## Corrección operativa 0.51.2 — distribución de teclado del lector
+
+- La prueba física mostró que el lector USB enviaba `LAP'V'000016` aunque el
+  código impreso representa `LAP-V-000016`, por una diferencia de distribución
+  de teclado.
+- Tickets normaliza esos apóstrofes como guiones antes de consultar la venta,
+  también desde Venta y Cambios / devoluciones. La corrección se limita a
+  folios: no transforma claves ni códigos de producto.
+- La prueba automatizada reproduce exactamente el valor leído en La Piedad.

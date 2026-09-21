@@ -25,6 +25,12 @@ describe("folios de ticket de regalo", () => {
     expect(saleFolioFromReceiptCode(" lap-v-000142 ")).toBe("LAP-V-000142");
   });
 
+  it("corrige los apóstrofes que envía un lector USB en lugar de guiones", () => {
+    expect(saleFolioFromReceiptCode("LAP'V'000016")).toBe("LAP-V-000016");
+    expect(saleFolioFromReceiptCode("R'LAP'V'000016'1")).toBe("LAP-V-000016");
+    expect(isTicketReceiptCode("LAP'V'000016")).toBe(true);
+  });
+
   it("distingue tickets normales y de regalo de códigos de producto", () => {
     expect(isTicketReceiptCode("LAP-V-000142")).toBe(true);
     expect(isTicketReceiptCode("R-LAP-V-000142-1")).toBe(true);

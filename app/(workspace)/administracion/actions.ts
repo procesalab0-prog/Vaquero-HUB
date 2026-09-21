@@ -209,19 +209,26 @@ export async function saveLocation(formData: FormData) {
     const { supabase } = await requirePermission("locations.manage");
     const id = textField(formData, "id");
     const code = textField(formData, "code").toUpperCase();
+    const labelCode = textField(formData, "label_code").toUpperCase();
     const name = textField(formData, "name");
     const type = textField(formData, "type");
     const address = textField(formData, "address") || null;
     const phone = textField(formData, "phone") || null;
-    if (!code || !name || !["STORE", "WAREHOUSE"].includes(type))
+    if (
+      !code ||
+      !name ||
+      (labelCode && !/^[A-Z0-9]{1,4}$/.test(labelCode)) ||
+      !["STORE", "WAREHOUSE"].includes(type)
+    )
       throw new Error("INVALID_INPUT");
 
     // La función deja la sucursal usable de una sola vez: la crea, le da acceso
     // a quien la dio de alta y le abre su primera caja. Insertar la fila a mano
     // dejaba una sucursal que se veía en la lista y no servía para nada.
-    const result = await supabase.rpc("upsert_location", {
+    const result = await supabase.rpc("upsert_location_v2", {
       p_id: id || null,
       p_code: code,
+      p_label_code: labelCode || null,
       p_name: name,
       p_type: type,
       p_address: address,

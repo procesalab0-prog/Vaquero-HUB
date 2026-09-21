@@ -1411,11 +1411,12 @@ dice?** Que el código exista no significa que funcione.
   dinero; antes de cerrar debe resolverse esa decisión puntual en
   `specs/M7_APARTADOS.md` §6.
 - [ ] Lealtad: pospuesta por decisión del negocio; no bloquea M7.
-- [ ] Fase final de diseño: después del piloto y con los recorridos estables,
-      ejecutar la auditoría visual descrita en el plan maestro y decidir con
-      evidencia entre conservar, refrescar o rediseñar. No sustituye las
-      revisiones ergonómicas de cada entrega ni puede empeorar velocidad,
-      accesibilidad o controles operativos.
+- [~] Rediseño basado en Mi Vaquero SM: la dirección visual ya fue aprobada y
+      la primera capa compartida cubre acceso, navegación, tokens, tarjetas,
+      botones y jerarquía tipográfica. Continuar por módulos y comparar POS,
+      Productos, Inventario, Caja y Devoluciones con usuarios reales. No puede
+      empeorar velocidad, accesibilidad ni controles operativos. Véase
+      `specs/REDISENO_MI_TIENDA.md`.
 
 La conversión parcial de una cotización permanece fuera de M8.2 porque el
 negocio todavía no la ha definido. No se inventa: una cotización se cobra
@@ -1492,7 +1493,26 @@ pueden convertirla en dos ventas.
       efectivo USD separado y conciliación/ticket. Requiere migración y pruebas
       concurrentes antes de producción.
 
-## Revisión 0.51.1 — la hoja de estilos quedó minificada y perdió reglas vivas
+## Corrección 0.51.1 — logotipo y lector de tickets
+
+- [x] Cargar el logotipo de etiqueta sin optimización diferida y esperar su
+      decodificación antes de abrir el diálogo de impresión.
+- [x] Mantener activo el lector USB dentro de la ventana de escaneo de Tickets,
+      incluyendo el acceso desde Cambios / devoluciones.
+- [x] Probar en navegador el logo listo al imprimir y la apertura del ticket
+      desde Venta y desde el flujo de devoluciones.
+- [ ] Confirmar físicamente en la EVA58 que el logotipo aparece en una etiqueta
+      51 × 25 mm con escala 100 %, horizontal y márgenes desactivados.
+
+## Corrección 0.51.2 — folio leído con apóstrofes
+
+- [x] Normalizar `LAP'V'000016` a `LAP-V-000016` antes de buscar el ticket.
+- [x] Aplicar la misma regla al acceso desde Venta y Cambios / devoluciones.
+- [x] Mantener intactos los códigos de producto y cubrir el caso físico con
+      pruebas unitarias y de navegador.
+- [ ] Repetir el escaneo del ticket físico en producción después del despliegue.
+
+## Revisión 0.52.3 — la hoja de estilos quedó minificada y perdió reglas vivas
 
 Los tres commits que siguieron a `800b4e1` dejaron `app/globals.css` en **una
 sola línea de 141 157 bytes**. La primera corrección de codificación
@@ -1544,7 +1564,7 @@ vertical (601–820 px, que es donde cae un iPad de 768 px y un iPad mini de
 volviera a encenderlo: el POS se quedaba sin botón de carrito. En horizontal
 (1024 px) el iPad no entra en ese rango y no se veía afectado.
 
-Corregido en 0.51.1: archivo devuelto a formato Prettier (8 838 líneas), los 19
+Corregido en 0.52.3: archivo devuelto a formato Prettier (8 838 líneas), los 19
 comentarios explicativos restaurados desde `800b4e1`, y las tres clases de daño
 reparadas. Verificado con `next build`: la consulta `@media` compuesta, los
 `calc()` y el selector descendente aparecen en el CSS emitido.

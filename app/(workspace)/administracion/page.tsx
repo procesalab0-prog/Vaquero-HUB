@@ -31,6 +31,7 @@ type Role = {
 type Location = {
   id: string;
   code: string;
+  label_code: string | null;
   name: string;
   type: string;
   address: string | null;
@@ -139,7 +140,7 @@ export default async function AdministrationPage({
       supabase.from("roles").select("id, code, name").order("name"),
       supabase
         .from("locations")
-        .select("id, code, name, type, address, phone, is_active")
+        .select("id, code, label_code, name, type, address, phone, is_active")
         .order("name"),
     ]);
     employees = (employeesResult.data ?? []) as unknown as Employee[];
@@ -148,7 +149,7 @@ export default async function AdministrationPage({
   } else if (tab === "sucursales") {
     const { data } = await supabase
       .from("locations")
-      .select("id, code, name, type, address, phone, is_active")
+      .select("id, code, label_code, name, type, address, phone, is_active")
       .order("name");
     locations = (data ?? []) as unknown as Location[];
   } else if (tab === "roles") {
@@ -512,7 +513,7 @@ function LocationsPanel({ locations }: { locations: Location[] }) {
               <span>
                 <strong>{location.name}</strong>
                 <small>
-                  {location.code} ·{" "}
+                  {location.code} · Etiqueta {location.label_code ?? "automática"} ·{" "}
                   {location.type === "STORE"
                     ? "Tienda"
                     : location.type === "WAREHOUSE"
@@ -550,8 +551,29 @@ function LocationForm({ location }: { location?: Location }) {
     <form action={saveLocation} className="admin-form compact">
       {location ? <input name="id" type="hidden" value={location.id} /> : null}
       <label>
-        <span>Código</span>
-        <input name="code" defaultValue={location?.code} required />
+        <span>Código operativo</span>
+        <input
+          name="code"
+          defaultValue={location?.code}
+          readOnly={Boolean(location)}
+          required
+        />
+        <small>
+          {location
+            ? "Forma parte de los folios históricos y no se puede cambiar."
+            : "De 2 a 10 letras o números; se usará en los folios."}
+        </small>
+      </label>
+      <label>
+        <span>Código en etiquetas</span>
+        <input
+          name="label_code"
+          defaultValue={location?.label_code ?? ""}
+          maxLength={4}
+          pattern="[A-Za-z0-9]{1,4}"
+          placeholder={location ? "VSM1" : "Automático: VSM1, VSM2…"}
+        />
+        <small>Personalizable: máximo 4 letras o números.</small>
       </label>
       <label>
         <span>Nombre</span>

@@ -1,5 +1,4 @@
 import Image from "next/image";
-import type { WorkspaceLocation } from "@/lib/auth/types";
 import { BUSINESS_PROFILE, LA_PIEDAD_STORE } from "@/lib/business-profile";
 import { receiptPageStyle } from "@/lib/printing";
 import { LabelBarcode } from "@/components/label-barcode";
@@ -19,6 +18,14 @@ export type ReceiptPayment = {
   reference?: string | null;
 };
 
+type ReceiptLocation = {
+  id: string;
+  code: string;
+  name: string;
+  address: string | null;
+  phone: string | null;
+};
+
 type ThermalReceiptProps = {
   mode: "sale" | "gift";
   folio: string;
@@ -34,7 +41,7 @@ type ThermalReceiptProps = {
   reprintLabel?: string;
   cashierName?: string;
   registerName?: string;
-  location?: WorkspaceLocation | null;
+  location?: ReceiptLocation | null;
   returnWindowDays?: number;
   boldText?: boolean;
 };

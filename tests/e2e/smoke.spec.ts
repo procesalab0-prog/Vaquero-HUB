@@ -140,6 +140,30 @@ test("el ticket de regalo usa un código real y no un cuadro simulado", async ({
 test("el lector USB abre el ticket inmediatamente", async ({ page }) => {
   await page.goto("/tickets");
   await page.getByRole("heading", { name: "Tickets y comprobantes" }).click();
+  await page.keyboard.type("V'000842");
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("heading", { name: "V-000842", exact: true }),
+  ).toBeVisible();
+});
+
+test("el lector USB abre un ticket desde Venta", async ({ page }) => {
+  await page.goto("/pos");
+  await page.getByText("Frecuentes").click();
+  await page.keyboard.type("V-000842");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/tickets\?escanear=V-000842/);
+  await expect(
+    page.getByRole("heading", { name: "V-000842", exact: true }),
+  ).toBeVisible();
+});
+
+test("el lector USB abre un ticket en el flujo de devoluciones", async ({
+  page,
+}) => {
+  await page.goto("/tickets?accion=devolver");
+  await expect(page.getByText(/escanea el ticket del cliente/i)).toBeVisible();
+  await page.getByRole("heading", { name: "Tickets y comprobantes" }).click();
   await page.keyboard.type("V-000842");
   await page.keyboard.press("Enter");
   await expect(

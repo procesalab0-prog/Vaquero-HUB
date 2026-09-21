@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Cormorant_Garamond, IBM_Plex_Mono } from "next/font/google";
+import { Archivo, Cormorant_Garamond, IBM_Plex_Mono, PT_Sans } from "next/font/google";
 import "./globals.css";
+import "./workspace-brand.css";
 
 const archivo = Archivo({
   variable: "--font-archivo",
@@ -18,6 +19,12 @@ const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
   subsets: ["latin"],
   weight: ["600", "700"],
+});
+
+const ptSans = PT_Sans({
+  variable: "--font-pt-sans",
+  subsets: ["latin"],
+  weight: ["400", "700"],
 });
 
 export const metadata: Metadata = {
@@ -80,7 +87,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#8E2A1C",
+  themeColor: "#000000",
 };
 
 export default function RootLayout({
@@ -89,7 +96,7 @@ export default function RootLayout({
   return (
     <html lang="es-MX">
       <body
-        className={`${archivo.variable} ${plexMono.variable} ${cormorant.variable}`}
+        className={`${archivo.variable} ${plexMono.variable} ${cormorant.variable} ${ptSans.variable}`}
       >
         {children}
       </body>

@@ -30,10 +30,11 @@ export async function getWorkspaceIdentity(): Promise<WorkspaceIdentity | null> 
           : [],
     )
     .filter((location) => location.is_active && location.type === "STORE")
-    .map(({ id, name, code, address, phone }) => ({
+    .map(({ id, name, code, label_code, address, phone }) => ({
       id,
       name,
       code,
+      labelCode: label_code,
       address,
       phone,
     }));

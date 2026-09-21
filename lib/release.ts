@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.51.1";
-export const APP_RELEASE = "Estilos legibles y reglas móviles restauradas";
+export const APP_VERSION = "0.52.2";
+export const APP_RELEASE = "Apariencia persistente y texto más legible";

@@ -2,6 +2,7 @@ export type WorkspaceLocation = {
   id: string;
   name: string;
   code: string;
+  labelCode: string;
   address: string | null;
   phone: string | null;
 };
