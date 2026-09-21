@@ -203,4 +203,40 @@ describe.sequential("M1B: autorregistro seguro de clientes", () => {
     });
     expect(result.error?.message).toContain("PHONE_ALREADY_REGISTERED");
   });
+
+  it("no permite apropiarse de una cuenta de cliente ya vinculada", async () => {
+    const linkedEmail = `registro-ocupado-${runCode}@vaquero.test`;
+    const linkedPhone = `355${runCode}`;
+    const firstAuth = await server.auth.admin.createUser({
+      email: `registro-dueno-${runCode}@vaquero.test`,
+      password,
+      email_confirm: true,
+    });
+    expect(firstAuth.error).toBeNull();
+
+    const existing = await server.from("customers").insert({
+      full_name: "Cliente con cuenta",
+      phone_e164: `+52${linkedPhone}`,
+      email: linkedEmail,
+      auth_user_id: firstAuth.data.user!.id,
+      privacy_consent_at: new Date().toISOString(),
+      privacy_notice_version: "TEST-SELF-1",
+    });
+    expect(existing.error).toBeNull();
+
+    const secondAuth = await server.auth.admin.createUser({
+      email: linkedEmail,
+      password,
+      email_confirm: true,
+    });
+    expect(secondAuth.error).toBeNull();
+
+    const result = await server.rpc("complete_customer_self_registration", {
+      p_auth_user_id: secondAuth.data.user!.id,
+      p_full_name: "Intento de apropiación",
+      p_phone: linkedPhone,
+      p_privacy_notice_version: "TEST-SELF-1",
+    });
+    expect(result.error?.message).toContain("CUSTOMER_ACCOUNT_ALREADY_LINKED");
+  });
 });

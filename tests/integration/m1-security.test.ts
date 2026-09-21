@@ -235,7 +235,7 @@ describe.sequential("M1: matriz de identidad, permisos y RLS", () => {
       p_name: `Sucursal ${runCode}`,
       p_type: "STORE",
     });
-    expect(invalidLabel.error?.message).toContain("INVALID_LOCATION");
+    expect(invalidLabel.error?.message).toContain("INVALID_LABEL_CODE");
 
     // Y la escritura directa a la tabla quedó cerrada.
     const directa = await state.admin!.client.from("locations").insert({
