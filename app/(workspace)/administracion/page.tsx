@@ -94,7 +94,34 @@ const statusMessages: Record<string, string> = {
   "sucursal-creada": "Sucursal creada correctamente.",
   "sucursal-actualizada": "Sucursal actualizada correctamente.",
   "sucursal-error": "No fue posible guardar la sucursal.",
+  "sucursal-etiqueta-ocupada":
+    "Ese código de etiqueta ya lo usa otra sucursal. Elige uno distinto.",
+  "sucursal-etiqueta-invalida":
+    "El código de etiqueta admite de 1 a 4 letras o números, sin espacios ni signos.",
+  "sucursal-codigo-ocupado":
+    "Ese código operativo ya existe. Cada sucursal necesita el suyo.",
+  "sucursal-codigo-inmutable":
+    "El código operativo viaja dentro de los folios ya emitidos y no se puede cambiar.",
+  "sucursal-transito":
+    "La ubicación de tránsito la administra el sistema y no se edita.",
+  "sucursal-sin-permiso": "No tienes permiso para administrar sucursales.",
 };
+
+// Un estado que explica un rechazo tiene que verse como rechazo. Cuando la
+// única señal era la palabra «error» en el nombre, cualquier estado nuevo
+// salía pintado de verde diciendo que algo falló.
+const errorStatuses = new Set([
+  "empleado-correo-existe",
+  "empleado-pin-invalido",
+  "empleado-pin-vacio",
+  "empleado-sucursales-vacias",
+  "sucursal-etiqueta-ocupada",
+  "sucursal-etiqueta-invalida",
+  "sucursal-codigo-ocupado",
+  "sucursal-codigo-inmutable",
+  "sucursal-transito",
+  "sucursal-sin-permiso",
+]);
 
 export default async function AdministrationPage({
   searchParams,
@@ -107,11 +134,7 @@ export default async function AdministrationPage({
     : "empleados";
   const statusIsError = Boolean(
     params.status &&
-    (params.status.includes("error") ||
-      params.status === "empleado-correo-existe" ||
-      params.status === "empleado-pin-invalido" ||
-      params.status === "empleado-pin-vacio" ||
-      params.status === "empleado-sucursales-vacias"),
+    (params.status.includes("error") || errorStatuses.has(params.status)),
   );
   if (!isSupabaseConfigured()) return <AdministrationPreview tab={tab} />;
   const { supabase, userId } = await requirePermission(
@@ -513,7 +536,8 @@ function LocationsPanel({ locations }: { locations: Location[] }) {
               <span>
                 <strong>{location.name}</strong>
                 <small>
-                  {location.code} · Etiqueta {location.label_code ?? "automática"} ·{" "}
+                  {location.code} · Etiqueta{" "}
+                  {location.label_code ?? "automática"} ·{" "}
                   {location.type === "STORE"
                     ? "Tienda"
                     : location.type === "WAREHOUSE"

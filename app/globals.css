@@ -4448,7 +4448,12 @@ code {
   width: 25px;
   color: var(--accent);
 }
+/* La etiqueta se calibró físicamente en la EVA58 a 51 x 25 mm con esta
+   tipografía. Si hereda la de pantalla, cualquier cambio de tema mueve el
+   ancho del texto sobre un papel troquelado que no perdona. El ticket térmico
+   fija la suya por la misma razón. */
 .product-label {
+  font-family: var(--font-archivo), system-ui, sans-serif;
   width: var(--label-width, 50mm);
   height: var(--label-height, 30mm);
   padding: 0.6mm 1mm;
@@ -5622,6 +5627,11 @@ a:active {
 }
 .variant-summary strong {
   color: var(--text);
+}
+/* La muestra de Identidad no fija un color: toma el que declare la capa de
+   marca, que es justo lo que restaura al elegirla. */
+.theme-options .identidad > span {
+  background: var(--accent);
 }
 .theme-options .vino > span {
   background: #8e2a1c;

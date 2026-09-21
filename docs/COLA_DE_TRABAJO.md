@@ -6,7 +6,7 @@
 > Para entender el proyecto antes de tocarlo, empezar por
 > [`ESTADO_Y_CONTINUIDAD.md`](ESTADO_Y_CONTINUIDAD.md).
 >
-> Última actualización: 2026-09-20, al reparar la hoja de estilos minificada.
+> Última actualización: 2026-09-21, al revisar el rediseño y las claves de etiqueta.
 
 ## Cómo usar esta cola
 
@@ -1576,6 +1576,91 @@ reparadas. Verificado con `next build`: la consulta `@media` compuesta, los
       archivo minificado o mal codificado rompa CI en lugar de pasar inadvertido.
       Es un cambio de alcance amplio (reformatea archivos que hoy nadie formatea)
       y debe ir en su propio PR, no mezclado con una corrección.
+
+## Revisión 0.52.3 — rediseño, claves de etiqueta y acento de identidad
+
+Revisión de los diez commits que Codex subió sobre `157c708`: identidad Mi
+Vaquero, `app/workspace-brand.css`, escala de texto, clave corta de sucursal
+para etiquetas, folios con apóstrofe y logotipo listo antes de imprimir.
+
+Lo que quedó bien y se comprobó ejecutando:
+
+- La escala de texto **no se filtra a la impresión**. Con `xlarge`, el texto de
+  pantalla sube de 16 px a 22 px mientras el ticket se queda en 13 px y la
+  etiqueta en 14 px: las reglas nuevas están acotadas a `.workspace-main`.
+- El ticket térmico fija su propia tipografía (`--font-plex-mono`), así que el
+  cambio de fuente de la interfaz no lo toca.
+- `upsert_location_v2` conserva la autorización por permiso, la inmutabilidad
+  del código operativo y la bitácora; el disparador de clave automática
+  serializa las altas simultáneas con un bloqueo de transacción y la tabla
+  sigue cerrada a escritura directa (`authenticated` sólo tiene `SELECT`).
+- La normalización de apóstrofes vive sólo en el camino de folios y sigue sin
+  confundir un código de producto con un ticket.
+
+Cuatro defectos encontrados y corregidos:
+
+1. **El acento de la identidad no se veía nunca.** `workspace-brand.css` define
+   `--accent: #5b4021`, pero el shell aplicaba `#8E2A1C` en línea sobre `<html>`
+   en cada carga aunque nadie hubiera elegido color. Medido en navegador: la
+   hoja entregaba `#5b4021` y el shell lo pisaba. Ahora sin color elegido no se
+   toca nada y manda la hoja.
+2. **Elegir un color movía sólo `--accent`.** `--accent-hover`, `--accent-pressed`
+   y `--accent-soft` se quedaban en los tonos café de la marca, así que un botón
+   vino se oscurecía a café al tocarlo y su fondo suave salía beige. Los cuatro
+   tokens se calculan juntos en `lib/accent.ts`, un solo lugar en vez de la
+   paleta duplicada en dos archivos.
+3. **No había vuelta atrás.** Una vez elegido un color no se podía recuperar el
+   de la identidad. Se agregó la opción **Identidad**, que borra la preferencia
+   y retira las propiedades en línea.
+4. **Una clave de etiqueta repetida decía sólo «no fue posible guardar la
+   sucursal».** Ahora que la clave se captura a mano, chocar con la de otra
+   sucursal es un callejón sin salida si la pantalla no explica cuál fue el
+   problema. La función traduce la violación del índice único a
+   `LABEL_CODE_TAKEN` y Administración explica cada rechazo por su nombre.
+   De paso, los estados nuevos se marcan como error: con la regla anterior
+   —«es error si el nombre contiene *error*»— un rechazo nuevo salía pintado
+   de verde.
+
+Dos endurecimientos preventivos:
+
+- **La clave de etiqueta ya no se reacuña en silencio.** Un `update` que dejara
+  `label_code` en nulo no fallaba: el disparador acuñaba una clave nueva y la
+  sucursal cambiaba de identidad impresa. Hoy sólo la llega a tener un alta
+  nueva. No era alcanzable desde la interfaz —la tabla está cerrada— pero es un
+  valor que viaja pegado a la mercancía.
+- **La etiqueta fija su tipografía.** `.product-label` la heredaba de `body`,
+  que el rediseño acaba de cambiar de Archivo a PT Sans. Las medidas están en
+  puntos y no cambian, pero la letra sí, sobre un papel troquelado de 51 × 25 mm
+  ya calibrado físicamente. Queda fijada a Archivo, como el ticket fija la suya.
+  Si se quiere PT Sans en etiquetas, es una decisión con nueva prueba física.
+
+Medido en la aplicación real, en los cuatro tamaños que pide el criterio de
+aceptación del rediseño:
+
+| Tamaño | Barra inferior | Relleno del contenido | Botón de carrito | Scroll horizontal |
+| --- | --- | --- | --- | --- |
+| 390 × 844 | 92 px | 110 px | visible | no |
+| 768 × 1024 | 92 px | 110 px | visible | no |
+| 1024 × 1366 | barra lateral | — | no aplica | no |
+| escritorio | barra lateral | — | no aplica | no |
+
+- [x] Restaurar el acento de la identidad y mover con él sus tonos derivados.
+- [x] Permitir volver al acento de la identidad después de elegir otro.
+- [x] Dar nombre al choque de claves de etiqueta y explicarlo en pantalla.
+- [x] Impedir que una clave de etiqueta se reacuñe sola.
+- [x] Fijar la tipografía de la etiqueta impresa.
+- [ ] Reimprimir la etiqueta 51 × 25 en la EVA58 después de este despliegue:
+      el rediseño cambió la tipografía de la interfaz y conviene confirmar que
+      la etiqueta sigue saliendo igual que el 19 de septiembre.
+- [ ] El color y el tamaño de texto se aplican en `useEffect`, así que un
+      equipo con preferencia guardada muestra el valor por omisión durante el
+      primer cuadro. Quitarlo pide un script bloqueante en `app/layout.tsx`;
+      va aparte, no mezclado con una corrección.
+
+Nota menor, sin cambio: la prueba de integración de sucursales ocupa la clave
+literal `TST1`, que el índice único no libera. CI corre `supabase db reset`
+antes de las pruebas, así que ahí no falla; en local, una segunda corrida sin
+`pnpm db:reset` sí.
 
 ## Corrección operativa 0.32.2 — sucursal activa
 

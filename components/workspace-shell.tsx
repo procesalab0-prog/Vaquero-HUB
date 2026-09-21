@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { APP_RELEASE, APP_VERSION } from "@/lib/release";
+import { ACCENT_EVENT, applyAccent, storedAccent } from "@/lib/accent";
 import {
   Bell,
   ArrowLeft,
@@ -114,24 +115,17 @@ export function WorkspaceShell({
       const value = (event as CustomEvent<string>).detail;
       if (value) document.documentElement.dataset.textSize = value;
     };
-    const accentColors: Record<string, string> = {
-      vino: "#8E2A1C",
-      cuero: "#9A5D32",
-      noche: "#241E1B",
-    };
-    const applyAccent = (value: string) => {
-      const color = accentColors[value];
-      if (color) document.documentElement.style.setProperty("--accent", color);
-    };
-    applyAccent(window.localStorage.getItem("mi-tienda:accent:v1") ?? "vino");
+    // Sin acento elegido no se fuerza ninguno: el de la identidad lo define
+    // workspace-brand.css. Forzar aquí un valor dejaba ese diseño sin efecto.
+    applyAccent(storedAccent());
     const syncAccent = (event: Event) => {
-      applyAccent((event as CustomEvent<string>).detail);
+      applyAccent((event as CustomEvent<string>).detail || null);
     };
     window.addEventListener("mi-tienda:text-size", syncTextSize);
-    window.addEventListener("mi-tienda:accent", syncAccent);
+    window.addEventListener(ACCENT_EVENT, syncAccent);
     return () => {
       window.removeEventListener("mi-tienda:text-size", syncTextSize);
-      window.removeEventListener("mi-tienda:accent", syncAccent);
+      window.removeEventListener(ACCENT_EVENT, syncAccent);
     };
   }, []);
 

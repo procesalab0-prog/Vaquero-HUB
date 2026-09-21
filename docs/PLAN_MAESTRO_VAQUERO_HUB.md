@@ -3138,3 +3138,28 @@ Entrega visible 0.52.3 — hoja de estilos legible y reglas móviles vivas:
 - Verificado ejecutando: Chromium reporta `not all` para la consulta sin
   espacio y calcula 0 para `calc(var(--a)+ var(--b))`; `next build` omitía el
   bloque `@media` compuesto del CSS emitido y ahora lo incluye.
+
+Entrega visible 0.52.3 — identidad visible y claves de etiqueta claras:
+
+- El acento de la identidad definido en `app/workspace-brand.css` vuelve a ser
+  el que se ve. La preferencia de color sólo se aplica cuando alguien la eligió,
+  y entonces mueve los cuatro tokens juntos: acento, hover, presionado y suave.
+  Elegir un color se puede deshacer con la opción **Identidad**.
+- Regla operativa que deja esta revisión: la paleta vive en un solo archivo
+  (`lib/accent.ts`). Cuando dos archivos describen la misma paleta, uno termina
+  pisando al diseño sin que nadie lo note.
+- La clave corta de sucursal que se imprime en la etiqueta es un identificador
+  físico: no se reacuña sola, su choque con otra sucursal tiene nombre propio
+  (`LABEL_CODE_TAKEN`) y Administración explica cada rechazo en lugar de decir
+  sólo que no se pudo guardar.
+- Regla operativa para impresión: todo lo que se imprime fija su tipografía.
+  El ticket térmico ya lo hacía; la etiqueta la heredaba de la pantalla, y el
+  rediseño acababa de cambiarla. Una calibración física no puede depender del
+  tema visual.
+- Verificado ejecutando: las 94 migraciones aplican limpias sobre una base
+  vacía; el disparador de claves conserva la existente ante un nulo, acuña sólo
+  en altas nuevas y sigue rechazando duplicados; `upsert_location_v2` conserva
+  `NOT_AUTHORIZED`, `LOCATION_CODE_TAKEN` y `LOCATION_CODE_IMMUTABLE`; 45
+  pruebas unitarias y 114 de navegador en verde; medición en la aplicación real
+  a 390 × 844, 768 × 1024, 1024 × 1366 y escritorio sin desplazamiento
+  horizontal ni controles perdidos.
