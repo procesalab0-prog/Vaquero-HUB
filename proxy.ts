@@ -10,7 +10,8 @@ export async function proxy(request: NextRequest) {
   if (customerHost && requestHost === customerHost) {
     const pathname = request.nextUrl.pathname;
     const customerPage = pathname === "/mi" || pathname.startsWith("/mi/");
-    const customerApi = pathname === "/api/mi" || pathname.startsWith("/api/mi/");
+    const customerApi =
+      pathname === "/api/mi" || pathname.startsWith("/api/mi/");
     if (pathname.startsWith("/api/") && !customerApi) {
       return new NextResponse("No encontrado", { status: 404 });
     }
@@ -27,6 +28,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|ttf|woff|woff2)$).*)",
   ],
 };

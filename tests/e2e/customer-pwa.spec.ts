@@ -21,6 +21,8 @@ test("Mi Vaquero conserva su instalación separada y el recorrido editorial", as
   expect(
     (await (await request.get("/manifest.webmanifest")).json()).start_url,
   ).toBe("/inicio");
+  expect((await request.get("/mi-media/campaign-02.mp4")).status()).toBe(200);
+  expect((await request.get("/fonts/pt-sans-regular.ttf")).status()).toBe(200);
   await expect(page.locator("video")).not.toHaveAttribute("src");
   await page
     .getByRole("button", { name: "Video siguiente", exact: true })

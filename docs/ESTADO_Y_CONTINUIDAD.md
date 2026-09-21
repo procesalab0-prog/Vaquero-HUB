@@ -407,3 +407,9 @@ que dice?_ Que exista el código no significa que funcione.
 - La vista se verificó sin desbordamiento horizontal en 320, 390, 768 y
   1440 píxeles; las pruebas cubren navegación, manifest independiente, tarjeta
   sin conexión, QR, código de barras y retiro local.
+
+### Corrección 0.55.1 — recursos públicos de campaña
+
+- El proxy excluye explícitamente videos y fuentes públicas de la autenticación
+  interna. En producción ya no se redirigen a `/login`; una prueba de navegador
+  exige respuesta 200 para ambos tipos de recurso.
