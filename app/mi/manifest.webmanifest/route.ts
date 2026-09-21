@@ -15,8 +15,8 @@ export function GET(request: NextRequest) {
       scope: dedicatedOrigin ? "/" : "/mi",
       display: "standalone",
       orientation: "portrait",
-      background_color: "#F4F2EF",
-      theme_color: "#8E2A1C",
+      background_color: "#000000",
+      theme_color: "#000000",
       lang: "es-MX",
       categories: ["shopping", "lifestyle"],
       icons: [

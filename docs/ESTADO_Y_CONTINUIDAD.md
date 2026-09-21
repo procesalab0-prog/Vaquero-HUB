@@ -392,3 +392,18 @@ que dice?_ Que exista el código no significa que funcione.
 - La prueba en staging cubre código incorrecto, canje, devolución parcial y
   cancelación completa; todos los datos de la prueba se revierten al concluir.
 - El programa sigue desactivado por omisión hasta fijar la fecha de lanzamiento.
+
+## Mi Vaquero 0.55.0 — identidad editorial sin pérdida funcional
+
+- Se integró en `/mi` el diseño editorial construido y validado en la rama
+  local `codex/pwa-lealtad-editorial`: portada audiovisual, narrativa visual,
+  tarjeta reversible QR/CODE128, navegación propia e instalación PWA.
+- El traslado no reemplaza la versión operativa más reciente. Conserva el alta
+  de clientes por correo, la sesión persistente, el saldo e historial de puntos,
+  los códigos temporales de canje y la descarga de tickets del cliente.
+- El tema e íconos siguen separados de Mi Tienda SM. El service worker de
+  clientes limita su alcance, excluye API y datos personales, y no cachea los
+  videos de campaña.
+- La vista se verificó sin desbordamiento horizontal en 320, 390, 768 y
+  1440 píxeles; las pruebas cubren navegación, manifest independiente, tarjeta
+  sin conexión, QR, código de barras y retiro local.

@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Mi Vaquero",
   },
   robots: { index: false, follow: false },
@@ -34,7 +34,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#8E2A1C",
+  themeColor: "#000000",
 };
 
 export default function CustomerLayout({

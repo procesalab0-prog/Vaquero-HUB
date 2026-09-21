@@ -1,18 +1,26 @@
 "use client";
 
 import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
+  Barcode,
+  Check,
   CheckCircle2,
+  ChevronRight,
   CloudOff,
   Download,
   FileText,
+  Home,
   LogOut,
   Mail,
   RefreshCw,
   ShieldCheck,
+  ShoppingBag,
   Smartphone,
   Trash2,
-  UserPlus,
-  Wifi,
+  UserRound,
+  X,
 } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -27,6 +35,11 @@ import {
   serializeOfflineCustomerCard,
 } from "@/lib/customer-card-storage";
 import { createCustomerClient } from "@/lib/supabase/customer-client";
+import { APP_VERSION } from "@/lib/release";
+import { CampaignFilm } from "./campaign-film";
+import { MemberCard } from "./member-card";
+import { MemberCodes } from "./member-codes";
+import { useScanWakeLock } from "./use-scan-wake-lock";
 
 type CardData = { memberNumber: string; fullName: string | null };
 type LoyaltySummary = {
@@ -81,6 +94,12 @@ type CustomerPwaProps = {
   privacyNoticeVersion: string;
   privacyNoticeUrl: string;
 };
+type View = "inicio" | "tarjeta" | "perfil";
+type InstallPrompt = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: string }>;
+};
+const views: View[] = ["inicio", "tarjeta", "perfil"];
 const ticketDate = new Intl.DateTimeFormat("es-MX", {
   dateStyle: "medium",
   timeZone: "America/Mexico_City",
@@ -104,7 +123,10 @@ export function CustomerPwa({
   const clientRef = useRef<ReturnType<typeof createCustomerClient> | null>(
     null,
   );
-  const barcodeRef = useRef<SVGSVGElement>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [scanning, setScanning] = useState(false);
+  useScanWakeLock(scanning);
+  const [view, setView] = useState<View>("inicio");
   const [card, setCard] = useState<CardData | null>(null);
   const [loyalty, setLoyalty] = useState<LoyaltySummary | null>(null);
   const [redemptionPoints, setRedemptionPoints] = useState("");
@@ -116,7 +138,6 @@ export function CustomerPwa({
   } | null>(null);
   const [tickets, setTickets] = useState<CustomerTicket[]>([]);
   const [ticketBusy, setTicketBusy] = useState<string | null>(null);
-  const [qr, setQr] = useState("");
   const [identifier, setIdentifier] = useState("");
   const [token, setToken] = useState("");
   const [mode, setMode] = useState<"access" | "register">("access");
@@ -135,6 +156,22 @@ export function CustomerPwa({
   const [authenticated, setAuthenticated] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [ready, setReady] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [install, setInstall] = useState<InstallPrompt | null>(null);
+  const [installed, setInstalled] = useState(false);
+
+  const navigate = useCallback((next: View) => {
+    setView(next);
+    setError("");
+    setNotice("");
+    history.replaceState(
+      null,
+      "",
+      `${location.pathname}${location.search}#${next}`,
+    );
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
 
   const loadOnlineCard = useCallback(async () => {
     const client = clientRef.current;
@@ -160,10 +197,18 @@ export function CustomerPwa({
       memberNumber: record.member_number as string,
       fullName: record.full_name as string,
     };
-    localStorage.setItem(
-      CUSTOMER_CARD_STORAGE_KEY,
-      serializeOfflineCustomerCard(nextCard.memberNumber),
-    );
+    try {
+      localStorage.setItem(
+        CUSTOMER_CARD_STORAGE_KEY,
+        serializeOfflineCustomerCard(nextCard.memberNumber),
+      );
+      setSaved(true);
+    } catch {
+      setSaved(false);
+      setNotice(
+        "Tu navegador no permite guardar la tarjeta. Podrás consultarla con conexión.",
+      );
+    }
     setCard(nextCard);
     const ticketResult = await client.rpc("get_my_customer_tickets", {
       p_limit: 25,
@@ -259,23 +304,49 @@ export function CustomerPwa({
 
   useEffect(() => {
     const hydrateTimer = window.setTimeout(() => {
+      const requested = location.hash.slice(1) as View;
+      if (views.includes(requested)) setView(requested);
       setOnline(navigator.onLine);
-      const cached = parseOfflineCustomerCard(
-        localStorage.getItem(CUSTOMER_CARD_STORAGE_KEY),
-      );
-      if (cached) {
-        localStorage.setItem(
-          CUSTOMER_CARD_STORAGE_KEY,
-          serializeOfflineCustomerCard(cached.memberNumber),
+      try {
+        const cached = parseOfflineCustomerCard(
+          localStorage.getItem(CUSTOMER_CARD_STORAGE_KEY),
         );
-        setCard({ memberNumber: cached.memberNumber, fullName: null });
+        if (cached) {
+          setCard({ memberNumber: cached.memberNumber, fullName: null });
+          setSaved(true);
+          if (!views.includes(requested)) setView("tarjeta");
+        }
+      } catch {
+        // The online card still works when persistent storage is unavailable.
       }
+      setInstalled(
+        matchMedia("(display-mode: standalone)").matches ||
+          Boolean(
+            (navigator as Navigator & { standalone?: boolean }).standalone,
+          ),
+      );
+      setReady(true);
     }, 0);
 
     const onOnline = () => setOnline(true);
     const onOffline = () => setOnline(false);
+    const onHash = () => {
+      const next = location.hash.slice(1) as View;
+      if (views.includes(next)) setView(next);
+    };
+    const onInstall = (event: Event) => {
+      event.preventDefault();
+      setInstall(event as InstallPrompt);
+    };
+    const onInstalled = () => {
+      setInstalled(true);
+      setInstall(null);
+    };
     window.addEventListener("online", onOnline);
     window.addEventListener("offline", onOffline);
+    window.addEventListener("hashchange", onHash);
+    window.addEventListener("beforeinstallprompt", onInstall);
+    window.addEventListener("appinstalled", onInstalled);
 
     if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
       const scope = window.location.pathname.startsWith("/mi") ? "/mi" : "/";
@@ -289,6 +360,9 @@ export function CustomerPwa({
         window.clearTimeout(hydrateTimer);
         window.removeEventListener("online", onOnline);
         window.removeEventListener("offline", onOffline);
+        window.removeEventListener("hashchange", onHash);
+        window.removeEventListener("beforeinstallprompt", onInstall);
+        window.removeEventListener("appinstalled", onInstalled);
       };
 
     const client = createCustomerClient();
@@ -317,39 +391,11 @@ export function CustomerPwa({
       listener.subscription.unsubscribe();
       window.removeEventListener("online", onOnline);
       window.removeEventListener("offline", onOffline);
+      window.removeEventListener("hashchange", onHash);
+      window.removeEventListener("beforeinstallprompt", onInstall);
+      window.removeEventListener("appinstalled", onInstalled);
     };
   }, [configured, loadOnlineCard]);
-
-  useEffect(() => {
-    if (!card?.memberNumber) return;
-    let cancelled = false;
-    Promise.all([import("qrcode"), import("jsbarcode")])
-      .then(async ([qrModule, barcodeModule]) => {
-        const nextQr = await qrModule.default.toDataURL(card.memberNumber, {
-          color: { dark: "#1e1917", light: "#ffffff" },
-          errorCorrectionLevel: "M",
-          margin: 2,
-          width: 280,
-        });
-        if (cancelled) return;
-        setQr(nextQr);
-        if (barcodeRef.current) {
-          barcodeModule.default(barcodeRef.current, card.memberNumber, {
-            background: "#ffffff",
-            displayValue: false,
-            format: "CODE128",
-            height: 62,
-            lineColor: "#1e1917",
-            margin: 0,
-            width: 2,
-          });
-        }
-      })
-      .catch(() => setQr(""));
-    return () => {
-      cancelled = true;
-    };
-  }, [card?.memberNumber]);
 
   async function requestAccess(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -515,6 +561,7 @@ export function CustomerPwa({
         setNotice("Tarjeta activada en este dispositivo.");
       }
       setToken("");
+      navigate("tarjeta");
     } catch {
       setError("El código no es válido o ya venció. Solicita uno nuevo.");
     } finally {
@@ -568,6 +615,8 @@ export function CustomerPwa({
     setNeedsProfile(false);
     setMode("access");
     setStep("identify");
+    setSaved(false);
+    navigate("perfil");
     setNotice("La tarjeta se quitó únicamente de este dispositivo.");
   }
 
@@ -675,463 +724,780 @@ export function CustomerPwa({
     );
   }
 
+  const groupedNumber = card
+    ? `${card.memberNumber.slice(0, 4)} ${card.memberNumber.slice(4)}`
+    : "";
+
   return (
-    <main className="mi-app">
-      <header className="mi-header">
+    <div className={`mi-app mi-view-${view}`}>
+      <a className="mi-skip" href="#mi-main">
+        Ir al contenido
+      </a>
+      <div className="mi-splash" aria-hidden="true">
         <Image
           src="/brand/logo-vaquerosm-blanco.png"
-          alt="Vaquero SM"
-          width={188}
-          height={68}
+          alt=""
+          width={360}
+          height={160}
+          unoptimized
           priority
         />
-        <span className={online ? "mi-connectivity online" : "mi-connectivity"}>
-          {online ? (
-            <Wifi aria-hidden="true" />
-          ) : (
-            <CloudOff aria-hidden="true" />
-          )}
-          {online ? "En línea" : "Sin conexión"}
-        </span>
+        <span>EL MISMO QUE VISTE Y CALZA.</span>
+      </div>
+      <header className="mi-header">
+        <button
+          className="mi-brand-button"
+          onClick={() => navigate("inicio")}
+          aria-label="Vaquero SM, ir a inicio"
+        >
+          <Image
+            src="/brand/logo-vaquerosm-blanco.png"
+            alt="Vaquero SM"
+            width={180}
+            height={88}
+            priority
+            unoptimized
+          />
+        </button>
+        <div className="mi-header-right">
+          <span>
+            INDUMENTARIA
+            <br />
+            VAQUERA
+          </span>
+          <button
+            className="mi-icon-button"
+            onClick={() => navigate("perfil")}
+            aria-label="Abrir perfil"
+          >
+            <UserRound />
+          </button>
+        </div>
       </header>
 
-      <section className="mi-content">
-        {card ? (
-          <>
-            <div className="mi-title">
-              <p>Tarjeta digital</p>
-              <h1>
-                {card.fullName
-                  ? `Hola, ${card.fullName.split(" ")[0]}`
-                  : "Mi tarjeta Vaquero"}
-              </h1>
-              <span>
-                {authenticated
-                  ? "Información actualizada"
-                  : "Disponible sin iniciar sesión"}
-              </span>
-            </div>
-            <article className="member-card">
-              <div className="member-card-brand">
-                <Image
-                  src="/brand/emblema-blanco.png"
-                  alt=""
-                  width={52}
-                  height={52}
-                />
-                <span>VAQUERO SM</span>
-              </div>
-              <div className="member-qr">
-                {qr ? (
-                  <Image
-                    src={qr}
-                    alt={`Código QR del socio ${card.memberNumber}`}
-                    width={280}
-                    height={280}
-                    unoptimized
-                  />
-                ) : (
-                  <span>Generando QR…</span>
-                )}
-              </div>
-              <div className="member-number">
-                <small>NÚMERO DE SOCIO</small>
-                <strong>
-                  {card.memberNumber.slice(0, 4)} {card.memberNumber.slice(4)}
-                </strong>
-              </div>
-              <div className="member-barcode">
-                <svg
-                  ref={barcodeRef}
-                  role="img"
-                  aria-label={`Código de barras del socio ${card.memberNumber}`}
-                />
-              </div>
-            </article>
+      {!online && (
+        <div className="mi-offline" role="status">
+          <CloudOff size={15} /> Sin conexión
+          {saved ? " · Tu tarjeta sigue contigo" : ""}
+        </div>
+      )}
 
-            <div className="mi-safe-note">
-              <ShieldCheck aria-hidden="true" />
-              <span>
-                <strong>Funciona sin internet</strong>
-                <small>
-                  Este dispositivo conserva únicamente tu número de socio. Tus
-                  datos personales no se guardan aquí.
-                </small>
-              </span>
-            </div>
-            {authenticated && loyalty?.enabled ? (
-              <section className="mi-loyalty-panel">
-                <div className="mi-loyalty-balance">
-                  <span>
-                    <small>PUNTOS DISPONIBLES</small>
-                    <strong>
-                      {loyalty.available_points.toLocaleString("es-MX")}
-                    </strong>
-                  </span>
-                  <span>
-                    <small>VALOR</small>
-                    <b>
-                      {ticketMoney.format(
-                        (loyalty.available_points * loyalty.point_value_cents) /
-                          100,
-                      )}
-                    </b>
-                  </span>
-                </div>
-                <p>
-                  Cada punto vale{" "}
-                  {ticketMoney.format(loyalty.point_value_cents / 100)} y vence{" "}
-                  {loyalty.expiry_months} meses después de ganarse.
-                </p>
-                {loyalty.points_debt > 0 ? (
-                  <p className="mi-loyalty-warning">
-                    Los próximos {loyalty.points_debt} puntos cubrirán un ajuste
-                    por cambio o devolución.
-                  </p>
-                ) : null}
-                <form className="mi-redemption" onSubmit={createRedemptionCode}>
-                  <label htmlFor="redemption-points">Usar puntos</label>
-                  <div>
-                    <input
-                      id="redemption-points"
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      max={loyalty.available_points}
-                      step={1}
-                      value={redemptionPoints}
-                      onChange={(event) =>
-                        setRedemptionPoints(event.target.value)
-                      }
-                      placeholder="Cantidad"
-                    />
-                    <button
-                      type="submit"
-                      disabled={busy || !loyalty.available_points}
-                    >
-                      Generar código
-                    </button>
-                  </div>
-                </form>
-                {redemptionCode ? (
-                  <div className="mi-redemption-code" role="status">
-                    <small>CÓDIGO TEMPORAL</small>
-                    <strong>{redemptionCode.code}</strong>
-                    <span>
-                      {redemptionCode.points} puntos ·{" "}
-                      {ticketMoney.format(redemptionCode.value_cents / 100)}
-                    </span>
-                  </div>
-                ) : null}
-                {loyalty.history.length ? (
-                  <div className="mi-points-history">
-                    <strong>Movimientos recientes</strong>
-                    {loyalty.history.slice(0, 8).map((movement) => (
-                      <div key={movement.id}>
-                        <span>
-                          {movement.type === "EARN"
-                            ? "Compra"
-                            : movement.type === "EXPIRE"
-                              ? "Vencimiento"
-                              : movement.type === "RETURN_REVERSAL"
-                                ? "Cambio o devolución"
-                                : movement.type === "REDEEM"
-                                  ? "Canje"
-                                  : "Ajuste"}
-                          <small>
-                            {ticketDate.format(new Date(movement.created_at))}
-                          </small>
-                        </span>
-                        <b className={movement.points > 0 ? "positive" : ""}>
-                          {movement.points > 0 ? "+" : ""}
-                          {movement.points}
-                        </b>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </section>
-            ) : (
-              <div className="mi-program-status">
-                <CheckCircle2 aria-hidden="true" />
-                <span>
-                  <strong>Identidad lista</strong>
-                  <small>
-                    Tus compras vinculadas aparecen aquí. El saldo de puntos se
-                    activará desde la fecha oficial de lanzamiento.
-                  </small>
-                </span>
-              </div>
-            )}
-            {authenticated ? (
-              <section className="mi-ticket-history">
-                <div className="mi-section-title">
-                  <FileText aria-hidden="true" />
-                  <span>
-                    <strong>Mis tickets</strong>
-                    <small>Compras registradas con tu cuenta</small>
-                  </span>
-                </div>
-                {tickets.length ? (
-                  tickets.map((ticket) => (
-                    <article key={ticket.id}>
-                      <div>
-                        <strong>{ticket.folio}</strong>
-                        <small>
-                          {ticketDate.format(new Date(ticket.sold_at))} ·{" "}
-                          {ticket.location.name}
-                        </small>
-                      </div>
-                      <div>
-                        <b>
-                          {ticketMoney.format(Number(ticket.total_cents) / 100)}
-                        </b>
-                        {ticket.status === "CANCELLED" ? (
-                          <small>Cancelada</small>
-                        ) : null}
-                      </div>
-                      <button
-                        type="button"
-                        disabled={ticketBusy === ticket.id}
-                        onClick={() => void downloadCustomerTicket(ticket)}
-                      >
-                        <Download aria-hidden="true" />
-                        {ticketBusy === ticket.id ? "Preparando…" : "PDF"}
-                      </button>
-                    </article>
-                  ))
-                ) : (
-                  <p className="mi-empty-tickets">
-                    Todavía no hay compras vinculadas a esta cuenta.
-                  </p>
-                )}
-              </section>
-            ) : null}
-            <div className="mi-actions">
-              {authenticated ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    loadOnlineCard().catch(() =>
-                      setError("No fue posible actualizar la tarjeta."),
-                    )
-                  }
-                >
-                  <RefreshCw aria-hidden="true" />
-                  Actualizar
-                </button>
-              ) : null}
-              {authenticated ? (
-                <button type="button" onClick={signOut}>
-                  <LogOut aria-hidden="true" />
-                  Cerrar sesión
-                </button>
-              ) : null}
-              <button className="danger" type="button" onClick={removeCard}>
-                <Trash2 aria-hidden="true" />
-                Quitar del dispositivo
-              </button>
-            </div>
-          </>
-        ) : (
+      <main id="mi-main">
+        {view === "inicio" && (
           <>
-            <div className="mi-title">
-              <p>Vaquero SM</p>
-              <h1>Tu tarjeta siempre contigo</h1>
-              <span>
-                Identifícate en caja con QR, código de barras o número de socio.
-              </span>
-            </div>
-            <div className="mi-access-card">
-              <div className="mi-access-icon">
-                {mode === "register" ? (
-                  <UserPlus aria-hidden="true" />
-                ) : (
-                  <Smartphone aria-hidden="true" />
-                )}
+            <section className="mi-hero" aria-label="Campaña Vaquero SM">
+              <CampaignFilm />
+              <div className="mi-hero-shade" />
+              <div className="mi-hero-copy">
+                <span className="mi-eyebrow">VAQUERO SM · LA PIEDAD</span>
+                <h1>
+                  LO QUE ERES.
+                  <br />
+                  <em>LO QUE LLEVAS.</em>
+                </h1>
+                <p>El mismo que viste y calza.</p>
+                <button
+                  className="mi-outline"
+                  onClick={() => navigate("tarjeta")}
+                >
+                  {card ? "Mi tarjeta" : "Descubre tu tarjeta"} <ArrowUpRight />
+                </button>
               </div>
-              <h2>
-                {needsProfile
-                  ? "Termina de crear tu cuenta"
-                  : mode === "register"
-                    ? "Crear mi cuenta"
-                    : "Activar mi tarjeta"}
-              </h2>
-              <p>
-                {needsProfile
-                  ? "Tu correo ya está verificado. Completa tus datos para recibir tu número de socio."
-                  : mode === "register"
-                    ? "Regístrate desde aquí y recibe tu tarjeta digital. No necesitas contraseña."
-                    : "Usa el teléfono o correo que registraste en tienda. Nunca te pediremos una contraseña."}
-              </p>
-              {!needsProfile && step === "identify" ? (
-                <div className="mi-access-modes" aria-label="Tipo de acceso">
-                  <button
-                    className={mode === "access" ? "active" : ""}
-                    type="button"
-                    onClick={() => {
-                      setMode("access");
-                      setError("");
-                      setNotice("");
-                    }}
-                  >
-                    Ya tengo cuenta
-                  </button>
-                  <button
-                    className={mode === "register" ? "active" : ""}
-                    type="button"
-                    onClick={() => {
-                      setMode("register");
-                      setError("");
-                      setNotice("");
-                    }}
-                  >
-                    Crear cuenta
-                  </button>
-                </div>
-              ) : null}
-              {!configured ? (
-                <div className="mi-message error">
-                  El acceso se habilitará al conectar Supabase.
-                </div>
-              ) : needsProfile ? (
-                <form onSubmit={finishVerifiedRegistration}>
-                  {registrationFields(true)}
-                  <button className="mi-primary" disabled={busy} type="submit">
-                    {busy ? "Creando cuenta…" : "Crear mi tarjeta"}
-                  </button>
-                  <button
-                    className="mi-link-button"
-                    type="button"
-                    onClick={() => void signOut()}
-                  >
-                    Usar otro correo
-                  </button>
-                </form>
-              ) : mode === "register" && step === "identify" ? (
-                <form onSubmit={requestRegistration}>
-                  {registrationFields()}
-                  <button
-                    className="mi-primary"
-                    disabled={
-                      busy || !privacyNoticeVersion || !privacyNoticeUrl
-                    }
-                    type="submit"
-                  >
-                    {busy ? "Enviando código…" : "Verificar mi correo"}
-                  </button>
-                  {!privacyNoticeVersion || !privacyNoticeUrl ? (
-                    <small className="mi-channel-note">
-                      El formulario quedará habilitado al publicar el aviso de
-                      privacidad aprobado.
-                    </small>
-                  ) : null}
-                </form>
-              ) : step === "identify" ? (
-                <form onSubmit={requestAccess}>
-                  <label htmlFor="customer-identifier">Teléfono o correo</label>
-                  <div className="mi-input">
-                    <Mail aria-hidden="true" />
-                    <input
-                      id="customer-identifier"
-                      value={identifier}
-                      onChange={(event) => setIdentifier(event.target.value)}
-                      autoComplete="username"
-                      inputMode="text"
-                      placeholder="correo@ejemplo.com"
-                    />
-                  </div>
-                  <button className="mi-primary" disabled={busy} type="submit">
-                    {busy ? "Solicitando…" : "Continuar"}
-                  </button>
-                  {!phoneOtpEnabled ? (
-                    <small className="mi-channel-note">
-                      SMS pendiente de configuración. El acceso por correo ya
-                      está preparado.
-                    </small>
-                  ) : null}
-                </form>
-              ) : (
-                <form onSubmit={verifyAccess}>
-                  <label htmlFor="customer-token">Código de seis dígitos</label>
-                  <input
-                    className="mi-code-input"
-                    id="customer-token"
-                    value={token}
-                    onChange={(event) =>
-                      setToken(
-                        event.target.value.replace(/\D/g, "").slice(0, 6),
-                      )
-                    }
-                    autoComplete="one-time-code"
-                    inputMode="numeric"
-                    placeholder="000000"
+              <span className="mi-hero-side">
+                TRADICIÓN QUE SE LLEVA PUESTA
+              </span>
+            </section>
+            <section className="mi-editorial">
+              <div className="mi-editorial-heading">
+                <span className="mi-eyebrow">ES PARTE DE TI</span>
+                <h2>
+                  Una forma
+                  <br />
+                  de <em>vivir.</em>
+                </h2>
+                <p>Los detalles cuentan tu historia.</p>
+              </div>
+              <div className="mi-editorial-images">
+                <figure>
+                  <Image
+                    src="/mi-media/portrait-woman.webp"
+                    alt="Estilo vaquero con sombrero y bolso negro"
+                    width={1280}
+                    height={1920}
+                    sizes="(max-width: 700px) 72vw, 40vw"
                   />
-                  <button className="mi-primary" disabled={busy} type="submit">
-                    {busy
-                      ? "Verificando…"
-                      : mode === "register"
-                        ? "Verificar y crear cuenta"
-                        : "Activar tarjeta"}
-                  </button>
-                  <small className="mi-channel-note">
-                    La sesión quedará guardada en este dispositivo. Puedes
-                    repetir este acceso en otros equipos.
-                  </small>
-                  <button
-                    className="mi-link-button"
-                    type="button"
-                    onClick={() => {
-                      setStep("identify");
-                      setToken("");
-                      setNotice("");
-                      setError("");
-                    }}
-                  >
-                    {mode === "register"
-                      ? "Corregir mis datos"
-                      : "Usar otro teléfono o correo"}
-                  </button>
-                </form>
-              )}
-              <p className="mi-privacy">
-                <ShieldCheck aria-hidden="true" />
-                Las promociones son opcionales y se autorizan por separado.
-              </p>
-            </div>
+                  <figcaption>01 / ESENCIA</figcaption>
+                </figure>
+                <figure>
+                  <Image
+                    src="/mi-media/boots-detail.webp"
+                    alt="Detalle de botas vaqueras negras bordadas"
+                    width={1280}
+                    height={1920}
+                    sizes="(max-width: 700px) 52vw, 30vw"
+                  />
+                  <figcaption>02 / CARÁCTER</figcaption>
+                </figure>
+              </div>
+              <div className="mi-editorial-details">
+                <Image
+                  src="/mi-media/shirt-detail.webp"
+                  alt="Textura y detalles de una camisa vaquera"
+                  width={1280}
+                  height={1920}
+                  sizes="(max-width: 700px) 45vw, 24vw"
+                />
+                <p>
+                  Más que compras,
+                  <br />
+                  es parte de
+                  <br />
+                  <em>tu historia.</em>
+                </p>
+                <Image
+                  src="/mi-media/vest-detail.webp"
+                  alt="Detalle de chaleco, camisa y cinturón"
+                  width={1280}
+                  height={1920}
+                  sizes="(max-width: 700px) 45vw, 24vw"
+                />
+              </div>
+              <button
+                className="mi-primary"
+                onClick={() => navigate("tarjeta")}
+              >
+                Siempre contigo <ArrowRight />
+              </button>
+            </section>
           </>
         )}
 
-        {notice ? (
-          <div className="mi-message" role="status">
-            {notice}
-          </div>
-        ) : null}
-        {error ? (
-          <div className="mi-message error" role="alert">
-            {error}
-          </div>
-        ) : null}
+        {view === "tarjeta" && (
+          <>
+            <section className="mi-card-scene">
+              <Image
+                className="mi-card-photo"
+                src="/mi-media/portrait-man.webp"
+                alt=""
+                fill
+                sizes="(max-width: 900px) 100vw, 60vw"
+                priority
+                unoptimized
+              />
+              <div className="mi-card-shade" />
+              <div className="mi-card-content">
+                <div className="mi-card-kicker">
+                  <span className="mi-eyebrow">
+                    TARJETA
+                    <br />
+                    DE LEALTAD
+                  </span>
+                  <span className="mi-rule" />
+                </div>
+                <div className="mi-card-title">
+                  <span className="mi-eyebrow">VAQUERO SM</span>
+                  <h1>
+                    SIEMPRE
+                    <br />
+                    CONTIGO
+                  </h1>
+                  <span className="mi-rule" />
+                  <p>
+                    Más que compras,
+                    <br />
+                    es parte de <em>tu historia.</em>
+                  </p>
+                </div>
+                {!ready ? (
+                  <div className="mi-member-panel" role="status">
+                    Preparando tu tarjeta…
+                  </div>
+                ) : card ? (
+                  <MemberCard
+                    memberNumber={card.memberNumber}
+                    fullName={card.fullName}
+                    saved={saved}
+                    onExpand={() => {
+                      dialog.current?.showModal();
+                      setScanning(true);
+                    }}
+                  />
+                ) : (
+                  <div className="mi-member-panel mi-member-empty">
+                    <span className="mi-eyebrow">
+                      TU PRÓXIMA VISITA EMPIEZA AQUÍ
+                    </span>
+                    <h2>Tu tarjeta, siempre a mano.</h2>
+                    <p>
+                      Crea tu cuenta con tu correo y recibe tu número de socio.
+                    </p>
+                    <button
+                      className="mi-primary"
+                      onClick={() => navigate("perfil")}
+                    >
+                      Crear o activar mi tarjeta <ArrowRight />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </section>
 
-        <details className="mi-install">
-          <summary>
-            <Download aria-hidden="true" />
-            Guardar en mi pantalla de inicio
-          </summary>
-          <div>
-            <strong>En iPhone</strong>
-            <span>
-              Abre esta página en Safari, toca Compartir y elige “Agregar a
-              inicio”.
-            </span>
-            <strong>En Android</strong>
-            <span>
-              Abre el menú del navegador y selecciona “Instalar aplicación”.
-            </span>
+            {card && (
+              <section className="mi-customer-dashboard">
+                <div className="mi-safe-note">
+                  <ShieldCheck aria-hidden="true" />
+                  <span>
+                    <strong>Funciona sin internet</strong>
+                    <small>
+                      Este dispositivo conserva únicamente tu número de socio.
+                      Tus datos personales no se guardan aquí.
+                    </small>
+                  </span>
+                </div>
+
+                {authenticated && loyalty?.enabled ? (
+                  <section className="mi-loyalty-panel">
+                    <div className="mi-loyalty-balance">
+                      <span>
+                        <small>PUNTOS DISPONIBLES</small>
+                        <strong>
+                          {loyalty.available_points.toLocaleString("es-MX")}
+                        </strong>
+                      </span>
+                      <span>
+                        <small>VALOR</small>
+                        <b>
+                          {ticketMoney.format(
+                            (loyalty.available_points *
+                              loyalty.point_value_cents) /
+                              100,
+                          )}
+                        </b>
+                      </span>
+                    </div>
+                    <p>
+                      Cada punto vale{" "}
+                      {ticketMoney.format(loyalty.point_value_cents / 100)} y
+                      vence {loyalty.expiry_months} meses después de ganarse.
+                    </p>
+                    {loyalty.points_debt > 0 && (
+                      <p className="mi-loyalty-warning">
+                        Los próximos {loyalty.points_debt} puntos cubrirán un
+                        ajuste por cambio o devolución.
+                      </p>
+                    )}
+                    <form
+                      className="mi-redemption"
+                      onSubmit={createRedemptionCode}
+                    >
+                      <label htmlFor="redemption-points">Usar puntos</label>
+                      <div>
+                        <input
+                          id="redemption-points"
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          max={loyalty.available_points}
+                          step={1}
+                          value={redemptionPoints}
+                          onChange={(event) =>
+                            setRedemptionPoints(event.target.value)
+                          }
+                          placeholder="Cantidad"
+                        />
+                        <button
+                          type="submit"
+                          disabled={busy || !loyalty.available_points}
+                        >
+                          Generar código
+                        </button>
+                      </div>
+                    </form>
+                    {redemptionCode && (
+                      <div className="mi-redemption-code" role="status">
+                        <small>CÓDIGO TEMPORAL</small>
+                        <strong>{redemptionCode.code}</strong>
+                        <span>
+                          {redemptionCode.points} puntos ·{" "}
+                          {ticketMoney.format(redemptionCode.value_cents / 100)}
+                        </span>
+                      </div>
+                    )}
+                    {loyalty.history.length > 0 && (
+                      <div className="mi-points-history">
+                        <strong>Movimientos recientes</strong>
+                        {loyalty.history.slice(0, 8).map((movement) => (
+                          <div key={movement.id}>
+                            <span>
+                              {movement.type === "EARN"
+                                ? "Compra"
+                                : movement.type === "EXPIRE"
+                                  ? "Vencimiento"
+                                  : movement.type === "RETURN_REVERSAL"
+                                    ? "Cambio o devolución"
+                                    : movement.type === "REDEEM"
+                                      ? "Canje"
+                                      : "Ajuste"}
+                              <small>
+                                {ticketDate.format(
+                                  new Date(movement.created_at),
+                                )}
+                              </small>
+                            </span>
+                            <b
+                              className={movement.points > 0 ? "positive" : ""}
+                            >
+                              {movement.points > 0 ? "+" : ""}
+                              {movement.points}
+                            </b>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                ) : (
+                  <div className="mi-program-status">
+                    <CheckCircle2 aria-hidden="true" />
+                    <span>
+                      <strong>Identidad lista</strong>
+                      <small>
+                        Tus compras vinculadas aparecen aquí. El saldo de puntos
+                        se activará desde la fecha oficial de lanzamiento.
+                      </small>
+                    </span>
+                  </div>
+                )}
+
+                {authenticated && (
+                  <section className="mi-ticket-history">
+                    <div className="mi-section-title">
+                      <FileText aria-hidden="true" />
+                      <span>
+                        <strong>Mis tickets</strong>
+                        <small>Compras registradas con tu cuenta</small>
+                      </span>
+                    </div>
+                    {tickets.length ? (
+                      tickets.map((ticket) => (
+                        <article key={ticket.id}>
+                          <div>
+                            <strong>{ticket.folio}</strong>
+                            <small>
+                              {ticketDate.format(new Date(ticket.sold_at))} ·{" "}
+                              {ticket.location.name}
+                            </small>
+                          </div>
+                          <div>
+                            <b>
+                              {ticketMoney.format(
+                                Number(ticket.total_cents) / 100,
+                              )}
+                            </b>
+                            {ticket.status === "CANCELLED" && (
+                              <small>Cancelada</small>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            disabled={ticketBusy === ticket.id}
+                            onClick={() => void downloadCustomerTicket(ticket)}
+                          >
+                            <Download aria-hidden="true" />
+                            {ticketBusy === ticket.id ? "Preparando…" : "PDF"}
+                          </button>
+                        </article>
+                      ))
+                    ) : (
+                      <p className="mi-empty-tickets">
+                        Todavía no hay compras vinculadas a esta cuenta.
+                      </p>
+                    )}
+                  </section>
+                )}
+              </section>
+            )}
+          </>
+        )}
+
+        {view === "perfil" && (
+          <section className="mi-profile">
+            <div className="mi-profile-photo">
+              <Image
+                src="/mi-media/portrait-woman.webp"
+                alt="Estilo Vaquero SM"
+                fill
+                sizes="45vw"
+              />
+            </div>
+            <div className="mi-profile-content">
+              <button
+                className="mi-text-button mi-back"
+                onClick={() => navigate("tarjeta")}
+              >
+                <ArrowLeft size={18} /> Mi tarjeta
+              </button>
+
+              {authenticated && card ? (
+                <div className="mi-account">
+                  <span className="mi-eyebrow">MI PERFIL</span>
+                  <h1>
+                    Hola,
+                    <br />
+                    <em>{card.fullName?.split(" ")[0] || "socio"}.</em>
+                  </h1>
+                  <p>
+                    Número de socio <strong>{groupedNumber}</strong>
+                  </p>
+                  <div className="mi-settings">
+                    <button
+                      disabled={busy || !online || !configured}
+                      onClick={async () => {
+                        setBusy(true);
+                        setError("");
+                        try {
+                          await loadOnlineCard();
+                          setNotice("Tu tarjeta está actualizada.");
+                        } catch {
+                          setError("No pudimos actualizar tu tarjeta.");
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
+                    >
+                      <RefreshCw /> Actualizar tarjeta <ChevronRight />
+                    </button>
+                    <button disabled={busy} onClick={() => void signOut()}>
+                      <LogOut /> Cerrar sesión <ChevronRight />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mi-access">
+                  <span className="mi-eyebrow">MI VAQUERO</span>
+                  <h1>
+                    {needsProfile
+                      ? "Termina tu cuenta."
+                      : mode === "register"
+                        ? "Crea tu cuenta."
+                        : "Entra a tu cuenta."}
+                  </h1>
+                  <p>
+                    {needsProfile
+                      ? "Tu correo ya está verificado. Completa tus datos."
+                      : "Accede con tu correo personal. No necesitas contraseña."}
+                  </p>
+
+                  {!needsProfile && step === "identify" && (
+                    <div
+                      className="mi-access-modes"
+                      aria-label="Tipo de acceso"
+                    >
+                      <button
+                        className={mode === "access" ? "active" : ""}
+                        type="button"
+                        onClick={() => {
+                          setMode("access");
+                          setError("");
+                          setNotice("");
+                        }}
+                      >
+                        Ya tengo cuenta
+                      </button>
+                      <button
+                        className={mode === "register" ? "active" : ""}
+                        type="button"
+                        onClick={() => {
+                          setMode("register");
+                          setError("");
+                          setNotice("");
+                        }}
+                      >
+                        Crear cuenta
+                      </button>
+                    </div>
+                  )}
+
+                  {!configured ? (
+                    <div className="mi-message mi-error">
+                      El acceso se habilitará al conectar Supabase.
+                    </div>
+                  ) : needsProfile ? (
+                    <form onSubmit={finishVerifiedRegistration}>
+                      {registrationFields(true)}
+                      <button
+                        className="mi-primary"
+                        disabled={busy}
+                        type="submit"
+                      >
+                        {busy ? "Creando cuenta…" : "Crear mi tarjeta"}
+                      </button>
+                      <button
+                        className="mi-text-button"
+                        type="button"
+                        onClick={() => void signOut()}
+                      >
+                        Usar otro correo
+                      </button>
+                    </form>
+                  ) : mode === "register" && step === "identify" ? (
+                    <form onSubmit={requestRegistration}>
+                      {registrationFields()}
+                      <button
+                        className="mi-primary"
+                        disabled={
+                          busy || !privacyNoticeVersion || !privacyNoticeUrl
+                        }
+                        type="submit"
+                      >
+                        {busy ? "Enviando código…" : "Verificar mi correo"}
+                      </button>
+                      {(!privacyNoticeVersion || !privacyNoticeUrl) && (
+                        <small className="mi-channel-note">
+                          El formulario quedará habilitado al publicar el aviso
+                          de privacidad.
+                        </small>
+                      )}
+                    </form>
+                  ) : step === "identify" ? (
+                    <form onSubmit={requestAccess}>
+                      <label htmlFor="customer-identifier">
+                        Correo personal
+                      </label>
+                      <div className="mi-input">
+                        <Mail aria-hidden="true" />
+                        <input
+                          id="customer-identifier"
+                          value={identifier}
+                          onChange={(event) =>
+                            setIdentifier(event.target.value)
+                          }
+                          autoComplete="username"
+                          inputMode="email"
+                          placeholder="correo@ejemplo.com"
+                        />
+                      </div>
+                      <button
+                        className="mi-primary"
+                        disabled={busy}
+                        type="submit"
+                      >
+                        {busy ? "Solicitando…" : "Continuar"}
+                      </button>
+                    </form>
+                  ) : (
+                    <form onSubmit={verifyAccess}>
+                      <label htmlFor="customer-token">
+                        Código de seis dígitos
+                      </label>
+                      <input
+                        className="mi-code-input"
+                        id="customer-token"
+                        value={token}
+                        onChange={(event) =>
+                          setToken(
+                            event.target.value.replace(/\D/g, "").slice(0, 6),
+                          )
+                        }
+                        autoComplete="one-time-code"
+                        inputMode="numeric"
+                        placeholder="000000"
+                      />
+                      <button
+                        className="mi-primary"
+                        disabled={busy}
+                        type="submit"
+                      >
+                        {busy
+                          ? "Verificando…"
+                          : mode === "register"
+                            ? "Verificar y crear cuenta"
+                            : "Activar tarjeta"}
+                      </button>
+                      <small className="mi-channel-note">
+                        La sesión quedará guardada en este dispositivo y podrás
+                        repetir el acceso en otros equipos.
+                      </small>
+                      <button
+                        className="mi-text-button"
+                        type="button"
+                        onClick={() => {
+                          setStep("identify");
+                          setToken("");
+                          setNotice("");
+                          setError("");
+                        }}
+                      >
+                        {mode === "register"
+                          ? "Corregir mis datos"
+                          : "Usar otro correo"}
+                      </button>
+                    </form>
+                  )}
+                  <p className="mi-access-note">
+                    <ShieldCheck size={16} /> Las promociones son opcionales.
+                  </p>
+                </div>
+              )}
+
+              {notice && (
+                <div className="mi-message" role="status">
+                  {notice}
+                </div>
+              )}
+              {error && (
+                <div className="mi-message mi-error" role="alert">
+                  {error}
+                </div>
+              )}
+
+              <div className="mi-install">
+                {installed ? (
+                  <p>
+                    <Check size={18} /> Ya está en tu pantalla de inicio
+                  </p>
+                ) : (
+                  <>
+                    <span className="mi-eyebrow">LLÉVALA CONTIGO</span>
+                    <h3>Un lugar en tu pantalla.</h3>
+                    {install && (
+                      <button
+                        className="mi-primary"
+                        onClick={async () => {
+                          try {
+                            await install.prompt();
+                            await install.userChoice;
+                            setInstall(null);
+                          } catch {
+                            setNotice(
+                              "Abre el menú del navegador y elige instalar o agregar a inicio.",
+                            );
+                          }
+                        }}
+                      >
+                        <Download /> Instalar Mi Vaquero
+                      </button>
+                    )}
+                    <details>
+                      <summary>
+                        <Smartphone size={19} /> Cómo instalarla{" "}
+                        <ChevronRight size={17} />
+                      </summary>
+                      <p>
+                        <strong>iPhone</strong>
+                        <br />
+                        En Safari, toca Compartir y después “Agregar a pantalla
+                        de inicio”.
+                      </p>
+                      <p>
+                        <strong>Android</strong>
+                        <br />
+                        En el menú del navegador, toca “Instalar aplicación”.
+                      </p>
+                    </details>
+                  </>
+                )}
+              </div>
+
+              {card && (
+                <button
+                  className="mi-text-button mi-remove"
+                  disabled={busy}
+                  onClick={removeCard}
+                >
+                  <Trash2 size={16} /> Quitar tarjeta de este dispositivo
+                </button>
+              )}
+              <p className="mi-profile-footer">
+                MI VAQUERO · {APP_VERSION}
+                <br />
+                Creado por ProcesaLab
+              </p>
+            </div>
+          </section>
+        )}
+
+        {view !== "perfil" && (notice || error) && (
+          <div
+            className="mi-floating-message"
+            role={error ? "alert" : "status"}
+          >
+            {error || notice}
+            <button
+              className="mi-icon-button"
+              aria-label="Cerrar aviso"
+              onClick={() => {
+                setError("");
+                setNotice("");
+              }}
+            >
+              <X />
+            </button>
           </div>
-        </details>
-      </section>
-      <footer>Mi Vaquero · Creado por ProcesaLab</footer>
-    </main>
+        )}
+      </main>
+
+      <nav className="mi-nav" aria-label="Navegación de clientes">
+        <button
+          onClick={() => navigate("inicio")}
+          aria-current={view === "inicio" ? "page" : undefined}
+        >
+          <Home />
+          <span>Inicio</span>
+        </button>
+        <a
+          href="https://www.vaquerosm.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Tienda en línea, abre en otra pestaña"
+        >
+          <ShoppingBag />
+          <span>
+            Tienda <ArrowUpRight className="mi-external-icon" />
+          </span>
+        </a>
+        <button
+          onClick={() => navigate("tarjeta")}
+          aria-current={view === "tarjeta" ? "page" : undefined}
+        >
+          <Barcode />
+          <span>Tarjeta</span>
+        </button>
+        <button
+          onClick={() => navigate("perfil")}
+          aria-current={view === "perfil" ? "page" : undefined}
+        >
+          <UserRound />
+          <span>Perfil</span>
+        </button>
+      </nav>
+
+      <dialog
+        className="mi-code-dialog"
+        ref={dialog}
+        onClose={() => setScanning(false)}
+        aria-labelledby="mi-code-title"
+      >
+        <button
+          className="mi-icon-button mi-dialog-close"
+          aria-label="Cerrar códigos"
+          onClick={() => dialog.current?.close()}
+        >
+          <X />
+        </button>
+        <span className="mi-eyebrow">VAQUERO SM</span>
+        <h2 id="mi-code-title">Tu tarjeta de socio</h2>
+        {card && (
+          <>
+            <MemberCodes memberNumber={card.memberNumber} barcode />
+            <p className="mi-member-number">{groupedNumber}</p>
+          </>
+        )}
+        <p>
+          Presenta este código en caja.
+          <br />
+          También puedes dictar tu número de socio.
+        </p>
+      </dialog>
+    </div>
   );
 }
