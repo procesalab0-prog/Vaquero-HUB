@@ -63,7 +63,7 @@ type PosDraftPayload = {
 };
 
 type SalePaymentInput = {
-  method_code: "CASH" | "CARD" | "TRANSFER" | "CREDIT";
+  method_code: "CASH" | "CARD" | "TRANSFER" | "CREDIT" | "LOYALTY";
   amount_cents: number;
   tendered_cents?: number;
   reference?: string;
@@ -103,6 +103,15 @@ type CancelSaleActionResult =
 type CreateLayawayResult =
   | { ok: true; layawayId: string; folio: string; totalCents: number }
   | { ok: false; code: string; message: string };
+type LoyaltyRedemption = {
+  token: string;
+  points: number;
+  valueCents: number;
+  availablePoints: number;
+  expiresAt: string;
+  customerId: string;
+  saleTotalCents: number;
+};
 type StoredReceipt = {
   subtotal_cents: number;
   discount_cents: number;
@@ -194,6 +203,7 @@ export function PosWorkspace({
   preview = false,
   status,
   createSaleAction,
+  verifyLoyaltyCodeAction,
   getCustomerCreditAction,
   authorizeDiscountAction,
   authorizeCreditOverrideAction,
@@ -211,6 +221,21 @@ export function PosWorkspace({
   preview?: boolean;
   status?: string;
   createSaleAction?: (input: SaleActionInput) => Promise<SaleActionResult>;
+  verifyLoyaltyCodeAction?: (input: {
+    customerId: string;
+    code: string;
+    maxValueCents: number;
+  }) => Promise<
+    | {
+        ok: true;
+        token: string;
+        points: number;
+        valueCents: number;
+        availablePoints: number;
+        expiresAt: string;
+      }
+    | { ok: false; code: string; message: string }
+  >;
   getCustomerCreditAction?: (
     customerId: string,
   ) => Promise<
@@ -352,6 +377,11 @@ export function PosWorkspace({
     return date.toISOString().slice(0, 10);
   });
   const [saleError, setSaleError] = useState("");
+  const [loyaltyCode, setLoyaltyCode] = useState("");
+  const [loyaltyError, setLoyaltyError] = useState("");
+  const [loyaltyBusy, setLoyaltyBusy] = useState(false);
+  const [loyaltyRedemption, setLoyaltyRedemption] =
+    useState<LoyaltyRedemption | null>(null);
   const [saleFolio, setSaleFolio] = useState("V-000842");
   const [saleId, setSaleId] = useState("");
   const [storedReceipt, setStoredReceipt] = useState<StoredReceipt | null>(
@@ -558,10 +588,19 @@ export function PosWorkspace({
   );
   const discountAmount = (subtotal * discountPercent) / 100;
   const total = subtotal - discountAmount;
+  const totalCents = Math.round(total * 100);
+  const activeLoyaltyRedemption =
+    loyaltyRedemption?.customerId === selectedCustomer?.id &&
+    loyaltyRedemption?.saleTotalCents === totalCents
+      ? loyaltyRedemption
+      : null;
+  const loyaltyValueCents = activeLoyaltyRedemption?.valueCents ?? 0;
+  const amountDueCents = Math.max(0, totalCents - loyaltyValueCents);
+  const amountDue = amountDueCents / 100;
   const quantity = cart.reduce((sum, line) => sum + line.quantity, 0);
   const giftCount = cart.filter((line) => line.giftReceipt).length;
   const cashTendered = Number(cashInput.replace(",", ".") || 0);
-  const change = Math.max(0, cashTendered - total);
+  const change = Math.max(0, cashTendered - amountDue);
   const receiptLines: ReceiptLine[] = cart.map((line) => ({
     name: line.variant.productName,
     variant: `${line.variant.color} · ${line.variant.size}`,
@@ -575,6 +614,44 @@ export function PosWorkspace({
     transfer: "Transferencia",
     credit: "Crédito",
   };
+
+  async function verifyLoyaltyCode() {
+    if (!selectedCustomer) {
+      setLoyaltyError("Selecciona al cliente de esta venta.");
+      return;
+    }
+    if (!verifyLoyaltyCodeAction) {
+      setLoyaltyError("El canje de puntos todavía no está disponible.");
+      return;
+    }
+    if (!/^\d{6}$/.test(loyaltyCode)) {
+      setLoyaltyError("Captura los seis dígitos que muestra el cliente.");
+      return;
+    }
+    setLoyaltyBusy(true);
+    setLoyaltyError("");
+    const result = await verifyLoyaltyCodeAction({
+      customerId: selectedCustomer.id,
+      code: loyaltyCode,
+      maxValueCents: totalCents,
+    });
+    setLoyaltyBusy(false);
+    if (!result.ok) {
+      setLoyaltyError(result.message);
+      return;
+    }
+    setLoyaltyRedemption({
+      token: result.token,
+      points: result.points,
+      valueCents: result.valueCents,
+      availablePoints: result.availablePoints,
+      expiresAt: result.expiresAt,
+      customerId: selectedCustomer.id,
+      saleTotalCents: totalCents,
+    });
+    setLoyaltyCode("");
+    notify(`${result.points} puntos aplicados`);
+  }
 
   function notify(message: string) {
     setToast(message);
@@ -774,6 +851,16 @@ export function PosWorkspace({
       );
       return;
     }
+    const salePayments: SalePaymentInput[] = activeLoyaltyRedemption
+      ? [
+          ...payments,
+          {
+            method_code: "LOYALTY",
+            amount_cents: activeLoyaltyRedemption.valueCents,
+            reference: activeLoyaltyRedemption.token,
+          },
+        ]
+      : payments;
     submittingRef.current = true;
     setSubmitting(true);
     setSaleError("");
@@ -794,7 +881,7 @@ export function PosWorkspace({
           quantity: line.quantity,
           gift_receipt: line.giftReceipt,
         })),
-        payments,
+        payments: salePayments,
         customerId: selectedCustomer?.id ?? null,
         quoteId,
         discount:
@@ -822,22 +909,31 @@ export function PosWorkspace({
       setReceiptDate(formatReceiptDate());
     }
     setPaymentUsed(method);
-    setReceiptPaymentLabel(receiptLabel);
+    setReceiptPaymentLabel(
+      activeLoyaltyRedemption
+        ? amountDueCents > 0
+          ? `${receiptLabel} + ${activeLoyaltyRedemption.points} puntos`
+          : `${activeLoyaltyRedemption.points} puntos`
+        : receiptLabel,
+    );
     setCheckoutOpen(false);
     setCompleted(true);
   }
 
   function completeSale(method: PaymentMethod) {
-    const totalCents = Math.round(total * 100);
+    if (amountDueCents === 0 && activeLoyaltyRedemption) {
+      void submitSale(method, [], `${activeLoyaltyRedemption.points} puntos`);
+      return;
+    }
     if (method === "cash") {
-      if (cashTendered < total) {
+      if (cashTendered < amountDue) {
         setSaleError("El efectivo recibido no cubre el total.");
         return;
       }
       void submitSale(method, [
         {
           method_code: "CASH",
-          amount_cents: totalCents,
+          amount_cents: amountDueCents,
           tendered_cents: Math.round(cashTendered * 100),
         },
       ]);
@@ -854,7 +950,7 @@ export function PosWorkspace({
       }
       void submitSale(
         "credit",
-        [{ method_code: "CREDIT", amount_cents: totalCents }],
+        [{ method_code: "CREDIT", amount_cents: amountDueCents }],
         "Crédito",
         creditDueDate,
       );
@@ -867,19 +963,21 @@ export function PosWorkspace({
     void submitSale(method, [
       {
         method_code: method === "card" ? "CARD" : "TRANSFER",
-        amount_cents: totalCents,
+        amount_cents: amountDueCents,
         reference: paymentReference.trim(),
       },
     ]);
   }
 
   async function completeSplitSale() {
-    const totalCents = Math.round(total * 100);
     const cashCents = Math.round(Number(splitCash || 0) * 100);
     const cardCents = Math.round(Number(splitCard || 0) * 100);
     const transferCents = Math.round(Number(splitTransfer || 0) * 100);
     const creditCents = Math.round(Number(splitCredit || 0) * 100);
-    if (cashCents + cardCents + transferCents + creditCents !== totalCents) {
+    if (
+      cashCents + cardCents + transferCents + creditCents !==
+      amountDueCents
+    ) {
       setSaleError(
         "La suma de los pagos debe coincidir exactamente con el total.",
       );
@@ -1034,7 +1132,7 @@ export function PosWorkspace({
   function appendCashKey(key: string) {
     setCashInput((current) => {
       if (key === "backspace") return current.slice(0, -1);
-      if (key === "exact") return total.toFixed(2);
+      if (key === "exact") return amountDue.toFixed(2);
       const next = `${current}${key}`;
       return next.length <= 8 ? next : current;
     });
@@ -1967,7 +2065,94 @@ export function PosWorkspace({
           >
             <p className="kicker">Confirmar cobro</p>
             <h2 id="checkout-title">{money.format(total)}</h2>
-            {!cashMode && !splitMode && paymentUsed !== "credit" ? (
+            <div className="credit-checkout-summary loyalty-checkout-summary">
+              <div>
+                <span>Puntos del cliente</span>
+                <strong>
+                  {selectedCustomer?.full_name ?? "Selecciona un cliente"}
+                </strong>
+              </div>
+              {activeLoyaltyRedemption ? (
+                <>
+                  <div>
+                    <span>Canje aplicado</span>
+                    <strong>
+                      {activeLoyaltyRedemption.points} puntos · −
+                      {money.format(loyaltyValueCents / 100)}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Resta por cobrar</span>
+                    <strong>{money.format(amountDue)}</strong>
+                  </div>
+                  <button
+                    className="secondary-button wide"
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => {
+                      setLoyaltyRedemption(null);
+                      setLoyaltyError("");
+                    }}
+                  >
+                    Quitar puntos
+                  </button>
+                  {amountDueCents === 0 ? (
+                    <button
+                      className="primary-button wide"
+                      type="button"
+                      disabled={submitting}
+                      onClick={() => completeSale("cash")}
+                    >
+                      Confirmar venta con puntos
+                    </button>
+                  ) : null}
+                </>
+              ) : selectedCustomer ? (
+                <label>
+                  <span>Código temporal de seis dígitos</span>
+                  <input
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    value={loyaltyCode}
+                    onChange={(event) =>
+                      setLoyaltyCode(event.target.value.replace(/\D/g, ""))
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && loyaltyCode.length === 6) {
+                        event.preventDefault();
+                        void verifyLoyaltyCode();
+                      }
+                    }}
+                    placeholder="000000"
+                  />
+                  <small>
+                    El cliente genera este código desde Mi Vaquero SM.
+                  </small>
+                  <button
+                    className="secondary-button wide"
+                    type="button"
+                    disabled={loyaltyBusy || loyaltyCode.length !== 6}
+                    onClick={() => void verifyLoyaltyCode()}
+                  >
+                    {loyaltyBusy ? "Validando…" : "Aplicar puntos"}
+                  </button>
+                </label>
+              ) : (
+                <small>
+                  Asocia un cliente para usar sus puntos en esta venta.
+                </small>
+              )}
+              {loyaltyError ? (
+                <p className="inline-error" role="alert">
+                  {loyaltyError}
+                </p>
+              ) : null}
+            </div>
+            {amountDueCents > 0 &&
+            !cashMode &&
+            !splitMode &&
+            paymentUsed !== "credit" ? (
               <>
                 <p>Selecciona el método registrado en la venta.</p>
                 <div className="payment-options">
@@ -2116,7 +2301,7 @@ export function PosWorkspace({
                   Confirmar pago combinado
                 </button>
               </div>
-            ) : (
+            ) : amountDueCents === 0 ? null : (
               <div className="cash-keypad-flow">
                 <div className="cash-display">
                   <span>Recibido</span>
@@ -2130,7 +2315,7 @@ export function PosWorkspace({
                     onKeyDown={(event) => {
                       if (
                         event.key === "Enter" &&
-                        cashTendered >= total &&
+                        cashTendered >= amountDue &&
                         !submitting
                       ) {
                         event.preventDefault();
@@ -2143,10 +2328,12 @@ export function PosWorkspace({
                     }}
                     placeholder="0.00"
                   />
-                  <small className={cashTendered >= total ? "enough" : ""}>
-                    {cashTendered >= total
+                  <small
+                    className={cashTendered >= amountDue ? "enough" : ""}
+                  >
+                    {cashTendered >= amountDue
                       ? `Cambio: ${money.format(change)}`
-                      : `Faltan ${money.format(total - cashTendered)}`}
+                      : `Faltan ${money.format(amountDue - cashTendered)}`}
                   </small>
                 </div>
                 <div className="cash-keypad">
@@ -2179,14 +2366,16 @@ export function PosWorkspace({
                 <button
                   className="confirm-cash-button"
                   type="button"
-                  disabled={cashTendered < total || submitting}
+                  disabled={cashTendered < amountDue || submitting}
                   onClick={() => completeSale("cash")}
                 >
                   Confirmar efectivo
                 </button>
               </div>
             )}
-            {!cashMode && paymentUsed === "credit" ? (
+            {amountDueCents > 0 &&
+            !cashMode &&
+            paymentUsed === "credit" ? (
               <div className="credit-checkout-summary">
                 <div>
                   <span>Cliente</span>
@@ -2217,7 +2406,7 @@ export function PosWorkspace({
                   · saldo después:{" "}
                   {money.format(
                     (Number(creditSummary?.balance_cents ?? 0) +
-                      Math.round(total * 100)) /
+                      amountDueCents) /
                       100,
                   )}
                 </small>
@@ -2227,7 +2416,7 @@ export function PosWorkspace({
                   disabled={
                     submitting ||
                     !creditDueDate ||
-                    Math.round(total * 100) >
+                    amountDueCents >
                       Number(creditSummary?.available_cents ?? 0)
                   }
                   onClick={() => completeSale("credit")}
@@ -2236,7 +2425,8 @@ export function PosWorkspace({
                 </button>
               </div>
             ) : null}
-            {!cashMode &&
+            {amountDueCents > 0 &&
+            !cashMode &&
             (paymentUsed === "card" || paymentUsed === "transfer") ? (
               <div className="form-stack electronic-reference">
                 <label>

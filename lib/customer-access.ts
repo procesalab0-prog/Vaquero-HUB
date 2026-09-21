@@ -2,6 +2,15 @@ import { normalizeMexicanPhone } from "./customers";
 
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
+export type CustomerSelfRegistration = {
+  fullName: string;
+  phone: string;
+  email: string;
+  birthdate: string | null;
+  privacyAccepted: boolean;
+  marketingConsent: boolean;
+};
+
 export type CustomerIdentifier =
   { channel: "email"; value: string } | { channel: "phone"; value: string };
 
@@ -23,6 +32,59 @@ export function parseCustomerIdentifier(
   }
   const phone = normalizeMexicanPhone(value);
   return phone ? { channel: "phone", value: phone } : null;
+}
+
+export function parseCustomerSelfRegistration(input: {
+  fullName?: unknown;
+  phone?: unknown;
+  email?: unknown;
+  birthdate?: unknown;
+  privacyAccepted?: unknown;
+  marketingConsent?: unknown;
+}): CustomerSelfRegistration | null {
+  const fullName =
+    typeof input.fullName === "string" ? input.fullName.trim() : "";
+  const phone =
+    typeof input.phone === "string" ? normalizeMexicanPhone(input.phone) : null;
+  const identifier = parseCustomerIdentifier(
+    typeof input.email === "string" ? input.email : "",
+  );
+  const birthdate =
+    typeof input.birthdate === "string" && input.birthdate.trim()
+      ? input.birthdate.trim()
+      : null;
+
+  if (
+    fullName.length < 2 ||
+    fullName.length > 120 ||
+    !phone ||
+    identifier?.channel !== "email" ||
+    input.privacyAccepted !== true ||
+    (birthdate !== null && !/^\d{4}-\d{2}-\d{2}$/.test(birthdate))
+  ) {
+    return null;
+  }
+
+  if (birthdate) {
+    const date = new Date(`${birthdate}T00:00:00Z`);
+    const today = new Date();
+    if (
+      Number.isNaN(date.getTime()) ||
+      date.getUTCFullYear() < 1900 ||
+      date > today
+    ) {
+      return null;
+    }
+  }
+
+  return {
+    fullName,
+    phone,
+    email: identifier.value,
+    birthdate,
+    privacyAccepted: true,
+    marketingConsent: input.marketingConsent === true,
+  };
 }
 
 /**

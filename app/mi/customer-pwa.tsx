@@ -11,12 +11,16 @@ import {
   ShieldCheck,
   Smartphone,
   Trash2,
+  UserPlus,
   Wifi,
 } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { parseCustomerIdentifier } from "@/lib/customer-access";
+import {
+  parseCustomerIdentifier,
+  parseCustomerSelfRegistration,
+} from "@/lib/customer-access";
 import {
   CUSTOMER_CARD_STORAGE_KEY,
   parseOfflineCustomerCard,
@@ -25,6 +29,31 @@ import {
 import { createCustomerClient } from "@/lib/supabase/customer-client";
 
 type CardData = { memberNumber: string; fullName: string | null };
+type LoyaltySummary = {
+  enabled: boolean;
+  launched_at: string | null;
+  available_points: number;
+  points_debt: number;
+  lifetime_earned: number;
+  lifetime_redeemed: number;
+  point_value_cents: number;
+  expiry_months: number;
+  history: Array<{
+    id: string;
+    type:
+      | "EARN"
+      | "REDEEM"
+      | "EXPIRE"
+      | "RETURN_REVERSAL"
+      | "DEBT_SETTLEMENT"
+      | "ADJUSTMENT";
+    points: number;
+    balance_after: number;
+    created_at: string;
+    expires_at: string | null;
+    reference_type: string;
+  }>;
+};
 type CustomerTicket = {
   id: string;
   folio: string;
@@ -46,7 +75,12 @@ type CustomerTicket = {
   }>;
   payments: Array<{ method_name: string; amount_cents: number }>;
 };
-type CustomerPwaProps = { configured: boolean; phoneOtpEnabled: boolean };
+type CustomerPwaProps = {
+  configured: boolean;
+  phoneOtpEnabled: boolean;
+  privacyNoticeVersion: string;
+  privacyNoticeUrl: string;
+};
 const ticketDate = new Intl.DateTimeFormat("es-MX", {
   dateStyle: "medium",
   timeZone: "America/Mexico_City",
@@ -61,17 +95,40 @@ const ticketMoney = new Intl.NumberFormat("es-MX", {
   currency: "MXN",
 });
 
-export function CustomerPwa({ configured, phoneOtpEnabled }: CustomerPwaProps) {
+export function CustomerPwa({
+  configured,
+  phoneOtpEnabled,
+  privacyNoticeVersion,
+  privacyNoticeUrl,
+}: CustomerPwaProps) {
   const clientRef = useRef<ReturnType<typeof createCustomerClient> | null>(
     null,
   );
   const barcodeRef = useRef<SVGSVGElement>(null);
   const [card, setCard] = useState<CardData | null>(null);
+  const [loyalty, setLoyalty] = useState<LoyaltySummary | null>(null);
+  const [redemptionPoints, setRedemptionPoints] = useState("");
+  const [redemptionCode, setRedemptionCode] = useState<{
+    code: string;
+    points: number;
+    value_cents: number;
+    expires_at: string;
+  } | null>(null);
   const [tickets, setTickets] = useState<CustomerTicket[]>([]);
   const [ticketBusy, setTicketBusy] = useState<string | null>(null);
   const [qr, setQr] = useState("");
   const [identifier, setIdentifier] = useState("");
   const [token, setToken] = useState("");
+  const [mode, setMode] = useState<"access" | "register">("access");
+  const [needsProfile, setNeedsProfile] = useState(false);
+  const [registration, setRegistration] = useState({
+    fullName: "",
+    phone: "",
+    email: "",
+    birthdate: "",
+    privacyAccepted: false,
+    marketingConsent: false,
+  });
   const [step, setStep] = useState<"identify" | "verify">("identify");
   const [busy, setBusy] = useState(false);
   const [online, setOnline] = useState(true);
@@ -89,7 +146,16 @@ export function CustomerPwa({ configured, phoneOtpEnabled }: CustomerPwaProps) {
     const { data, error: cardError } = await client.rpc("get_my_customer_card");
     if (cardError) throw cardError;
     const record = Array.isArray(data) ? data[0] : null;
-    if (!record?.member_number) throw new Error("CUSTOMER_CARD_NOT_LINKED");
+    if (!record?.member_number) {
+      setNeedsProfile(true);
+      setMode("register");
+      setRegistration((current) => ({
+        ...current,
+        email: current.email || sessionData.session?.user.email || "",
+      }));
+      return;
+    }
+    setNeedsProfile(false);
     const nextCard = {
       memberNumber: record.member_number as string,
       fullName: record.full_name as string,
@@ -104,15 +170,58 @@ export function CustomerPwa({ configured, phoneOtpEnabled }: CustomerPwaProps) {
     });
     if (!ticketResult.error)
       setTickets((ticketResult.data ?? []) as CustomerTicket[]);
+    const loyaltyResult = await client.rpc("get_my_loyalty_summary");
+    if (!loyaltyResult.error && loyaltyResult.data)
+      setLoyalty(loyaltyResult.data as LoyaltySummary);
   }, []);
+
+  async function createRedemptionCode(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const client = clientRef.current;
+    const points = Number(redemptionPoints);
+    if (
+      !client ||
+      !loyalty?.enabled ||
+      !Number.isInteger(points) ||
+      points <= 0 ||
+      points > loyalty.available_points
+    ) {
+      setError("Escribe una cantidad válida dentro de tus puntos disponibles.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const { data, error: codeError } = await client.rpc(
+        "create_my_loyalty_redemption_code",
+        { p_points: points },
+      );
+      if (codeError) throw codeError;
+      setRedemptionCode(
+        data as {
+          code: string;
+          points: number;
+          value_cents: number;
+          expires_at: string;
+        },
+      );
+      setNotice("Muestra este código en caja. Vence en cinco minutos.");
+    } catch {
+      setError(
+        "No fue posible generar el código. Actualiza tu saldo e inténtalo nuevamente.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function downloadCustomerTicket(ticket: CustomerTicket) {
     setTicketBusy(ticket.id);
     setError("");
     try {
-      const { createTicketPdf, downloadTicketPdf } = await import(
-        "@/lib/ticket-pdf"
-      );
+      const { createTicketPdf, downloadTicketPdf } =
+        await import("@/lib/ticket-pdf");
       const { blob, fileName } = await createTicketPdf({
         mode: "sale",
         folio: ticket.folio,
@@ -281,11 +390,97 @@ export function CustomerPwa({ configured, phoneOtpEnabled }: CustomerPwaProps) {
     }
   }
 
+  async function requestRegistration(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+    if (!privacyNoticeVersion || !privacyNoticeUrl)
+      return setError(
+        "El registro se habilitará cuando esté publicado el aviso de privacidad.",
+      );
+    const parsed = parseCustomerSelfRegistration(registration);
+    if (!parsed)
+      return setError(
+        "Revisa nombre, teléfono, correo, fecha y aceptación del aviso.",
+      );
+    setBusy(true);
+    try {
+      const response = await fetch("/api/mi/registro", {
+        body: JSON.stringify(registration),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      const payload = (await response.json()) as { message?: string };
+      if (!response.ok)
+        throw new Error(payload.message ?? "REGISTRATION_REQUEST_FAILED");
+      setStep("verify");
+      setNotice(
+        "Revisa tu correo y escribe el código de seis dígitos para crear tu cuenta.",
+      );
+    } catch (registrationError) {
+      setError(
+        registrationError instanceof Error
+          ? registrationError.message
+          : "No fue posible iniciar el registro.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function completeRegistration() {
+    const client = clientRef.current;
+    const parsed = parseCustomerSelfRegistration(registration);
+    if (!client || !parsed || !privacyNoticeVersion || !privacyNoticeUrl) {
+      setError(
+        "Revisa nombre, teléfono, correo, fecha y aceptación del aviso.",
+      );
+      return false;
+    }
+
+    const { data: sessionData } = await client.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (!accessToken) throw new Error("Vuelve a verificar tu correo.");
+
+    const response = await fetch("/api/mi/registro/completar", {
+      body: JSON.stringify(parsed),
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+    const payload = (await response.json()) as { message?: string };
+    if (!response.ok) {
+      const message = payload.message ?? "";
+      if (message.includes("PHONE_ALREADY_REGISTERED"))
+        throw new Error(
+          "Ese teléfono ya pertenece a otro registro. Pide ayuda en tienda para unirlo de forma segura.",
+        );
+      if (message.includes("STAFF_ACCOUNT_NOT_ALLOWED"))
+        throw new Error(
+          "Ese correo pertenece al sistema de empleados. Usa otro correo para Mi Vaquero.",
+        );
+      if (message.includes("CUSTOMER_ACCOUNT_ALREADY_LINKED"))
+        throw new Error(
+          "Ese cliente ya tiene otra cuenta vinculada. Pide ayuda en tienda.",
+        );
+      throw new Error(
+        message || "No fue posible crear la cuenta. Inténtalo nuevamente.",
+      );
+    }
+    setNeedsProfile(false);
+    await loadOnlineCard();
+    return true;
+  }
+
   async function verifyAccess(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     const client = clientRef.current;
-    const parsed = parseCustomerIdentifier(identifier);
+    const parsed = parseCustomerIdentifier(
+      mode === "register" ? registration.email : identifier,
+    );
     if (!client || !parsed || !/^\d{6}$/.test(token))
       return setError("Escribe el código completo de seis dígitos.");
     setBusy(true);
@@ -303,8 +498,22 @@ export function CustomerPwa({ configured, phoneOtpEnabled }: CustomerPwaProps) {
               type: "email",
             });
       if (result.error) throw result.error;
-      await loadOnlineCard();
-      setNotice("Tarjeta activada en este dispositivo.");
+      if (mode === "register") {
+        try {
+          await completeRegistration();
+          setNotice("Tu cuenta y tarjeta quedaron creadas.");
+        } catch (registrationError) {
+          setError(
+            registrationError instanceof Error
+              ? registrationError.message
+              : "El correo quedó verificado, pero no fue posible crear la cuenta.",
+          );
+          return;
+        }
+      } else {
+        await loadOnlineCard();
+        setNotice("Tarjeta activada en este dispositivo.");
+      }
       setToken("");
     } catch {
       setError("El código no es válido o ya venció. Solicita uno nuevo.");
@@ -313,9 +522,31 @@ export function CustomerPwa({ configured, phoneOtpEnabled }: CustomerPwaProps) {
     }
   }
 
+  async function finishVerifiedRegistration(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+    setBusy(true);
+    try {
+      if (await completeRegistration())
+        setNotice("Tu cuenta y tarjeta quedaron creadas.");
+    } catch (registrationError) {
+      setError(
+        registrationError instanceof Error
+          ? registrationError.message
+          : "No fue posible completar el registro.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function signOut() {
     await clientRef.current?.auth.signOut();
     setAuthenticated(false);
+    setNeedsProfile(false);
     setNotice(
       "Cerraste sesión. Tu número de socio sigue disponible sin conexión.",
     );
@@ -331,9 +562,117 @@ export function CustomerPwa({ configured, phoneOtpEnabled }: CustomerPwaProps) {
     await clientRef.current?.auth.signOut();
     localStorage.removeItem(CUSTOMER_CARD_STORAGE_KEY);
     setCard(null);
+    setLoyalty(null);
+    setRedemptionCode(null);
     setAuthenticated(false);
+    setNeedsProfile(false);
+    setMode("access");
     setStep("identify");
     setNotice("La tarjeta se quitó únicamente de este dispositivo.");
+  }
+
+  function registrationFields(emailLocked = false) {
+    return (
+      <div className="mi-registration-fields">
+        <label htmlFor="customer-register-name">Nombre completo</label>
+        <input
+          id="customer-register-name"
+          value={registration.fullName}
+          onChange={(event) =>
+            setRegistration((current) => ({
+              ...current,
+              fullName: event.target.value,
+            }))
+          }
+          autoComplete="name"
+          maxLength={120}
+          placeholder="Tu nombre completo"
+        />
+        <label htmlFor="customer-register-phone">Teléfono</label>
+        <input
+          id="customer-register-phone"
+          value={registration.phone}
+          onChange={(event) =>
+            setRegistration((current) => ({
+              ...current,
+              phone: event.target.value,
+            }))
+          }
+          autoComplete="tel"
+          inputMode="tel"
+          placeholder="352 123 4567"
+        />
+        <label htmlFor="customer-register-email">Correo</label>
+        <input
+          id="customer-register-email"
+          value={registration.email}
+          onChange={(event) =>
+            setRegistration((current) => ({
+              ...current,
+              email: event.target.value,
+            }))
+          }
+          autoComplete="email"
+          inputMode="email"
+          readOnly={emailLocked}
+          placeholder="correo@ejemplo.com"
+        />
+        <label htmlFor="customer-register-birthdate">
+          Fecha de nacimiento <small>Opcional</small>
+        </label>
+        <input
+          id="customer-register-birthdate"
+          type="date"
+          value={registration.birthdate}
+          onChange={(event) =>
+            setRegistration((current) => ({
+              ...current,
+              birthdate: event.target.value,
+            }))
+          }
+          autoComplete="bday"
+          max={new Date().toISOString().slice(0, 10)}
+        />
+        <label className="mi-consent">
+          <input
+            type="checkbox"
+            checked={registration.privacyAccepted}
+            onChange={(event) =>
+              setRegistration((current) => ({
+                ...current,
+                privacyAccepted: event.target.checked,
+              }))
+            }
+          />
+          <span>
+            Acepto el{" "}
+            {privacyNoticeUrl ? (
+              <a href={privacyNoticeUrl} target="_blank" rel="noreferrer">
+                aviso de privacidad
+              </a>
+            ) : (
+              "aviso de privacidad"
+            )}
+            .
+          </span>
+        </label>
+        <label className="mi-consent optional">
+          <input
+            type="checkbox"
+            checked={registration.marketingConsent}
+            onChange={(event) =>
+              setRegistration((current) => ({
+                ...current,
+                marketingConsent: event.target.checked,
+              }))
+            }
+          />
+          <span>
+            Quiero recibir promociones. <small>Opcional</small>
+          </span>
+        </label>
+      </div>
+    );
   }
 
   return (
@@ -420,16 +759,110 @@ export function CustomerPwa({ configured, phoneOtpEnabled }: CustomerPwaProps) {
                 </small>
               </span>
             </div>
-            <div className="mi-program-status">
-              <CheckCircle2 aria-hidden="true" />
-              <span>
-                <strong>Identidad lista</strong>
-                <small>
-                  Tus compras vinculadas aparecen aquí. Los puntos y recompensas
-                  se activarán cuando Vaquero SM confirme sus reglas.
-                </small>
-              </span>
-            </div>
+            {authenticated && loyalty?.enabled ? (
+              <section className="mi-loyalty-panel">
+                <div className="mi-loyalty-balance">
+                  <span>
+                    <small>PUNTOS DISPONIBLES</small>
+                    <strong>
+                      {loyalty.available_points.toLocaleString("es-MX")}
+                    </strong>
+                  </span>
+                  <span>
+                    <small>VALOR</small>
+                    <b>
+                      {ticketMoney.format(
+                        (loyalty.available_points * loyalty.point_value_cents) /
+                          100,
+                      )}
+                    </b>
+                  </span>
+                </div>
+                <p>
+                  Cada punto vale{" "}
+                  {ticketMoney.format(loyalty.point_value_cents / 100)} y vence{" "}
+                  {loyalty.expiry_months} meses después de ganarse.
+                </p>
+                {loyalty.points_debt > 0 ? (
+                  <p className="mi-loyalty-warning">
+                    Los próximos {loyalty.points_debt} puntos cubrirán un ajuste
+                    por cambio o devolución.
+                  </p>
+                ) : null}
+                <form className="mi-redemption" onSubmit={createRedemptionCode}>
+                  <label htmlFor="redemption-points">Usar puntos</label>
+                  <div>
+                    <input
+                      id="redemption-points"
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={loyalty.available_points}
+                      step={1}
+                      value={redemptionPoints}
+                      onChange={(event) =>
+                        setRedemptionPoints(event.target.value)
+                      }
+                      placeholder="Cantidad"
+                    />
+                    <button
+                      type="submit"
+                      disabled={busy || !loyalty.available_points}
+                    >
+                      Generar código
+                    </button>
+                  </div>
+                </form>
+                {redemptionCode ? (
+                  <div className="mi-redemption-code" role="status">
+                    <small>CÓDIGO TEMPORAL</small>
+                    <strong>{redemptionCode.code}</strong>
+                    <span>
+                      {redemptionCode.points} puntos ·{" "}
+                      {ticketMoney.format(redemptionCode.value_cents / 100)}
+                    </span>
+                  </div>
+                ) : null}
+                {loyalty.history.length ? (
+                  <div className="mi-points-history">
+                    <strong>Movimientos recientes</strong>
+                    {loyalty.history.slice(0, 8).map((movement) => (
+                      <div key={movement.id}>
+                        <span>
+                          {movement.type === "EARN"
+                            ? "Compra"
+                            : movement.type === "EXPIRE"
+                              ? "Vencimiento"
+                              : movement.type === "RETURN_REVERSAL"
+                                ? "Cambio o devolución"
+                                : movement.type === "REDEEM"
+                                  ? "Canje"
+                                  : "Ajuste"}
+                          <small>
+                            {ticketDate.format(new Date(movement.created_at))}
+                          </small>
+                        </span>
+                        <b className={movement.points > 0 ? "positive" : ""}>
+                          {movement.points > 0 ? "+" : ""}
+                          {movement.points}
+                        </b>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </section>
+            ) : (
+              <div className="mi-program-status">
+                <CheckCircle2 aria-hidden="true" />
+                <span>
+                  <strong>Identidad lista</strong>
+                  <small>
+                    Tus compras vinculadas aparecen aquí. El saldo de puntos se
+                    activará desde la fecha oficial de lanzamiento.
+                  </small>
+                </span>
+              </div>
+            )}
             {authenticated ? (
               <section className="mi-ticket-history">
                 <div className="mi-section-title">
@@ -445,8 +878,8 @@ export function CustomerPwa({ configured, phoneOtpEnabled }: CustomerPwaProps) {
                       <div>
                         <strong>{ticket.folio}</strong>
                         <small>
-                          {ticketDate.format(new Date(ticket.sold_at))}{" "}
-                          · {ticket.location.name}
+                          {ticketDate.format(new Date(ticket.sold_at))} ·{" "}
+                          {ticket.location.name}
                         </small>
                       </div>
                       <div>
@@ -511,17 +944,89 @@ export function CustomerPwa({ configured, phoneOtpEnabled }: CustomerPwaProps) {
             </div>
             <div className="mi-access-card">
               <div className="mi-access-icon">
-                <Smartphone aria-hidden="true" />
+                {mode === "register" ? (
+                  <UserPlus aria-hidden="true" />
+                ) : (
+                  <Smartphone aria-hidden="true" />
+                )}
               </div>
-              <h2>Activar mi tarjeta</h2>
+              <h2>
+                {needsProfile
+                  ? "Termina de crear tu cuenta"
+                  : mode === "register"
+                    ? "Crear mi cuenta"
+                    : "Activar mi tarjeta"}
+              </h2>
               <p>
-                Usa el teléfono o correo que registraste en tienda. Nunca te
-                pediremos una contraseña.
+                {needsProfile
+                  ? "Tu correo ya está verificado. Completa tus datos para recibir tu número de socio."
+                  : mode === "register"
+                    ? "Regístrate desde aquí y recibe tu tarjeta digital. No necesitas contraseña."
+                    : "Usa el teléfono o correo que registraste en tienda. Nunca te pediremos una contraseña."}
               </p>
+              {!needsProfile && step === "identify" ? (
+                <div className="mi-access-modes" aria-label="Tipo de acceso">
+                  <button
+                    className={mode === "access" ? "active" : ""}
+                    type="button"
+                    onClick={() => {
+                      setMode("access");
+                      setError("");
+                      setNotice("");
+                    }}
+                  >
+                    Ya tengo cuenta
+                  </button>
+                  <button
+                    className={mode === "register" ? "active" : ""}
+                    type="button"
+                    onClick={() => {
+                      setMode("register");
+                      setError("");
+                      setNotice("");
+                    }}
+                  >
+                    Crear cuenta
+                  </button>
+                </div>
+              ) : null}
               {!configured ? (
                 <div className="mi-message error">
                   El acceso se habilitará al conectar Supabase.
                 </div>
+              ) : needsProfile ? (
+                <form onSubmit={finishVerifiedRegistration}>
+                  {registrationFields(true)}
+                  <button className="mi-primary" disabled={busy} type="submit">
+                    {busy ? "Creando cuenta…" : "Crear mi tarjeta"}
+                  </button>
+                  <button
+                    className="mi-link-button"
+                    type="button"
+                    onClick={() => void signOut()}
+                  >
+                    Usar otro correo
+                  </button>
+                </form>
+              ) : mode === "register" && step === "identify" ? (
+                <form onSubmit={requestRegistration}>
+                  {registrationFields()}
+                  <button
+                    className="mi-primary"
+                    disabled={
+                      busy || !privacyNoticeVersion || !privacyNoticeUrl
+                    }
+                    type="submit"
+                  >
+                    {busy ? "Enviando código…" : "Verificar mi correo"}
+                  </button>
+                  {!privacyNoticeVersion || !privacyNoticeUrl ? (
+                    <small className="mi-channel-note">
+                      El formulario quedará habilitado al publicar el aviso de
+                      privacidad aprobado.
+                    </small>
+                  ) : null}
+                </form>
               ) : step === "identify" ? (
                 <form onSubmit={requestAccess}>
                   <label htmlFor="customer-identifier">Teléfono o correo</label>
@@ -563,7 +1068,11 @@ export function CustomerPwa({ configured, phoneOtpEnabled }: CustomerPwaProps) {
                     placeholder="000000"
                   />
                   <button className="mi-primary" disabled={busy} type="submit">
-                    {busy ? "Verificando…" : "Activar tarjeta"}
+                    {busy
+                      ? "Verificando…"
+                      : mode === "register"
+                        ? "Verificar y crear cuenta"
+                        : "Activar tarjeta"}
                   </button>
                   <small className="mi-channel-note">
                     La sesión quedará guardada en este dispositivo. Puedes
@@ -576,15 +1085,18 @@ export function CustomerPwa({ configured, phoneOtpEnabled }: CustomerPwaProps) {
                       setStep("identify");
                       setToken("");
                       setNotice("");
+                      setError("");
                     }}
                   >
-                    Usar otro teléfono o correo
+                    {mode === "register"
+                      ? "Corregir mis datos"
+                      : "Usar otro teléfono o correo"}
                   </button>
                 </form>
               )}
               <p className="mi-privacy">
                 <ShieldCheck aria-hidden="true" />
-                El acceso no te registra para recibir promociones.
+                Las promociones son opcionales y se autorizan por separado.
               </p>
             </div>
           </>

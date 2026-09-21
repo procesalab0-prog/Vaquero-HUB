@@ -14,6 +14,12 @@ import {
 } from "lucide-react";
 import { useWorkspace } from "@/components/workspace-context";
 import { BUSINESS_PROFILE, LA_PIEDAD_STORE } from "@/lib/business-profile";
+import {
+  ACCENT_EVENT,
+  ACCENT_STORAGE_KEY,
+  applyAccent,
+  storedAccent,
+} from "@/lib/accent";
 
 type Section =
   "business" | "stores" | "pos" | "tickets" | "labels" | "appearance";
@@ -67,12 +73,6 @@ const tabs: Array<{
     icon: UserCog,
   },
 ];
-const accentColors: Record<string, string> = {
-  vino: "#8E2A1C",
-  cuero: "#9A5D32",
-  noche: "#241E1B",
-};
-
 export function SettingsWorkspace({
   returnPolicies = [],
   canManageReturnPolicy = false,
@@ -103,10 +103,10 @@ export function SettingsWorkspace({
     },
   ];
   const [saved, setSaved] = useState(false);
+  // Vacío significa «el de la identidad»: no hay por qué señalar Vino como
+  // elegido cuando nadie lo eligió y la pantalla está mostrando otro color.
   const [accent, setAccent] = useState(() =>
-    typeof window === "undefined"
-      ? "vino"
-      : (window.localStorage.getItem("mi-tienda:accent:v1") ?? "vino"),
+    typeof window === "undefined" ? "" : (storedAccent() ?? ""),
   );
   const [preferences, setPreferences] = useState<
     Record<string, string | boolean>
@@ -169,11 +169,10 @@ export function SettingsWorkspace({
 
   function chooseAccent(value: string) {
     setAccent(value);
-    window.localStorage.setItem("mi-tienda:accent:v1", value);
-    document.documentElement.style.setProperty("--accent", accentColors[value]);
-    window.dispatchEvent(
-      new CustomEvent("mi-tienda:accent", { detail: value }),
-    );
+    if (value) window.localStorage.setItem(ACCENT_STORAGE_KEY, value);
+    else window.localStorage.removeItem(ACCENT_STORAGE_KEY);
+    applyAccent(value || null);
+    window.dispatchEvent(new CustomEvent(ACCENT_EVENT, { detail: value }));
   }
 
   async function savePolicy() {
@@ -630,13 +629,22 @@ function AppearanceSettings({
     >
       <div className="theme-options">
         <button
+          className={accent === "" ? "selected identidad" : "identidad"}
+          type="button"
+          onClick={() => setAccent("")}
+        >
+          <span />
+          <strong>Identidad</strong>
+          <small>Vaquero SM</small>
+        </button>
+        <button
           className={accent === "vino" ? "selected vino" : "vino"}
           type="button"
           onClick={() => setAccent("vino")}
         >
           <span />
           <strong>Vino Vaquero</strong>
-          <small>Actual</small>
+          <small>Ladrillo</small>
         </button>
         <button
           className={accent === "cuero" ? "selected cuero" : "cuero"}

@@ -92,24 +92,24 @@ usa**. Esta lista es el índice, no la fuente de verdad.
 
 ## 6. Programa de lealtad
 
-Ninguna de éstas frena el arranque: la tarjeta identifica al cliente desde
-M1B sin necesidad de que los puntos existan. Pero todo el motor de puntos
-queda detenido hasta tenerlas.
+Las reglas operativas quedaron confirmadas el 21 de septiembre de 2026 y viven
+en [`specs/M7_LEALTAD.md`](specs/M7_LEALTAD.md). La entrega 0.54.0 inicia el
+motor sin activarlo retroactivamente.
 
 **Decisión del 9 de septiembre de 2026:** lealtad, puntos, niveles y beneficios
 de cumpleaños se realizarán después de apartados y crédito. No bloquean el
 cierre de la primera entrega de M7.
 
-| #   | Pregunta                                                                                                                                                     | Bloquea | Urgencia |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | -------- |
-| 6.1 | **¿Cuántos puntos se ganan por peso gastado, y cuánto vale un punto al redimir?**                                                                            | M7      | ⚪       |
-| 6.2 | ¿Los puntos expiran? ¿En cuánto tiempo?                                                                                                                      | M7      | ⚪       |
-| 6.3 | ¿Se ganan puntos en mercancía ya rebajada?                                                                                                                   | M7      | ⚪       |
-| 6.4 | Si se devuelve una compra, ¿se retiran los puntos que generó?                                                                                                | M7      | ⚪       |
-| 6.5 | **¿Qué se exige para redimir puntos?** El número de socio es copiable con una foto de la pantalla: acumular en la cuenta de otro es inofensivo, gastarlos no | M7      | ⚪       |
-| 6.6 | Descuento de cumpleaños: ¿automático o lo autoriza un supervisor? ¿Monto o porcentaje? ¿Vale el día o todo el mes?                                           | M7      | ⚪       |
-| 6.7 | ¿Habrá niveles de cliente o un solo esquema para todos?                                                                                                      | M7      | ⚪       |
-| 6.8 | ¿Ya existe hoy una tarjeta física con código impreso, o se estrena desde cero?                                                                               | M1B     | 🟡       |
+| #   | Pregunta                                                                                                      | Bloquea | Urgencia |
+| --- | ------------------------------------------------------------------------------------------------------------- | ------- | -------- |
+| 6.1 | **Contestado:** 1 punto por cada $100; cada punto vale $1                                                     | M7      | ✅       |
+| 6.2 | **Contestado:** vencen a los 12 meses                                                                         | M7      | ✅       |
+| 6.3 | **Contestado:** ofertas acumulan a la mitad; mayoreo no acumula                                               | M7      | ✅       |
+| 6.4 | **Contestado:** cambios y devoluciones recalculan puntos automáticamente                                      | M7      | ✅       |
+| 6.5 | **Contestado:** código temporal único ligado al cliente y a cada canje                                        | M7      | ✅       |
+| 6.6 | Pendiente: porcentaje de cumpleaños por marca o producto; ventana confirmada de un día antes a un día después | M7      | 🟡       |
+| 6.7 | Pendiente: definir diferencias antes de crear niveles                                                         | M7      | 🟡       |
+| 6.8 | ¿Ya existe hoy una tarjeta física con código impreso, o se estrena desde cero?                                | M1B     | 🟡       |
 
 ## 7. Datos personales
 
@@ -124,14 +124,15 @@ Decisiones confirmadas el 9 de septiembre de 2026:
 - ProcesaLab preparará el aviso de privacidad y lo enviará a Vaqueros SM para
   revisión y aprobación antes de publicarlo.
 - El alta de una cuenta no se interpretará como consentimiento de marketing.
-  Sigue pendiente confirmar si las promociones usarán una casilla opcional y
-  separada; los avisos operativos y las promociones conservarán finalidades
-  distintas.
+  El formulario ya usa una casilla opcional y separada; los avisos operativos
+  y las promociones conservarán finalidades distintas.
+- El autorregistro seguro ya está implementado en 0.53.0, pero se mantiene
+  deshabilitado hasta aprobar y publicar el aviso definitivo.
 
-| #   | Pregunta                                                                                                                                                                            | Bloquea | Urgencia |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | -------- |
-| 7.1 | **Parcialmente contestada:** ProcesaLab redactará y enviará el aviso; falta aprobar el texto definitivo antes de publicarlo                                                         | M1B     | 🟡       |
-| 7.2 | **¿Las promociones y el descuento de cumpleaños se mandan sólo a quien dio consentimiento de marketing?** Recomendación: que sea explícito y separado del consentimiento de lealtad | M1B     | 🟡       |
+| #   | Pregunta                                                                                                                                                  | Bloquea | Urgencia |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | -------- |
+| 7.1 | **Parcialmente contestada:** ProcesaLab redactará y enviará el aviso; falta aprobar el texto definitivo antes de publicarlo                               | M1B     | 🟡       |
+| 7.2 | **Resuelto:** promociones y descuento de cumpleaños sólo podrán usar el consentimiento opcional de marketing, separado del alta y del aviso de privacidad | M1B     | ✅       |
 
 ## 8. Migración de SICAR
 

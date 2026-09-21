@@ -7,10 +7,26 @@ export const metadata: Metadata = {
   description: "Tu tarjeta digital de cliente de Vaquero SM.",
   manifest: "/mi/manifest.webmanifest",
   icons: {
-    icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
-    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    icon: [
+      {
+        url: "/icons/mi-vaquero/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
+    ],
+    apple: [
+      {
+        url: "/icons/mi-vaquero/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
   },
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "Mi Vaquero" },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Mi Vaquero",
+  },
   robots: { index: false, follow: false },
 };
 
@@ -21,6 +37,10 @@ export const viewport: Viewport = {
   themeColor: "#8E2A1C",
 };
 
-export default function CustomerLayout({ children }: { children: React.ReactNode }) {
+export default function CustomerLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return children;
 }

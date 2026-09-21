@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requirePermission } from "@/lib/auth/authorization";
 
 export type SalePaymentInput = {
-  method_code: "CASH" | "CARD" | "TRANSFER" | "CREDIT";
+  method_code: "CASH" | "CARD" | "TRANSFER" | "CREDIT" | "LOYALTY";
   amount_cents: number;
   tendered_cents?: number;
   reference?: string;
@@ -43,6 +43,17 @@ export type CancelSaleActionResult =
 
 export type CreateLayawayResult =
   | { ok: true; layawayId: string; folio: string; totalCents: number }
+  | { ok: false; code: string; message: string };
+
+export type LoyaltyRedemptionResult =
+  | {
+      ok: true;
+      token: string;
+      points: number;
+      valueCents: number;
+      availablePoints: number;
+      expiresAt: string;
+    }
   | { ok: false; code: string; message: string };
 
 export type PosDraftItemInput = {
@@ -107,6 +118,26 @@ function saleError(error: unknown): SaleActionResult {
       "Captura la referencia del pago electrónico.",
     ],
     [
+      "LOYALTY_CODE_REQUIRED",
+      "Vuelve a validar el código de puntos antes de cobrar.",
+    ],
+    [
+      "LOYALTY_CODE_INVALID",
+      "El código de puntos ya no es válido. Genera uno nuevo.",
+    ],
+    [
+      "LOYALTY_CODE_EXPIRED",
+      "El código de puntos venció. Genera uno nuevo.",
+    ],
+    [
+      "LOYALTY_POINTS_CHANGED",
+      "El saldo de puntos cambió. Vuelve a validar el canje.",
+    ],
+    [
+      "LOYALTY_PAYMENT_MISMATCH",
+      "El valor del canje cambió. Vuelve a validar el código.",
+    ],
+    [
       "DISCOUNT_AUTHORIZATION_INVALID",
       "La autorización del descuento venció. Solicítala otra vez.",
     ],
@@ -154,6 +185,88 @@ function saleError(error: unknown): SaleActionResult {
       match?.[1] ??
       "No fue posible registrar la venta. No se realizó ningún cargo ni movimiento.",
   };
+}
+
+export async function verifyPosLoyaltyCode(input: {
+  customerId: string;
+  code: string;
+  maxValueCents: number;
+}): Promise<LoyaltyRedemptionResult> {
+  try {
+    const { supabase } = await requirePermission("loyalty.redeem");
+    if (
+      !input.customerId ||
+      !/^\d{6}$/.test(input.code) ||
+      !Number.isSafeInteger(input.maxValueCents) ||
+      input.maxValueCents <= 0
+    ) {
+      return {
+        ok: false,
+        code: "INVALID_CODE",
+        message: "Captura los seis dígitos del código del cliente.",
+      };
+    }
+    const { data, error } = await supabase.rpc(
+      "verify_loyalty_redemption_code",
+      {
+        p_customer_id: input.customerId,
+        p_code: input.code,
+        p_max_value_cents: input.maxValueCents,
+      },
+    );
+    if (error) throw error;
+    const result = data as {
+      ok?: boolean;
+      code?: string;
+      token?: string;
+      points?: number;
+      value_cents?: number;
+      available_points?: number;
+      expires_at?: string;
+      attempts_remaining?: number;
+    } | null;
+    if (!result?.ok || !result.token) {
+      const messages: Record<string, string> = {
+        NOT_ACTIVE: "El programa de puntos todavía no está activo.",
+        NOT_FOUND: "El cliente no tiene un código activo.",
+        EXPIRED: "El código venció. Pide al cliente que genere uno nuevo.",
+        LOCKED:
+          "El código quedó bloqueado por intentos fallidos. Genera uno nuevo.",
+        POINTS_CHANGED:
+          "El saldo de puntos cambió. Pide al cliente que genere otro código.",
+        VALUE_EXCEEDS_SALE:
+          "El valor de los puntos supera el total de esta venta.",
+        INVALID_CODE:
+          result?.attempts_remaining === undefined
+            ? "El código no es válido."
+            : `Código incorrecto. Quedan ${result.attempts_remaining} intentos.`,
+      };
+      return {
+        ok: false,
+        code: result?.code ?? "INVALID_CODE",
+        message:
+          messages[result?.code ?? "INVALID_CODE"] ??
+          "No fue posible validar el código de puntos.",
+      };
+    }
+    return {
+      ok: true,
+      token: result.token,
+      points: Number(result.points ?? 0),
+      valueCents: Number(result.value_cents ?? 0),
+      availablePoints: Number(result.available_points ?? 0),
+      expiresAt: result.expires_at ?? "",
+    };
+  } catch (error) {
+    console.error("[pos/verifyLoyaltyCode] failed", {
+      message: error instanceof Error ? error.message : "UNKNOWN_ERROR",
+    });
+    return {
+      ok: false,
+      code: "LOYALTY_UNAVAILABLE",
+      message: "No fue posible validar los puntos. Intenta nuevamente.",
+    };
+  }
 }
 
 function draftError(error: unknown): PosDraftActionResult {

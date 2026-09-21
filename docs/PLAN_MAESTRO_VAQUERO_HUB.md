@@ -1336,7 +1336,10 @@ Las reglas confirmadas de apartados y crédito viven respectivamente en
 se realizarán en una etapa posterior por decisión del negocio y no bloquean la
 entrega de apartados y crédito.
 
-Posible módulo:
+Módulo iniciado en 0.54.0; la especificación vigente está en
+[`specs/M7_LEALTAD.md`](specs/M7_LEALTAD.md).
+
+Estructura:
 
 customers
 loyalty_accounts
@@ -3114,3 +3117,72 @@ Subfase financiera aprobada — recepción de dólares:
 - Esta subfase exige migración hacia delante, RLS/permisos, operación atómica de
   caja y pruebas de concurrencia. Hasta cumplirlas no se presenta como método de
   pago activo.
+
+Entrega visible 0.53.0 — creación de cuentas desde Mi Vaquero:
+
+- El diseño aprobado de Mi Vaquero incorpora “Ya tengo cuenta” y “Crear
+  cuenta”. El cliente captura nombre, teléfono, correo, fecha de nacimiento
+  opcional y consentimientos sin intervenir en el acceso del personal.
+- La cuenta se completa sólo después de verificar el correo. La operación final
+  pasa por servidor, valida la sesión y registra exactamente la versión del
+  aviso publicada; el navegador no puede inventar ese dato.
+- Un correo verificado puede vincular un cliente ya existente. Un teléfono no
+  verificado que ya pertenece a otra persona se detiene para conciliación en
+  tienda y nunca se usa para tomar su cuenta.
+- Una identidad presente en `app_users` se rechaza: cuentas de empleados y de
+  clientes permanecen separadas aunque compartan el mismo proveedor Auth.
+- La creación es idempotente, genera el número de socio y deja auditoría sin
+  duplicar datos personales. El autorregistro global de Supabase permanece
+  cerrado.
+- Marketing es una autorización opcional aparte. El formulario sólo se habilita
+  cuando el aviso aprobado tenga versión y URL configuradas. Puntos,
+  recompensas y redenciones siguen pospuestos hasta definir sus reglas.
+
+Entrega visible 0.52.3 — hoja de estilos legible y reglas móviles vivas:
+
+- La reparación de codificación que siguió a 0.51.0 dejó `app/globals.css`
+  minificado en una sola línea. No se perdió ninguna regla, pero sí el
+  whitespace que en CSS es significativo, y con él tres cosas que el navegador
+  descarta en silencio: la consulta `@media (min-width: 601px) and
+  (max-width: 820px)` completa, 17 declaraciones con `calc()` y dos
+  combinadores descendentes.
+- El bloque muerto era exactamente el del iPad del mostrador: carrito como
+  cajón táctil, fondo, botón flotante y contador de piezas. Las declaraciones
+  `calc()` descartadas eran la aritmética de barra inferior y área segura en
+  teléfono e iPad.
+- Regla operativa que deja esta revisión: una corrección de codificación no
+  puede reescribir el formato del archivo. Si un archivo sale de una corrección
+  con otra forma, se compara regla por regla contra la última versión buena
+  antes de darlo por bueno.
+- `format:check` no cubre `app/`, así que CI siguió en verde con la hoja de
+  estilos rota. Extender la cobertura queda registrado en la cola de trabajo
+  como tarea propia; reformatear archivos que hoy nadie formatea no debe
+  mezclarse con una corrección.
+- Verificado ejecutando: Chromium reporta `not all` para la consulta sin
+  espacio y calcula 0 para `calc(var(--a)+ var(--b))`; `next build` omitía el
+  bloque `@media` compuesto del CSS emitido y ahora lo incluye.
+
+Entrega visible 0.52.3 — identidad visible y claves de etiqueta claras:
+
+- El acento de la identidad definido en `app/workspace-brand.css` vuelve a ser
+  el que se ve. La preferencia de color sólo se aplica cuando alguien la eligió,
+  y entonces mueve los cuatro tokens juntos: acento, hover, presionado y suave.
+  Elegir un color se puede deshacer con la opción **Identidad**.
+- Regla operativa que deja esta revisión: la paleta vive en un solo archivo
+  (`lib/accent.ts`). Cuando dos archivos describen la misma paleta, uno termina
+  pisando al diseño sin que nadie lo note.
+- La clave corta de sucursal que se imprime en la etiqueta es un identificador
+  físico: no se reacuña sola, su choque con otra sucursal tiene nombre propio
+  (`LABEL_CODE_TAKEN`) y Administración explica cada rechazo en lugar de decir
+  sólo que no se pudo guardar.
+- Regla operativa para impresión: todo lo que se imprime fija su tipografía.
+  El ticket térmico ya lo hacía; la etiqueta la heredaba de la pantalla, y el
+  rediseño acababa de cambiarla. Una calibración física no puede depender del
+  tema visual.
+- Verificado ejecutando: las 94 migraciones aplican limpias sobre una base
+  vacía; el disparador de claves conserva la existente ante un nulo, acuña sólo
+  en altas nuevas y sigue rechazando duplicados; `upsert_location_v2` conserva
+  `NOT_AUTHORIZED`, `LOCATION_CODE_TAKEN` y `LOCATION_CODE_IMMUTABLE`; 45
+  pruebas unitarias y 114 de navegador en verde; medición en la aplicación real
+  a 390 × 844, 768 × 1024, 1024 × 1366 y escritorio sin desplazamiento
+  horizontal ni controles perdidos.

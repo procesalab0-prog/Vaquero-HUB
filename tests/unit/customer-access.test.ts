@@ -4,6 +4,7 @@ import {
   customerAuthIdentityAttributes,
   customerRedirectUrl,
   parseCustomerIdentifier,
+  parseCustomerSelfRegistration,
 } from "../../lib/customer-access";
 import {
   parseOfflineCustomerCard,
@@ -37,6 +38,43 @@ describe("acceso y tarjeta del cliente", () => {
         value: "+523531234567",
       }),
     ).toEqual({ phone: "+523531234567", phone_confirm: true });
+  });
+
+  it("valida el alta propia sin mezclar consentimiento de marketing", () => {
+    expect(
+      parseCustomerSelfRegistration({
+        fullName: "  María López  ",
+        phone: "352 123 4567",
+        email: " Maria@Ejemplo.COM ",
+        birthdate: "1994-06-12",
+        privacyAccepted: true,
+        marketingConsent: false,
+      }),
+    ).toEqual({
+      fullName: "María López",
+      phone: "+523521234567",
+      email: "maria@ejemplo.com",
+      birthdate: "1994-06-12",
+      privacyAccepted: true,
+      marketingConsent: false,
+    });
+
+    expect(
+      parseCustomerSelfRegistration({
+        fullName: "María López",
+        phone: "352 123 4567",
+        email: "maria@ejemplo.com",
+        privacyAccepted: false,
+      }),
+    ).toBeNull();
+    expect(
+      parseCustomerSelfRegistration({
+        fullName: "María López",
+        phone: "123",
+        email: "maria@ejemplo.com",
+        privacyAccepted: true,
+      }),
+    ).toBeNull();
   });
 
   it("nunca adivina el destino del enlace de acceso", () => {

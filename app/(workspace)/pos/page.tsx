@@ -17,6 +17,7 @@ import {
   requestSalePrint,
   resumePosDraft,
   savePosCurrentDraft,
+  verifyPosLoyaltyCode,
   type PosDraftPayload,
 } from "./actions";
 
@@ -152,6 +153,7 @@ export default async function PosPage({
         }
       }
       createSaleAction={createPosSale}
+      verifyLoyaltyCodeAction={verifyPosLoyaltyCode}
       getCustomerCreditAction={getPosCustomerCredit}
       authorizeDiscountAction={authorizeSaleDiscount}
       authorizeCreditOverrideAction={authorizeOverdueCredit}

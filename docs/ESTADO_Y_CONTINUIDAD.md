@@ -363,3 +363,32 @@ que dice?_ Que exista el código no significa que funcione.
   también desde Venta y Cambios / devoluciones. La corrección se limita a
   folios: no transforma claves ni códigos de producto.
 - La prueba automatizada reproduce exactamente el valor leído en La Piedad.
+
+## Lealtad 0.54.0 — saldo, vencimiento e historial
+
+- El programa nace desactivado y con fecha de lanzamiento explícita: no toma
+  ventas históricas ni productos de prueba.
+- Contado acumula al concluir; crédito sólo cuando queda liquidado y apartados
+  al convertirse en venta entregada. El cálculo confirmado es 1 punto por
+  $100 regular y 1 por $200 con descuento, siempre con valor de $1.
+- Los puntos viven en lotes con caducidad individual de doce meses y un libro
+  inmutable. Cambios, cancelaciones y devoluciones descuentan lo ganado; si ya
+  se usó, registran deuda para las ganancias futuras sin bloquear al cliente.
+- Mi Vaquero muestra saldo e historial y genera un código temporal ligado a la
+  cuenta.
+- La PWA de clientes tiene ícono propio crema/borgoña con distintivo dorado;
+  Mi Tienda SM conserva el ícono operativo anterior.
+
+## Lealtad 0.54.1 — canje seguro en caja
+
+- Venta valida el código de seis dígitos y recibe un token opaco de un solo uso;
+  ni el código ni el token quedan impresos o guardados en el ticket.
+- Los puntos son una forma de pago, no efectivo ni descuento: el total conserva
+  su valor, la caja registra sólo dinero real y el comprobante muestra `Puntos`.
+- El saldo se descuenta dentro de la misma transacción de la venta. Si inventario,
+  cobro o cualquier otra validación falla, los puntos siguen disponibles.
+- Una devolución restaura la proporción pagada con puntos y una cancelación
+  devuelve el remanente. Nunca se entrega efectivo por puntos.
+- La prueba en staging cubre código incorrecto, canje, devolución parcial y
+  cancelación completa; todos los datos de la prueba se revierten al concluir.
+- El programa sigue desactivado por omisión hasta fijar la fecha de lanzamiento.

@@ -3,15 +3,16 @@
 > Decisión transversal: afecta a M7 (clientes y lealtad), a la integración
 > con WooCommerce y a la elección del lector de códigos.
 >
-> Última actualización: 2026-09-01.
+> Última actualización: 2026-09-20.
 
 ## 1. El principio: la cuenta es opcional y perezosa
 
 El registro del cliente y su cuenta de acceso son **dos cosas distintas**,
 y ésa es la decisión central:
 
-- **`customers`** existe siempre. Se crea en la primera compra, con o sin
-  cuenta. Es el dueño del saldo de puntos y del historial.
+- **`customers`** es el registro central. Puede nacer en tienda con la primera
+  compra o al autorregistrarse desde Mi Vaquero. Es el dueño del historial y,
+  cuando se definan sus reglas, del saldo de puntos.
 - **La cuenta de acceso se crea sólo cuando el cliente realmente quiere
   entrar** a ver sus puntos. La mayoría nunca lo hará: irán a la tienda,
   darán su teléfono y acumularán puntos sin haber iniciado sesión jamás.
@@ -31,11 +32,11 @@ customers
 Esto resuelve las tres objeciones que existían contra darle cuenta al
 cliente:
 
-| Objeción | Cómo se resuelve |
-|---|---|
+| Objeción                                    | Cómo se resuelve                                                                                                                       |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | Supabase cobra por usuarios activos de Auth | Sólo se vuelve usuario de Auth quien de verdad inicia sesión. El costo escala con el uso real, no con el tamaño del padrón de clientes |
-| Pedir registro en la caja mata el programa | En la caja nunca se pide cuenta. Se pide el teléfono, que toma tres segundos |
-| Un cliente podría alcanzar datos internos | Ver sección 4 |
+| Pedir registro en la caja mata el programa  | En la caja nunca se pide cuenta. Se pide el teléfono, que toma tres segundos                                                           |
+| Un cliente podría alcanzar datos internos   | Ver sección 4                                                                                                                          |
 
 ## 2. La identidad real es el teléfono, no la tarjeta
 
@@ -78,11 +79,11 @@ despliegue en Vercel resuelven ambos.
 Las tres representaciones del **mismo número de socio**, juntas en una
 pantalla:
 
-| Representación | Para qué sirve | Nota |
-|---|---|---|
-| **QR** | Lectura principal en caja | Requiere lector imager 2D |
-| **Código de barras 1D** | Compatibilidad | Su valor real es para tarjetas **impresas**; en pantalla es la más débil de las tres |
-| **Código numérico** | Cuando fallan los dos anteriores | Se teclea a mano. **Debe llevar dígito verificador** |
+| Representación          | Para qué sirve                   | Nota                                                                                 |
+| ----------------------- | -------------------------------- | ------------------------------------------------------------------------------------ |
+| **QR**                  | Lectura principal en caja        | Requiere lector imager 2D                                                            |
+| **Código de barras 1D** | Compatibilidad                   | Su valor real es para tarjetas **impresas**; en pantalla es la más débil de las tres |
+| **Código numérico**     | Cuando fallan los dos anteriores | Se teclea a mano. **Debe llevar dígito verificador**                                 |
 
 Más el saldo de puntos, el historial de compras, sus apartados y el aviso
 de cumpleaños.
@@ -305,7 +306,7 @@ El **número de socio se conserva** a propósito: no es un dato personal y es
 lo que mantiene unidas las ventas históricas del registro.
 
 **Y una decisión que parece un descuido y no lo es:** el disparador
-`app.audit_customer_change()` registra sólo los *nombres* de los campos que
+`app.audit_customer_change()` registra sólo los _nombres_ de los campos que
 cambiaron, nunca sus valores, a diferencia del disparador genérico que usan
 las demás tablas. Si la bitácora guardara el teléfono o el nombre
 anteriores, anonimizar no anonimizaría nada, porque los datos seguirían en
@@ -324,8 +325,8 @@ Nada de esto se implementa hasta tener respuesta (bloquean M7):
 5. ¿El descuento de cumpleaños es automático o lo autoriza un supervisor?
 6. ¿Habrá niveles de cliente, o un solo esquema para todos?
 7. **¿Qué se exige para redimir puntos?** El número de socio es copiable
-   —basta una foto de la pantalla—, así que conviene distinguir: *acumular*
-   puntos en la cuenta de otro es inofensivo, pero *gastarlos* no. Hay que
+   —basta una foto de la pantalla—, así que conviene distinguir: _acumular_
+   puntos en la cuenta de otro es inofensivo, pero _gastarlos_ no. Hay que
    definir si redimir exige un segundo dato (por ejemplo los últimos
    cuatro dígitos del teléfono) o autorización de supervisor a partir de
    cierto monto.
@@ -334,13 +335,21 @@ Nada de esto se implementa hasta tener respuesta (bloquean M7):
    dio consentimiento de marketing, o el negocio asume que registrarse ya
    lo incluye? Conviene que sea lo primero.
 
-## 9. Estado implementado en 0.9.0
+## 9. Estado implementado
 
 La identidad base y la tarjeta digital ya existen en **Mi Vaquero**. La
 PWA está preparada para un host dedicado y, hasta configurar el dominio,
-se publica en `/mi`. El acceso por correo no crea cuentas públicas: sólo
-acepta clientes previamente registrados y vincula su identidad en el
-servidor. SMS se mantiene desactivado hasta configurar proveedor.
+se publica en `/mi`. Desde 0.53.0 admite dos caminos independientes:
+
+- activar una tarjeta que la tienda ya creó;
+- crear una cuenta nueva después de verificar el correo.
+
+El autorregistro global de Supabase sigue cerrado y las cuentas de empleados
+no pueden convertirse en clientes. La finalización ocurre en servidor: valida
+la sesión, la versión del aviso publicada y los conflictos de identidad. Un
+correo verificado puede recuperar un cliente preexistente con ese correo; un
+teléfono todavía no verificado nunca se usa para apropiarse de otro registro.
+SMS se mantiene desactivado hasta configurar proveedor.
 
 El QR, el CODE128 y el número visible codifican exactamente el mismo
 `member_number`. Sin conexión se guarda únicamente ese número en un
@@ -348,4 +357,5 @@ formato versionado; no se conservan nombre, teléfono, correo, puntos ni
 historial. La lectura online se limita a la tarjeta propia mediante
 `get_my_customer_card()`. Sigue siendo obligatoria la prueba física con
 los lectores reales y no se habilitan puntos o redenciones hasta resolver
-las reglas de la sección 8.
+las reglas de la sección 8. El formulario de alta permanece bloqueado hasta
+publicar el aviso aprobado y configurar su versión y URL en el servidor.

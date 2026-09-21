@@ -6,7 +6,7 @@
 > Para entender el proyecto antes de tocarlo, empezar por
 > [`ESTADO_Y_CONTINUIDAD.md`](ESTADO_Y_CONTINUIDAD.md).
 >
-> Última actualización: 2026-09-09, al validar M8.2 cotizaciones.
+> Última actualización: 2026-09-21, al revisar el rediseño y las claves de etiqueta.
 
 ## Cómo usar esta cola
 
@@ -1233,6 +1233,106 @@ mínimo, ¿se puede confirmar un apartado con $0 abonados?** Si la respuesta es
 que sí, un apartado sin dinero de por medio aparta mercancía real y el caso de
 cancelación anticipada se vuelve más frecuente, no menos.
 
+### Revisión de M7.3: apartados
+
+Verificado ejecutando contra una base reconstruida: 87 migraciones aplican
+limpio. **No se encontraron defectos.**
+
+La prueba que define el módulo —**que lo apartado no se pueda vender**— la
+pasa. Es la primera vez que `reserved_qty` se usa de verdad desde que se creó
+en M3, y el candado que ya traía `app.apply_movement` la respeta solo.
+
+| Prueba                                              | Resultado medido                       |
+| --------------------------------------------------- | ---------------------------------------- |
+| Apartar 3 de 5 botas                                | 5 totales, 3 apartadas                   |
+| Vender las 2 libres                                 | Permitido                                |
+| **Vender una de las apartadas**                     | **`INSUFFICIENT_STOCK`**                 |
+| Entregar sin liquidar                               | `LAYAWAY_NOT_READY`                      |
+| Abonar de más                                       | `LAYAWAY_NOT_PAYABLE`                    |
+| Entregar ya liquidado                               | Genera la venta, saca la mercancía y libera la reserva |
+| Mover a mano la fecha de vencimiento                | `LAYAWAY_LEDGER_IMMUTABLE`, ni como superusuario |
+
+El ciclo completo cuadra: cada abono entra al cajón, la entrega no cobra de
+nuevo porque ya estaba pagado, y al final la reserva queda en cero.
+
+### Decisión del dueño: cancelar un apartado que todavía no vence
+
+Al cancelar un apartado **no vencido**, el sistema responde
+`LAYAWAY_CANCELLATION_POLICY_UNDEFINED`. **No es un defecto: es la decisión
+correcta.** La spec define qué pasa cuando la tienda cancela un apartado
+vencido —lo abonado se retiene como penalización— pero no dice nada del caso
+en que **el cliente se arrepiente antes de la fecha**. En vez de inventar una
+regla con el dinero de alguien, la función se niega y lo dice.
+
+Pero en una tienda eso pasa: «ya no lo quiero, devuélvanme lo que llevo
+abonado». Hoy no hay salida por sistema.
+
+Lo que falta decidir:
+
+1. ¿Se puede cancelar antes del vencimiento, o hay que esperar a que venza?
+2. Si se puede, ¿se devuelve lo abonado, se retiene una parte, o se deja a
+   criterio del gerente con autorización?
+3. Si se devuelve, ¿por el mismo método de pago? Ahí ya hay precedente: la
+   devolución de una venta reparte por método original y nunca convierte
+   tarjeta en efectivo. Conviene que el apartado siga la misma regla.
+
+Va junto con la pregunta 5.4, que tampoco está contestada: **sin enganche
+mínimo, ¿se puede confirmar un apartado con $0 abonados?** Si la respuesta es
+que sí, un apartado sin dinero de por medio aparta mercancía real y el caso de
+cancelación anticipada se vuelve más frecuente, no menos.
+
+### Revisión de la cancelación anticipada de apartados y de M8.3
+
+Verificado ejecutando contra una base reconstruida: 89 migraciones aplican
+limpio. **La lógica del dinero está bien.**
+
+La decisión que faltaba ya se tomó y se implementó con criterio: en vez de
+editar el historial de abonos, la cancelación anticipada levanta un
+**documento compensatorio** y deja los abonos intactos.
+
+| Prueba                                              | Resultado medido                       |
+| --------------------------------------------------- | ---------------------------------------- |
+| La cajera intenta cancelar un apartado vigente      | `NOT_AUTHORIZED`                         |
+| Devolver más de lo abonado                          | `REFUND_EXCEEDS_LAYAWAY_PAYMENTS`        |
+| Devolver $600 de $1,000 abonados (800 efectivo + 200 tarjeta) | $480 en efectivo y $120 a la tarjeta: **el mismo reparto proporcional que las devoluciones de venta** |
+| Penalización                                        | $400 retenidos y registrados aparte      |
+| Mercancía                                           | Liberada: la reserva quedó en cero       |
+| Cancelar dos veces                                  | `LAYAWAY_NOT_CANCELLABLE`                |
+| Historial de abonos                                 | Intacto: `paid_cents` sigue en $1,000    |
+
+También se revisó M8.3: el historial que ve el cliente se resuelve por
+`auth_user_id` contra su propia sesión, excluye clientes anonimizados y no
+devuelve costos. El PDF del ticket tampoco los lleva.
+
+### La trampa de la caja única ya no es un caso aislado
+
+Ayer se reportó que **con una sola caja por sucursal no se puede cancelar una
+venta a crédito** durante el turno. Hoy se comprobó que **la cancelación
+anticipada de un apartado tiene exactamente el mismo bloqueo**, por la misma
+razón: exige un permiso que sólo tienen ADMIN y MANAGER **y** que quien la
+ejecuta tenga su propia caja abierta.
+
+Ya son dos operaciones, y el patrón se va a repetir: cada vez que se construya
+una operación de dinero autorizada por gerencia, va a heredar la misma
+combinación. Conviene resolverlo de una vez y no operación por operación.
+
+Además hay un efecto que conviene tener presente aunque no sea un error: **el
+dinero sale de una caja distinta de la que entró.** En la prueba, los $800 del
+abono entraron al cajón de la cajera y los $480 del reembolso salieron del
+cajón del gerente. Cada corte cuadra por separado y todo queda auditado, pero
+el gerente necesita efectivo propio en su cajón para poder devolver.
+
+Las dos salidas siguen siendo las mismas, y la decisión es de negocio:
+
+1. **Dos cajas por sucursal.** Cero código, y responde de paso la pregunta 9.4.
+2. **Que la cajera ejecute con autorización de gerencia**, como ya ocurre con
+   descuentos y devoluciones. En el crédito la función ya exige token de
+   supervisor, así que ahí no se debilita nada; en apartados habría que
+   agregarlo.
+
+**Conviene decidirlo esta semana:** quedan cuatro semanas para octubre y son
+dos operaciones de mostrador con el cliente enfrente.
+
 ## Deuda pendiente
 
 | Qué                                                                                       | Dónde              |
@@ -1312,11 +1412,11 @@ dice?** Que el código exista no significa que funcione.
   `specs/M7_APARTADOS.md` §6.
 - [ ] Lealtad: pospuesta por decisión del negocio; no bloquea M7.
 - [~] Rediseño basado en Mi Vaquero SM: la dirección visual ya fue aprobada y
-      la primera capa compartida cubre acceso, navegación, tokens, tarjetas,
-      botones y jerarquía tipográfica. Continuar por módulos y comparar POS,
-      Productos, Inventario, Caja y Devoluciones con usuarios reales. No puede
-      empeorar velocidad, accesibilidad ni controles operativos. Véase
-      `specs/REDISENO_MI_TIENDA.md`.
+  la primera capa compartida cubre acceso, navegación, tokens, tarjetas,
+  botones y jerarquía tipográfica. Continuar por módulos y comparar POS,
+  Productos, Inventario, Caja y Devoluciones con usuarios reales. No puede
+  empeorar velocidad, accesibilidad ni controles operativos. Véase
+  `specs/REDISENO_MI_TIENDA.md`.
 
 La conversión parcial de una cotización permanece fuera de M8.2 porque el
 negocio todavía no la ha definido. No se inventa: una cotización se cobra
@@ -1412,6 +1512,156 @@ pueden convertirla en dos ventas.
       pruebas unitarias y de navegador.
 - [ ] Repetir el escaneo del ticket físico en producción después del despliegue.
 
+## Revisión 0.52.3 — la hoja de estilos quedó minificada y perdió reglas vivas
+
+Los tres commits que siguieron a `800b4e1` dejaron `app/globals.css` en **una
+sola línea de 141 157 bytes**. La primera corrección de codificación
+(`8281ba2`) redujo el archivo a 90 059 bytes todavía inválidos; la segunda
+(`157c708`) recuperó UTF-8 válido pero entregó el archivo minificado. Nadie lo
+detectó porque `format:check` no cubre `app/`, así que CI siguió en verde.
+
+Al comparar regla por regla contra `800b4e1` **no se perdió ninguna regla de
+CSS**: las 1 533 reglas y las 5 346 declaraciones corresponden exactamente a la
+línea base más los cambios de La Piedad. Lo que sí se perdió fue whitespace
+significativo, y en CSS eso no es cosmético:
+
+- **La consulta `@media (min-width: 601px) and (max-width: 820px)` quedó como
+  `and(max-width:820px)`.** Sin el espacio, `and(` se tokeniza como función y
+  la consulta entera es inválida. Comprobado en Chromium: el navegador la
+  reporta como `not all`, y en el `next build` el bloque **no aparece en el CSS
+  emitido**. Eran 13 reglas muertas: el carrito como cajón táctil del iPad, su
+  fondo, el botón flotante y el contador de piezas. Justo el rango de pantalla
+  del iPad del mostrador.
+- **17 declaraciones con `calc()` quedaron sin espacio a la izquierda del
+  operador** (`var(--mobile-nav-height)+ env(safe-area-inset-bottom)`). En
+  `calc()` los operadores `+` y `-` exigen espacio de ambos lados; sin él la
+  declaración se descarta. Comprobado en Chromium: `calc(var(--a)+ var(--b))`
+  calcula 0. Afectaba a `.sale-panel`, `.workspace-main`, `.nav-rail`,
+  `.mobile-cart-toggle`, `.mobile-cart-backdrop`, `.customer-create[open]` y los
+  modales: toda la aritmética de barra inferior y área segura en teléfono e
+  iPad.
+- **Dos combinadores descendentes se volvieron compuestos**:
+  `:where(.checkout-modal, …) :where(input, select, textarea, button)` y
+  `.customer-create[open] .admin-form`. Sin el espacio dejan de describir «lo
+  que está dentro de» y pasan a describir «lo que es ambas cosas a la vez», que
+  no existe.
+
+Medido en Chromium con la hoja rota y con la reparada, cargando el mismo
+marcado de taller:
+
+| Ancho | Barra inferior | Relleno inferior del contenido | Botón de carrito |
+| --- | --- | --- | --- |
+| 390 px roto | 16 px | 0 px | visible |
+| 768 px roto | 16 px | 0 px | **oculto** |
+| 390 px reparado | 92 px | 110 px | visible |
+| 768 px reparado | 92 px | 110 px | visible |
+
+Es decir: en **todo teléfono y en iPad vertical** las últimas filas de cualquier
+lista o formulario quedaban debajo de la barra de navegación fija, porque
+`.workspace-main` perdió su `padding-bottom` y `.nav-rail` su altura. Y en iPad
+vertical (601–820 px, que es donde cae un iPad de 768 px y un iPad mini de
+744 px) el botón flotante de carrito quedaba en `display: none` sin nada que
+volviera a encenderlo: el POS se quedaba sin botón de carrito. En horizontal
+(1024 px) el iPad no entra en ese rango y no se veía afectado.
+
+Corregido en 0.52.3: archivo devuelto a formato Prettier (8 838 líneas), los 19
+comentarios explicativos restaurados desde `800b4e1`, y las tres clases de daño
+reparadas. Verificado con `next build`: la consulta `@media` compuesta, los
+`calc()` y el selector descendente aparecen en el CSS emitido.
+
+- [x] Restaurar `app/globals.css` a formato legible y recuperar sus comentarios.
+- [x] Reparar la consulta `@media` compuesta, los 17 `calc()` y los dos
+      combinadores descendentes.
+- [ ] Extender `format:check` a `app/`, `components/` y `lib/` para que un
+      archivo minificado o mal codificado rompa CI en lugar de pasar inadvertido.
+      Es un cambio de alcance amplio (reformatea archivos que hoy nadie formatea)
+      y debe ir en su propio PR, no mezclado con una corrección.
+
+## Revisión 0.52.3 — rediseño, claves de etiqueta y acento de identidad
+
+Revisión de los diez commits que Codex subió sobre `157c708`: identidad Mi
+Vaquero, `app/workspace-brand.css`, escala de texto, clave corta de sucursal
+para etiquetas, folios con apóstrofe y logotipo listo antes de imprimir.
+
+Lo que quedó bien y se comprobó ejecutando:
+
+- La escala de texto **no se filtra a la impresión**. Con `xlarge`, el texto de
+  pantalla sube de 16 px a 22 px mientras el ticket se queda en 13 px y la
+  etiqueta en 14 px: las reglas nuevas están acotadas a `.workspace-main`.
+- El ticket térmico fija su propia tipografía (`--font-plex-mono`), así que el
+  cambio de fuente de la interfaz no lo toca.
+- `upsert_location_v2` conserva la autorización por permiso, la inmutabilidad
+  del código operativo y la bitácora; el disparador de clave automática
+  serializa las altas simultáneas con un bloqueo de transacción y la tabla
+  sigue cerrada a escritura directa (`authenticated` sólo tiene `SELECT`).
+- La normalización de apóstrofes vive sólo en el camino de folios y sigue sin
+  confundir un código de producto con un ticket.
+
+Cuatro defectos encontrados y corregidos:
+
+1. **El acento de la identidad no se veía nunca.** `workspace-brand.css` define
+   `--accent: #5b4021`, pero el shell aplicaba `#8E2A1C` en línea sobre `<html>`
+   en cada carga aunque nadie hubiera elegido color. Medido en navegador: la
+   hoja entregaba `#5b4021` y el shell lo pisaba. Ahora sin color elegido no se
+   toca nada y manda la hoja.
+2. **Elegir un color movía sólo `--accent`.** `--accent-hover`, `--accent-pressed`
+   y `--accent-soft` se quedaban en los tonos café de la marca, así que un botón
+   vino se oscurecía a café al tocarlo y su fondo suave salía beige. Los cuatro
+   tokens se calculan juntos en `lib/accent.ts`, un solo lugar en vez de la
+   paleta duplicada en dos archivos.
+3. **No había vuelta atrás.** Una vez elegido un color no se podía recuperar el
+   de la identidad. Se agregó la opción **Identidad**, que borra la preferencia
+   y retira las propiedades en línea.
+4. **Una clave de etiqueta repetida decía sólo «no fue posible guardar la
+   sucursal».** Ahora que la clave se captura a mano, chocar con la de otra
+   sucursal es un callejón sin salida si la pantalla no explica cuál fue el
+   problema. La función traduce la violación del índice único a
+   `LABEL_CODE_TAKEN` y Administración explica cada rechazo por su nombre.
+   De paso, los estados nuevos se marcan como error: con la regla anterior
+   —«es error si el nombre contiene *error*»— un rechazo nuevo salía pintado
+   de verde.
+
+Dos endurecimientos preventivos:
+
+- **La clave de etiqueta ya no se reacuña en silencio.** Un `update` que dejara
+  `label_code` en nulo no fallaba: el disparador acuñaba una clave nueva y la
+  sucursal cambiaba de identidad impresa. Hoy sólo la llega a tener un alta
+  nueva. No era alcanzable desde la interfaz —la tabla está cerrada— pero es un
+  valor que viaja pegado a la mercancía.
+- **La etiqueta fija su tipografía.** `.product-label` la heredaba de `body`,
+  que el rediseño acaba de cambiar de Archivo a PT Sans. Las medidas están en
+  puntos y no cambian, pero la letra sí, sobre un papel troquelado de 51 × 25 mm
+  ya calibrado físicamente. Queda fijada a Archivo, como el ticket fija la suya.
+  Si se quiere PT Sans en etiquetas, es una decisión con nueva prueba física.
+
+Medido en la aplicación real, en los cuatro tamaños que pide el criterio de
+aceptación del rediseño:
+
+| Tamaño | Barra inferior | Relleno del contenido | Botón de carrito | Scroll horizontal |
+| --- | --- | --- | --- | --- |
+| 390 × 844 | 92 px | 110 px | visible | no |
+| 768 × 1024 | 92 px | 110 px | visible | no |
+| 1024 × 1366 | barra lateral | — | no aplica | no |
+| escritorio | barra lateral | — | no aplica | no |
+
+- [x] Restaurar el acento de la identidad y mover con él sus tonos derivados.
+- [x] Permitir volver al acento de la identidad después de elegir otro.
+- [x] Dar nombre al choque de claves de etiqueta y explicarlo en pantalla.
+- [x] Impedir que una clave de etiqueta se reacuñe sola.
+- [x] Fijar la tipografía de la etiqueta impresa.
+- [ ] Reimprimir la etiqueta 51 × 25 en la EVA58 después de este despliegue:
+      el rediseño cambió la tipografía de la interfaz y conviene confirmar que
+      la etiqueta sigue saliendo igual que el 19 de septiembre.
+- [ ] El color y el tamaño de texto se aplican en `useEffect`, así que un
+      equipo con preferencia guardada muestra el valor por omisión durante el
+      primer cuadro. Quitarlo pide un script bloqueante en `app/layout.tsx`;
+      va aparte, no mezclado con una corrección.
+
+Nota menor, sin cambio: la prueba de integración de sucursales ocupa la clave
+literal `TST1`, que el índice único no libera. CI corre `supabase db reset`
+antes de las pruebas, así que ahí no falla; en local, una segunda corrida sin
+`pnpm db:reset` sí.
+
 ## Corrección operativa 0.32.2 — sucursal activa
 
 - [x] Conservar la sucursal elegida al navegar entre módulos y validar siempre
@@ -1426,3 +1676,35 @@ pueden convertirla en dos ventas.
       `transfers.receive` y acceso a La Piedad Prueba debe confirmar las cinco
       piezas. No se debe relajar la separación de funciones para cerrar una
       prueba.
+
+## Entrega 0.53.0 — alta propia en Mi Vaquero
+
+- [x] Separar “Ya tengo cuenta” de “Crear cuenta” en la PWA del cliente.
+- [x] Verificar el correo antes de crear o vincular el registro de cliente.
+- [x] Mantener cerrado el autorregistro de empleados y rechazar identidades de
+      personal en el flujo de clientes.
+- [x] Crear número de socio y tarjeta digital desde el perfil verificado.
+- [x] Tratar el consentimiento de marketing como opcional e independiente.
+- [x] Resolver conflictos de teléfono en tienda en vez de unir identidades por
+      un dato que todavía no fue verificado.
+- [x] Validar en servidor la sesión y la versión publicada del aviso.
+- [ ] Aprobar y publicar el aviso de privacidad; configurar
+      `CUSTOMER_PRIVACY_NOTICE_VERSION` y `CUSTOMER_PRIVACY_NOTICE_URL` en cada
+      entorno antes de habilitar el formulario.
+- [x] Definir acumulación, valor, vencimiento y tratamiento de devoluciones.
+
+## Entrega 0.54.0 — fundación de lealtad
+
+- [x] Crear saldo, lotes con vencimiento e historial inmutable.
+- [x] Acumular contado al concluir, crédito al liquidarse y apartado al
+      entregarse como venta.
+- [x] Recalcular puntos ante cancelación, cambio o devolución sin bloquear la
+      operación monetaria.
+- [x] Mostrar saldo e historial en Mi Vaquero y generar código temporal seguro.
+- [x] Separar visualmente el ícono de Mi Vaquero del de Mi Tienda SM.
+- [x] Consumir el código dentro de la misma transacción del cobro como forma de
+      pago `Puntos`, reflejarlo en el ticket y restaurarlo proporcionalmente en
+      devoluciones o cancelaciones sin convertirlo en efectivo.
+- [ ] Registrar explícitamente la tarifa de mayoreo para excluirla sin inferir
+      por precio.
+- [ ] Añadir controles administrativos de lanzamiento y configuración.

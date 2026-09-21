@@ -5,13 +5,15 @@ export const dynamic = "force-dynamic";
 export function GET(request: NextRequest) {
   const configuredHost = process.env.CUSTOMER_APP_HOST?.toLowerCase();
   const requestHost = request.headers.get("host")?.split(":")[0]?.toLowerCase();
-  const dedicatedOrigin = Boolean(configuredHost && requestHost === configuredHost);
+  const dedicatedOrigin = Boolean(
+    configuredHost && requestHost === configuredHost,
+  );
   const shell = dedicatedOrigin ? "/" : "/mi";
   const scope = dedicatedOrigin ? "/" : "/mi";
   const source = `
-const CACHE = "mi-vaquero-v2";
+const CACHE = "mi-vaquero-v3";
 const SHELL = ${JSON.stringify(shell)};
-const STATIC = [SHELL, "/mi/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
+const STATIC = [SHELL, "/mi/manifest.webmanifest", "/icons/mi-vaquero/icon-192.png", "/icons/mi-vaquero/icon-512.png"];
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(STATIC)).then(() => self.skipWaiting()));
 });

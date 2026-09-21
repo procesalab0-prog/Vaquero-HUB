@@ -203,6 +203,30 @@ export async function updateEmployee(formData: FormData) {
   redirect(`${adminPath}?tab=empleados&status=${status}`);
 }
 
+// Un error con nombre vale más que un «no se pudo»: la clave de etiqueta ahora
+// se captura a mano y chocar con la de otra sucursal es un callejón sin salida
+// si la pantalla no dice cuál fue el problema.
+const locationErrorStatuses: Record<string, string> = {
+  LABEL_CODE_TAKEN: "sucursal-etiqueta-ocupada",
+  INVALID_LABEL_CODE: "sucursal-etiqueta-invalida",
+  INVALID_LOCATION_CODE: "sucursal-codigo-invalido",
+  LOCATION_CODE_TAKEN: "sucursal-codigo-ocupado",
+  LOCATION_CODE_IMMUTABLE: "sucursal-codigo-inmutable",
+  TRANSIT_LOCATION_IS_NOT_EDITABLE: "sucursal-transito",
+  NOT_AUTHORIZED: "sucursal-sin-permiso",
+};
+
+function locationErrorStatus(error: unknown) {
+  const message =
+    typeof error === "object" && error && "message" in error
+      ? String((error as { message?: unknown }).message ?? "")
+      : String(error ?? "");
+  const match = Object.keys(locationErrorStatuses).find((key) =>
+    message.includes(key),
+  );
+  return match ? locationErrorStatuses[match] : "sucursal-error";
+}
+
 export async function saveLocation(formData: FormData) {
   let status = "sucursal-error";
   try {
@@ -250,8 +274,8 @@ export async function saveLocation(formData: FormData) {
       }
     }
     status = id ? "sucursal-actualizada" : "sucursal-creada";
-  } catch {
-    status = "sucursal-error";
+  } catch (error) {
+    status = locationErrorStatus(error);
   }
   revalidatePath(adminPath);
   redirect(`${adminPath}?tab=sucursales&status=${status}`);
