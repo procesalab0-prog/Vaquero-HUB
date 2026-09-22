@@ -422,3 +422,11 @@ que dice?_ Que exista el código no significa que funcione.
   sus primeros 3 segundos.
 - Cada cambio usa un desvanecimiento de 700 ms; los controles manuales y la
   pausa siguen disponibles, y la preferencia de movimiento reducido se respeta.
+
+### Corrección 0.55.3 — orden solicitado de la campaña
+
+- La numeración indicada por el cliente correspondía al orden visible, no al
+  nombre interno de los archivos. Se retira el primer video que se mostraba
+  (`campaign-02`) y se restaura `campaign-01`.
+- La secuencia definitiva queda 03, 01, 04 y 05: del primero se muestran sólo
+  sus primeros 8 segundos y el segundo empieza después de sus primeros 3.

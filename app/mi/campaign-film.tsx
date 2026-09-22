@@ -6,8 +6,8 @@ import { useEffect, useRef, useState } from "react";
 type Film = { id: number; startAt?: number; endAt?: number };
 
 const films: Film[] = [
-  { id: 2, endAt: 10 },
-  { id: 3, startAt: 3 },
+  { id: 3, endAt: 8 },
+  { id: 1, startAt: 3 },
   { id: 4 },
   { id: 5 },
 ];

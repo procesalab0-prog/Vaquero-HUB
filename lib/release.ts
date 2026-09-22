@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.55.2";
-export const APP_RELEASE = "Videos de Mi Vaquero en secuencia";
+export const APP_VERSION = "0.55.3";
+export const APP_RELEASE = "Orden audiovisual corregido";

@@ -26,16 +26,16 @@ test("Mi Vaquero conserva su instalación separada y el recorrido editorial", as
   await expect(page.locator("video")).not.toHaveAttribute("src");
   await expect(page.locator("video")).toHaveAttribute(
     "poster",
-    "/mi-media/campaign-02.jpg",
+    "/mi-media/campaign-03.jpg",
   );
-  await expect(page.locator("video")).toHaveAttribute("data-end-at", "10");
+  await expect(page.locator("video")).toHaveAttribute("data-end-at", "8");
   await expect(page.getByText("/ 04", { exact: true })).toBeVisible();
   await page
     .getByRole("button", { name: "Video siguiente", exact: true })
     .click();
   await expect(page.locator("video")).toHaveAttribute(
     "poster",
-    "/mi-media/campaign-03.jpg",
+    "/mi-media/campaign-01.jpg",
   );
   await expect(page.locator("video")).toHaveAttribute("data-start-at", "3");
   await page.getByRole("button", { name: "Tarjeta", exact: true }).click();
