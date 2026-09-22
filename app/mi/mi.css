@@ -245,6 +245,11 @@
   object-fit: cover;
   object-position: 50% 42%;
   z-index: -3;
+  opacity: 1;
+  transition: opacity 700ms ease;
+}
+.mi-film.is-fading {
+  opacity: 0;
 }
 .mi-hero-shade {
   position: absolute;

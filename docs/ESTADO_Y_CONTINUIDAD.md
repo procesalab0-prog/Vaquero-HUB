@@ -413,3 +413,12 @@ que dice?_ Que exista el código no significa que funcione.
 - El proxy excluye explícitamente videos y fuentes públicas de la autenticación
   interna. En producción ya no se redirigen a `/login`; una prueba de navegador
   exige respuesta 200 para ambos tipos de recurso.
+
+### Corrección 0.55.2 — secuencia audiovisual de Mi Vaquero
+
+- La portada deja fuera el video 01 y reproduce en orden los videos 02, 03, 04
+  y 05. Al terminar el último vuelve al 02 automáticamente.
+- El video 02 se limita a sus primeros 10 segundos y el 03 comienza después de
+  sus primeros 3 segundos.
+- Cada cambio usa un desvanecimiento de 700 ms; los controles manuales y la
+  pausa siguen disponibles, y la preferencia de movimiento reducido se respeta.

@@ -24,6 +24,12 @@ test("Mi Vaquero conserva su instalación separada y el recorrido editorial", as
   expect((await request.get("/mi-media/campaign-02.mp4")).status()).toBe(200);
   expect((await request.get("/fonts/pt-sans-regular.ttf")).status()).toBe(200);
   await expect(page.locator("video")).not.toHaveAttribute("src");
+  await expect(page.locator("video")).toHaveAttribute(
+    "poster",
+    "/mi-media/campaign-02.jpg",
+  );
+  await expect(page.locator("video")).toHaveAttribute("data-end-at", "10");
+  await expect(page.getByText("/ 04", { exact: true })).toBeVisible();
   await page
     .getByRole("button", { name: "Video siguiente", exact: true })
     .click();
@@ -31,6 +37,7 @@ test("Mi Vaquero conserva su instalación separada y el recorrido editorial", as
     "poster",
     "/mi-media/campaign-03.jpg",
   );
+  await expect(page.locator("video")).toHaveAttribute("data-start-at", "3");
   await page.getByRole("button", { name: "Tarjeta", exact: true }).click();
   await expect(
     page.getByRole("button", {
