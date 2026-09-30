@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { APP_RELEASE, APP_VERSION } from "@/lib/release";
 import { ACCENT_EVENT, applyAccent, storedAccent } from "@/lib/accent";
@@ -24,7 +24,7 @@ import type { LucideIcon } from "lucide-react";
 import type { WorkspaceIdentity } from "@/lib/auth/types";
 import { WorkspaceContext } from "@/components/workspace-context";
 import { LA_PIEDAD_STORE } from "@/lib/business-profile";
-import { saveActiveLocationPreference } from "@/lib/location-preference";
+import { pickActiveLocation, saveActiveLocationPreference } from "@/lib/location-preference";
 
 const navigation: Array<{
   href: string;
@@ -79,17 +79,21 @@ export function WorkspaceShell({
 }) {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(true);
   const activeIdentity = identity ?? demoIdentity;
-  const [activeLocationId, setActiveLocationId] = useState(
-    initialLocationId || activeIdentity.locations[0]?.id || "",
+  const activeLocation = pickActiveLocation(
+    activeIdentity.locations,
+    searchParams.get("ubicacion") ?? undefined,
+    initialLocationId,
   );
-  const activeLocation = activeIdentity.locations.find(
-    (location) => location.id === activeLocationId,
-  );
+  const activeLocationId = activeLocation?.id ?? "";
+  useEffect(() => {
+    saveActiveLocationPreference(activeLocationId);
+  }, [activeLocationId]);
   const cashLocation = activeIdentity.locations.find(
     (location) => location.id === activeIdentity.openCashSession?.locationId,
   );
@@ -138,7 +142,6 @@ export function WorkspaceShell({
   }
 
   function changeLocation(locationId: string) {
-    setActiveLocationId(locationId);
     saveActiveLocationPreference(locationId);
     const next = new URLSearchParams(window.location.search);
     next.set("ubicacion", locationId);

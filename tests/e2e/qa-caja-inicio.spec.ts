@@ -24,3 +24,37 @@ test("un corte nuevo no hereda conteo ni motivo del anterior", async ({
     page.getByRole("button", { name: "Confirmar y cerrar" }),
   ).toHaveCount(0);
 });
+
+test("la sucursal de la URL persiste y acompaña la navegación de la caja", async ({
+  page,
+}) => {
+  await page.goto("/caja?ubicacion=demo-la-piedad");
+  await expect(page.locator(".location-pill .location-name")).toHaveText(
+    "La Piedad",
+  );
+  await expect
+    .poll(
+      async () =>
+        (await page.context().cookies()).find(
+          (cookie) => cookie.name === "mi_tienda_active_location",
+        )?.value,
+    )
+    .toBe("demo-la-piedad");
+  const inventoryLink = page
+    .locator(".nav-rail")
+    .getByRole("link", { name: "Inventario", exact: true });
+  await expect(inventoryLink).toHaveAttribute(
+    "href",
+    "/inventario?ubicacion=demo-la-piedad",
+  );
+  await inventoryLink.click();
+  await expect(page).toHaveURL(/\/inventario\?ubicacion=demo-la-piedad/);
+  await page.goBack();
+  await expect(page.locator(".location-pill .location-name")).toHaveText(
+    "La Piedad",
+  );
+  await page.reload();
+  await expect(page.locator(".location-pill .location-name")).toHaveText(
+    "La Piedad",
+  );
+});

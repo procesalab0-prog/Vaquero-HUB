@@ -4,7 +4,8 @@ import { AlertTriangle, ArrowRight, CircleDollarSign, PackagePlus, PackageCheck,
 import { resolveActiveLocation } from "@/lib/auth/active-location";
 import { getWorkspaceSession } from "@/lib/auth/workspace-session";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import type { InventoryReport, SalesReport } from "../reportes/reports-workspace";
+import type { SalesReport } from "../reportes/reports-workspace";
+import { INVENTORY_SNAPSHOT_LIMIT, summarizeInventory } from "@/lib/inventory-summary";
 import { DashboardGreeting } from "./dashboard-greeting";
 
 export const metadata: Metadata = { title: "Inicio" };
@@ -34,7 +35,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const location = configured ? await resolveActiveLocation(locations, params.ubicacion) : null;
   const link = (path: string) => location ? `${path}?ubicacion=${encodeURIComponent(location.id)}` : path;
   let sales: SalesReport | null = null;
-  let inventory: InventoryReport | null = null;
+  let inventory: Array<{ available_qty: number | string }> | null = null;
   let recent: RecentTicket[] = [];
   let cashSession: CashSessionSummary | null = null;
   let canReportSales = false;
@@ -43,7 +44,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   if (location && session?.supabase && profile?.is_active) {
     const { supabase } = session;
-    const permissionsResult = await supabase.from("role_permissions").select("permission_code").eq("role_id", profile.role_id).in("permission_code", ["reports.sales", "reports.inventory", "pos.sell", "cash.open"]);
+    const permissionsResult = await supabase.from("role_permissions").select("permission_code").eq("role_id", profile.role_id).in("permission_code", ["reports.sales", "inventory.read", "pos.sell", "cash.open"]);
     if (permissionsResult.error) {
       errors.push("No fue posible comprobar los permisos del resumen.");
     } else {
@@ -53,14 +54,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       const range = todayRange();
       const [salesResult, inventoryResult, ticketsResult, cashResult] = await Promise.all([
         canReportSales ? supabase.rpc("get_sales_report", { p_location_id: location.id, p_from: range.from, p_to: range.to, p_grouping: "day", p_query: "" }) : null,
-        permissions.has("reports.inventory") ? supabase.rpc("get_inventory_report", { p_location_id: location.id, p_query: "" }) : null,
+        permissions.has("inventory.read") ? supabase.rpc("get_inventory_snapshot", { p_location_id: location.id, p_query: "", p_limit: INVENTORY_SNAPSHOT_LIMIT }) : null,
         permissions.has("pos.sell") ? supabase.rpc("list_sale_tickets", { p_location_id: location.id, p_query: "", p_from: null, p_to: null, p_limit: 5 }) : null,
           canViewCash ? supabase.rpc("get_my_cash_session") : null,
       ]);
       if (salesResult?.error) errors.push("No fue posible cargar las ventas de hoy.");
       else sales = (salesResult?.data as SalesReport | null) ?? null;
       if (inventoryResult?.error) errors.push("No fue posible cargar el inventario.");
-      else inventory = (inventoryResult?.data as InventoryReport | null) ?? null;
+      else inventory = (inventoryResult?.data as Array<{ available_qty: number | string }> | null) ?? null;
       if (ticketsResult?.error) errors.push("No fue posible cargar los tickets recientes.");
       else recent = (ticketsResult?.data as RecentTicket[] | null) ?? [];
       if (cashResult?.error) { errors.push("No fue posible cargar el estado de caja."); canViewCash = false; }
@@ -69,7 +70,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   }
 
   const salesSummary = sales?.summary;
-  const inventorySummary = inventory?.summary;
+  const inventorySummary = inventory ? summarizeInventory(inventory.map((item) => ({ availableQuantity: Number(item.available_qty) }))) : null;
   const cashLocation = locations.find((item) => item.id === cashSession?.location_id);
 
   return <section className="module-page dashboard-page">
@@ -81,7 +82,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       <article className="metric-card metric-sales"><span className="metric-icon"><CircleDollarSign aria-hidden="true" /></span><span>Venta de hoy{location ? ` · ${location.name}` : ""}</span><strong>{salesSummary ? money.format(Number(salesSummary.net_cents) / 100) : "—"}</strong><small>{salesSummary ? `${salesSummary.sale_count} tickets · promedio ${money.format(salesSummary.sale_count ? Number(salesSummary.net_cents) / salesSummary.sale_count / 100 : 0)}` : "Disponible para gerencia en Reportes"}</small></article>
       <article className="metric-card metric-cash"><span className="metric-icon"><Store aria-hidden="true" /></span><span>Mi caja</span><strong>{canViewCash ? cashSession ? "Abierta" : "Sin turno abierto" : "—"}</strong><small>{cashSession ? `${cashSession.register_name} · ${cashLocation?.name ?? "otra sucursal"}` : canViewCash ? "El efectivo esperado se revela sólo después del conteo" : "Consulta Caja para ver el estado de tu turno"}</small></article>
       <article className="metric-card metric-units"><span className="metric-icon"><PackageCheck aria-hidden="true" /></span><span>Unidades vendidas hoy</span><strong>{salesSummary ? Number(salesSummary.item_count) : "—"}</strong><small>{salesSummary ? "Ventas completadas de esta sucursal" : "Disponible para gerencia en Reportes"}</small></article>
-      <article className="metric-card metric-alert"><span className="metric-icon"><AlertTriangle aria-hidden="true" /></span><span>Inventario crítico</span><strong>{inventorySummary ? Number(inventorySummary.out_count) + Number(inventorySummary.low_count) : "—"}</strong><small>{inventorySummary ? `${inventorySummary.out_count} agotadas · ${inventorySummary.low_count} con hasta 2 disponibles` : "Disponible para gerencia en Reportes"}</small></article>
+      <article className="metric-card metric-alert"><span className="metric-icon"><AlertTriangle aria-hidden="true" /></span><span>Variantes agotadas</span><strong>{inventorySummary ? inventorySummary.outCount : "—"}</strong><small>{inventorySummary ? `${inventorySummary.lowCount} con hasta 2 disponibles${inventory?.length === INVENTORY_SNAPSHOT_LIMIT ? ` · primeras ${INVENTORY_SNAPSHOT_LIMIT} variantes` : ""}` : "Disponible con acceso a Inventario"}</small></article>
     </div>
     <div className="dashboard-columns">
       <section className="content-card"><div className="card-heading"><div><p className="eyebrow">Accesos rápidos</p><h2>Operación diaria</h2></div></div><div className="quick-actions">
@@ -91,7 +92,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <Link href={link("/caja")}><CircleDollarSign aria-hidden="true" /><span><strong>Revisar caja</strong><small>Movimientos y corte</small></span><ArrowRight aria-hidden="true" /></Link>
       </div></section>
       <section className="content-card"><div className="card-heading"><div><p className="eyebrow">Atención</p><h2>Inventario de {location?.name ?? "la sucursal"}</h2></div><Link href={link("/inventario")}>Ver inventario</Link></div><div className="alert-list">
-        {inventorySummary ? <><article><span className="alert-icon error"><AlertTriangle aria-hidden="true" /></span><div><strong>Agotadas: {inventorySummary.out_count}</strong><p>Variantes sin disponibilidad en esta sucursal.</p></div></article><article><span className="alert-icon warning"><AlertTriangle aria-hidden="true" /></span><div><strong>Existencia baja: {inventorySummary.low_count}</strong><p>Variantes con una o dos piezas disponibles.</p></div></article></> : <p className="empty-copy">Consulta Inventario para revisar las existencias de esta sucursal.</p>}
+        {inventorySummary ? <><article><span className="alert-icon error"><AlertTriangle aria-hidden="true" /></span><div><strong>Agotadas: {inventorySummary.outCount}</strong><p>Variantes sin disponibilidad en esta sucursal.</p></div></article><article><span className="alert-icon warning"><AlertTriangle aria-hidden="true" /></span><div><strong>Existencia baja: {inventorySummary.lowCount}</strong><p>Variantes con una o dos piezas disponibles.</p></div></article></> : <p className="empty-copy">Consulta Inventario para revisar las existencias de esta sucursal.</p>}
       </div></section>
     </div>
     <section className="content-card recent-sales"><div className="card-heading"><div><p className="eyebrow">Actividad</p><h2>{canReportSales ? "Ventas recientes" : "Mis ventas recientes"}</h2></div><Link href={link("/tickets")}>Ver todos los tickets</Link></div>
