@@ -49,7 +49,10 @@ export default async function CashPage({
   ]);
   return (
     <CashRegister
+      key={(sessionResult.data as { id?: string } | null)?.id ?? `sin-caja-${location.id}`}
       locationId={location.id}
+      selectedLocationName={location.name}
+      sessionLocationName={locations.find((item) => item.id === (sessionResult.data as { location_id?: string } | null)?.location_id)?.name}
       canManageRegisters={Boolean(managePermission.data)}
       registers={(registersResult.data ?? []) as never[]}
       session={(sessionResult.data as never) ?? null}

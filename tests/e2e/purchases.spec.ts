@@ -19,6 +19,18 @@ test.describe("M6 compras", () => {
     ).toBeVisible();
   });
 
+  test("conserva la pestaña de Compras al recargar y navegar atrás", async ({ page }) => {
+    await page.goto("/compras?tab=proveedores");
+    await page.getByRole("tab", { name: /Órdenes/ }).click();
+    await expect(page).toHaveURL(/tab=ordenes/);
+    await page.reload();
+    await expect(page.getByRole("tab", { name: /Órdenes/ })).toHaveAttribute("aria-selected", "true");
+    await page.goBack();
+    await expect(page.getByRole("tab", { name: /Proveedores/ })).toHaveAttribute("aria-selected", "true");
+    await page.goForward();
+    await expect(page.getByRole("tab", { name: /Órdenes/ })).toHaveAttribute("aria-selected", "true");
+  });
+
   test("en teléfono vertical permite recorrer y tocar las cuatro secciones", async ({
     page,
   }) => {

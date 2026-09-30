@@ -136,7 +136,13 @@ export function PurchasesWorkspace({
   ).includes(initialTab as Tab)
     ? (initialTab as Tab)
     : "ordenes";
-  const [tab, setTab] = useState<Tab>(validTab);
+  const tab = validTab;
+
+  function selectTab(nextTab: Tab) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", nextTab);
+    router.push(`${url.pathname}${url.search}`);
+  }
   const [notice, setNotice] = useState("");
   const [isPending, startTransition] = useTransition();
   const [orderOpen, setOrderOpen] = useState(false);
@@ -237,7 +243,7 @@ export function PurchasesWorkspace({
         order.items.map((item) => [item.id, item.remaining_qty]),
       ),
     );
-    setTab("recibir");
+    selectTab("recibir");
   }
   function printReceiptLabels(receipt: ReceiptView) {
     sessionStorage.setItem(
@@ -297,7 +303,7 @@ export function PurchasesWorkspace({
         ).map(([value, label, Icon]) => (
           <button
             className={tab === value ? "active" : ""}
-            onClick={() => setTab(value)}
+            onClick={() => selectTab(value)}
             role="tab"
             aria-selected={tab === value}
             key={value}
