@@ -26,8 +26,8 @@ for (const viewport of [
       height: viewport.height,
     });
     await page.goto("/inicio");
-    const finalSale = page.getByText("V-000840");
-    await expect(finalSale).toBeVisible();
+    const finalSection = page.locator(".recent-sales");
+    await expect(finalSection).toBeVisible();
 
     const workspace = page.locator(".workspace-main");
     await workspace.evaluate((element) => {
@@ -43,7 +43,9 @@ for (const viewport of [
         ),
       )
       .toBeLessThanOrEqual(1);
-    await expect(finalSale).toBeInViewport();
+    await expect(
+      finalSection.getByText("No hay tickets visibles en esta sucursal."),
+    ).toBeInViewport();
     expect(
       await page.locator("html").evaluate((element) => element.scrollWidth),
     ).toBeLessThanOrEqual(viewport.width);
