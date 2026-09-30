@@ -1,5 +1,7 @@
 "use client";
 
+import { INVENTORY_SNAPSHOT_LIMIT, summarizeInventory } from "@/lib/inventory-summary";
+
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -669,6 +671,7 @@ export function InventoryWorkspace({
   status?: string;
   preview?: boolean;
 }) {
+  const inventorySummary = summarizeInventory(items);
   const { identity } = useWorkspace();
   const [showMovements, setShowMovements] = useState(false);
   const [showCounts, setShowCounts] = useState(false);
@@ -798,7 +801,7 @@ export function InventoryWorkspace({
         <article>
           <span>Variantes agotadas</span>
           <strong>
-            {items.filter((item) => item.availableQuantity <= 0).length}
+            {inventorySummary.outCount}
           </strong>
         </article>
       </div>
@@ -807,6 +810,7 @@ export function InventoryWorkspace({
         <ShieldCheck aria-hidden="true" />
         <div>
           <strong>Inventario auditable</strong>
+          {items.length === INVENTORY_SNAPSHOT_LIMIT ? <span>Resumen de las primeras {INVENTORY_SNAPSHOT_LIMIT} variantes del catálogo, igual que Inicio.</span> : null}
           <span>
             Cada corrección conserva la cantidad anterior, la nueva, el motivo y
             la persona que la realizó.

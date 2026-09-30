@@ -9,6 +9,7 @@ import type {
   InventoryTransfer,
 } from "@/lib/domain";
 import { mockVariants } from "@/lib/mock-data";
+import { INVENTORY_SNAPSHOT_LIMIT } from "@/lib/inventory-summary";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   applyInventoryAdjustment,
@@ -222,7 +223,7 @@ export default async function InventoryPage({
     supabase.rpc("get_inventory_snapshot", {
       p_location_id: activeLocation.id,
       p_query: "",
-      p_limit: 500,
+      p_limit: INVENTORY_SNAPSHOT_LIMIT,
     }),
     supabase.rpc("list_inventory_movements", {
       p_location_id: activeLocation.id,
