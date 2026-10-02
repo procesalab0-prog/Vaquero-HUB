@@ -11,6 +11,7 @@ import {
   bulkUpdateVariantStatus,
   commitCatalogImport,
   createCatalogProduct,
+  createCatalogProductWithWeb,
   lookupCatalogBarcode,
   previewCatalogImport,
   registerVariantBarcode,
@@ -181,6 +182,11 @@ export default async function ProductsPage({
         </p>
       )}
       <ProductsWorkspace
+        webDraftsEnabled={
+          process.env.NEXT_PUBLIC_SUPABASE_URL ===
+          "https://zsezjtswqeijboezvado.supabase.co"
+        }
+        createWebAction={canCreate ? createCatalogProductWithWeb : undefined}
         initialVariants={variants}
         categories={(categoriesResult.data ?? []) as Category[]}
         attributeValues={(valuesResult.data ?? []) as AttributeValue[]}

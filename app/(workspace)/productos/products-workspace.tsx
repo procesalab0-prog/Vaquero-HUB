@@ -22,6 +22,7 @@ import type { CatalogImportState } from "@/lib/catalog-import-shared";
 import type { BatchActionResult, ProductVariant } from "@/lib/domain";
 import { CatalogBatchActions } from "./catalog-batch-actions";
 import { CatalogImportDialog } from "./catalog-import-dialog";
+import { WebFields } from "./ficha-web/fields";
 
 type Category = {
   id: string;
@@ -40,6 +41,10 @@ type Props = {
   initialVariants: ProductVariant[];
   categories: Category[];
   attributeValues: AttributeValue[];
+  webDraftsEnabled?: boolean;
+  createWebAction?: (
+    formData: FormData,
+  ) => Promise<{ productId?: string; error?: string; photoPending?: boolean }>;
   preview?: boolean;
   status?: string;
   createAction?: (formData: FormData) => Promise<void>;
@@ -167,6 +172,8 @@ export function ProductsWorkspace({
   previewImportAction,
   commitImportAction,
   initialImportState,
+  webDraftsEnabled = false,
+  createWebAction,
 }: Props) {
   const availableCategories = categories.length
     ? categories
@@ -174,6 +181,10 @@ export function ProductsWorkspace({
   const availableValues = attributeValues.length
     ? attributeValues
     : previewValues;
+  const [prepareWeb, setPrepareWeb] = useState(false);
+  const [webRequest, setWebRequest] = useState("");
+  const [webError, setWebError] = useState("");
+  const [webBusy, setWebBusy] = useState(false);
   const [variants, setVariants] = useState(initialVariants);
   const [modalMode, setModalMode] = useState<ModalMode | null>(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -395,6 +406,9 @@ export function ProductsWorkspace({
   }
 
   function openCreateModal() {
+    setWebRequest(crypto.randomUUID());
+    setWebError("");
+    setPrepareWeb(false);
     resetVariantSelection();
     setSelectedCategory("");
     setModalMode("create");
@@ -790,6 +804,13 @@ export function ProductsWorkspace({
                   <em className="variant-inactive">Dada de baja</em>
                 ) : null}
                 <small>{item.brand}</small>
+                {webDraftsEnabled && item.productId && (
+                  <Link
+                    href={`/productos/ficha-web?producto=${item.productId}`}
+                  >
+                    Ficha web
+                  </Link>
+                )}
               </strong>
             </div>
             <code>{item.legacyCode}</code>
@@ -856,6 +877,42 @@ export function ProductsWorkspace({
               </button>
             </header>
             <form
+              onChange={() => {
+                if (modalMode === "create") {
+                  setWebRequest(crypto.randomUUID());
+                  setWebError("");
+                }
+              }}
+              onSubmit={async (event) => {
+                if (
+                  preview ||
+                  modalMode !== "create" ||
+                  !prepareWeb ||
+                  !createWebAction
+                )
+                  return;
+                event.preventDefault();
+                if (webBusy) return;
+                const form = new FormData(event.currentTarget);
+                setWebBusy(true);
+                try {
+                  const result = await createWebAction(form);
+                  if (result.productId)
+                    window.location.assign(
+                      `/productos/ficha-web?producto=${result.productId}${result.photoPending ? "&foto=pendiente" : ""}`,
+                    );
+                  else
+                    setWebError(
+                      result.error ?? "No se confirmó el guardado. Reintenta.",
+                    );
+                } catch {
+                  setWebError(
+                    "No se confirmó el guardado. Conservamos la captura; reintenta.",
+                  );
+                } finally {
+                  setWebBusy(false);
+                }
+              }}
               action={
                 preview
                   ? modalMode === "create"
@@ -946,6 +1003,33 @@ export function ProductsWorkspace({
                   />
                 </label>
               </div>
+              {modalMode === "create" && webDraftsEnabled && (
+                <section className="wide-field">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={prepareWeb}
+                      onChange={(e) => setPrepareWeb(e.target.checked)}
+                    />{" "}
+                    Preparar también ficha para tienda en línea
+                  </label>
+                  {prepareWeb && (
+                    <>
+                      <p>
+                        Se guarda junto al producto en staging. El envío a
+                        WooCommerce está desactivado.
+                      </p>
+                      <input
+                        type="hidden"
+                        name="web_request_id"
+                        value={webRequest}
+                      />
+                      <WebFields nameOptional />
+                      {webError && <p role="alert">{webError}</p>}
+                    </>
+                  )}
+                </section>
+              )}
               <div className="size-picker color-picker">
                 <span>1. Selecciona uno o varios colores</span>
                 <div className="picker-quick-actions">
@@ -1118,6 +1202,7 @@ export function ProductsWorkspace({
                 </button>
                 <SubmitButton
                   count={activeCombinations.length}
+                  busy={webBusy}
                   mode={modalMode}
                 />
               </div>
@@ -1480,15 +1565,23 @@ function EditSubmitButton({ label }: { label: string }) {
   );
 }
 
-function SubmitButton({ count, mode }: { count: number; mode: ModalMode }) {
+function SubmitButton({
+  count,
+  mode,
+  busy = false,
+}: {
+  count: number;
+  mode: ModalMode;
+  busy?: boolean;
+}) {
   const { pending } = useFormStatus();
   return (
     <button
       className="primary-button"
       type="submit"
-      disabled={pending || count === 0}
+      disabled={pending || busy || count === 0}
     >
-      {pending
+      {pending || busy
         ? "Guardando…"
         : `${mode === "create" ? "Crear" : "Agregar"} ${count || ""} ${count === 1 ? "variante" : "variantes"}`}
     </button>

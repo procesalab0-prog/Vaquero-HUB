@@ -126,6 +126,9 @@ export function MigrationReview({
                 </dd>
               </div>
             </dl>
+            <Link href={`/productos/ficha-web?variante=${row.id}`}>
+              Revisar ficha web
+            </Link>
             <details>
               <summary>Identificación y vínculo web</summary>
               <p>Descripción SICAR: {row.source_description}</p>
@@ -137,8 +140,8 @@ export function MigrationReview({
                   : ""}
               </p>
               <p>
-                Fotos y descripción comercial: pendientes de incorporar al
-                sistema.
+                Fotos y descripción comercial: disponibles para preparar en la
+                ficha web.
               </p>
             </details>
           </article>

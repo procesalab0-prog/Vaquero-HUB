@@ -1,0 +1,93 @@
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px;
+  overflow-wrap: anywhere;
+}
+.page h1,
+.page h2,
+.page h3 {
+  margin: 18px 0 10px;
+}
+.notice {
+  padding: 12px;
+  border: 1px solid currentColor;
+  border-radius: 12px;
+}
+.fields {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.fields textarea {
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+}
+.fields input,
+.fields textarea {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0;
+}
+.actions button,
+.upload button {
+  min-height: 44px;
+  padding: 10px 18px;
+}
+.upload,
+.preview {
+  border: 1px solid var(--border, #aaa);
+  border-radius: 14px;
+  padding: 16px;
+  margin: 20px 0;
+}
+.upload {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+.upload input {
+  display: block;
+  max-width: 100%;
+}
+.gallery {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.gallery figure {
+  margin: 0;
+  max-width: 100%;
+}
+.gallery img {
+  object-fit: contain;
+  max-width: 100%;
+}
+.copy {
+  white-space: pre-wrap;
+}
+.variants {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 12px;
+}
+.variants article {
+  border: 1px solid var(--border, #aaa);
+  border-radius: 12px;
+  padding: 12px;
+}
+@media (max-width: 600px) {
+  .page {
+    padding: 12px;
+  }
+  .fields :global(.settings-form) {
+    grid-template-columns: 1fr;
+  }
+}
