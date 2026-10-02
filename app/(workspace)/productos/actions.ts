@@ -1,5 +1,7 @@
 "use server";
 
+import { parseCatalogCents as cents } from "@/lib/catalog-money";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -131,13 +133,6 @@ export async function bulkUpdateVariantPrices(
 
 function textField(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
-}
-
-function cents(value: string) {
-  const amount = Number(value);
-  return Number.isFinite(amount) && amount >= 0
-    ? Math.round(amount * 100)
-    : null;
 }
 
 function catalogErrorStatus(error: unknown) {

@@ -1380,7 +1380,8 @@ export function ProductsWorkspace({
                         inputMode="decimal"
                         min="0"
                         step="0.01"
-                        defaultValue={editingVariant.cost ?? 0}
+                        defaultValue={editingVariant.cost ?? ""}
+                        placeholder="Sin capturar"
                         required
                       />
                     </label>
