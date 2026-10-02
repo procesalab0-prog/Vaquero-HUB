@@ -23,6 +23,7 @@ export function MigrationReview({
         <p>Catálogo de pruebas · Solo consulta · Existencias no importadas</p>
       </header>
       <form
+        key={reviewHref(filters, data.page)}
         method="get"
         className={styles.filters}
         action="/productos/migracion"
