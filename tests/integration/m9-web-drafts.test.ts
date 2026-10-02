@@ -45,7 +45,7 @@ describe.sequential(
             await server.from("app_users").insert({
               id: auth.data.user!.id,
               email,
-              employee_code: `WEB${suffix}`,
+              employee_code: `WEB${suffix.toUpperCase()}`,
               full_name: `Prueba ${role}`,
               role_id: roles!.find((r) => r.code === role)!.id,
             })
