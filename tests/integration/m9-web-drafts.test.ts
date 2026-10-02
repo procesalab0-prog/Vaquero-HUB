@@ -60,10 +60,9 @@ describe.sequential(
       }
       expect(
         (
-          await server.rpc("configure_sicar_staging", {
-            p_environment: "STAGING",
-            p_enabled: true,
-            p_confirmation: "STAGING CATALOG ONLY",
+          await server.rpc("configure_sicar_catalog_staging", {
+            p_project_ref: "zsezjtswqeijboezvado",
+            p_confirmation: "ENABLE CATALOG ONLY",
           })
         ).error,
       ).toBeNull();
