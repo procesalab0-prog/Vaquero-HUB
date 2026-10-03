@@ -3513,3 +3513,14 @@ Ensayo supervisado con diario separado, conservando revisiones/marcadores origin
 Evidencia: outputs/m9-lote-actualizacion-2026-10-03 (ensayar.mjs, run/before.json, after.json, plans.json, cuatro resultados, verification.json, journal-integrity.json, captura y procedimiento-del-corte.md). Procedimiento propuesto exige fuentes frescas, lectura final de IDs, comparacion antes/despues y reversion selectiva protegida contra ventas/ediciones posteriores. Respaldo y recuperacion del destino real siguen pendientes; no sustituirlos por el laboratorio.
 
 Estimacion tecnica 85% por lector fisico confirmado y ensayo conjunto completado, no porcentaje de catalogo publicado. Staging abierto. Pendientes: aprobacion comercial, casos excluidos, fuentes frescas, respaldo/reversion real y autorizacion de produccion. Mejoras del otro chat pospuestas por usuario. Version 0.63.0 sin cambios funcionales ni nuevo despliegue de codigo. Sin escrituras Supabase/Woo produccion ni importacion de existencias.
+
+
+## Registro vivo - errores y reversion selectiva local (2026-10-03)
+
+Cinco escenarios ejecutados contra familia SINTETICA local 23/hijo24: edicion concurrente detectada antes del envio (cero escrituras), perdida de conexion antes del envio (reintento cero solicitudes), perdida de respuesta tras PUT real (conciliacion GET por ID conocido, padre escrito una vez y continuacion del hijo), reversion de precio conservando edicion posterior del nombre, y bloqueo de reversion ante cambio posterior del mismo precio. Datos simulados limpiados con guardas; seis padres/23 hijos comparados contra estado anterior iguales salvo fechas de modificacion. Diario original verificado contra respaldo; diarios de ensayo separados.
+
+Esto prueba el flujo supervisado local; NO ofrece compare-and-swap atomico ni resuelve la ventana entre GET/PUT en produccion. Falta definir/validar concurrencia en destino real. No hay ventas ni existencias importadas.
+
+Comparativo comercial preparado: cuatro familias/17 variantes/14 fotos locales; texto de exportacion Woo 1 de octubre frente a texto ensayado. Navegador verificado en localhost9430, solo lectura, no publicacion. Evidencia outputs/m9-errores-reversion-2026-10-03 (reporte, scripts, run/verification.json, catalogue-final.json, comparativo HTML/JSON/fotos y captura).
+
+Version 0.63.0 sin cambios funcionales de app. Estimacion 85% se mantiene. Staging abierto; respaldo real pendiente de acceso Hostinger con verificacion del usuario, decisiones comerciales y fuentes frescas pendientes. Ninguna escritura de produccion o staging.
