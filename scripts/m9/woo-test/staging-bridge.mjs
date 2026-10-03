@@ -41,9 +41,11 @@ export function claimedInput(claim, baseline) {
     "CLAIM_REQUIRED",
   );
   assert(
-    ((p?.version === 1 && p.mode === "create") ||
-      (p?.version === 2 && p.mode === "update")) &&
-      p.type === "simple" &&
+    ((p?.version === 1 && p.type === "simple" && p.mode === "create") ||
+      (p?.version === 2 && p.type === "simple" && p.mode === "update") ||
+      (p?.version === 3 && p.type === "variable" && p.mode === "create") ||
+      (p?.version === 4 && p.type === "variable" && p.mode === "update")) &&
+      (p.type === "simple" || p.type === "variable") &&
       p.store?.id === "m9-local-2026-10-02" &&
       localStore(p.store) === "http://127.0.0.1:9417",
     "LOCAL_CLAIM_ONLY",
@@ -52,29 +54,47 @@ export function claimedInput(claim, baseline) {
     p.category_evidence?.valid === true &&
       p.catalog?.active === true &&
       p.catalog.product_id === p.product_id &&
-      p.catalog.variants?.length === 1 &&
-      p.catalog.variants[0].active === true &&
-      Object.keys(p.catalog.variants[0].attributes).length === 0,
+      Array.isArray(p.catalog.variants) &&
+      p.catalog.variants.length > 0 &&
+      p.catalog.variants.every((v) => v.active === true) &&
+      (p.type === "simple"
+        ? p.catalog.variants.length === 1 &&
+          Object.keys(p.catalog.variants[0].attributes).length === 0
+        : p.catalog.variants.length >= 2 &&
+          p.family_evidence?.catalog_fingerprint === p.fingerprint &&
+          p.family_evidence?.source_fingerprint === p.source_fingerprint &&
+          /^[a-f0-9]{64}$/.test(p.family_evidence?.evidence_sha256)),
     "CLAIM_REVIEW_REQUIRED",
   );
   p.content.images.forEach((i) => sourceImage(i.url));
-  const v = p.catalog.variants[0];
+  categoryNodes(p.content.categories);
   const input = {
     store: p.store,
     product_id: p.product_id,
     revision: p.revision,
     mode: p.mode,
-    type: "simple",
+    type: p.type,
     content: p.content,
-    variants: [
-      {
-        id: v.id,
-        sku: v.sku,
-        barcode: v.barcode,
-        price_cents: v.price_cents,
-        attributes: [],
-      },
-    ],
+    variants: p.catalog.variants.map((v) => ({
+      id: v.id,
+      sku: v.sku,
+      barcode: v.barcode,
+      price_cents: v.price_cents,
+      attributes: Object.entries(v.attributes)
+        .map(([code, option]) => {
+          const name = { TALLA: "Talla", COLOR: "Color", LARGO: "Largo" }[code];
+          assert(name, "UNSUPPORTED_ATTRIBUTE");
+          return { name, option };
+        })
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    })),
+    ...(p.type === "variable"
+      ? {
+          descriptive_attributes: (p.parent_attributes ?? [])
+            .filter((a) => a.variation === false)
+            .map((a) => ({ name: a.name, options: [a.option] })),
+        }
+      : {}),
     bindings: {
       store_id: p.store.id,
       categories: p.content.categories.map((path, i) => ({ path, id: i + 1 })),
@@ -102,12 +122,62 @@ export function claimedInput(claim, baseline) {
       store_id: p.store.id,
       product_id: parent.id,
       snapshot: parent,
-      variants: [{ variant_id: v.id, id: parent.id, snapshot: parent }],
+      variants:
+        p.type === "simple"
+          ? [
+              {
+                variant_id: input.variants[0].id,
+                id: parent.id,
+                snapshot: parent,
+              },
+            ]
+          : input.variants.map((v) => {
+              const receipt = p.previous.receipt.variants?.filter(
+                (x) => x.variant_id === v.id,
+              );
+              const children = baseline.evidence.children?.filter(
+                (x) => x.variant_id === v.id,
+              );
+              assert(
+                receipt?.length === 1 &&
+                  children?.length === 1 &&
+                  receipt[0].local_variation_id === children[0].id,
+                "VERIFIED_PREVIOUS_VARIANT_REQUIRED",
+              );
+              return children[0];
+            }),
     };
   }
   compilePlan(input); // Validate completely before any remote media/category writes.
   return input;
 }
+
+export function categoryNodes(paths) {
+  const nodes = new Map();
+  assert(Array.isArray(paths) && paths.length > 0, "INVALID_CATEGORY_PATH");
+  for (const path of paths) {
+    const parts = path.split(" > ");
+    assert(
+      parts.length <= 10 &&
+        parts.every((s) => s && s.trim() === s && !s.includes(">")),
+      "INVALID_CATEGORY_PATH",
+    );
+    for (let i = 0; i < parts.length; i++) {
+      const full = parts.slice(0, i + 1).join(" > ");
+      nodes.set(full, {
+        path: full,
+        name: parts[i],
+        parent_path: parts.slice(0, i).join(" > "),
+      });
+    }
+  }
+  return [...nodes.values()].sort(
+    (a, b) =>
+      a.path.split(" > ").length - b.path.split(" > ").length ||
+      a.path.localeCompare(b.path),
+  );
+}
+
 async function durable(file, value) {
   const h = await open(`${file}.tmp`, "w", 0o600);
   try {
@@ -234,6 +304,14 @@ export async function processClaim({
         `products/${input.target.product_id}`,
       );
       assert(hash(current) === hash(input.target.snapshot), "REMOTE_CHANGED");
+      if (input.type === "variable")
+        for (const child of input.target.variants) {
+          const currentChild = await request(
+            "GET",
+            `products/${input.target.product_id}/variations/${child.id}`,
+          );
+          assert(hash(currentChild) === hash(child.snapshot), "REMOTE_CHANGED");
+        }
       journal.preflight = true;
       await durable(journalFile, journal);
     }
@@ -261,38 +339,50 @@ export async function processClaim({
       await durable(journalFile, journal);
       return result.id;
     }
-    input.bindings.categories = [];
-    for (const path of input.content.categories) {
-      // Verified paths with ancestry need an explicit hierarchy mapping, never flatten.
-      assert(!path.includes(" > "), "CATEGORY_HIERARCHY_REVIEW_REQUIRED");
-      const previous = baseline?.input.bindings.categories.find(
-        (c) => c.path === path,
-      );
+    const nodes = categoryNodes(input.content.categories),
+      categoryBindings = new Map();
+    for (const node of nodes) {
+      const parent = node.parent_path
+        ? categoryBindings.get(node.parent_path).id
+        : 0;
+      const previous = (
+        baseline?.evidence.category_nodes ??
+        baseline?.input.bindings.categories ??
+        []
+      ).find((c) => c.path === node.path);
       if (previous) {
         const current = await call(`wc/v3/products/categories/${previous.id}`);
         assert(
           current.id === previous.id &&
-            current.name === path &&
-            current.parent === 0,
+            current.name === node.name &&
+            current.parent === parent,
           "CATEGORY_READBACK_FAILED",
         );
-        input.bindings.categories.push(previous);
+        categoryBindings.set(node.path, { id: previous.id, path: node.path });
         continue;
       }
-      const slug = `m9-${hash([input.store.id, claim.id, path]).slice(0, 20)}`;
+      const slug = `m9-${hash([input.store.id, claim.id, node.path]).slice(0, 20)}`;
       const id = await asset(
-        `category:${path}`,
-        () => call("wc/v3/products/categories", "POST", { name: path, slug }),
+        `category:${node.path}`,
+        () =>
+          call("wc/v3/products/categories", "POST", {
+            name: node.name,
+            slug,
+            parent,
+          }),
         async (id) => {
           const c = await call(`wc/v3/products/categories/${id}`);
           assert(
-            c.name === path && c.slug === slug && c.parent === 0,
+            c.name === node.name && c.slug === slug && c.parent === parent,
             "CATEGORY_READBACK_FAILED",
           );
         },
       );
-      input.bindings.categories.push({ id, path });
+      categoryBindings.set(node.path, { id, path: node.path });
     }
+    input.bindings.categories = input.content.categories.map((path) =>
+      categoryBindings.get(path),
+    );
     input.bindings.images = [];
     for (const [i, img] of input.content.images.entries()) {
       const previous = baseline?.input.bindings.images.find(
@@ -343,16 +433,38 @@ export async function processClaim({
     const localId = result.steps[0].remote_id;
     const parent = await request("GET", `products/${localId}`);
     assert(
-      parent.status === "draft" &&
-        parent.type === "simple" &&
-        parent.sku === input.variants[0].sku &&
-        parent.meta_data.some(
-          (m) =>
-            m.key === "_mi_tienda_barcode" &&
-            m.value === input.variants[0].barcode,
-        ),
+      parent.status === "draft" && parent.type === input.type,
       "FINAL_IDENTITY_FAILED",
     );
+    const children = [];
+    for (const v of input.variants) {
+      const id =
+        input.type === "simple"
+          ? localId
+          : result.steps.find((step) => step.key === v.id)?.remote_id;
+      assert(Number.isSafeInteger(id) && id > 0, "FINAL_IDENTITY_FAILED");
+      const snapshot =
+        input.type === "simple"
+          ? parent
+          : await request("GET", `products/${localId}/variations/${id}`);
+      assert(
+        snapshot.sku === v.sku &&
+          snapshot.meta_data.some(
+            (m) => m.key === "_mi_tienda_barcode" && m.value === v.barcode,
+          ) &&
+          snapshot.meta_data.some(
+            (m) => m.key === "_mi_tienda_variant_id" && m.value === v.id,
+          ),
+        "FINAL_IDENTITY_FAILED",
+      );
+      children.push({ variant_id: v.id, id, snapshot });
+    }
+    if (input.type === "variable")
+      assert(
+        hash([...parent.variations].sort((a, b) => a - b)) ===
+          hash(children.map((c) => c.id).sort((a, b) => a - b)),
+        "FINAL_FAMILY_CHANGED",
+      );
     let repeatCalls = 0;
     await runJob({
       input,
@@ -367,6 +479,8 @@ export async function processClaim({
       claim_hash: hash(claim),
       worker_result: result,
       parent,
+      ...(input.type === "variable" ? { children } : {}),
+      category_nodes: [...categoryBindings.values()],
       isolation,
       repeat_requests: repeatCalls,
       production_writes: 0,
@@ -377,7 +491,14 @@ export async function processClaim({
       state: "SUCCEEDED",
       store_id: input.store.id,
       local_product_id: localId,
-      variant_id: input.variants[0].id,
+      ...(input.type === "simple"
+        ? { variant_id: input.variants[0].id }
+        : {
+            variants: children.map((c) => ({
+              variant_id: c.variant_id,
+              local_variation_id: c.id,
+            })),
+          }),
       evidence_sha256: hash(evidence),
     };
     await durable(resolve(out, "receipt.json"), receipt);

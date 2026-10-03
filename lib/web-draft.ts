@@ -153,6 +153,10 @@ export type WebLabState = {
   enabled: boolean;
   supervised: true;
   last_verified_revision?: number | null;
+  last_verified_variants?: Array<{
+    variant_id: string;
+    local_variation_id: number;
+  }>;
   local_product_id?: number | null;
   production_enabled: false;
   job: null | {

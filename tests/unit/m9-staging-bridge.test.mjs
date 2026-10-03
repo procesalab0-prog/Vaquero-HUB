@@ -2,6 +2,7 @@ import { hash, compilePlan } from "../../scripts/m9/woo-test/plan.mjs";
 import { describe, it, expect } from "vitest";
 import {
   sourceImage,
+  categoryNodes,
   imageType,
   claimedInput,
 } from "../../scripts/m9/woo-test/staging-bridge.mjs";
@@ -125,4 +126,102 @@ it("rejects changed evidence, input or missing prior verification", () => {
   expect(() => claimedInput(clean.c, clean.baseline)).toThrow(
     "VERIFIED_PREVIOUS_RESULT_REQUIRED",
   );
+});
+
+function familyClaim() {
+  const c = claim();
+  c.packet.type = "variable";
+  c.packet.version = 3;
+  c.packet.fingerprint = "catalog-hash";
+  c.packet.source_fingerprint = "source-hash";
+  c.packet.family_evidence = {
+    catalog_fingerprint: "catalog-hash",
+    source_fingerprint: "source-hash",
+    evidence_sha256: "a".repeat(64),
+  };
+  c.packet.parent_attributes = [
+    { name: "Color", option: "GUINDA CON AMARILLO", variation: false },
+  ];
+  c.packet.catalog.variants = sampleInput().variants.map((v) => ({
+    ...v,
+    active: true,
+    attributes: Object.fromEntries(
+      v.attributes.map((a) => [a.name.toUpperCase(), a.option]),
+    ),
+  }));
+  return c;
+}
+it("requires fresh family evidence and preserves descriptive color separately", () => {
+  const c = familyClaim();
+  const i = claimedInput(c),
+    p = compilePlan(i);
+  expect(p.steps).toHaveLength(3);
+  expect(p.steps[0].payload.attributes).toContainEqual({
+    name: "Color",
+    visible: true,
+    variation: false,
+    options: ["GUINDA CON AMARILLO"],
+  });
+  expect(p.steps[1].payload.attributes).toEqual([
+    { name: "Talla", option: "M" },
+  ]);
+  c.packet.fingerprint = "new-catalog";
+  expect(() => claimedInput(c)).toThrow("CLAIM_REVIEW_REQUIRED");
+});
+it("uses verified child identities for updates and rejects missing mappings", () => {
+  const c = familyClaim(),
+    input = claimedInput(c),
+    plan = compilePlan(input);
+  const children = input.variants.map((v, i) => ({
+    variant_id: v.id,
+    id: 51 + i,
+    snapshot: { id: 51 + i, ...plan.steps[i + 1].payload },
+  }));
+  const parent = { id: 50, ...plan.steps[0].payload, variations: [51, 52] };
+  const baseline = {
+    input,
+    evidence: {
+      parent,
+      children,
+      worker_result: {
+        state: "SUCCEEDED",
+        plan_hash: hash(plan),
+        steps: [{ remote_id: 50 }],
+      },
+    },
+  };
+  c.packet.mode = "update";
+  c.packet.version = 4;
+  c.packet.revision = 2;
+  c.packet.previous = {
+    revision: 1,
+    receipt: {
+      local_product_id: 50,
+      evidence_sha256: hash(baseline.evidence),
+      variants: children.map((v) => ({
+        variant_id: v.variant_id,
+        local_variation_id: v.id,
+      })),
+    },
+  };
+  expect(
+    compilePlan(claimedInput(c, baseline)).steps.map((s) => s.path),
+  ).toEqual([
+    "products/50",
+    "products/50/variations/51",
+    "products/50/variations/52",
+  ]);
+  c.packet.previous.receipt.variants.pop();
+  expect(() => claimedInput(c, baseline)).toThrow(
+    "VERIFIED_PREVIOUS_VARIANT_REQUIRED",
+  );
+});
+
+it("builds category ancestry without merging names from different branches", () => {
+  expect(categoryNodes(["Camisa", "Dama > Camisa", "Dama"])).toEqual([
+    { path: "Camisa", name: "Camisa", parent_path: "" },
+    { path: "Dama", name: "Dama", parent_path: "" },
+    { path: "Dama > Camisa", name: "Camisa", parent_path: "Dama" },
+  ]);
+  expect(() => categoryNodes(["Dama>Camisa"])).toThrow("INVALID_CATEGORY_PATH");
 });

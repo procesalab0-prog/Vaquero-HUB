@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.59.0";
-export const APP_RELEASE = "Primera familia completa en staging";
+export const APP_VERSION = "0.60.0";
+export const APP_RELEASE = "Familias completas en el laboratorio";

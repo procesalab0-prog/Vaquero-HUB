@@ -79,6 +79,7 @@ export function compilePlan(input) {
     "bindings",
     "variants",
     "target",
+    "descriptive_attributes",
   ]);
   const origin = localStore(input.store);
   assert(
@@ -209,6 +210,30 @@ export function compilePlan(input) {
     ),
     "INCONSISTENT_ATTRIBUTE_AXES",
   );
+  const descriptive = (input.descriptive_attributes ?? []).map((a) => {
+    keys(a, ["name", "options"]);
+    assert(
+      text(a.name) &&
+        !attributeNames.includes(a.name) &&
+        Array.isArray(a.options) &&
+        a.options.length > 0 &&
+        a.options.length <= 100 &&
+        a.options.every((o) => text(o)),
+      "INVALID_DESCRIPTIVE_ATTRIBUTE",
+    );
+    unique(a.options, "DUPLICATE_DESCRIPTIVE_OPTION");
+    return {
+      name: a.name,
+      visible: true,
+      variation: false,
+      options: a.options,
+    };
+  });
+  assert(descriptive.length <= 20, "INVALID_DESCRIPTIVE_ATTRIBUTE");
+  unique(
+    descriptive.map((a) => a.name),
+    "DUPLICATE_DESCRIPTIVE_ATTRIBUTE",
+  );
   const editorial = {
     name: c.name,
     description: plainHtml(c.description),
@@ -259,6 +284,8 @@ export function compilePlan(input) {
           ),
         ],
       }));
+    if (descriptive.length)
+      payload.attributes = [...(payload.attributes ?? []), ...descriptive];
     steps.push({ key: "parent", method: "POST", path: "products", payload });
     if (input.type === "variable")
       for (const v of vs)
@@ -299,6 +326,18 @@ export function compilePlan(input) {
       t.variants.map((v) => v.variant_id),
       "DUPLICATE_TARGET_VARIANT",
     );
+    if (input.descriptive_attributes !== undefined)
+      editorial.attributes = [
+        ...(t.snapshot.attributes ?? [])
+          .filter((a) => a.variation)
+          .map(({ name, visible, variation, options }) => ({
+            name,
+            visible,
+            variation,
+            options,
+          })),
+        ...descriptive,
+      ];
     const changedEditorial = Object.fromEntries(
       Object.entries(editorial).filter(([key, value]) => {
         let current = t.snapshot[key];
@@ -307,6 +346,13 @@ export function compilePlan(input) {
         if (key === "images")
           current = current?.map(({ id, alt }) => ({ id, alt }));
         if (key === "categories") current = current?.map(({ id }) => ({ id }));
+        if (key === "attributes")
+          current = current?.map(({ name, visible, variation, options }) => ({
+            name,
+            visible,
+            variation,
+            options,
+          }));
         return hash(value) !== hash(current ?? null);
       }),
     );

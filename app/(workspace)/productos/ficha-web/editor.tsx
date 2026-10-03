@@ -378,6 +378,18 @@ export function WebDraftEditor({
                 · {v.active ? "Activo" : "Inactivo"}
               </p>
               <p>SKU interno: {v.sku}</p>
+              {labState?.last_verified_variants?.find(
+                (m) => m.variant_id === v.id,
+              ) && (
+                <p>
+                  Verificada en Woo local:{" "}
+                  {
+                    labState.last_verified_variants.find(
+                      (m) => m.variant_id === v.id,
+                    )!.local_variation_id
+                  }
+                </p>
+              )}
               <p>
                 {v.woo_product_id
                   ? `WooCommerce ${v.woo_product_id}${v.woo_variation_id ? ` / ${v.woo_variation_id}` : ""}`
