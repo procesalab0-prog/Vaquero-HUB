@@ -70,6 +70,13 @@ assert(
   "RECOVERY_WRITE_NOT_BLOCKED",
 );
 await request(9427, "/wp-admin/", "GET", 403);
+await request(9427, "/wp-json/m9-local/v1/isolation?_method=POST", "GET", 403);
+await request(
+  9427,
+  "/wp-json/m9-local/v1/isolation?rest_route=/wp/v2/settings",
+  "GET",
+  403,
+);
 const originalIsolation = await (
   await request(9417, "/wp-json/m9-local/v1/isolation")
 ).json();

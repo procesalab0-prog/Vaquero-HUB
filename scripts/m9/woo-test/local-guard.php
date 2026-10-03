@@ -4,7 +4,7 @@ if (wp_get_environment_type() !== 'local') { http_response_code(503); exit('M9 r
 if (defined('M9_RECOVERY_READ_ONLY') && M9_RECOVERY_READ_ONLY && isset($_SERVER['REQUEST_METHOD'])) {
     $recovery_path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
     $read_path = preg_match('#^/(m9-laboratorio/?|wp-json/m9-local/v1/isolation/?|wp-json/wc/v3/products(?:/[1-9][0-9]*(?:/variations(?:/[1-9][0-9]*)?)?)?/?)$#', $recovery_path ?? '');
-    if (!in_array($_SERVER['REQUEST_METHOD'], array('GET', 'HEAD'), true) || !$read_path) { http_response_code(403); exit('M9 recovery is read only'); }
+    if (!in_array($_SERVER['REQUEST_METHOD'], array('GET', 'HEAD'), true) || !$read_path || isset($_GET['_method']) || isset($_GET['rest_route']) || isset($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'])) { http_response_code(403); exit('M9 recovery is read only'); }
 }
 add_filter('pre_wp_mail', '__return_false');
 add_filter('pre_http_request', function () { return new WP_Error('m9_network_blocked', 'External requests are disabled in the local test store.'); }, PHP_INT_MAX);
