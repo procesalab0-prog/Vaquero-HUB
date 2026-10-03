@@ -670,3 +670,38 @@ Catálogo y snapshots staging conservan huellas 0b383408d10c27de98fdf51768b5f677
 
 
 Verificación de entrega 0.61.0: commit funcional 3320a12ac47ea8e003eb853580340005052cbd2a; CI #271 (run 37134903562, job 111237348717) completó con éxito formato, lint, tipos, migraciones, 144 unitarias, integración, build y E2E. Vercel exitoso; avatar y consulta de estado comprobados en Preview. Captura outputs/m9-precio-local-2026-10-03/staging-version.jpg. Los avisos de seguridad mantienen las mismas cantidades históricas: 34 tablas privadas con RLS cerrado sin políticas, 105 funciones autenticadas SECURITY DEFINER y una configuración de protección de contraseñas. Las nuevas funciones son privadas y sus permisos se probaron. No se cierra todavía toda la fase staging.
+
+
+### Etiqueta física aportada por el usuario — 2026-10-03
+
+Foto conservada en outputs/m9-etiqueta-2026-10-03/etiqueta-original.jpeg con SHA256 en manifest.json. Decodificación efectiva de las barras usando ZXing 0.23.0 (misma biblioteca base que el respaldo del escáner de la app): CODE_128, texto literal 2396. La ejecución final leyó la fotografía completa sin giro (rotation 0), resultado en decoder.json; no confundir con lectura OCR ni ingreso manual. El intento inicial con Vision falló por inicialización del modelo y no cuenta como verificación.
+
+SICAR (5), fila 5056: Clave1 2396, SOTOM30XRA1132RO59, UNISEX / SOMBRERO TOMBSTONE, talla 59, precio1 2190. Conciliación exacta contra snapshot Woo del 1 de octubre: padre 19746 / variante 19815. Consulta de app.m9_rows en staging para 2396 no devuelve filas: aún no pertenece al piloto. No se alteró código, catálogo, inventario ni producción.
+
+La foto acredita que esta etiqueta codifica la Clave1; todavía no acredita cámara en vivo, lector USB ni resolución/venta desde staging. Mantener physicalBarcodeVerified=false para autorización de importadores hasta una prueba física de extremo a extremo. Próximo paso: revisar/preparar su familia completa para piloto y probar resolución por 2396; no inventar stock para permitir una venta. Preview permanece 0.61.0, sin cambio de aplicación.
+
+
+### Sombrero de etiqueta incorporado al catálogo staging — 2026-10-03
+
+Padre Woo 19746 SOMBRERO TOMBSTONE 30X RANDA 1132: seis coincidencias exactas de SICAR (5), códigos 2391–2396 / tallas 54–59 / precio público 2190.00 / UNISEX / SOMBRERO TOMBSTONE. La captura Woo del 1 de octubre tiene siete hijos: talla 60 (19816) sin fila SICAR conciliada, excluida en revisión manual. No es familia web completa; no se habilitó envío Woo ni se inventó Clave1 o stock. Los seis códigos confirmados se incorporaron exclusivamente al catálogo de staging.
+
+Preparación reproducible en outputs/m9-sombrero-etiqueta-2026-10-03/prepare.mjs: verifica huellas de reporte/fuente, vínculo único por código, atributos literales, nombres/base y comprobaciones comerciales. Dos payloads idénticos, SHA256 8ecb76a9e8a326e1dbc6cdc355b3639318ae261db066d901b1963e563132ca99. Plan privado sin errores, ensayo transaccional rollback: seis altas, repetición sin cambios, preservación de catálogo previo/fuentes/borradores/cola/inventario. Aplicación real a zsezjtswqeijboezvado: 6 creadas, 0 actualizadas; repetición real 0 creadas, 0 actualizadas, 6 sin cambios. Piloto: 41 productos / 50 variantes. Costos NULL y mayoreos sin definir.
+
+Producto staging eae132eb-8111-418a-b30c-86a199934e62; variante 2396: 6da4feb2-7146-4d4d-b865-6af14cc02a9b. Lectura final preserva huellas del catálogo previo 0b383408d10c27de98fdf51768b5f677 y snapshots b30594ca2e87a49a4427eb0407e0a031. Inventario y movimientos cero. UI Productos: búsqueda escrita 2396 devuelve sólo talla 59 a $2190.00, evidencia busqueda-2396.jpg. Esto no acredita captura con cámara/USB; la foto ya fue decodificada en el turno anterior. physicalBarcodeVerified permanece false hasta prueba física completa.
+
+Preview 0.61.0 sin cambio de código ni despliegue en esta entrega. Avance técnico estimado se mantiene 68%; la ampliación del piloto no sustituye escaneo físico, revisión comercial o corte final. Siguiente: prueba física de 2396, revisión de talla 60 y preparación de contenido web complementario sin habilitar familia incompleta. No hubo producción, importación de existencias ni integración de mejoras del otro chat. Staging aún no cerrado.
+
+
+### Fichas guardadas y ampliación de tres familias — 2026-10-03
+
+Staging zsezjtswqeijboezvado tiene 41 productos / 64 variantes. Se agregaron 14 variantes en familias existentes: Woo 5738 (cinto pescado café, seis tallas), 24939 (Nokota Lincoln Black Cherry, seis tallas) y 25814 (Wrangler George Strait 6950, cinco tallas). Payload de 17 filas: 14 CREATE + 3 UNCHANGED, cero UPDATE; repetición real 17 UNCHANGED. SHA256 50fcb57bb6f7410491e43c5d78fca923b291d7e7e3f5e4b850211251e4a9711e. Dos preparaciones por familia idénticas. Ensayo con rollback y guardas en aplicación real comprobó que las 50 filas previas, fuentes web, borradores, correspondencias de categorías y cuatro trabajos anteriores permanecieran íntegros. Inventario y movimientos cero; todos los costos NULL.
+
+Sombrero 19746: fuente web complementaria y categoría verificada Sombrero (278), cuatro fotos y textos de Woo; ficha guardada desde UI revisión 1. Siguen sólo seis tallas 54–59: talla 60 sin SICAR permanece fuera y bloquea habilitación de esa familia. Las tres familias ampliadas también se guardaron por UI en revisión 1, sin editar textos originales. Total siete borradores internos. Categorías válidas; ninguno de estos cuatro productos está habilitado para envío al laboratorio. Guardar no equivale a aprobación comercial ni publicación.
+
+Nuevo SICAR (5) conciliado contra captura autenticada Woo del 1 de octubre. Revisión pública adicional del 3 de octubre confirmó nombres/base, fotos y orden, textos normalizados por tipografía WordPress, IDs de variantes y nombres de términos obtenidos de su taxonomía (no inferir que slug 26-5 sea talla literal). La consulta pública no sustituye una exportación autenticada completa ni verifica precios individuales actuales. La revisión de 40 familias se recalculó: ocho candidatas/44 miembros; sus contadores «ya en piloto» corresponden al lote original y no al catálogo ampliado.
+
+Pendientes separados: 8059 excluido de ampliación porque Clave1 13851 tiene costo 990 marcado unverified; no convertirlo a costo aprobado ni anular el control. 13440 excluido de nueva ampliación por alertas de existencias contra Woo histórico, sin afirmar discrepancia actual. En Nokota 24939 se detectan departamentos SICAR mezclados: códigos 11201/talla 29 y 3280/talla 27 están en DAMA; 9174/26, 8342/26.5, 10954/27.5 y 11202/28 en CABALLERO. Se preservan literalmente para revisión; no reclasificar ni habilitar publicación automáticamente. Evidencia visual nokota-departamentos.jpg.
+
+Archivos: outputs/m9-ampliacion-tres-familias-2026-10-03 (payload, manifests, repeticiones, plan, rollback, aplicación, verificación final, revisión pública y capturas); outputs/m9-ampliacion-contenido-2026-10-03; outputs/m9-ampliacion-taxonomia-2026-10-03; outputs/m9-sombrero-contenido-2026-10-03; outputs/m9-sombrero-taxonomia-2026-10-03. No modificar retrospectivamente snapshots originales.
+
+Preview sigue 0.61.0: esta entrega cambia datos de prueba/documentación, no código de aplicación ni esquema. Avance técnico estimado se mantiene 68% (no porcentaje de filas migradas), producción 0%. La fase staging NO está cerrada. Próximo: ensayo de fichas completas elegibles en Woo local, lector físico para 2396, revisión de pendientes, corte actualizado de ambas fuentes y ensayo de recuperación; coordinar mejoras del otro chat antes del cierre. Sin producción, existencias, nuevos trabajos Woo, merge a main ni integración del otro chat.
