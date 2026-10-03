@@ -1,0 +1,81 @@
+.review {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.review h1 {
+  font-size: 1.65rem;
+}
+.review h2 {
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.8rem;
+}
+.filters label {
+  display: grid;
+  gap: 0.3rem;
+  flex: 1 1 180px;
+  min-width: 0;
+}
+.filters input,
+.filters select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.6rem;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 0.5rem;
+  background: var(--surface, #fff);
+  color: inherit;
+}
+.filters a,
+.pagination a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 1rem;
+}
+.card {
+  border: 1px solid var(--border, #ccc);
+  border-radius: 1rem;
+  padding: 1rem;
+  overflow-wrap: anywhere;
+}
+.card p {
+  margin: 0.65rem 0;
+}
+.card dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  margin: 1rem 0;
+}
+.card dt {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+.card dd {
+  margin: 0;
+  font-weight: 600;
+}
+.card summary {
+  min-height: 48px;
+  cursor: pointer;
+  padding-top: 0.8rem;
+}
+.code {
+  font-variant-numeric: tabular-nums;
+}
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}

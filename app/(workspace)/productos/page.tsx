@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { mockVariants } from "@/lib/mock-data";
 import { requirePermission } from "@/lib/auth/authorization";
 import { initialCatalogImportState } from "@/lib/catalog-import-shared";
@@ -10,6 +11,7 @@ import {
   bulkUpdateVariantStatus,
   commitCatalogImport,
   createCatalogProduct,
+  createCatalogProductWithWeb,
   lookupCatalogBarcode,
   previewCatalogImport,
   registerVariantBarcode,
@@ -170,33 +172,48 @@ export default async function ProductsPage({
   }));
 
   return (
-    <ProductsWorkspace
-      initialVariants={variants}
-      categories={(categoriesResult.data ?? []) as Category[]}
-      attributeValues={(valuesResult.data ?? []) as AttributeValue[]}
-      status={params.status}
-      createAction={canCreate ? createCatalogProduct : undefined}
-      addVariantsAction={canCreate ? addCatalogVariants : undefined}
-      registerBarcodeAction={canUpdate ? registerVariantBarcode : undefined}
-      lookupBarcodeAction={lookupCatalogBarcode}
-      updateProductAction={canUpdate ? updateCatalogProduct : undefined}
-      updateVariantAction={
-        canUpdate && canSeeCost ? updateCatalogVariant : undefined
-      }
-      updatePriceAction={
-        permissions.has("products.price_update")
-          ? updateCatalogVariantPrice
-          : undefined
-      }
-      bulkStatusAction={canUpdate ? bulkUpdateVariantStatus : undefined}
-      bulkPriceAction={
-        permissions.has("products.price_update")
-          ? bulkUpdateVariantPrices
-          : undefined
-      }
-      previewImportAction={canCreate ? previewCatalogImport : undefined}
-      commitImportAction={canCreate ? commitCatalogImport : undefined}
-      initialImportState={canCreate ? initialCatalogImportState : undefined}
-    />
+    <>
+      {process.env.NEXT_PUBLIC_SUPABASE_URL ===
+        "https://zsezjtswqeijboezvado.supabase.co" && (
+        <p>
+          <Link href="/productos/migracion">
+            Revisar piloto SICAR · solo consulta
+          </Link>
+        </p>
+      )}
+      <ProductsWorkspace
+        webDraftsEnabled={
+          process.env.NEXT_PUBLIC_SUPABASE_URL ===
+          "https://zsezjtswqeijboezvado.supabase.co"
+        }
+        createWebAction={canCreate ? createCatalogProductWithWeb : undefined}
+        initialVariants={variants}
+        categories={(categoriesResult.data ?? []) as Category[]}
+        attributeValues={(valuesResult.data ?? []) as AttributeValue[]}
+        status={params.status}
+        createAction={canCreate ? createCatalogProduct : undefined}
+        addVariantsAction={canCreate ? addCatalogVariants : undefined}
+        registerBarcodeAction={canUpdate ? registerVariantBarcode : undefined}
+        lookupBarcodeAction={lookupCatalogBarcode}
+        updateProductAction={canUpdate ? updateCatalogProduct : undefined}
+        updateVariantAction={
+          canUpdate && canSeeCost ? updateCatalogVariant : undefined
+        }
+        updatePriceAction={
+          permissions.has("products.price_update")
+            ? updateCatalogVariantPrice
+            : undefined
+        }
+        bulkStatusAction={canUpdate ? bulkUpdateVariantStatus : undefined}
+        bulkPriceAction={
+          permissions.has("products.price_update")
+            ? bulkUpdateVariantPrices
+            : undefined
+        }
+        previewImportAction={canCreate ? previewCatalogImport : undefined}
+        commitImportAction={canCreate ? commitCatalogImport : undefined}
+        initialImportState={canCreate ? initialCatalogImportState : undefined}
+      />
+    </>
   );
 }

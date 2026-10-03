@@ -1,5 +1,7 @@
 "use server";
 
+import { parseCatalogCents as cents } from "@/lib/catalog-money";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -13,6 +15,7 @@ import {
 import type { ProductVariant } from "@/lib/domain";
 import type { BatchActionResult } from "@/lib/domain";
 import { uploadProductImage } from "@/lib/product-images";
+import { WEB_STAGING_URL, webContentFromForm } from "@/lib/web-draft";
 
 const productsPath = "/productos";
 
@@ -131,13 +134,6 @@ export async function bulkUpdateVariantPrices(
 
 function textField(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
-}
-
-function cents(value: string) {
-  const amount = Number(value);
-  return Number.isFinite(amount) && amount >= 0
-    ? Math.round(amount * 100)
-    : null;
 }
 
 function catalogErrorStatus(error: unknown) {
@@ -565,4 +561,47 @@ export async function lookupCatalogBarcode(
     price: row.price_cents / 100,
     stock: 0,
   };
+}
+
+export async function createCatalogProductWithWeb(
+  formData: FormData,
+): Promise<{ productId?: string; error?: string; photoPending?: boolean }> {
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL !== WEB_STAGING_URL)
+      throw new Error("STAGING_ONLY");
+    const { supabase } = await requirePermission("products.create");
+    const name = textField(formData, "product_name");
+    const { data, error } = await supabase.rpc(
+      "create_product_with_web_draft",
+      {
+        p_name: name,
+        p_category_id: textField(formData, "category_id"),
+        p_variants: variantsFromForm(formData),
+        p_brand_name: textField(formData, "brand_name") || null,
+        p_content: webContentFromForm(formData, name),
+        p_request_id: textField(formData, "web_request_id"),
+      },
+    );
+    if (error) throw new Error(error.message);
+    let photoPending = false;
+    // Photo upload is independent: a failure must not undo or duplicate the saved product.
+    try {
+      await uploadProductImage({
+        supabase,
+        productId: data.product_id,
+        image: formData.get("product_image"),
+      });
+    } catch {
+      photoPending = true;
+    }
+    revalidatePath(productsPath);
+    return { productId: data.product_id, photoPending };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    return {
+      error: /INVALID|DUPLICATE|CATALOG|WEB_REQUEST/.test(message)
+        ? "Revisa nombre, categoría, variantes y fotos. No se creó otro producto; corrige la captura y vuelve a intentar."
+        : "No se confirmó el guardado. La captura sigue aquí; puedes reintentar sin duplicar el producto.",
+    };
+  }
 }
