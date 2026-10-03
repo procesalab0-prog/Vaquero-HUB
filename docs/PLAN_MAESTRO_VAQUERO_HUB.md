@@ -3533,3 +3533,6 @@ Nueva herramienta inspect-rollback.mjs de solo lectura: coteja snapshots antes/a
 16 pruebas especificas aprobadas. Ejecucion sobre evidencia historica real del precio sintetico informa ALREADY_RESTORED; repeticion byte-identica. No se altero Woo ni staging. Ver guia [M9_REVISION_REVERSION.md](M9_REVISION_REVERSION.md) y outputs/m9-revision-reversion-2026-10-03.
 
 No resuelve carrera GET/PUT ni cambios intermedios que regresaron al mismo valor. Recuperacion real de Hostinger pendiente del codigo de acceso; aprobacion comercial y fuentes frescas pendientes. Avance tecnico se mantiene 85%; staging abierto. Entrega funcional 0.64.0; CI/Preview pendientes de verificar al redactar esta entrada.
+
+
+Verificacion final 0.64.0: commit 3ada2b9c9c6f33fea61f38b58332540e706100ee. CI #282 / run 37150771716 / job 111284031238 completado con exito (formato, lint, tipos, migraciones, 178 unitarias, integracion, build y E2E). Preview exitoso y avatar confirma 0.64.0; captura version-0.64.jpg en outputs/m9-revision-reversion-2026-10-03. Sin escrituras Woo/Supabase; estimacion 85%, staging abierto.
