@@ -731,3 +731,17 @@ Avance técnico estimado 80%, por los dos hitos adicionales; no es porcentaje de
 
 
 Verificación final 0.63.0: commit funcional c937c46d615e8b6c410f9b5c816cc912717c896c; CI #277, run 37141506692, job 111256730121 completado con éxito (formato, lint, tipos, migraciones, 162 unitarias —incluyen ocho casos Python de respaldo—, integración, build y E2E). Preview Vercel exitoso y avatar confirma 0.63.0. Recuperación reiniciada y verificada nuevamente: seis padres, 23 variantes y 19 imágenes; bloqueos de administrador, POST y parámetros de cambio de método/ruta comprobados. Evidencia definitiva: restauracion-protegida.json; versión visible: version-0.63.jpg. Staging sigue abierto, avance técnico estimado 80%, producción sin cambios.
+
+
+## Registro vivo - lector y lote de revision (2026-10-03)
+
+El usuario confirma lectura de etiqueta con lector fisico y busqueda en staging. Talla 59 y precio 2190 siguen pendientes de confirmar; no se realizo venta. Esta evidencia parcial no autoriza importadores. Por indicacion expresa del usuario, las mejoras del otro chat se posponen hasta terminar esta etapa; no bloquean preparar el lote actual. Antes de produccion se probara la version definitiva.
+
+Paquete offline de revision: cuatro familias nativas completas y ya ensayadas: 5630/5 variantes (Wrangler guinda), 5738/6 (cinto pescado cafe), 19771/1 (bolsa Cuadra), 25814/5 (Wrangler George Strait). Total 17 variantes vendibles; 37 familias del piloto excluidas y tres altas nuevas SICAR 18056-18058 en revision. Verificadas huellas, unicidad de Clave1 literal, precio1, departamento/seccion, costo NULL, totalidad de hijos y borrador recuperado. Dos ejecuciones identicas byte por byte. Evidencia y preparador: outputs/m9-lote-revision-2026-10-03, fuera del repositorio.
+
+No contiene SQL ni payload de importacion; permisos de produccion y automaticos false. Los cuatro padres ya existen en Woo: nunca utilizar sus IDs locales en produccion ni recrearlos como nuevos. Faltan revision comercial y fuentes frescas al corte. Preguntas enviadas: talla 60 Tombstone Randa; departamentos Nokota; piedra roja West Point; eleccion/surtido de amartigon; talla/precio del resultado del lector; distincion entre cintos 18057/18058.
+
+Aplicacion permanece 0.63.0, sin cambios funcionales ni despliegue nuevo. Sin escrituras de catalogo/Woo/existencias. Estimacion tecnica se mantiene 80% hasta cerrar nuevos hitos: organizar un lote no basta para declarar 90%. Staging sigue abierto.
+
+
+Actualizacion posterior del mismo turno: el usuario responde que SI aparecio el sombrero talla 59 a $2,190 al usar el lector. Lectura, busqueda, talla y precio quedan confirmados por reporte del usuario (no por observacion directa del agente). No hubo venta ni prueba de existencias; esto no autoriza produccion. Las preguntas 1-4 y 6 siguen pendientes de los propietarios. Reproduccion final del paquete en final/ y final-repeticion/ incorpora esta confirmacion.
