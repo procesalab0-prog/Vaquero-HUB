@@ -11,10 +11,10 @@ export function GET(request: NextRequest) {
   const shell = dedicatedOrigin ? "/" : "/mi";
   const scope = dedicatedOrigin ? "/" : "/mi";
   const source = `
-const CACHE = "mi-vaquero-editorial-v2";
+const CACHE = "mi-vaquero-editorial-v3";
 const SHELL = ${JSON.stringify(shell)};
 const DEDICATED = ${JSON.stringify(dedicatedOrigin)};
-const STATIC = [SHELL, "/mi/manifest.webmanifest", "/icons/mi-vaquero/original-192.png", "/icons/mi-vaquero/original-512.png", "/mi-media/portrait-man.webp", "/fonts/pt-sans-regular.ttf"];
+const STATIC = [SHELL, "/mi/manifest.webmanifest", "/icons/mi-vaquero/mi-vaquero-original-192.png", "/icons/mi-vaquero/mi-vaquero-original-512.png", "/mi-media/portrait-man.webp", "/fonts/pt-sans-regular.ttf"];
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(STATIC)).then(() => self.skipWaiting()));
 });

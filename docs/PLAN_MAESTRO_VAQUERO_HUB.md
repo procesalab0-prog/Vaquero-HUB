@@ -3194,3 +3194,9 @@ El icono instalado usa el mismo logo completo original del inicio (`public/brand
 La verificación detectó que la convención `app/manifest.ts` tenía prioridad sobre el manifiesto de clientes. Se convierte a Route Handler en la misma URL `/manifest.webmanifest`, conservando el contenido de Mi Tienda SM, para que `/mi` seleccione su manifiesto propio y el icono correcto.
 
 Validación de entrega: compilación de producción y TypeScript correctos; lint completo y formato correctos; seis pruebas de la PWA en escritorio/móvil aprobadas, incluyendo manifiestos separados y tarjeta offline. Navegador confirma `/mi/manifest.webmanifest` y Apple Touch Icon original sin overlay de error. La versión 0.55.4 queda sincronizada con package.json. No se validó avatar S con sesión de empleado en este entorno sin credenciales ni actualización del icono en dispositivo físico instalado.
+
+### 2026-10-03 · 0.55.5 · Restaurar letras de Mi Vaquero
+
+El icono combina el emblema original de Vaquero SM con las letras «Mi Vaquero» del icono anterior, conservadas sin reinterpretarlas. Se corrige la entrega 0.55.4 que había reemplazado el nombre por VAQUERO SM. Exportaciones PNG 180/192/512 y máscara de 512 con margen adicional; referencias nuevas y caché editorial v3. Sin cambios de datos ni simulaciones nuevas.
+
+Validación 0.55.5: revisión visual del icono; compilación de producción/TypeScript, lint y seis pruebas de PWA correctos. Navegador confirma el manifiesto de Mi Vaquero y nuevo Apple Touch Icon, con contenido y sin error de interfaz. La comprobación del icono en un teléfono instalado sigue pendiente; su actualización depende del SO. Avatar S no validado sin sesión de empleado en este entorno.
