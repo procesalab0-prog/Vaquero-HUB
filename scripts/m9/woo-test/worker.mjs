@@ -1,6 +1,13 @@
 import { mkdir, open, readFile, rename, unlink } from "node:fs/promises";
 import { resolve } from "node:path";
-import { assert, compilePlan, hash, localStore, VERSION } from "./plan.mjs";
+import {
+  assert,
+  compilePlan,
+  comparableWooHtml,
+  hash,
+  localStore,
+  VERSION,
+} from "./plan.mjs";
 
 export function wooClient(store, authorization = "") {
   const origin = localStore(store);
@@ -69,7 +76,7 @@ function matches(wanted, actual, key = "") {
     typeof wanted === "string" &&
     typeof actual === "string"
   )
-    return wanted.replace(/\n+$/, "") === actual.replace(/\n+$/, "");
+    return comparableWooHtml(wanted) === comparableWooHtml(actual);
   if (key === "regular_price")
     return (
       typeof actual === "string" &&

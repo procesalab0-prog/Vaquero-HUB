@@ -59,6 +59,15 @@ const escape = (s) =>
     .replaceAll("'", "&#39;");
 export const plainHtml = (s) =>
   `<p>${escape(s.replaceAll("\r\n", "\n")).replaceAll("\n", "<br />")}</p>`;
+// WordPress turns the generated double break into a paragraph boundary.
+// Preserve all text and other markup: this is not an HTML-stripping comparison.
+export const comparableWooHtml = (s) =>
+  typeof s === "string"
+    ? s
+        .replaceAll("\r\n", "\n")
+        .replaceAll("<br /><br />", "</p>\n<p>")
+        .replace(/\n+$/, "")
+    : s;
 function price(cents) {
   assert(positive(cents), "INVALID_PUBLIC_PRICE");
   return `${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, "0")}`;
@@ -342,7 +351,7 @@ export function compilePlan(input) {
       Object.entries(editorial).filter(([key, value]) => {
         let current = t.snapshot[key];
         if (["description", "short_description"].includes(key))
-          current = current?.replace(/\n+$/, "");
+          return comparableWooHtml(value) !== comparableWooHtml(current);
         if (key === "images")
           current = current?.map(({ id, alt }) => ({ id, alt }));
         if (key === "categories") current = current?.map(({ id }) => ({ id }));

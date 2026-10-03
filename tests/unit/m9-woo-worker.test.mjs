@@ -441,3 +441,53 @@ it("accepts reordered category membership but rejects substituted categories", a
     expect(r.state).toBe(corrupted ? "REVIEW_REQUIRED" : "SUCCEEDED");
   }
 });
+
+it("verifies WordPress paragraph conversion and omits unchanged paragraphs from updates", async () => {
+  const input = sampleInput(),
+    api = fake(),
+    journalDir = await directory();
+  input.content.description = "Primer párrafo.\r\n\r\nSegundo & último.";
+  const request = async (...args) => {
+    const r = await api.request(...args);
+    if (r.description) {
+      r.description =
+        r.description.replaceAll("<br /><br />", "</p>\n<p>") + "\n";
+      if (args[0] === "GET") api.records.set(args[1], structuredClone(r));
+    }
+    return r;
+  };
+  const result = await runJob({ input, journalDir, request });
+  expect(result.state).toBe("SUCCEEDED");
+  const next = update({ input, api, result });
+  next.variants[0].price_cents += 100;
+  expect(compilePlan(next).steps[0].payload).not.toHaveProperty("description");
+  const repeats = api.writes.length;
+  expect((await runJob({ input, journalDir, request })).state).toBe(
+    "SUCCEEDED",
+  );
+  expect(api.writes.length).toBe(repeats);
+});
+
+it.each(["missing text", "single break", "extra markup"])(
+  "rejects paragraph corruption: %s",
+  async (corruption) => {
+    const input = sampleInput(),
+      api = fake(),
+      journalDir = await directory();
+    input.content.description = "Uno\n\nDos";
+    const request = async (...args) => {
+      const r = await api.request(...args);
+      if (r.description)
+        r.description = {
+          "missing text": "<p>Uno</p>\n",
+          "single break": "<p>Uno<br />Dos</p>\n",
+          "extra markup": "<p>Uno</p>\n<p><b>Dos</b></p>\n",
+        }[corruption];
+      return r;
+    };
+    expect((await runJob({ input, journalDir, request })).state).toBe(
+      "REVIEW_REQUIRED",
+    );
+    expect(api.writes).toHaveLength(1);
+  },
+);
