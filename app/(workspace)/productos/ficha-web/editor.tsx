@@ -54,6 +54,14 @@ export function WebDraftEditor({
         setRevision(state.revision!);
         setDirty(false);
         requestRef.current = null;
+        const refresh = new FormData();
+        refresh.set("product_id", draft.catalog.product_id);
+        try {
+          const status = await webLabAction(refresh);
+          if (status.lab) setLabState(status.lab);
+        } catch {
+          setLabError("Ficha guardada. Actualiza el estado del laboratorio.");
+        }
       }
     } catch {
       setResult({
@@ -80,7 +88,10 @@ export function WebDraftEditor({
     }
     try {
       const response = await webLabAction(form);
-      if (response.lab) setLabState(response.lab);
+      if (response.lab) {
+        setLabState(response.lab);
+        if (!response.error) labRequest.current = null;
+      }
       if (response.error) setLabError(response.error);
     } catch {
       setLabError(
@@ -251,7 +262,8 @@ export function WebDraftEditor({
         )}
         {labState?.job && (
           <p role="status">
-            Revisión {labState.job.revision}:{" "}
+            Envío {labState.job.revision} · texto guardado{" "}
+            {labState.job.editorial_revision ?? labState.job.revision}:{" "}
             {
               {
                 READY: "en espera de procesamiento supervisado",
@@ -277,32 +289,41 @@ export function WebDraftEditor({
               </a>
             </p>
           )}
-        {labState?.job && labState.job.revision !== revision && (
+        {labState?.job &&
+          (labState.job.editorial_revision ?? labState.job.revision) !==
+            revision && (
+            <p>
+              El resultado corresponde a una revisión anterior; los cambios
+              nuevos no se han enviado.
+            </p>
+          )}
+        {dirty && <p>Guarda tus cambios antes de solicitar el ensayo.</p>}
+        {labState?.can_request && labState.local_product_id && (
           <p>
-            El resultado corresponde a una revisión anterior; los cambios nuevos
-            no se han enviado.
+            Hay cambios revisados para enviar. No necesitas modificar el texto
+            si sólo cambió el precio.
           </p>
         )}
-        {dirty && <p>Guarda tus cambios antes de solicitar el ensayo.</p>}
+        {labState?.request_reason === "LAB_FAMILY_REVIEW_REQUIRED" && (
+          <p>
+            El catálogo cambió: falta revisar nuevamente la familia antes de
+            enviarla.
+          </p>
+        )}
         <div className={styles.actions}>
-          {labState?.enabled &&
-            draft.can_edit &&
-            (!labState.job ||
-              labState.job.state === "SUPERSEDED" ||
-              (labState.job.state === "SUCCEEDED" &&
-                revision > labState.job.revision)) && (
-              <button
-                type="button"
-                disabled={dirty || !revision || busy || uploading || labBusy}
-                onClick={() => {
-                  void laboratory(true);
-                }}
-              >
-                {labState.local_product_id
-                  ? "Preparar actualización en laboratorio"
-                  : "Preparar envío al laboratorio"}
-              </button>
-            )}
+          {labState?.enabled && draft.can_edit && labState.can_request && (
+            <button
+              type="button"
+              disabled={dirty || !revision || busy || uploading || labBusy}
+              onClick={() => {
+                void laboratory(true);
+              }}
+            >
+              {labState.local_product_id
+                ? "Preparar actualización en laboratorio"
+                : "Preparar envío al laboratorio"}
+            </button>
+          )}
           <button
             type="button"
             disabled={labBusy || busy || uploading}

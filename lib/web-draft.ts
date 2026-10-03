@@ -151,6 +151,8 @@ export type SaveWebState = {
 
 export type WebLabState = {
   enabled: boolean;
+  can_request?: boolean;
+  request_reason?: string | null;
   supervised: true;
   last_verified_revision?: number | null;
   last_verified_variants?: Array<{
@@ -163,6 +165,7 @@ export type WebLabState = {
     id: string;
     state: "READY" | "RUNNING" | "SUCCEEDED" | "REVIEW_REQUIRED" | "SUPERSEDED";
     revision: number;
+    editorial_revision?: number;
     local_product_id: number | null;
   };
 };
