@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { WebFields } from "./fields";
-import type { SaveWebState } from "@/lib/web-draft";
+import type { SaveWebState, WebLabState, WebLabResult } from "@/lib/web-draft";
 import {
   validWebImage,
   webDraftIssues,
@@ -16,11 +16,20 @@ export function WebDraftEditor({
   draft,
   saveWebDraft,
   uploadWebPhoto,
+  lab,
+  webLabAction,
 }: {
   draft: WebDraft;
+  lab: WebLabState | null;
+  webLabAction: (form: FormData) => Promise<WebLabResult>;
   saveWebDraft: (form: FormData) => Promise<SaveWebState>;
   uploadWebPhoto: (form: FormData) => Promise<{ url?: string; error?: string }>;
 }) {
+  const [labState, setLabState] = useState(lab);
+  const [labBusy, setLabBusy] = useState(false);
+  const [labError, setLabError] = useState("");
+  const [dirty, setDirty] = useState(false);
+  const labRequest = useRef<string | null>(null);
   const [revision, setRevision] = useState(draft.revision);
   const [result, setResult] = useState<SaveWebState | null>(null);
   const [busy, setBusy] = useState(false);
@@ -41,6 +50,7 @@ export function WebDraftEditor({
       setResult(state);
       if (state.ok) {
         setRevision(state.revision!);
+        setDirty(false);
         requestRef.current = null;
       }
     } catch {
@@ -53,7 +63,34 @@ export function WebDraftEditor({
       setBusy(false);
     }
   }
+  async function laboratory(enqueue = false) {
+    if (labBusy || busy || uploading) return;
+    setLabBusy(true);
+    setLabError("");
+    const form = new FormData();
+    form.set("product_id", draft.catalog.product_id);
+    if (enqueue) {
+      labRequest.current ??= crypto.randomUUID();
+      form.set("operation", "enqueue");
+      form.set("revision", String(revision));
+      form.set("fingerprint", draft.fingerprint);
+      form.set("request_id", labRequest.current);
+    }
+    try {
+      const response = await webLabAction(form);
+      if (response.lab) setLabState(response.lab);
+      if (response.error) setLabError(response.error);
+    } catch {
+      setLabError(
+        "No se pudo confirmar el estado. Actualiza antes de reintentar.",
+      );
+    } finally {
+      setLabBusy(false);
+    }
+  }
   function change() {
+    setDirty(true);
+    labRequest.current = null;
     requestRef.current = null;
     setResult(null);
   }
@@ -111,9 +148,7 @@ export function WebDraftEditor({
       <Link href="/productos/migracion">← Revisar piloto</Link>
       <h1>Ficha para tienda en línea</h1>
       <p>{draft.catalog.name}</p>
-      <p className={styles.notice}>
-        Prueba en staging · Envío a WooCommerce desactivado
-      </p>
+      <p className={styles.notice}>Prueba en staging · Tienda real bloqueada</p>
       <p>
         {revision
           ? `Guardado interno · revisión ${revision}`
@@ -123,10 +158,10 @@ export function WebDraftEditor({
       </p>
       {draft.source && (
         <p>
-          Producto WooCommerce {draft.source.woo_product_id}.{" "}
+          Producto de la tienda real: WooCommerce {draft.source.woo_product_id}.{" "}
           {partial
             ? `${draft.source.unselected_woo_variation_ids.length} variantes adicionales fuera del piloto se conservarán.`
-            : "Vínculo existente: no se creará otro producto."}
+            : "El ensayo crea una copia separada en el laboratorio local."}
         </p>
       )}
       <form
@@ -144,7 +179,7 @@ export function WebDraftEditor({
         />
         <input type="hidden" name="fingerprint" value={draft.fingerprint} />
         <fieldset
-          disabled={!draft.can_edit || busy || uploading}
+          disabled={!draft.can_edit || busy || uploading || labBusy}
           className={styles.fields}
         >
           <WebFields content={draft.content} />
@@ -199,6 +234,80 @@ export function WebDraftEditor({
           {uploadMessage && <p role="status">{uploadMessage}</p>}
         </form>
       )}
+      <section className={styles.preview} aria-label="Envío al laboratorio">
+        <h2>Ensayo en WooCommerce local</h2>
+        <p>
+          Se prepara un borrador con la ficha guardada, las fotos y el precio
+          público. El procesamiento es supervisado; no publica en la tienda real
+          ni envía existencias.
+        </p>
+        {!labState && (
+          <p>No se pudo consultar la disponibilidad del laboratorio.</p>
+        )}
+        {labState && !labState.enabled && (
+          <p>Esta ficha todavía no está habilitada para el ensayo.</p>
+        )}
+        {labState?.job && (
+          <p role="status">
+            Revisión {labState.job.revision}:{" "}
+            {
+              {
+                READY: "en espera de procesamiento supervisado",
+                RUNNING: "procesamiento iniciado; no volver a enviar",
+                SUCCEEDED: "borrador verificado en el laboratorio",
+                REVIEW_REQUIRED: "requiere revisión antes de continuar",
+                SUPERSEDED: "detenida porque cambió la ficha o su evidencia",
+              }[labState.job.state]
+            }
+            .
+          </p>
+        )}
+        {labState?.job?.state === "SUCCEEDED" &&
+          labState.job.local_product_id && (
+            <p>
+              ID exclusivo del laboratorio: {labState.job.local_product_id}.{" "}
+              <a
+                href="http://127.0.0.1:9417/m9-laboratorio/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Ver laboratorio en este equipo
+              </a>
+            </p>
+          )}
+        {labState?.job && labState.job.revision !== revision && (
+          <p>
+            El resultado corresponde a una revisión anterior; los cambios nuevos
+            no se han enviado.
+          </p>
+        )}
+        {dirty && <p>Guarda tus cambios antes de solicitar el ensayo.</p>}
+        <div className={styles.actions}>
+          {labState?.enabled &&
+            draft.can_edit &&
+            (!labState.job || labState.job.state === "SUPERSEDED") && (
+              <button
+                type="button"
+                disabled={dirty || !revision || busy || uploading || labBusy}
+                onClick={() => {
+                  void laboratory(true);
+                }}
+              >
+                Preparar envío al laboratorio
+              </button>
+            )}
+          <button
+            type="button"
+            disabled={labBusy || busy || uploading}
+            onClick={() => {
+              void laboratory();
+            }}
+          >
+            {labBusy ? "Consultando…" : "Actualizar estado"}
+          </button>
+        </div>
+        {labError && <p role="alert">{labError}</p>}
+      </section>
       <section className={styles.preview} aria-label="Vista previa comercial">
         <h2>Vista previa comercial</h2>
         <p>Revisa con «Ver vista previa» los cambios aún sin guardar.</p>

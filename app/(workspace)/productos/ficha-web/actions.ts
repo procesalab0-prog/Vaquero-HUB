@@ -85,3 +85,34 @@ export async function uploadWebPhoto(
     };
   }
 }
+
+export async function webLabAction(
+  form: FormData,
+): Promise<import("@/lib/web-draft").WebLabResult> {
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL !== WEB_STAGING_URL)
+      throw new Error("STAGING_ONLY");
+    const { supabase } = await requirePermission("products.read");
+    const product = String(form.get("product_id"));
+    const result =
+      form.get("operation") === "enqueue"
+        ? await supabase.rpc("enqueue_web_lab", {
+            p_product_id: product,
+            p_revision: Number(form.get("revision")),
+            p_fingerprint: String(form.get("fingerprint")),
+            p_request_id: String(form.get("request_id")),
+          })
+        : await supabase.rpc("read_web_lab", { p_product_id: product });
+    if (result.error) throw new Error(result.error.message);
+    return { lab: result.data };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    return {
+      error: /LAB_ALREADY_REQUESTED/.test(message)
+        ? "Ya existe una solicitud. Actualiza su estado; no hace falta enviarla otra vez."
+        : /LAB_.*CHANGED|LAB_CATEGORY_REVIEW/.test(message)
+          ? "La ficha o su evidencia cambió. Recarga y revisa antes de solicitar otro ensayo."
+          : "No se confirmó la solicitud. Actualiza el estado antes de reintentar.",
+    };
+  }
+}

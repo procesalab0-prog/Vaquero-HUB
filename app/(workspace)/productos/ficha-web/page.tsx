@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requirePermission } from "@/lib/auth/authorization";
 import { WEB_STAGING_URL, type WebDraft } from "@/lib/web-draft";
-import { saveWebDraft, uploadWebPhoto } from "./actions";
+import { saveWebDraft, uploadWebPhoto, webLabAction } from "./actions";
 import { WebDraftEditor } from "./editor";
 export const metadata = { title: "Ficha para tienda en línea" };
 export const dynamic = "force-dynamic";
@@ -56,6 +56,9 @@ export default async function WebPage({
       ],
     };
   }
+  const { data: lab } = await supabase.rpc("read_web_lab", {
+    p_product_id: draft.catalog.product_id,
+  });
   return (
     <>
       {params.foto === "pendiente" && (
@@ -67,6 +70,8 @@ export default async function WebPage({
       <WebDraftEditor
         key={data.catalog.product_id}
         draft={draft}
+        lab={lab}
+        webLabAction={webLabAction}
         saveWebDraft={saveWebDraft}
         uploadWebPhoto={uploadWebPhoto}
       />

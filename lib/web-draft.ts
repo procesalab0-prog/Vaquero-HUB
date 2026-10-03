@@ -131,3 +131,16 @@ export type SaveWebState = {
   revision?: number;
   conflict?: boolean;
 };
+
+export type WebLabState = {
+  enabled: boolean;
+  supervised: true;
+  production_enabled: false;
+  job: null | {
+    id: string;
+    state: "READY" | "RUNNING" | "SUCCEEDED" | "REVIEW_REQUIRED" | "SUPERSEDED";
+    revision: number;
+    local_product_id: number | null;
+  };
+};
+export type WebLabResult = { lab?: WebLabState; error?: string };
