@@ -3372,3 +3372,16 @@ Ensayo de familia separado: `scripts/m9/woo-test/rehearse-family.mjs` tomó la f
 131 unitarias, ocho comprobaciones SQL de actualización con rollback, tipos y lint aprobados; consultar CI del commit de entrega para integración/build/E2E. Los avisos de seguridad históricos siguen en 105 funciones y una configuración de contraseñas filtradas; las tablas nuevas permanecen privadas con RLS cerrado.
 
 Límites: cola UI todavía sólo para productos simples habilitados; la familia variable se probó por herramienta supervisada y no se incorporó al catálogo de staging. No hay trabajador automático permanente. Atributos descriptivos del padre, variantes fuera del piloto, clasificación web completa y compatibilidad de plugins/tema siguen pendientes antes de ampliar el lote o publicar. Siguiente paso: revisar e incorporar las variantes completas al piloto y conectar su edición/envío supervisado desde la ficha. Producción y existencias siguen cerradas.
+
+
+### Primera familia completa en el catálogo staging — 2026-10-03
+
+Familia Wrangler Woo 5630: se incorporaron cuatro variantes faltantes al mismo producto 14f3af61-18f0-4adb-b1d8-29b447ae9cdb. Cinco tallas literales S/M/L/XL/XXL, códigos SICAR 10581–10585, IDs Woo 6186–6190, precio público 820.00, departamento DAMA y sección CAMISAS WRANGLER. Costos NULL; mayoreo y medio mayoreo indefinidos. La variante S original conservó UUID/SKU. El piloto queda en 40 productos y 44 variantes.
+
+Preparación reproducible de sólo lectura: `node scripts/m9/prepare-staging-family.mjs FAMILY_REPORT_DIR RECONCILIATION_DIR 5630 NEW_OUTPUT_DIR`. Verifica huellas y cruza filas SICAR con la conciliación exacta; rechaza ambigüedad, duplicados, revisiones y atributos distintos. No copia existencias. Dos generaciones idénticas. Paquete SHA256 b27019379401691c7d808f20eec56e2006839d4262abcc9f3d422698988c8ee6.
+
+Se reutilizó el importador privado existente, con plan y token: 4 CREATE + 1 UNCHANGED, sin errores. Ensayo transaccional rollback comprobó identidad, segunda aplicación sin cambios y preservación de fuentes web/borradores/categorías/cola/inventario. Aplicación real sólo en zsezjtswqeijboezvado: 4 creadas, 0 actualizadas; repetición 0 creadas, 0 actualizadas, 5 sin cambios. Las 40 filas previas permanecen idénticas; inventario y movimientos siguen en cero. Evidencia: outputs/m9-familia-staging-2026-10-03 (payload, manifest, preflight, antes/después, rollback, ambas cargas y verificación).
+
+Versión preparada 0.59.0: el aviso de variantes fuera del piloto compara el snapshot histórico contra variantes activas del catálogo con el mismo padre Woo. No se altera la exportación ni se habilitan envíos por este cálculo visual. 136 pruebas unitarias, lint y tipos aprobados; CI y avatar Preview se verifican después del despliegue.
+
+Pendiente: conectar esta familia completa con la cola de fichas, correspondencias de categorías jerárquicas y recibos por variante del Woo local; por ahora sigue deshabilitada para envío desde UI. El borrador local 23 del ensayo anterior conserva UUID/SKU sintéticos y no se adoptó como destino de estas variantes. No hubo publicación Woo, modificación de producción, importación de inventario ni integración con main. Las mejoras de caja/dólares del otro chat siguen separadas; no declarar terminado todo staging hasta cerrar el flujo variable y sus verificaciones.

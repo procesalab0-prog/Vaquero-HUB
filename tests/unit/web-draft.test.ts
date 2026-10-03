@@ -3,6 +3,8 @@ import {
   validWebImage,
   webContentFromForm,
   webDraftIssues,
+  remainingSourceVariants,
+  type WebDraft,
 } from "../../lib/web-draft";
 function form() {
   const f = new FormData();
@@ -15,6 +17,22 @@ function form() {
   return f;
 }
 describe("ficha web sin envío", () => {
+  it("counts only source children still absent or inactive under their original parent", () => {
+    const source = {
+      woo_product_id: 10,
+      unselected_woo_variation_ids: [11, 12, 13],
+    } as WebDraft["source"];
+    const catalog = {
+      variants: [
+        { active: true, woo_product_id: 10, woo_variation_id: 11 },
+        { active: false, woo_product_id: 10, woo_variation_id: 12 },
+        { active: true, woo_product_id: 99, woo_variation_id: 13 },
+      ],
+    } as WebDraft["catalog"];
+    expect(remainingSourceVariants({ source, catalog })).toEqual([12, 13]);
+    expect(source!.unselected_woo_variation_ids).toEqual([11, 12, 13]);
+    expect(remainingSourceVariants({ source: null, catalog })).toEqual([]);
+  });
   it("conserva código base como texto y orden/alt de la galería", () => {
     const c = webContentFromForm(form());
     expect(c.base_code).toBe("000BASE");

@@ -6,6 +6,7 @@ import { WebFields } from "./fields";
 import type { SaveWebState, WebLabState, WebLabResult } from "@/lib/web-draft";
 import {
   validWebImage,
+  remainingSourceVariants,
   webDraftIssues,
   type WebDraft,
   type WebContent,
@@ -38,7 +39,8 @@ export function WebDraftEditor({
   const [preview, setPreview] = useState<WebContent>(draft.content);
   const formRef = useRef<HTMLFormElement>(null);
   const requestRef = useRef<string | null>(null);
-  const partial = Boolean(draft.source?.unselected_woo_variation_ids.length);
+  const remainingVariants = remainingSourceVariants(draft);
+  const partial = remainingVariants.length > 0;
   async function save(form: FormData) {
     if (busy || uploading) return;
     setBusy(true);
@@ -160,7 +162,7 @@ export function WebDraftEditor({
         <p>
           Producto de la tienda real: WooCommerce {draft.source.woo_product_id}.{" "}
           {partial
-            ? `${draft.source.unselected_woo_variation_ids.length} variantes adicionales fuera del piloto se conservarán.`
+            ? `${remainingVariants.length} variantes adicionales fuera del piloto se conservarán.`
             : "El ensayo crea una copia separada en el laboratorio local."}
         </p>
       )}

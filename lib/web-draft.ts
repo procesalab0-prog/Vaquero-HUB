@@ -46,6 +46,23 @@ export type WebDraft = {
     }>;
   };
 };
+// Informational only: keep the original export immutable. Server-side send
+// eligibility still requires its own verified family evidence.
+export function remainingSourceVariants(
+  draft: Pick<WebDraft, "catalog" | "source">,
+) {
+  if (!draft.source) return [];
+  const linked = new Set(
+    draft.catalog.variants
+      .filter(
+        (v) => v.active && v.woo_product_id === draft.source!.woo_product_id,
+      )
+      .map((v) => v.woo_variation_id),
+  );
+  return draft.source.unselected_woo_variation_ids.filter(
+    (id) => !linked.has(id),
+  );
+}
 export function validWebImage(url: string) {
   try {
     const u = new URL(url);
