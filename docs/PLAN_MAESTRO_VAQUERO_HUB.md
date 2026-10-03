@@ -3186,3 +3186,11 @@ Entrega visible 0.52.3 — identidad visible y claves de etiqueta claras:
   pruebas unitarias y 114 de navegador en verde; medición en la aplicación real
   a 390 × 844, 768 × 1024, 1024 × 1366 y escritorio sin desplazamiento
   horizontal ni controles perdidos.
+
+### 2026-10-03 · 0.55.4 · Icono original de Mi Vaquero
+
+El icono instalado usa el mismo logo completo original del inicio (`public/brand/logo-vaquerosm-blanco.png`), exportado sobre negro en 180/192/512 px con margen seguro, sin generación de otra silueta. Manifest, favicon y Apple Touch Icon apuntan a archivos nuevos; caché editorial v2. Conserva el nombre Mi Vaquero y el resto de la PWA vigente en main. Sin cambios de datos ni simulaciones nuevas. La actualización de instalaciones existentes depende del navegador/SO; en iOS puede requerir volver a agregar a Inicio.
+
+La verificación detectó que la convención `app/manifest.ts` tenía prioridad sobre el manifiesto de clientes. Se convierte a Route Handler en la misma URL `/manifest.webmanifest`, conservando el contenido de Mi Tienda SM, para que `/mi` seleccione su manifiesto propio y el icono correcto.
+
+Validación de entrega: compilación de producción y TypeScript correctos; lint completo y formato correctos; seis pruebas de la PWA en escritorio/móvil aprobadas, incluyendo manifiestos separados y tarjeta offline. Navegador confirma `/mi/manifest.webmanifest` y Apple Touch Icon original sin overlay de error. La versión 0.55.4 queda sincronizada con package.json. No se validó avatar S con sesión de empleado en este entorno sin credenciales ni actualización del icono en dispositivo físico instalado.

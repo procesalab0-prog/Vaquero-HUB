@@ -1,7 +1,5 @@
-import type { MetadataRoute } from "next";
-
-export default function manifest(): MetadataRoute.Manifest {
-  return {
+export function GET() {
+  return Response.json({
     name: "Mi Tienda SM",
     short_name: "Mi Tienda SM",
     description: "Sistema operativo de punto de venta e inventario para Vaquero SM.",
@@ -18,5 +16,5 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/icons/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
-  };
+  });
 }

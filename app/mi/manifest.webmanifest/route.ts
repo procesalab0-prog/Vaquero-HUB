@@ -21,19 +21,19 @@ export function GET(request: NextRequest) {
       categories: ["shopping", "lifestyle"],
       icons: [
         {
-          src: "/icons/mi-vaquero/icon-192.png",
+          src: "/icons/mi-vaquero/original-192.png",
           sizes: "192x192",
           type: "image/png",
           purpose: "any",
         },
         {
-          src: "/icons/mi-vaquero/icon-512.png",
+          src: "/icons/mi-vaquero/original-512.png",
           sizes: "512x512",
           type: "image/png",
           purpose: "any",
         },
         {
-          src: "/icons/mi-vaquero/icon-maskable-512.png",
+          src: "/icons/mi-vaquero/original-512.png",
           sizes: "512x512",
           type: "image/png",
           purpose: "maskable",
