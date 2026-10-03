@@ -3524,3 +3524,12 @@ Esto prueba el flujo supervisado local; NO ofrece compare-and-swap atomico ni re
 Comparativo comercial preparado: cuatro familias/17 variantes/14 fotos locales; texto de exportacion Woo 1 de octubre frente a texto ensayado. Navegador verificado en localhost9430, solo lectura, no publicacion. Evidencia outputs/m9-errores-reversion-2026-10-03 (reporte, scripts, run/verification.json, catalogue-final.json, comparativo HTML/JSON/fotos y captura).
 
 Version 0.63.0 sin cambios funcionales de app. Estimacion 85% se mantiene. Staging abierto; respaldo real pendiente de acceso Hostinger con verificacion del usuario, decisiones comerciales y fuentes frescas pendientes. Ninguna escritura de produccion o staging.
+
+
+## Registro vivo - revision offline de reversion (2026-10-03, 0.64.0)
+
+Nueva herramienta inspect-rollback.mjs de solo lectura: coteja snapshots antes/aplicado/actual por campos explicitamente seleccionados, verifica identidad literal y pertenencia de variantes, distingue ya restaurado/sin cambio/conflicto/candidato para revision. Si hay conflicto bloquea todo el recurso. Prohibe inventario, promociones, publicacion y metadatos como objetivos. No posee cliente de red ni mutaciones; produccion y reversion automatica siempre false.
+
+16 pruebas especificas aprobadas. Ejecucion sobre evidencia historica real del precio sintetico informa ALREADY_RESTORED; repeticion byte-identica. No se altero Woo ni staging. Ver guia [M9_REVISION_REVERSION.md](M9_REVISION_REVERSION.md) y outputs/m9-revision-reversion-2026-10-03.
+
+No resuelve carrera GET/PUT ni cambios intermedios que regresaron al mismo valor. Recuperacion real de Hostinger pendiente del codigo de acceso; aprobacion comercial y fuentes frescas pendientes. Avance tecnico se mantiene 85%; staging abierto. Entrega funcional 0.64.0; CI/Preview pendientes de verificar al redactar esta entrada.
