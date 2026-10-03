@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.62.0";
-export const APP_RELEASE = "Párrafos verificados y recuperación sin duplicados";
+export const APP_VERSION = "0.63.0";
+export const APP_RELEASE = "Respaldo recuperado y ensayo de corte";

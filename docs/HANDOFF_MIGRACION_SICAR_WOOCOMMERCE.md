@@ -719,3 +719,12 @@ Avance técnico estimado 70% por ensayo ampliado y recuperación real, no porcen
 
 
 Verificación final 0.62.0: commit funcional 99e62536e1ba862f8d4ecdb30f1b49c0e85a402a, CI #274 / run 37139180684 / job 111249877566 completado con éxito (formato, lint, tipos, migraciones, 148 unitarias, integración, build y E2E). Vercel Preview exitoso y avatar confirma 0.62.0. UI confirma borradores locales 42/52 y sus 11 vínculos; fotos y tallas comprobadas en laboratorio. Las 64 filas staging siguen coincidiendo literalmente con SICAR (5) en código, descripción, precio y clasificación. Evidencia en outputs/m9-dos-familias-woo-local-2026-10-03, incluida guía prueba-lector.md. Avance técnico estimado 70%; staging aún abierto y producción 0%.
+
+
+## Registro vivo — recuperación y ensayo de corte (2026-10-03, 0.63.0)
+
+Añadidas herramientas reproducibles de respaldo SQLite consistente, restauración en copia separada de solo lectura HTTP y ensayo de corte sin escrituras. Recuperados 9,976 archivos, seis padres, 23 variantes y 19 imágenes; diario de trabajos preservado y reintentos completados sin solicitudes ni duplicados. Laboratorio original permanece disponible. El respaldo incluye secretos locales y queda fuera de Git, con permisos restringidos. No constituye respaldo de producción ni de Supabase.
+
+El ensayo con SICAR (4)→(5) y Woo autenticado del 1 de octubre se repitió con resultados idénticos: 64/64 filas staging coincidentes; tres altas nuevas manuales; 68 cambios de existencias excluidos. 36 de 41 familias tienen reservas estructurales, principalmente porque el piloto es parcial. Ninguna coincidencia se interpreta como aprobación comercial. Sombrero sin talla 60 y Nokota mixto siguen bloqueados.
+
+Avance técnico estimado 80%, por los dos hitos adicionales; no es porcentaje del catálogo migrado. Staging NO cerrado: faltan lector físico, revisión comercial, fuentes frescas al corte, integración del otro chat y plan de respaldo/reversión real con autorización de producción. Sin escrituras en producción ni importación de existencias. Guía: [M9_CORTE_RECUPERACION.md](M9_CORTE_RECUPERACION.md). Evidencia fuera de Git en outputs/m9-corte-y-recuperacion-2026-10-03. CI y Preview 0.63.0 pendientes al redactar esta entrada.

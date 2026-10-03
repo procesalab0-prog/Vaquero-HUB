@@ -3,12 +3,23 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
+import { runtimeMode } from "./runtime-mode.mjs";
 
 // Runtime dependencies live OUTSIDE the application's shared node_modules.
 if (!process.argv[2])
   throw new Error("Usage: start-local.mjs ISOLATED_RUNTIME_DIR");
 const root = resolve(process.argv[2]);
-const port = 9417;
+if (process.argv.length > 4) throw new Error("UNKNOWN_RUNTIME_OPTION");
+const recoveryMarker = await readFile(
+  resolve(root, "private/recovery.json"),
+  "utf8",
+)
+  .then(JSON.parse)
+  .catch((e) => {
+    if (e.code !== "ENOENT") throw e;
+    return null;
+  });
+const { port, readOnly } = runtimeMode(root, process.argv[3], recoveryMarker);
 await mkdir(resolve(root, "wordpress"), { recursive: true });
 await mkdir(resolve(root, "private"), { recursive: true, mode: 0o700 });
 const guard = await readFile(
@@ -56,12 +67,20 @@ if (!installed && wordpressExists)
   );
 if (installed && !wordpressExists)
   throw new Error("PERSISTED_WORDPRESS_FILES_MISSING");
+if (readOnly && !installed) throw new Error("RECOVERY_INSTALL_FORBIDDEN");
 const blueprint = {
   constants: {
     WP_ENVIRONMENT_TYPE: "local",
     DISABLE_WP_CRON: true,
     WP_HTTP_BLOCK_EXTERNAL: true,
     AUTOMATIC_UPDATER_DISABLED: true,
+    ...(readOnly
+      ? {
+          M9_RECOVERY_READ_ONLY: true,
+          WP_HOME: `http://127.0.0.1:${port}`,
+          WP_SITEURL: `http://127.0.0.1:${port}`,
+        }
+      : {}),
   },
   steps: [
     { step: "mkdir", path: "/wordpress/wp-content/mu-plugins" },
@@ -99,19 +118,32 @@ const blueprint = {
           },
         ]
       : []),
-    {
-      step: "runPHP",
-      code: "<?php require '/wordpress/wp-load.php'; delete_transient('_wc_activation_redirect');",
-    },
+    ...(!readOnly
+      ? [
+          {
+            step: "runPHP",
+            code: "<?php require '/wordpress/wp-load.php'; delete_transient('_wc_activation_redirect');",
+          },
+        ]
+      : []),
   ],
 };
 const instance = await runCLI({
   command: "server",
-  define: { WP_ENVIRONMENT_TYPE: "local" },
+  define: {
+    WP_ENVIRONMENT_TYPE: "local",
+    ...(readOnly
+      ? {
+          WP_HOME: `http://127.0.0.1:${port}`,
+          WP_SITEURL: `http://127.0.0.1:${port}`,
+        }
+      : {}),
+  },
   "define-bool": {
     DISABLE_WP_CRON: true,
     WP_HTTP_BLOCK_EXTERNAL: true,
     AUTOMATIC_UPDATER_DISABLED: true,
+    ...(readOnly ? { M9_RECOVERY_READ_ONLY: true } : {}),
   },
   php: "8.3",
   wp: "7.0.6",
