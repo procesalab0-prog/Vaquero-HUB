@@ -3502,3 +3502,14 @@ Aplicacion permanece 0.63.0, sin cambios funcionales ni despliegue nuevo. Sin es
 
 
 Actualizacion posterior del mismo turno: el usuario responde que SI aparecio el sombrero talla 59 a $2,190 al usar el lector. Lectura, busqueda, talla y precio quedan confirmados por reporte del usuario (no por observacion directa del agente). No hubo venta ni prueba de existencias; esto no autoriza produccion. Las preguntas 1-4 y 6 siguen pendientes de los propietarios. Reproduccion final del paquete en final/ y final-repeticion/ incorpora esta confirmacion.
+
+
+## Registro vivo - ensayo conjunto del lote (2026-10-03)
+
+Completada reaplicacion de valores existentes en Woo local de cuatro familias/17 variantes vendibles: origen 5630/local33, 5738/42, 19771/18, 25814/52. Veinte PUT, cero POST; cuatro SUCCEEDED, reintentos cero solicitudes. Comparacion completa de seis padres y sus hijos antes/despues identica salvo date_modified/date_modified_gmt. Catorce fotos del lote verificadas por SHA256 contra respaldo. Textos y galerias revisados en navegador, sin aprobar propiedades fisicas.
+
+Ensayo supervisado con diario separado, conservando revisiones/marcadores originales. Diario real de entregas comprobado contra respaldo. La comprobacion previa detuvo dos intentos antes de escribir por diferente ordenacion de los mismos IDs de categorias; el ensayo conserva el orden actual tras comprobar igualdad de conjuntos. No cambia el compilador ni el comportamiento del sistema. No hay nuevos cambios comerciales ni precio SICAR real simulado.
+
+Evidencia: outputs/m9-lote-actualizacion-2026-10-03 (ensayar.mjs, run/before.json, after.json, plans.json, cuatro resultados, verification.json, journal-integrity.json, captura y procedimiento-del-corte.md). Procedimiento propuesto exige fuentes frescas, lectura final de IDs, comparacion antes/despues y reversion selectiva protegida contra ventas/ediciones posteriores. Respaldo y recuperacion del destino real siguen pendientes; no sustituirlos por el laboratorio.
+
+Estimacion tecnica 85% por lector fisico confirmado y ensayo conjunto completado, no porcentaje de catalogo publicado. Staging abierto. Pendientes: aprobacion comercial, casos excluidos, fuentes frescas, respaldo/reversion real y autorizacion de produccion. Mejoras del otro chat pospuestas por usuario. Version 0.63.0 sin cambios funcionales ni nuevo despliegue de codigo. Sin escrituras Supabase/Woo produccion ni importacion de existencias.
