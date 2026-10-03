@@ -108,7 +108,7 @@ export async function webLabAction(
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
     return {
-      error: /LAB_ALREADY_REQUESTED/.test(message)
+      error: /LAB_ALREADY_REQUESTED|LAB_REVISION_ALREADY_SENT/.test(message)
         ? "Ya existe una solicitud. Actualiza su estado; no hace falta enviarla otra vez."
         : /LAB_.*CHANGED|LAB_CATEGORY_REVIEW/.test(message)
           ? "La ficha o su evidencia cambió. Recarga y revisa antes de solicitar otro ensayo."

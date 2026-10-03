@@ -135,6 +135,8 @@ export type SaveWebState = {
 export type WebLabState = {
   enabled: boolean;
   supervised: true;
+  last_verified_revision?: number | null;
+  local_product_id?: number | null;
   production_enabled: false;
   job: null | {
     id: string;

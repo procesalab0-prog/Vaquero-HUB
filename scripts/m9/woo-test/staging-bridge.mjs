@@ -31,7 +31,7 @@ export function imageType(bytes) {
     return ["image/webp", "webp"];
   throw new Error("UNSUPPORTED_IMAGE_BYTES");
 }
-export function claimedInput(claim) {
+export function claimedInput(claim, baseline) {
   const p = claim?.packet;
   const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
   assert(
@@ -41,8 +41,8 @@ export function claimedInput(claim) {
     "CLAIM_REQUIRED",
   );
   assert(
-    p?.version === 1 &&
-      p.mode === "create" &&
+    ((p?.version === 1 && p.mode === "create") ||
+      (p?.version === 2 && p.mode === "update")) &&
       p.type === "simple" &&
       p.store?.id === "m9-local-2026-10-02" &&
       localStore(p.store) === "http://127.0.0.1:9417",
@@ -63,7 +63,7 @@ export function claimedInput(claim) {
     store: p.store,
     product_id: p.product_id,
     revision: p.revision,
-    mode: "create",
+    mode: p.mode,
     type: "simple",
     content: p.content,
     variants: [
@@ -81,6 +81,30 @@ export function claimedInput(claim) {
       images: p.content.images.map((x, i) => ({ url: x.url, id: i + 1 })),
     },
   };
+  if (p.mode === "update") {
+    assert(
+      baseline &&
+        hash(baseline.evidence) === p.previous?.receipt?.evidence_sha256 &&
+        baseline.evidence.worker_result.state === "SUCCEEDED" &&
+        hash(compilePlan(baseline.input)) ===
+          baseline.evidence.worker_result.plan_hash &&
+        baseline.input.product_id === p.product_id &&
+        baseline.input.revision === p.previous.revision &&
+        p.previous.revision < p.revision &&
+        hash(baseline.input.store) === hash(p.store) &&
+        baseline.evidence.parent.id === p.previous.receipt.local_product_id &&
+        baseline.evidence.parent.id ===
+          baseline.evidence.worker_result.steps[0].remote_id,
+      "VERIFIED_PREVIOUS_RESULT_REQUIRED",
+    );
+    const parent = baseline.evidence.parent;
+    input.target = {
+      store_id: p.store.id,
+      product_id: parent.id,
+      snapshot: parent,
+      variants: [{ variant_id: v.id, id: parent.id, snapshot: parent }],
+    };
+  }
   compilePlan(input); // Validate completely before any remote media/category writes.
   return input;
 }
@@ -122,8 +146,23 @@ async function download(url) {
   imageType(bytes);
   return bytes;
 }
-export async function processClaim({ claim, runtimeDir, outputDir }) {
-  const input = claimedInput(claim),
+export async function processClaim({
+  claim,
+  runtimeDir,
+  outputDir,
+  previousDir,
+}) {
+  const baseline = previousDir
+    ? {
+        input: JSON.parse(
+          await readFile(resolve(previousDir, "worker-input.json"), "utf8"),
+        ),
+        evidence: JSON.parse(
+          await readFile(resolve(previousDir, "verification.json"), "utf8"),
+        ),
+      }
+    : undefined;
+  const input = claimedInput(claim, baseline),
     origin = localStore(input.store),
     root = resolve(runtimeDir),
     out = resolve(outputDir);
@@ -189,6 +228,15 @@ export async function processClaim({ claim, runtimeDir, outputDir }) {
       journal = { claim_hash: hash(claim), steps: {} };
     }
     assert(journal.claim_hash === hash(claim), "CLAIM_FILE_CHANGED");
+    if (input.mode === "update" && !journal.preflight) {
+      const current = await request(
+        "GET",
+        `products/${input.target.product_id}`,
+      );
+      assert(hash(current) === hash(input.target.snapshot), "REMOTE_CHANGED");
+      journal.preflight = true;
+      await durable(journalFile, journal);
+    }
     async function asset(key, write, verify) {
       const prior = journal.steps[key];
       assert(
@@ -217,6 +265,20 @@ export async function processClaim({ claim, runtimeDir, outputDir }) {
     for (const path of input.content.categories) {
       // Verified paths with ancestry need an explicit hierarchy mapping, never flatten.
       assert(!path.includes(" > "), "CATEGORY_HIERARCHY_REVIEW_REQUIRED");
+      const previous = baseline?.input.bindings.categories.find(
+        (c) => c.path === path,
+      );
+      if (previous) {
+        const current = await call(`wc/v3/products/categories/${previous.id}`);
+        assert(
+          current.id === previous.id &&
+            current.name === path &&
+            current.parent === 0,
+          "CATEGORY_READBACK_FAILED",
+        );
+        input.bindings.categories.push(previous);
+        continue;
+      }
       const slug = `m9-${hash([input.store.id, claim.id, path]).slice(0, 20)}`;
       const id = await asset(
         `category:${path}`,
@@ -233,6 +295,20 @@ export async function processClaim({ claim, runtimeDir, outputDir }) {
     }
     input.bindings.images = [];
     for (const [i, img] of input.content.images.entries()) {
+      const previous = baseline?.input.bindings.images.find(
+        (m) => m.url === img.url,
+      );
+      if (previous) {
+        const current = await call(`wp/v2/media/${previous.id}`);
+        assert(
+          current.id === previous.id &&
+            current.media_type === "image" &&
+            current.source_url?.startsWith(`${origin}/`),
+          "IMAGE_READBACK_FAILED",
+        );
+        input.bindings.images.push(previous);
+        continue;
+      }
       let bytes;
       if (!journal.steps[`image:${img.url}`]) bytes = await download(img.url);
       const id = await asset(
@@ -315,15 +391,15 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(resolve(process.argv[1])).href
 ) {
-  const [claimFile, runtimeDir, outputDir] = process.argv.slice(2);
+  const [claimFile, runtimeDir, outputDir, previousDir] = process.argv.slice(2);
   assert(
     claimFile && runtimeDir && outputDir,
-    "Usage: staging-bridge.mjs CLAIM_JSON RUNTIME_DIR OUTPUT_DIR",
+    "Usage: staging-bridge.mjs CLAIM_JSON RUNTIME_DIR OUTPUT_DIR [PREVIOUS_VERIFIED_DIR]",
   );
   const claim = JSON.parse(await readFile(resolve(claimFile), "utf8"));
   console.log(
     JSON.stringify(
-      await processClaim({ claim, runtimeDir, outputDir }),
+      await processClaim({ claim, runtimeDir, outputDir, previousDir }),
       null,
       2,
     ),

@@ -285,7 +285,10 @@ export function WebDraftEditor({
         <div className={styles.actions}>
           {labState?.enabled &&
             draft.can_edit &&
-            (!labState.job || labState.job.state === "SUPERSEDED") && (
+            (!labState.job ||
+              labState.job.state === "SUPERSEDED" ||
+              (labState.job.state === "SUCCEEDED" &&
+                revision > labState.job.revision)) && (
               <button
                 type="button"
                 disabled={dirty || !revision || busy || uploading || labBusy}
@@ -293,7 +296,9 @@ export function WebDraftEditor({
                   void laboratory(true);
                 }}
               >
-                Preparar envío al laboratorio
+                {labState.local_product_id
+                  ? "Preparar actualización en laboratorio"
+                  : "Preparar envío al laboratorio"}
               </button>
             )}
           <button

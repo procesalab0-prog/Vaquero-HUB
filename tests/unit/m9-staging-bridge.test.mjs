@@ -1,3 +1,4 @@
+import { hash, compilePlan } from "../../scripts/m9/woo-test/plan.mjs";
 import { describe, it, expect } from "vitest";
 import {
   sourceImage,
@@ -78,4 +79,50 @@ describe("supervised staging bridge", () => {
       "UNSUPPORTED_IMAGE_BYTES",
     );
   });
+});
+
+function updateCase() {
+  const c = claim(),
+    input = claimedInput(c),
+    plan = compilePlan(input);
+  const parent = { id: 18, ...plan.steps[0].payload };
+  const baseline = {
+    input,
+    evidence: {
+      parent,
+      worker_result: {
+        state: "SUCCEEDED",
+        plan_hash: hash(plan),
+        steps: [{ remote_id: 18 }],
+      },
+    },
+  };
+  c.packet.version = 2;
+  c.packet.mode = "update";
+  c.packet.revision = 2;
+  c.packet.previous = {
+    revision: 1,
+    receipt: { local_product_id: 18, evidence_sha256: hash(baseline.evidence) },
+  };
+  return { c, baseline };
+}
+it("updates only the previously verified local ID", () => {
+  const { c, baseline } = updateCase();
+  const input = claimedInput(c, baseline);
+  const plan = compilePlan(input);
+  expect(input.target.product_id).toBe(18);
+  expect(plan.steps.every((s) => s.method === "PUT")).toBe(true);
+});
+it("rejects changed evidence, input or missing prior verification", () => {
+  const { c, baseline } = updateCase();
+  expect(() => claimedInput(c)).toThrow("VERIFIED_PREVIOUS_RESULT_REQUIRED");
+  baseline.input.variants[0].barcode = "CHANGED";
+  expect(() => claimedInput(c, baseline)).toThrow(
+    "VERIFIED_PREVIOUS_RESULT_REQUIRED",
+  );
+  const clean = updateCase();
+  clean.baseline.evidence.parent.id = 19771;
+  expect(() => claimedInput(clean.c, clean.baseline)).toThrow(
+    "VERIFIED_PREVIOUS_RESULT_REQUIRED",
+  );
 });
