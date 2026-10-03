@@ -78,6 +78,14 @@ function matches(wanted, actual, key = "") {
     );
   if (Array.isArray(wanted)) {
     if (!Array.isArray(actual)) return false;
+    if (key === "categories")
+      return (
+        wanted.length === actual.length &&
+        new Set(actual.map((x) => x.id)).size === actual.length &&
+        wanted.every((item) =>
+          actual.some((a) => a.id === item.id && matches(item, a)),
+        )
+      );
     if (key === "meta_data")
       return wanted.every((item) =>
         actual.some((a) => a.key === item.key && matches(item, a)),

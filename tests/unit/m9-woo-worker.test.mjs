@@ -421,3 +421,23 @@ it("follows no external redirect and retries only a GET redirected to its exact 
   expect(mock).toHaveBeenCalledTimes(1);
   expect(mock.mock.calls[0][1].redirect).toBe("error");
 });
+
+it("accepts reordered category membership but rejects substituted categories", async () => {
+  for (const corrupted of [false, true]) {
+    const input = sampleInput(),
+      api = fake(),
+      journalDir = await directory();
+    input.content.categories.push("Otra");
+    input.bindings.categories.push({ id: 99, path: "Otra" });
+    const request = async (...args) => {
+      const r = await api.request(...args);
+      if (r.categories) {
+        r.categories.reverse();
+        if (corrupted) r.categories[0].id = 999;
+      }
+      return r;
+    };
+    const r = await runJob({ input, journalDir, request });
+    expect(r.state).toBe(corrupted ? "REVIEW_REQUIRED" : "SUCCEEDED");
+  }
+});
