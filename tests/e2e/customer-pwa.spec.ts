@@ -157,7 +157,7 @@ test("la PWA conserva la tarjeta sin conexión sin guardar videos ni borrar otro
   ).toBeVisible();
   const cached = await page.evaluate(async () => ({
     keys: await caches.keys(),
-    urls: (await (await caches.open("mi-vaquero-editorial-v1")).keys()).map(
+    urls: (await (await caches.open("mi-vaquero-editorial-v3")).keys()).map(
       (entry) => entry.url,
     ),
   }));

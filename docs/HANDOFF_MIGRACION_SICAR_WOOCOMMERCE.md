@@ -856,3 +856,24 @@ Integrado expected snapshot de cada PUT en worker/wooClient; se envia a ruta POS
 Ensayo real mediante runJob: SUCCEEDED, conflicto inyectado entre preflight/envio REVIEW_REQUIRED con edicion conservada, retry cero solicitudes, dos solicitudes iguales una aceptada/otra rechazada. Negativas: PUT directo409, inventario400, codigo400, batch409, anonimo401. Familia sintetica23/hijo24 restaurada salvo fechas; diarios originales intactos. Evidencia outputs/m9-adaptador-protegido-2026-10-05. Primer ensayo fallo por enlaces REST omitidos en snapshot interno; corregido mediante response_to_data. 181 unitarias aprobadas desde raiz repo (primer lanzamiento desde workspace fallo ruta Python, no logica).
 
 Limitaciones explicitas: laboratorio Playground con un workerPHP; no multiples procesos, no ABA/versionado global, no bloqueo WP-admin/CLI/otras versiones API/creaciones. No transaccion atomica por familia. Produccion NO habilitada. Pendiente validar coordinacion de escritores/canal final y aprobacion/fuentes frescas. Staging abierto, estimacion90% mantenida. App preparada0.65.0; version publicada0.64.0 sin despliegue nuevo, avatar nuevo pendiente de comprobar al desplegar. Sin cambios en Woo/Supabase produccion ni importacion de existencias.
+
+
+## Preview 0.65.0 verificado — 2026-10-05
+
+Commit funcional b3524cf754c6111f3f81dc1498c9b9a7f89ea8f5 publicado en codex/m9-staging-review. Vercel success y menú de usuario0.65.0 comprobado. Captura: outputs/m9-preview-0.65-2026-10-05/version-staging.png. Antes de publicar se corrigió mutex: add_option permite upsert; ahora INSERT exclusivo y liberación condicionada al token. Bloqueo ocupado423, token conservado, producto intacto. Ensayos finales v3 aprobados.
+
+181 unitarias locales aprobadas, formato y diferencias revisados. GitHub Actions sin ejecución para este commit; PR87 borrador con mergeable=false frente a main5366bd48. No se mezclaron mejoras del otro chat ni se declara CI remota aprobada. Pendiente integrar ramas por separado y verificación completa, canal final con múltiples escritores, recuperación por familia, decisiones comerciales y fuentes frescas. Estimación90%, staging abierto. Producción intacta; cero importación de existencias.
+
+
+## Preparación de integración, interrupción y cortes — 2026-10-05
+
+Revisado main766c92e mediante merge-tree: cuatro conflictos (manifest de empleados, plan, release, package). Propuesta separada en outputs/m9-preparacion-integracion-2026-10-05/propuesta-no-aplicada, sin aplicar merge ni publicar0.66.0. Versión publicada sigue0.65.0. Preserva ambos historiales y Route Handler/cabeceras de staging, más iconos/caché de Mi Vaquero al integrar. Necesario repetir diagnóstico si cambian puntas.
+
+SIGKILL real del trabajador local tras respuesta de Woo antes de registrar acuse: bloqueo persistente, reinicio sin solicitudes, inspección y retirada sólo del bloqueo propio con proceso muerto, conciliación por una lectura del padre conocido, reanudación sólo de variante pendiente, repetición final cero solicitudes. Familia sintética23/24 restaurada salvo fechas. No prueba multiworker, WP-admin ni transacción por familia. 34 unitarias de worker/cortes aprobadas.
+
+Nuevo ejecutor offline recibir-corte.mjs preserva fuentes, genera dos reportes y dos deltas, comprueba igualdad y huellas. Ensayo con fuentes históricas:11 archivos idénticos,16133 sin cambios, cero escrituras de producción/existencias. No se descargaron fuentes nuevas. Ver reporte.md del paquete para instrucciones y limitaciones. Scripts del conciliador work/m9 conservan cambios no versionados preexistentes: no fueron modificados. Estimación90% mantenida, staging abierto; CI remota del commit anterior sigue pendiente y no se declara cierre.
+
+
+## Registro vivo — integración M9 y Mi Vaquero, 2026-10-05
+
+Integrado main766c92e en staging por autorización del usuario. Cuatro conflictos resueltos preservando Route Handler tipado y cabeceras del manifest de empleados, registros históricos de ambas ramas, build webpack y versión nueva0.66.0. Incluidos iconos originales de Mi Vaquero, caché v3 y su prueba PWA. Sin cambios de base de datos, datos Woo o inventario. 181 unitarias y formato locales aprobados antes del envío; validación alojada y avatar pendientes en este registro de preparación. No declarar staging cerrado ni habilitar producción.

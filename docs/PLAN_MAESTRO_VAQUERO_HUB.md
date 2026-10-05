@@ -3613,3 +3613,38 @@ Integrado expected snapshot de cada PUT en worker/wooClient; se envia a ruta POS
 Ensayo real mediante runJob: SUCCEEDED, conflicto inyectado entre preflight/envio REVIEW_REQUIRED con edicion conservada, retry cero solicitudes, dos solicitudes iguales una aceptada/otra rechazada. Negativas: PUT directo409, inventario400, codigo400, batch409, anonimo401. Familia sintetica23/hijo24 restaurada salvo fechas; diarios originales intactos. Evidencia outputs/m9-adaptador-protegido-2026-10-05. Primer ensayo fallo por enlaces REST omitidos en snapshot interno; corregido mediante response_to_data. 181 unitarias aprobadas desde raiz repo (primer lanzamiento desde workspace fallo ruta Python, no logica).
 
 Limitaciones explicitas: laboratorio Playground con un workerPHP; no multiples procesos, no ABA/versionado global, no bloqueo WP-admin/CLI/otras versiones API/creaciones. No transaccion atomica por familia. Produccion NO habilitada. Pendiente validar coordinacion de escritores/canal final y aprobacion/fuentes frescas. Staging abierto, estimacion90% mantenida. App preparada0.65.0; version publicada0.64.0 sin despliegue nuevo, avatar nuevo pendiente de comprobar al desplegar. Sin cambios en Woo/Supabase produccion ni importacion de existencias.
+
+
+## Preview 0.65.0 verificado — 2026-10-05
+
+Commit funcional b3524cf754c6111f3f81dc1498c9b9a7f89ea8f5 publicado en codex/m9-staging-review. Vercel success y menú de usuario0.65.0 comprobado. Captura: outputs/m9-preview-0.65-2026-10-05/version-staging.png. Antes de publicar se corrigió mutex: add_option permite upsert; ahora INSERT exclusivo y liberación condicionada al token. Bloqueo ocupado423, token conservado, producto intacto. Ensayos finales v3 aprobados.
+
+181 unitarias locales aprobadas, formato y diferencias revisados. GitHub Actions sin ejecución para este commit; PR87 borrador con mergeable=false frente a main5366bd48. No se mezclaron mejoras del otro chat ni se declara CI remota aprobada. Pendiente integrar ramas por separado y verificación completa, canal final con múltiples escritores, recuperación por familia, decisiones comerciales y fuentes frescas. Estimación90%, staging abierto. Producción intacta; cero importación de existencias.
+
+
+## Preparación de integración, interrupción y cortes — 2026-10-05
+
+Revisado main766c92e mediante merge-tree: cuatro conflictos (manifest de empleados, plan, release, package). Propuesta separada en outputs/m9-preparacion-integracion-2026-10-05/propuesta-no-aplicada, sin aplicar merge ni publicar0.66.0. Versión publicada sigue0.65.0. Preserva ambos historiales y Route Handler/cabeceras de staging, más iconos/caché de Mi Vaquero al integrar. Necesario repetir diagnóstico si cambian puntas.
+
+SIGKILL real del trabajador local tras respuesta de Woo antes de registrar acuse: bloqueo persistente, reinicio sin solicitudes, inspección y retirada sólo del bloqueo propio con proceso muerto, conciliación por una lectura del padre conocido, reanudación sólo de variante pendiente, repetición final cero solicitudes. Familia sintética23/24 restaurada salvo fechas. No prueba multiworker, WP-admin ni transacción por familia. 34 unitarias de worker/cortes aprobadas.
+
+Nuevo ejecutor offline recibir-corte.mjs preserva fuentes, genera dos reportes y dos deltas, comprueba igualdad y huellas. Ensayo con fuentes históricas:11 archivos idénticos,16133 sin cambios, cero escrituras de producción/existencias. No se descargaron fuentes nuevas. Ver reporte.md del paquete para instrucciones y limitaciones. Scripts del conciliador work/m9 conservan cambios no versionados preexistentes: no fueron modificados. Estimación90% mantenida, staging abierto; CI remota del commit anterior sigue pendiente y no se declara cierre.
+
+### 2026-10-03 · 0.55.4 · Icono original de Mi Vaquero
+
+El icono instalado usa el mismo logo completo original del inicio (`public/brand/logo-vaquerosm-blanco.png`), exportado sobre negro en 180/192/512 px con margen seguro, sin generación de otra silueta. Manifest, favicon y Apple Touch Icon apuntan a archivos nuevos; caché editorial v2. Conserva el nombre Mi Vaquero y el resto de la PWA vigente en main. Sin cambios de datos ni simulaciones nuevas. La actualización de instalaciones existentes depende del navegador/SO; en iOS puede requerir volver a agregar a Inicio.
+
+La verificación detectó que la convención `app/manifest.ts` tenía prioridad sobre el manifiesto de clientes. Se convierte a Route Handler en la misma URL `/manifest.webmanifest`, conservando el contenido de Mi Tienda SM, para que `/mi` seleccione su manifiesto propio y el icono correcto.
+
+Validación de entrega: compilación de producción y TypeScript correctos; lint completo y formato correctos; seis pruebas de la PWA en escritorio/móvil aprobadas, incluyendo manifiestos separados y tarjeta offline. Navegador confirma `/mi/manifest.webmanifest` y Apple Touch Icon original sin overlay de error. La versión 0.55.4 queda sincronizada con package.json. No se validó avatar S con sesión de empleado en este entorno sin credenciales ni actualización del icono en dispositivo físico instalado.
+
+### 2026-10-03 · 0.55.5 · Restaurar letras de Mi Vaquero
+
+El icono combina el emblema original de Vaquero SM con las letras «Mi Vaquero» del icono anterior, conservadas sin reinterpretarlas. Se corrige la entrega 0.55.4 que había reemplazado el nombre por VAQUERO SM. Exportaciones PNG 180/192/512 y máscara de 512 con margen adicional; referencias nuevas y caché editorial v3. Sin cambios de datos ni simulaciones nuevas.
+
+Validación 0.55.5: revisión visual del icono; compilación de producción/TypeScript, lint y seis pruebas de PWA correctos. Navegador confirma el manifiesto de Mi Vaquero y nuevo Apple Touch Icon, con contenido y sin error de interfaz. La comprobación del icono en un teléfono instalado sigue pendiente; su actualización depende del SO. Avatar S no validado sin sesión de empleado en este entorno.
+
+
+## Registro vivo — integración M9 y Mi Vaquero, 2026-10-05
+
+Integrado main766c92e en staging por autorización del usuario. Cuatro conflictos resueltos preservando Route Handler tipado y cabeceras del manifest de empleados, registros históricos de ambas ramas, build webpack y versión nueva0.66.0. Incluidos iconos originales de Mi Vaquero, caché v3 y su prueba PWA. Sin cambios de base de datos, datos Woo o inventario. 181 unitarias y formato locales aprobados antes del envío; validación alojada y avatar pendientes en este registro de preparación. No declarar staging cerrado ni habilitar producción.
