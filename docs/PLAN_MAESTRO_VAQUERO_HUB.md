@@ -3648,3 +3648,27 @@ Validación 0.55.5: revisión visual del icono; compilación de producción/Type
 ## Registro vivo — integración M9 y Mi Vaquero, 2026-10-05
 
 Integrado main766c92e en staging por autorización del usuario. Cuatro conflictos resueltos preservando Route Handler tipado y cabeceras del manifest de empleados, registros históricos de ambas ramas, build webpack y versión nueva0.66.0. Incluidos iconos originales de Mi Vaquero, caché v3 y su prueba PWA. Sin cambios de base de datos, datos Woo o inventario. 181 unitarias y formato locales aprobados antes del envío; validación alojada y avatar pendientes en este registro de preparación. No declarar staging cerrado ni habilitar producción.
+
+
+## Verificación Preview integrado0.66.0 — 2026-10-05
+
+Publicado4fb17ef con segundo padre main766c92e, árbol local/remoto idéntico. Vercel success, avatar0.66.0 verificado. Búsqueda escrita2396 devuelve sombrero59/$2190; no nueva prueba física de lector. /mi carga y referencia manifiesto propio e iconos originales nuevos. 181 unitarias, formato, lint y tipos aprobados localmente. PR87 mergeable=true, permanece borrador. CI286/run37375255100 sigue queued, sin ejecución: integración/E2E completas pendientes por runner externo; no declarar aprobado ni staging cerrado. Capturas y verificacion.json en outputs/m9-integracion-0.66-2026-10-05. Sin producción, importación de existencias o merge a main.
+
+
+## Verificación integrada y lote completo — 2026-10-05
+
+CI286/run37375255100 sobre4fb17ef termina SUCCESS:181 unitarias,165 integración,128 navegador, formato/lint/tipos/build y base de prueba aprobados. Lote real local de cuatro familias/17 variantes pasa actualización condicionada, respuesta descartada, conciliación por ID y reanudación; repetir cero solicitudes. Todo restaurado salvo fechas; identidad/stock conservados. Nueva evidencia outputs/m9-cierre-integrado-2026-10-05. No es un nuevo recorrido UI→cola→puente→recibo. Snapshots históricos pueden quedar obsoletos por las fechas; revalidar, no forzar comparación.
+
+Preparado procedimiento de escritor único/ventana supervisada, pero no verificado bloqueo de editores wp-admin/CLI/plugins ni múltiples procesos PHP. Pendientes recorrido UI fresco y validación de escritores antes de cerrar staging. Supabase local arrancó mientras CI estaba en cola y fue detenido preservando volúmenes; pruebas completas válidas son las de CI. Sin producción, stock o versión funcional nueva. Publicada0.66.0, estimación90%, staging abierto.
+
+
+Revisión posterior de recibos históricos: 20 recursos, 20 con diferencias exclusivamente en date_modified/date_modified_gmt y 0 con otras diferencias. Consulta sin escrituras, sin aceptar un nuevo baseline. La UI de bolsa sigue mostrando envío2 verificado/ID18; no se editó ni se encoló otro trabajo al identificar este requisito. Pendiente mecanismo auditable para revalidar el destino y conservar recibo original. Ver revalidacion-lectura.json.
+
+
+## Revalidación supervisada y recorrido de bolsa — 2026-10-05, 0.67.0
+
+Nueva herramienta prepare-revalidation.mjs produce sólo lecturas contra Woo local. Compara TODOS los campos contra la evidencia original salvo date_modified/date_modified_gmt de primer nivel; cualquier cambio comercial/identidad bloquea. Registro con motivo, hash de evidencia anterior, tienda/producto/target y snapshots nuevos. El puente valida la evidencia anterior íntegra antes de aplicar el registro; liga su hash al diario y conserva el registro en la evidencia del nuevo recibo. Preflight y guard final siguen comparando el snapshot completo; no se ignoran fechas durante el envío. No detecta ABA ni controla escritores externos.
+
+Recorrido real autorizado: UI staging bolsa10521, revisión3 con nombre temporal→cola→claim38ffe5a3-76dc-4c17-990a-f05b57b38c61→revalidación→Woo local18→recibo SUCCEEDED visible. UI revisión4 restaura nombre→claime9f1db4a-caf5-4746-96f3-6b021bb6f4d0→puente normal sin otra revalidación→mismo ID18 y recibo visible. Campos comerciales originales, cuatro fotos, código10521 y precio8695 conservados; cero solicitudes al repetir worker. Comprobantes anteriores sin modificaciones. Sólo escritura de ficha/cola en staging y borrador Woo local, nunca producción ni existencias. Evidencia outputs/m9-revalidacion-2026-10-05.
+
+194 unitarias locales aprobadas, incluyendo13 nuevas de revalidación; lint dirigido aprobado. Versión preparada0.67.0; despliegue y CI de esta versión pendientes al guardar este registro. CI286 aprobó0.66.0 con181/165/128 pruebas, no sustituye la nueva validación. Staging sigue abierto por control de escritores externos y revisión final del lote; no se declara revalidación productiva.

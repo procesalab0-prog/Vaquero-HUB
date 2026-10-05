@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { assert, compilePlan, hash, localStore } from "./plan.mjs";
 import { runJob, wooClient } from "./worker.mjs";
+import { applyRevalidation } from "./revalidation.mjs";
 
 export function sourceImage(url) {
   const u = new URL(url);
@@ -221,6 +222,7 @@ export async function processClaim({
   runtimeDir,
   outputDir,
   previousDir,
+  revalidationFile,
 }) {
   const baseline = previousDir
     ? {
@@ -232,8 +234,15 @@ export async function processClaim({
         ),
       }
     : undefined;
-  const input = claimedInput(claim, baseline),
-    origin = localStore(input.store),
+  let input = claimedInput(claim, baseline);
+  const revalidation = revalidationFile
+    ? JSON.parse(await readFile(resolve(revalidationFile), "utf8"))
+    : null;
+  if (revalidation) {
+    input = applyRevalidation(input, revalidation, hash(baseline.evidence));
+    compilePlan(input);
+  }
+  const origin = localStore(input.store),
     root = resolve(runtimeDir),
     out = resolve(outputDir);
   await mkdir(out, { recursive: true, mode: 0o700 });
@@ -298,6 +307,21 @@ export async function processClaim({
       journal = { claim_hash: hash(claim), steps: {} };
     }
     assert(journal.claim_hash === hash(claim), "CLAIM_FILE_CHANGED");
+    const revalidationHash = revalidation ? hash(revalidation) : null;
+    if (Object.hasOwn(journal, "revalidation_sha256"))
+      assert(
+        journal.revalidation_sha256 === revalidationHash,
+        "REVALIDATION_CHANGED",
+      );
+    else {
+      assert(
+        (!journal.preflight && Object.keys(journal.steps).length === 0) ||
+          !revalidation,
+        "REVALIDATION_CHANGED",
+      );
+      journal.revalidation_sha256 = revalidationHash;
+      await durable(journalFile, journal);
+    }
     if (input.mode === "update" && !journal.preflight) {
       const current = await request(
         "GET",
@@ -485,6 +509,7 @@ export async function processClaim({
       repeat_requests: repeatCalls,
       production_writes: 0,
       stock_payload_fields: 0,
+      ...(revalidation ? { revalidation } : {}),
     };
     await durable(resolve(out, "verification.json"), evidence);
     const receipt = {
@@ -512,15 +537,22 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(resolve(process.argv[1])).href
 ) {
-  const [claimFile, runtimeDir, outputDir, previousDir] = process.argv.slice(2);
+  const [claimFile, runtimeDir, outputDir, previousDir, revalidationFile] =
+    process.argv.slice(2);
   assert(
     claimFile && runtimeDir && outputDir,
-    "Usage: staging-bridge.mjs CLAIM_JSON RUNTIME_DIR OUTPUT_DIR [PREVIOUS_VERIFIED_DIR]",
+    "Usage: staging-bridge.mjs CLAIM_JSON RUNTIME_DIR OUTPUT_DIR [PREVIOUS_VERIFIED_DIR] [REVALIDATION_FILE]",
   );
   const claim = JSON.parse(await readFile(resolve(claimFile), "utf8"));
   console.log(
     JSON.stringify(
-      await processClaim({ claim, runtimeDir, outputDir, previousDir }),
+      await processClaim({
+        claim,
+        runtimeDir,
+        outputDir,
+        previousDir,
+        revalidationFile,
+      }),
       null,
       2,
     ),
