@@ -491,3 +491,45 @@ it.each(["missing text", "single break", "extra markup"])(
     expect(api.writes).toHaveLength(1);
   },
 );
+
+it("routes updates through guarded local endpoint with the expected snapshot", async () => {
+  const fetcher = vi.fn(async () => ({
+    ok: true,
+    json: async () => ({ id: 11 }),
+  }));
+  vi.stubGlobal("fetch", fetcher);
+  const request = wooClient(sampleInput().store);
+  const expected = { id: 11, name: "before" };
+  await request("PUT", "products/11", { name: "after" }, expected);
+  const [url, options] = fetcher.mock.calls[0];
+  expect(url).toBe(
+    "http://127.0.0.1:9417/wp-json/m9-local/v1/conditional-update",
+  );
+  expect(options.method).toBe("POST");
+  expect(JSON.parse(options.body)).toEqual({
+    path: "products/11",
+    expected,
+    payload: { name: "after" },
+  });
+});
+it("does not send an update without a matching snapshot", async () => {
+  const fetcher = vi.fn();
+  vi.stubGlobal("fetch", fetcher);
+  await expect(
+    wooClient(sampleInput().store)("PUT", "products/11", { name: "x" }),
+  ).rejects.toThrow("EXPECTED_SNAPSHOT_REQUIRED");
+  expect(fetcher).not.toHaveBeenCalled();
+});
+it("never falls back to plain PUT if the local guard rejects the update", async () => {
+  const fetcher = vi.fn(async () => ({ ok: false, status: 409 }));
+  vi.stubGlobal("fetch", fetcher);
+  await expect(
+    wooClient(sampleInput().store)(
+      "PUT",
+      "products/11",
+      { name: "x" },
+      { id: 11 },
+    ),
+  ).rejects.toThrow("WOO_HTTP_409");
+  expect(fetcher).toHaveBeenCalledTimes(1);
+});

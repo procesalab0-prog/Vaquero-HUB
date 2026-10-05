@@ -11,7 +11,7 @@ import {
 
 export function wooClient(store, authorization = "") {
   const origin = localStore(store);
-  return async (method, path, body) => {
+  return async (method, path, body, expected) => {
     assert(
       ["GET", "POST", "PUT"].includes(method) &&
         /^products(?:\/[1-9][0-9]*(?:\/variations(?:\/[1-9][0-9]*)?)?)?$/.test(
@@ -19,16 +19,32 @@ export function wooClient(store, authorization = "") {
         ),
       "UNSUPPORTED_WOO_OPERATION",
     );
-    const url = `${origin}/wp-json/wc/v3/${path}`;
+    // Updates must be checked inside the local server's serialized writer.
+    // No fallback to an unguarded GET + PUT if the guard is unavailable.
+    if (method === "PUT")
+      assert(
+        expected?.id === Number(path.split("/").at(-1)),
+        "EXPECTED_SNAPSHOT_REQUIRED",
+      );
+    const url =
+      method === "PUT"
+        ? `${origin}/wp-json/m9-local/v1/conditional-update`
+        : `${origin}/wp-json/wc/v3/${path}`;
     const options = {
-      method,
+      method: method === "PUT" ? "POST" : method,
       redirect: method === "GET" ? "manual" : "error",
       signal: AbortSignal.timeout(30000),
       headers: {
         "Content-Type": "application/json",
         ...(authorization ? { Authorization: authorization } : {}),
       },
-      ...(body ? { body: JSON.stringify(body) } : {}),
+      ...(body
+        ? {
+            body: JSON.stringify(
+              method === "PUT" ? { path, expected, payload: body } : body,
+            ),
+          }
+        : {}),
     };
     let response = await fetch(url, options);
     // Playground can issue one same-URL redirect on its first request after boot.
@@ -206,7 +222,12 @@ export async function runJob({ input, journalDir, request }) {
       job.events.push({ event: "DISPATCH", step: step.key });
       await save(file, ledger);
       try {
-        const result = await request(step.method, path, step.payload);
+        const result = await request(
+          step.method,
+          path,
+          step.payload,
+          step.expected,
+        );
         assert(
           Number.isSafeInteger(result.id) &&
             result.id > 0 &&

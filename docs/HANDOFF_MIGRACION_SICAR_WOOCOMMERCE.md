@@ -779,3 +779,80 @@ No resuelve carrera GET/PUT ni cambios intermedios que regresaron al mismo valor
 
 
 Verificacion final 0.64.0: commit 3ada2b9c9c6f33fea61f38b58332540e706100ee. CI #282 / run 37150771716 / job 111284031238 completado con exito (formato, lint, tipos, migraciones, 178 unitarias, integracion, build y E2E). Preview exitoso y avatar confirma 0.64.0; captura version-0.64.jpg en outputs/m9-revision-reversion-2026-10-03. Sin escrituras Woo/Supabase; estimacion 85%, staging abierto.
+
+
+## Recuperacion privada del respaldo real - 2026-10-03
+
+Acceso Hostinger resuelto. Descargados archivos (19,769,176,434 bytes) y SQL (34,854,457 bytes) del respaldo mostrado como 2026-10-03 10:29; zona horaria no confirmada. Gzip completos, CRC y SHA256 verificados. Configuracion DB coincide con asociacion del panel. Originales privados fuera de Git. No se pulso Restaurar en Hostinger.
+
+Recuperados exclusivamente 294,825 archivos de vaquerosm.com (23,194,613,938 bytes), releidos y cotejados por SHA256. Carpetas 0700, archivos 0600, cero enlaces; 71 entradas externas al prefijo excluidas. WordPress 6.9.9 y WooCommerce 11.0.1 leidos estaticamente. No se ejecuto PHP ni se sirvio la copia.
+
+Docker Desktop 4.93.0 oficial preparado localmente: huella y firma verificadas. Al abrir mostro bienvenida con Skip, sin acuerdo pendiente; el agente no acepto acuerdos ni inicio sesion externa. Motor 29.8.1. SQL importado sin errores en MariaDB 11.8.9, imagen oficial fijada por digest sha256:6422478cb8e159f080fb1d8ccf65101e26fe51385787fde7d16c3b165a331f15. Nuevo contenedor sin red ni puertos; skip_networking=1, event_scheduler=OFF, local_infile=0. Credenciales locales aleatorias nuevas y volumen independiente. CHECK TABLE: 290/290 OK. Recuento historico del respaldo: 2,121 productos y 12,158 variaciones, todos los estados; no implica publicaciones actuales ni coincidencias SICAR. Contenedor detenido al terminar.
+
+Evidencia: outputs/m9-respaldo-real-2026-10-03 (restaurar-archivos.py, recuperar-base.py, archivos-restauracion.json, aislamiento-archivos.json, base-datos-restauracion.json). Copia privada en work/m9-hostinger-restore-2026-10-03. No arrancarla con configuracion original: falta reemplazar conexiones y credenciales, probar aislamiento y verificar WordPress/catalogo/medios. La recuperacion de aplicacion aun no esta comprobada.
+
+Avance tecnico estimado 88% por recuperar archivos y SQL reales; no porcentaje de catalogo publicado. Staging sigue abierto. Pendientes: prueba funcional aislada, decisiones comerciales, fuentes frescas y autorizacion de produccion. Panel reporto 619K/600K inodos, causa no investigada; no se borraron archivos ni se cambio plan. Aplicacion 0.64.0 sin cambios funcionales ni despliegue. Produccion intacta; inventario no importado al sistema.
+
+
+## Recuperacion WordPress aislada y revision del lote - 2026-10-04
+
+Arranque CLI real de WordPress 6.9.9 / WooCommerce 11.0.1 con PHP 8.3.35, sobre archivos recuperados de solo lectura y configuracion local nueva superpuesta. MariaDB sin red/puertos y usuario SELECT-only. Verificados bloqueo de salida TCP, HTTP WordPress, correo, pasarelas, webhooks y escritura SQL; cron desactivado. Solo WooCommerce cargado; tema y otros plugins desactivados expresamente. No equivale a validar la tienda completa.
+
+Lectura repetida coincide en identidad, variantes, precios e imagenes de cuatro familias 5630/5738/19771/25814, 17 variantes vendibles y 14 fotos locales. Primer intento de repeticion fallo en el comparador por zip(strict=True) incompatible con Python 3.9; corregido con comprobacion explicita de longitudes y repeticion exitosa. Ninguna mutacion de catalogo. Recuento historico 2121 padres / 12158 variaciones no representa conciliacion SICAR ni catalogo publicado.
+
+Vista estatica local http://127.0.0.1:9447/ abierta y verificada en navegador: textos escapados, imagenes copiadas sin cambios y verificadas por SHA256, sin carrito ni conexiones externas. Servidor restringido a 127.0.0.1 y lista de 15 archivos permitidos; POST 405, rutas privadas 404, CSP connect-src none. Los tres contenedores de recuperacion quedan detenidos. Credenciales, SQL y copia original privados fuera de Git; no servidos por la vista.
+
+Evidencia reproducible: outputs/m9-recuperacion-wordpress-2026-10-04 (ensayar.py, repetir-lectura.py, verificar.php, guard.php, resultado.json, resultado-repeticion.json, crear-vista.py, servir-vista.py, vista-verificacion.json, verificacion-final.json). ensayar.py crea recursos nuevos; para repetir lectura usar repetir-lectura.py. No ejecutar la copia con wp-config original. Servidor de vista no inicia WordPress.
+
+Avance tecnico estimado 90% (orientativo por hitos, no porcentaje de productos migrados): respaldo real recuperado y modelo Woo del lote comprobado. Staging sigue abierto. Siguiente: ensayo aislado del tema y complementos necesarios, validar recuperacion/reversion sin perder ventas posteriores, resolver decisiones comerciales, obtener fuentes frescas al corte y aprobacion especifica antes de produccion. Mejoras del otro chat siguen pospuestas. App 0.64.0 sin cambio funcional ni despliegue; cero escrituras Woo/Supabase de produccion y cero importacion de existencias.
+
+
+## Arranque aislado con tema y complementos reales - 2026-10-05
+
+Ensayo CLI del respaldo real con Blocksy / blocksy-child y lista original de 31 plugins activos; init y after_setup_theme completados sin error fatal. Identidad y pertenencia de hijos de las cuatro familias 5630/5738/19771/25814 coinciden con el ensayo Woo-only. Correos y HTTP bloqueados, pasarelas disponibles cero, cron desactivado. Contenedor sin red/puertos, archivos y raiz de solo lectura, usuario DB SELECT-only. Contenedores detenidos en finally.
+
+Limitacion concreta: 57 menciones de escrituras SQL denegadas durante arranque. Son intentos bloqueados de plugins y no deben ocultarse ni interpretarse como compatibilidad funcional completa. Dos avisos PHP: ABSPATH definido dos veces por configuracion local, REMOTE_ADDR ausente al ejecutar Openpay por CLI. Cero fatales; no prueba renderizado, checkout, tareas programadas ni integraciones. No se ampliaron permisos para eliminar avisos. Diagnosticos crudos permanecen privados.
+
+Evidencia fuera del repositorio: outputs/m9-tema-complementos-2026-10-05/{ensayar.py,probar.php,guard.php,resultado.json,diagnostico-resumido.json,sha256.json}. Siguiente: preparar copia desechable de DB para escrituras internas de plugins, mantener aislamiento de red/correo/pagos, y probar renderizado web local con bloqueo de recursos externos del navegador. No servir directamente el arbol privado ni exponer datos de clientes. Pendiente aceptacion comercial, fuentes frescas y reversion que preserve ventas posteriores.
+
+Avance estimado se mantiene 90%; staging NO cerrado. Version Mi Tienda SM 0.64.0, sin cambios funcionales ni despliegue. Produccion intacta y sin importacion de existencias.
+
+
+## Base desechable y render del tema - 2026-10-05
+
+Creado esquema local m9_disposable_20261005 desde dump consistente de m9_recovery. Usuario nuevo con permisos solo sobre ese esquema. Misma MariaDB local sin red/puertos; PHP sin red, archivos originales RO, correo/pagos/HTTP/cron bloqueados. Credenciales y dump privados fuera de Git. Primer intento detenido por ruta local de configuracion inexistente; corregido y continuado sin recrear el esquema.
+
+Tema Blocksy-child y 31 plugins arrancan sobre clon writable. Cero SQL command denied (ensayo previo 57 menciones), cero fatales; un aviso SERVER_NAME ausente por ejecucion CLI. Generado single.php de producto 5630: 180713 bytes, nombre esperado presente. HTML crudo privado, no servido: contiene recursos de terceros que requieren bloqueo/relocalizacion antes de abrir navegador. No se declara prueba visual ni checkout completo.
+
+CHECKSUM TABLE wp_posts/wp_postmeta antes/despues coincide en origen recuperado y clon. No equivale a comparar cada tabla de la base; plugins pueden actualizar opciones/tablas internas en el clon. Cuatro familias conservan identidad e hijos. Contenedores detenidos al terminar. Produccion intacta; sin importacion de existencias al sistema.
+
+Evidencia: outputs/m9-base-desechable-2026-10-05/ensayar.py, continuar.py, probar.php, guard.php, resultado.json, diagnostico.json. scripts requieren nombres nuevos o el estado parcial documentado; no reejecutar sin revisar. Siguiente: render web local seguro con recursos externos bloqueados y revision visual; despues ensayo de recuperacion conservando ventas posteriores, decisiones comerciales y fuentes frescas. Estimacion 90% se mantiene; staging abierto. App 0.64.0 sin despliegue ni cambio funcional.
+
+
+## Lote visual, selectores, pedido posterior y cortes repetibles — 2026-10-05
+
+Avance local en los cuatro frentes autorizados. Cuatro fichas renderizadas con template_include Woo y tema Blocksy, comprobadas en navegador: fotos/textos/precios. Vista localhost9448 sirve solo 73 archivos públicos del lote con lista permitida, CSP sin conexiones/formularios/frames remotos; scripts de publicidad/pagos retirados. Selector de consulta 17 opciones; selector JS original Woo 16 tallas (tres familias variables), IDs/precios cotejados. Bolsa simple revisada sin selector. JSON de variaciones tiene imágenes/HTML auxiliar neutralizados; no equivale a aprobar checkout, galería dinámica ni plugin swatches. Capturas y pruebas en outputs/m9-cierre-pruebas-2026-10-05. Dos fuentes EOT antiguas omitidas. Agotado mostrado es histórico, no inventario actual.
+
+Reversión secuencial en clon desechable: producto ficticio 100→110, pedido ficticio posterior por 110; precio regresado a 100 y pedido conserva importe/cantidad. Cambio posterior a 120 bloquea decisión de revertir con esperado110. Datos ficticios limpiados; wp_posts/wp_postmeta del clon y origen sin cambios por checksum. No pago ni stock. NO prueba atomicidad GET/PUT, concurrencia de producción ni restauración total conservando pedidos. Script local no habilitado como importador real.
+
+Comparador ejecutado dos veces byte-idéntico: histórico 15722 UNCHANGED, 384 RECONCILIATION_CHANGE_ONLY, 24 INVENTORY_ONLY_EXCLUDED, 3 NEW_MANUAL_REVIEW. Mismo corte 16133 UNCHANGED. Seis escenarios de seguridad de actualización aprobados. Fuentes guardadas, no exportaciones nuevas. Comparar-cortes.py permite repetir sobre reportes nuevos con huellas verificadas y salida nueva. Reglas/conciliación cambiadas no prueban cambios físicos.
+
+Todos los contenedores de recuperación detenidos; solo vista estática local activa. Evidencia y procedimiento detallado: outputs/m9-cierre-pruebas-2026-10-05/reporte.md y verificacion-final.json. Estimación orientativa 90% se mantiene; staging abierto. Restan interfaz integrada completa, concurrencia/reversión real, aprobación comercial y fuentes frescas/autorización antes de producción. Mi Tienda SM 0.64.0 sin cambio funcional/despliegue. Producción intacta y cero importación de existencias al sistema. Mejoras del otro chat pospuestas por usuario.
+
+
+## Conflictos simultaneos — ensayo local 2026-10-05
+
+Dos conexiones concurrentes al clon desechable intentan actualizar precio de producto ficticio desde100 a110/120; exactamente una gana y otra afecta cero filas. Transaccion condicional SQL mantiene par _regular_price/_price consistente. Reversion preserva nombre editado posteriormente; un precio posterior bloquea reversion obsoleta. Acuse descartado se concilia por lectura sin reenviar; simulacion, no caida de red real. Woo lee140 final. Producto ficticio marcado eliminado; checksums wp_posts/wp_postmeta origen y clon iguales a iniciales. Sin pagos ni stock ni produccion.
+
+Limite: prototipo del motor SQL, NO endpoint Woo REST ni adaptador integrado. Escrituras directas evitan hooks/cache/tablas auxiliares y no cubren promociones. Comparacion por valor no detecta ABA ni obliga a escritores normales. No declarar resuelta concurrencia productiva. Siguiente: canal de escritura controlado con identidad/version/valor y registro de operacion, integrado y probado en laboratorio; o ventana supervisada sin ediciones del catalogo para las familias del lote, pendiente de acordar. Ninguna restauracion total sobre ventas posteriores.
+
+Evidencia outputs/m9-concurrencia-2026-10-05/reporte.md y resultado.json. Contenedores detenidos. Mi Tienda SM0.64.0 sin cambio funcional/despliegue. Estimacion90% mantenida, staging abierto; produccion intacta, existencias no importadas.
+
+
+## Worker con actualizacion condicionada local — 2026-10-05, preparada0.65.0
+
+Integrado expected snapshot de cada PUT en worker/wooClient; se envia a ruta POST local conditional-update, sin fallback a PUT normal. Guard en localhost9417 adquiere bloqueo exclusivo de opcion, relee respuesta REST completa y compara antes de delegar en Woo. Directos wc/v3 de actualizacion/batch bloqueados; metadata identidad/inventario rechazados. Caidas conservan bloqueo para inspeccion, sin vencimiento. Consultar [M9_ACTUALIZACION_CONDICIONAL_LOCAL.md](M9_ACTUALIZACION_CONDICIONAL_LOCAL.md).
+
+Ensayo real mediante runJob: SUCCEEDED, conflicto inyectado entre preflight/envio REVIEW_REQUIRED con edicion conservada, retry cero solicitudes, dos solicitudes iguales una aceptada/otra rechazada. Negativas: PUT directo409, inventario400, codigo400, batch409, anonimo401. Familia sintetica23/hijo24 restaurada salvo fechas; diarios originales intactos. Evidencia outputs/m9-adaptador-protegido-2026-10-05. Primer ensayo fallo por enlaces REST omitidos en snapshot interno; corregido mediante response_to_data. 181 unitarias aprobadas desde raiz repo (primer lanzamiento desde workspace fallo ruta Python, no logica).
+
+Limitaciones explicitas: laboratorio Playground con un workerPHP; no multiples procesos, no ABA/versionado global, no bloqueo WP-admin/CLI/otras versiones API/creaciones. No transaccion atomica por familia. Produccion NO habilitada. Pendiente validar coordinacion de escritores/canal final y aprobacion/fuentes frescas. Staging abierto, estimacion90% mantenida. App preparada0.65.0; version publicada0.64.0 sin despliegue nuevo, avatar nuevo pendiente de comprobar al desplegar. Sin cambios en Woo/Supabase produccion ni importacion de existencias.
