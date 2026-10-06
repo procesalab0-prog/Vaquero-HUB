@@ -3833,3 +3833,15 @@ Acción explícita Traer fotos de Woo de pruebas para altas remotas SUCCEEDED pr
 ### 2026-10-06 — Originales autenticados (0.71.1)
 
 Ensayo0.71.0 bloqueó correctamente una discrepancia: URL pública Woo devuelve SHA f5f8c179… mientras original validado es a84834f6…. No se guardó la ficha. Conector1.1.3 instalado y confirmado UI: GET photos/{request}/{media} únicamente para imagen de galería propia verificada, entrega original en base64+SHA, máximo4MB y no-store. Lectura autenticada real coincide con original; anónimo401. No es ruta arbitraria a medios. Cliente valida bytes/huella; copia usa nombre hash hexadecimal admitido por RLS de Storage. No se relajan permisos.3 nuevas pruebas del cliente aprobadas,32 comprobaciones PHP y build correctos. Se cambió sólo alt de imagen19 de ensayo en Woo para probar entrada. Pendiente resultado de copia publicada. CI294 de0.70.1 completó success.
+
+
+### 2026-10-06 — Copia Woo→ficha verificada en UI0.71.1
+
+Commit a4eb5597032153477a610e1deb5dfbf98f77070a publicado READY (vaquero-fk535s8h7-procesa-lab.vercel.app), avatar0.71.1 confirmado. Botón Traer fotos copió original de imagen19 Woo18 a Storage de staging y guardó ficha e8cfb266-e17f-4482-9756-ac0c1e457b8d revisión2, conservando texto alternativo modificado en Woo. Repetición devolvió «Las fotos ya coinciden con Woo de pruebas»; SQL confirma revisión2,1 archivo, sin duplicados. image_path del producto sigueNULL: copia verificada en ficha web, todavía no portada del catálogo. Evidencia fotos-0711.png y original-photo-check.json en outputs/m9-cola-remota-2026-10-06.267 unitarias/40 archivos, build/TypeScript y lint aprobados; CI295success, CI296 en curso al registrar.
+
+Pendientes concretos para cerrar integración antes de migración completa: 1) portada del catálogo con control de concurrencia, 2) baseline persistente y salida de fotos Mi Tienda→Woo con actualización condicionada/recuperación, 3) categorías y familias/variantes sin perder códigos, 4) aplicar galerías históricas por vínculos conciliados y últimas exportaciones. La copia actual sólo acepta primera adopción sobre galería inicial intacta o repetición exacta; una siguiente edición remota tras adopción requiere revisión, no se debe afirmar sincronización recurrente terminada. Producción y existencias intactas.
+
+
+### 2026-10-06 — Portadas desde ficha guardada (0.71.2 preparada)
+
+read_catalog_covers ahora prioriza primera foto de ficha guardada y conserva fallback histórico sólo con vínculo conciliado; excluye productos con image_path propio. Se reutiliza en Productos y Venta, con lotes de máximo200 y destinos de imagen restringidos. No escribe image_path ni sobrescribe cambios concurrentes de portada: lectura de fuente vigente. Una galería guardada vacía no recupera silenciosamente la portada histórica. Migración20261006154347 aplicada sólo staging después de pruebas con rollback: portada almacenada visible y prioridad de imagen explícita conservada. Pendiente confirmación visual de despliegue y contexto Venta (requiere caja de pruebas abierta). No abrir caja ni crear ventas para esa comprobación.

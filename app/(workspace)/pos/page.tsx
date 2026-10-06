@@ -4,7 +4,7 @@ import { mockVariants } from "@/lib/mock-data";
 import { resolveActiveLocation } from "@/lib/auth/active-location";
 import { requirePermission } from "@/lib/auth/authorization";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { productImageUrl } from "@/lib/product-images";
+import { productImageUrl, readCatalogCoverUrls } from "@/lib/product-images";
 import {
   authorizeOverdueCredit,
   authorizeSaleDiscount,
@@ -126,6 +126,11 @@ export default async function PosPage({
       productImageUrl(supabase, product.image_path),
     ]),
   );
+  const covers = await readCatalogCoverUrls(
+    supabase,
+    ((catalogResult.data ?? []) as CatalogRow[]).map((row) => row.product_id),
+  );
+  for (const [id, url] of covers) if (!images.get(id)) images.set(id, url);
   const variants = ((catalogResult.data ?? []) as CatalogRow[])
     .filter((row) => row.is_active)
     .map((row) => ({

@@ -4,9 +4,7 @@ import { mockVariants } from "@/lib/mock-data";
 import { requirePermission } from "@/lib/auth/authorization";
 import { initialCatalogImportState } from "@/lib/catalog-import-shared";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { wooImageUrl } from "@/lib/woo-image-url";
-import { WEB_STAGING_URL } from "@/lib/web-draft";
-import { productImageUrl } from "@/lib/product-images";
+import { productImageUrl, readCatalogCoverUrls } from "@/lib/product-images";
 import {
   addCatalogVariants,
   bulkUpdateVariantPrices,
@@ -145,28 +143,10 @@ export default async function ProductsPage({
       String(permission.permission_code),
     ),
   );
-  const covers = new Map<string, string>();
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL === WEB_STAGING_URL) {
-    const ids = [
-      ...new Set(
-        ((catalogResult.data ?? []) as CatalogRow[]).map(
-          (row) => row.product_id,
-        ),
-      ),
-    ];
-    const result = await supabase.rpc("read_catalog_covers", {
-      p_product_ids: ids,
-    });
-    if (result.error)
-      console.error("[productos] covers unavailable", result.error.message);
-    for (const row of (result.data ?? []) as {
-      product_id: string;
-      image_url: string;
-    }[]) {
-      const url = wooImageUrl(row.image_url);
-      if (url) covers.set(row.product_id, url);
-    }
-  }
+  const covers = await readCatalogCoverUrls(
+    supabase,
+    ((catalogResult.data ?? []) as CatalogRow[]).map((row) => row.product_id),
+  );
   const canUpdate = permissions.has("products.update");
   const canCreate = permissions.has("products.create");
   const canSeeCost =
