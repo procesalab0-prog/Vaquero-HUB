@@ -208,6 +208,7 @@ export function ProductsWorkspace({
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [simpleProduct, setSimpleProduct] = useState(false);
   const [rangeStart, setRangeStart] = useState("");
   const [rangeEnd, setRangeEnd] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
@@ -266,9 +267,12 @@ export function ProductsWorkspace({
     () => availableValues.filter((item) => item.type_code === "COLOR"),
     [availableValues],
   );
-  const combinations = selectedColors.flatMap((colorId) =>
-    selectedSizes.map((sizeId) => `${colorId}:${sizeId}`),
-  );
+  const isSimple = modalMode === "create" && simpleProduct;
+  const combinations = isSimple
+    ? ["simple"]
+    : selectedColors.flatMap((colorId) =>
+        selectedSizes.map((sizeId) => `${colorId}:${sizeId}`),
+      );
   const existingCombinations = useMemo(() => {
     if (modalMode !== "add") return new Set<string>();
     return new Set(
@@ -398,6 +402,7 @@ export function ProductsWorkspace({
   }
 
   function resetVariantSelection() {
+    setSimpleProduct(false);
     setSelectedSizes([]);
     setSelectedColors([]);
     setExcludedCombinations([]);
@@ -1016,8 +1021,9 @@ export function ProductsWorkspace({
                   {prepareWeb && (
                     <>
                       <p>
-                        Se guarda junto al producto en staging. El envío a
-                        WooCommerce está desactivado.
+                        Se guarda junto al producto en pruebas. Los productos
+                        elegibles se envían como borrador al Woo de pruebas;
+                        consulta el resultado en su ficha.
                       </p>
                       <input
                         type="hidden"
@@ -1030,158 +1036,194 @@ export function ProductsWorkspace({
                   )}
                 </section>
               )}
-              <div className="size-picker color-picker">
-                <span>1. Selecciona uno o varios colores</span>
-                <div className="picker-quick-actions">
-                  <button type="button" onClick={selectAllColors}>
-                    Marcar todos
-                  </button>
-                  <button type="button" onClick={clearColors}>
-                    Limpiar
-                  </button>
-                </div>
-                <div>
-                  {colors.map((color) => (
-                    <label
-                      className={
-                        selectedColors.includes(color.id)
-                          ? "size-option selected"
-                          : "size-option"
-                      }
-                      key={color.id}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedColors.includes(color.id)}
-                        onChange={() => toggleColor(color.id)}
-                        aria-label={`Color ${color.value}`}
-                      />
-                      <span>{color.value}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div className="size-picker">
-                <span>2. Selecciona una o varias tallas</span>
-                <small>{category?.name ?? "Tallas"}</small>
-                {sizes.length ? (
-                  <div className="picker-quick-actions size-range-picker">
-                    <button type="button" onClick={selectAllSizes}>
-                      Marcar todas
-                    </button>
-                    <button type="button" onClick={clearSizes}>
-                      Limpiar
-                    </button>
-                    <label>
-                      <span>Desde</span>
-                      <select
-                        aria-label="Talla inicial"
-                        value={rangeStart}
-                        onChange={(event) => setRangeStart(event.target.value)}
-                      >
-                        <option value="">—</option>
-                        {sizes.map((size) => (
-                          <option key={size.id} value={size.id}>
-                            {size.value}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      <span>Hasta</span>
-                      <select
-                        aria-label="Talla final"
-                        value={rangeEnd}
-                        onChange={(event) => setRangeEnd(event.target.value)}
-                      >
-                        <option value="">—</option>
-                        {sizes.map((size) => (
-                          <option key={size.id} value={size.id}>
-                            {size.value}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={selectSizeRange}
-                      disabled={!rangeStart || !rangeEnd}
-                    >
-                      Marcar rango
-                    </button>
+              {modalMode === "create" && (
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={simpleProduct}
+                    onChange={(e) => {
+                      setSimpleProduct(e.target.checked);
+                      setExcludedCombinations([]);
+                    }}
+                  />{" "}
+                  Producto sin talla ni color
+                </label>
+              )}
+              {isSimple ? (
+                <>
+                  <input type="hidden" name="simple_product" value="true" />
+                  <p>
+                    Se creará un solo código, sin atributos de talla ni color.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="size-picker color-picker">
+                    <span>1. Selecciona uno o varios colores</span>
+                    <div className="picker-quick-actions">
+                      <button type="button" onClick={selectAllColors}>
+                        Marcar todos
+                      </button>
+                      <button type="button" onClick={clearColors}>
+                        Limpiar
+                      </button>
+                    </div>
+                    <div>
+                      {colors.map((color) => (
+                        <label
+                          className={
+                            selectedColors.includes(color.id)
+                              ? "size-option selected"
+                              : "size-option"
+                          }
+                          key={color.id}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedColors.includes(color.id)}
+                            onChange={() => toggleColor(color.id)}
+                            aria-label={`Color ${color.value}`}
+                          />
+                          <span>{color.value}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
-                ) : null}
-                <div>
-                  {sizes.map((size) => (
-                    <label
-                      className={
-                        selectedSizes.includes(size.id)
-                          ? "size-option selected"
-                          : "size-option"
-                      }
-                      key={size.id}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedSizes.includes(size.id)}
-                        onChange={() => toggleSize(size.id)}
-                        aria-label={`Talla ${size.value}`}
-                      />
-                      <span>{size.value}</span>
-                    </label>
-                  ))}
-                </div>
-                {!selectedCategory ? (
-                  <p>
-                    Elige primero la categoría para mostrar las tallas que le
-                    corresponden.
-                  </p>
-                ) : sizes.length === 0 ? (
-                  <p>
-                    La escala de esta categoría está pendiente de confirmar con
-                    la tienda.
-                  </p>
-                ) : null}
-              </div>
-              {combinations.length ? (
-                <div className="variant-matrix">
-                  <span>3. Revisa la matriz antes de guardar</span>
-                  <small>Desmarca las combinaciones que no llegaron.</small>
-                  <div className="variant-matrix-grid">
-                    {selectedColors.map((colorId) => {
-                      const color = colors.find((item) => item.id === colorId);
-                      return selectedSizes.map((sizeId) => {
-                        const size = sizes.find((item) => item.id === sizeId);
-                        const combination = `${colorId}:${sizeId}`;
-                        const alreadyExists =
-                          existingCombinations.has(combination);
-                        const enabled =
-                          !alreadyExists &&
-                          !excludedCombinations.includes(combination);
-                        return (
-                          <label
-                            className={enabled ? "selected" : ""}
-                            key={combination}
+                  <div className="size-picker">
+                    <span>2. Selecciona una o varias tallas</span>
+                    <small>{category?.name ?? "Tallas"}</small>
+                    {sizes.length ? (
+                      <div className="picker-quick-actions size-range-picker">
+                        <button type="button" onClick={selectAllSizes}>
+                          Marcar todas
+                        </button>
+                        <button type="button" onClick={clearSizes}>
+                          Limpiar
+                        </button>
+                        <label>
+                          <span>Desde</span>
+                          <select
+                            aria-label="Talla inicial"
+                            value={rangeStart}
+                            onChange={(event) =>
+                              setRangeStart(event.target.value)
+                            }
                           >
-                            <input
-                              type="checkbox"
-                              name="variant_combo"
-                              value={combination}
-                              checked={enabled}
-                              disabled={alreadyExists}
-                              onChange={() => toggleCombination(combination)}
-                              aria-label={`${color?.value ?? "Color"}, talla ${size?.value ?? "única"}`}
-                            />
-                            <strong>{color?.value}</strong>
-                            <span>{size?.value}</span>
-                            {alreadyExists ? <small>Ya existe</small> : null}
-                          </label>
-                        );
-                      });
-                    })}
+                            <option value="">—</option>
+                            {sizes.map((size) => (
+                              <option key={size.id} value={size.id}>
+                                {size.value}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label>
+                          <span>Hasta</span>
+                          <select
+                            aria-label="Talla final"
+                            value={rangeEnd}
+                            onChange={(event) =>
+                              setRangeEnd(event.target.value)
+                            }
+                          >
+                            <option value="">—</option>
+                            {sizes.map((size) => (
+                              <option key={size.id} value={size.id}>
+                                {size.value}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={selectSizeRange}
+                          disabled={!rangeStart || !rangeEnd}
+                        >
+                          Marcar rango
+                        </button>
+                      </div>
+                    ) : null}
+                    <div>
+                      {sizes.map((size) => (
+                        <label
+                          className={
+                            selectedSizes.includes(size.id)
+                              ? "size-option selected"
+                              : "size-option"
+                          }
+                          key={size.id}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedSizes.includes(size.id)}
+                            onChange={() => toggleSize(size.id)}
+                            aria-label={`Talla ${size.value}`}
+                          />
+                          <span>{size.value}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {!selectedCategory ? (
+                      <p>
+                        Elige primero la categoría para mostrar las tallas que
+                        le corresponden.
+                      </p>
+                    ) : sizes.length === 0 ? (
+                      <p>
+                        La escala de esta categoría está pendiente de confirmar
+                        con la tienda.
+                      </p>
+                    ) : null}
                   </div>
-                </div>
-              ) : null}
+                  {combinations.length ? (
+                    <div className="variant-matrix">
+                      <span>3. Revisa la matriz antes de guardar</span>
+                      <small>Desmarca las combinaciones que no llegaron.</small>
+                      <div className="variant-matrix-grid">
+                        {selectedColors.map((colorId) => {
+                          const color = colors.find(
+                            (item) => item.id === colorId,
+                          );
+                          return selectedSizes.map((sizeId) => {
+                            const size = sizes.find(
+                              (item) => item.id === sizeId,
+                            );
+                            const combination = `${colorId}:${sizeId}`;
+                            const alreadyExists =
+                              existingCombinations.has(combination);
+                            const enabled =
+                              !alreadyExists &&
+                              !excludedCombinations.includes(combination);
+                            return (
+                              <label
+                                className={enabled ? "selected" : ""}
+                                key={combination}
+                              >
+                                <input
+                                  type="checkbox"
+                                  name="variant_combo"
+                                  value={combination}
+                                  checked={enabled}
+                                  disabled={alreadyExists}
+                                  onChange={() =>
+                                    toggleCombination(combination)
+                                  }
+                                  aria-label={`${color?.value ?? "Color"}, talla ${size?.value ?? "única"}`}
+                                />
+                                <strong>{color?.value}</strong>
+                                <span>{size?.value}</span>
+                                {alreadyExists ? (
+                                  <small>Ya existe</small>
+                                ) : null}
+                              </label>
+                            );
+                          });
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+                </>
+              )}
               <div className="variant-summary">
                 <strong>
                   {activeCombinations.length}{" "}

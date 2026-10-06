@@ -370,13 +370,23 @@ export async function updateCatalogVariantPrice(formData: FormData) {
   redirect(`${productsPath}?status=${status}`);
 }
 
-function variantsFromForm(formData: FormData) {
+function variantsFromForm(formData: FormData, allowSimple = false) {
   const priceCents = cents(textField(formData, "price"));
   const costCents = cents(textField(formData, "cost"));
   const combinations = Array.from(
     new Set(formData.getAll("variant_combo").map(String).filter(Boolean)),
   );
 
+  if (formData.get("simple_product") === "true") {
+    if (
+      !allowSimple ||
+      combinations.length ||
+      priceCents === null ||
+      costCents === null
+    )
+      throw new Error("INVALID_SIMPLE_PRODUCT");
+    return [{ cost_cents: costCents, price_cents: priceCents, attributes: {} }];
+  }
   if (
     priceCents === null ||
     costCents === null ||
@@ -407,7 +417,7 @@ export async function createCatalogProduct(formData: FormData) {
     const productName = textField(formData, "product_name");
     const categoryId = textField(formData, "category_id");
     const brandName = textField(formData, "brand_name");
-    const variants = variantsFromForm(formData);
+    const variants = variantsFromForm(formData, true);
 
     if (!productName || !categoryId) {
       status = "producto-datos-invalidos";
@@ -577,7 +587,7 @@ export async function createCatalogProductWithWeb(
       {
         p_name: name,
         p_category_id: textField(formData, "category_id"),
-        p_variants: variantsFromForm(formData),
+        p_variants: variantsFromForm(formData, true),
         p_brand_name: textField(formData, "brand_name") || null,
         p_content: webContentFromForm(formData, name),
         p_request_id: textField(formData, "web_request_id"),
