@@ -97,8 +97,8 @@ function m9_family_create($request) {
         $product=new WC_Product_Variable();$product->set_status('draft');$product->set_name($p['name']);$product->set_description($p['description']);$product->set_short_description($p['short_description']);$product->set_sku($p['barcode']);$product->set_category_ids($category_ids);
         $product->update_meta_data('_mi_tienda_product_id',$p['product_id']);$product->update_meta_data('_mi_tienda_barcode',$p['barcode']);$product->update_meta_data('_m9_remote_request',$p['request_id']);$product->update_meta_data('_m9_test_only','yes');
         $attributes=[];
-        foreach(array_keys($p['variants'][0]['attributes']) as $key) {
-            $a=new WC_Product_Attribute();$a->set_name($key);$a->set_options(array_values(array_unique(array_map(fn($v)=>$v['attributes'][$key],$p['variants']))));$a->set_visible(true);$a->set_variation(true);$attributes[]=$a;
+        foreach(array_keys($p['variants'][0]['attributes']) as $attribute_name) {
+            $a=new WC_Product_Attribute();$a->set_name($attribute_name);$a->set_options(array_values(array_unique(array_map(fn($v)=>$v['attributes'][$attribute_name],$p['variants']))));$a->set_visible(true);$a->set_variation(true);$attributes[]=$a;
         }
         foreach($p['descriptive_attributes'] as $attr) { $a=new WC_Product_Attribute();$a->set_name($attr['name']);$a->set_options([$attr['option']]);$a->set_visible(true);$a->set_variation(false);$attributes[]=$a; }
         $product->set_attributes($attributes);$id=$product->save();if(!$id) { throw new Exception('PARENT_SAVE_FAILED'); }
@@ -145,3 +145,20 @@ function m9_family_create($request) {
     }
 }
 add_action('rest_api_init',function(){register_rest_route('m9-test/v1','/families',['methods'=>'POST','permission_callback'=>'m9_bridge_permission','callback'=>'m9_family_create']);});
+
+// Repair only the 1.3.0/1.3.1 misplaced family receipt. Never create assets.
+// Runs in the authenticated administrator screen after the plugin update.
+add_action('admin_init', function() {
+    if (!current_user_can('manage_options') || !m9_remote_test_origin()) { return; }
+    foreach (['TALLA','COLOR','LARGO'] as $legacy_key) {
+        $saved=get_option($legacy_key);
+        if (!is_array($saved) || ($saved['protocol']??'')!=='m9-remote-family-1' || ($saved['state']??'')!=='SUCCEEDED' || empty($saved['verified']) || !preg_match('/^[0-9a-f-]{36}$/', $saved['request_id']??'')) { continue; }
+        $canonical='m9_remote_job_'.$saved['request_id'];$pending=get_option($canonical);
+        if (!is_array($pending) || ($pending['state']??'')!=='DISPATCHING') { continue; }
+        foreach (['protocol','owner','request_id','product_id','revision','fingerprint'] as $field) {
+            if (!isset($saved[$field],$pending[$field]) || $saved[$field]!==$pending[$field]) { continue 2; }
+        }
+        if (get_option('m9_remote_product_'.$saved['product_id'])!==$saved['request_id'] || !m9_family_identity($saved)) { continue; }
+        update_option($canonical,$saved,false);
+    }
+});

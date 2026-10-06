@@ -67,7 +67,10 @@ function m9_bridge_validate($p) {
     return array($bytes, $size['mime']);
 }
 function m9_bridge_receipt($request) {
-    $entry = get_option('m9_remote_job_' . strtolower($request['id']));
+    // Durable receipts must not depend on a persistent object-cache snapshot.
+    global $wpdb;
+    $raw = $wpdb->get_var($wpdb->prepare("SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", 'm9_remote_job_' . strtolower($request['id'])));
+    $entry = $raw === null ? false : maybe_unserialize($raw);
     if (!$entry || $entry['owner'] !== get_current_user_id()) { return new WP_Error('m9_not_found','Sin recibo.',array('status'=>404)); }
     return $entry;
 }

@@ -25,3 +25,7 @@ Resultado real:41 productos/64 variantes;3 estructuras completas para preparar e
 
 Evidencia fuera del repositorio: outputs/m9-familias-remotas-2026-10-06/{consulta.sql,staging.json,reporte,repeticion}. Dos corridas produjeron los3 archivos idénticos; SHA de familias.json4fbc6a774a91269003e85a960b2eb23d039dfb9daf001e5c899bbc398a335509.297 pruebas unitarias/43 archivos y lint dirigido aprobados. Sin nuevo despliegue: app0.73.0 y conector1.2.0 conservan alcance anterior. No hubo envío de familias, actualización de departamentos, cambio de esquema, inventario ni producción. Siguiente: adaptar cola/conector remoto a familias completas y categorías, ensayar las dos camisas desde UI con recibos de cada variante; refrescar staging con SICAR6 mediante flujo auditado, completar categorías y ampliar catálogo. Woo fuente histórica del1 de octubre, no corte vivo.
 
+
+## Ensayo remoto completado el 6 de octubre
+
+Las dos camisas se enviaron desde Preview0.74.0 al Woo remoto de pruebas: productos25 y37, diez variantes y siete fotos. Recibos SUCCEEDED independientes y checkpoint de galerías1 en ambos. Conector1.3.2 corrige el nombre de opción del recibo; incluye recuperación del primer ensayo sin recrear productos. Ver cronología y alcance en HANDOFF_MIGRACION_SICAR_WOOCOMMERCE.md. Las38 reservas del informe de preparación no quedan habilitadas por este ensayo. El preparador continúa siendo de sólo lectura.
