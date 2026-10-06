@@ -57,5 +57,12 @@ export default async function MigrationPage({
         <Link href="/productos/migracion">Reintentar</Link>
       </section>
     );
-  return <MigrationReview data={data as ReviewData} filters={filters} />;
+  return (
+    <>
+      <Link href="/productos/fotos-migracion">
+        Copiar fotos del catálogo conciliado
+      </Link>
+      <MigrationReview data={data as ReviewData} filters={filters} />
+    </>
+  );
 }

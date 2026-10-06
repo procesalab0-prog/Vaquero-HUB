@@ -162,44 +162,7 @@ export async function pullRemotePhotos(productId: string) {
     await remember(draft.data.revision, draft.data.content.images);
     return "Las fotos ya coinciden con Woo de pruebas.";
   }
-  const images = [];
-  for (const image of plan.images) {
-    const bytes = Buffer.from(image.base64, "base64");
-    const ext =
-      bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255
-        ? "jpg"
-        : bytes
-              .subarray(0, 8)
-              .equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
-          ? "png"
-          : bytes.subarray(0, 4).toString() === "RIFF" &&
-              bytes.subarray(8, 12).toString() === "WEBP"
-            ? "webp"
-            : null;
-    if (!ext) throw new Error("REMOTE_PHOTO_FORMAT");
-    const path = `${productId}/${image.sha256}.${ext}`;
-    const bucket = supabase.storage.from("product-images");
-    const uploaded = await bucket.upload(path, bytes, {
-      contentType: ext === "jpg" ? "image/jpeg" : `image/${ext}`,
-      upsert: false,
-    });
-    if (uploaded.error) {
-      // Unknown outcome or prior copy: verify existing bytes, never overwrite.
-      const existing = await bucket.download(path);
-      if (
-        existing.error ||
-        !existing.data ||
-        createHash("sha256")
-          .update(Buffer.from(await existing.data.arrayBuffer()))
-          .digest("hex") !== image.sha256
-      )
-        throw new Error("REMOTE_PHOTO_STORAGE");
-    }
-    images.push({
-      url: bucket.getPublicUrl(path).data.publicUrl,
-      alt: image.alt,
-    });
-  }
+  const images = await storeVerifiedWebPhotos(supabase, productId, plan.images);
   const latest = await client.gallery(status.data.job.id);
   if (latest.revision !== plan.revision)
     throw new Error("REMOTE_PHOTO_CHANGED");
@@ -315,4 +278,50 @@ export async function pushRemotePhotos(productId: string) {
     }
   }
   return finish(queued.job.id);
+}
+
+export async function storeVerifiedWebPhotos(
+  supabase: Awaited<ReturnType<typeof requirePermission>>["supabase"],
+  productId: string,
+  photos: Array<{ base64: string; sha256: string; alt: string }>,
+) {
+  const images = [];
+  for (const image of photos) {
+    const bytes = Buffer.from(image.base64, "base64");
+    const ext =
+      bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255
+        ? "jpg"
+        : bytes
+              .subarray(0, 8)
+              .equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+          ? "png"
+          : bytes.subarray(0, 4).toString() === "RIFF" &&
+              bytes.subarray(8, 12).toString() === "WEBP"
+            ? "webp"
+            : null;
+    if (!ext) throw new Error("REMOTE_PHOTO_FORMAT");
+    const path = `${productId}/${image.sha256}.${ext}`;
+    const bucket = supabase.storage.from("product-images");
+    const uploaded = await bucket.upload(path, bytes, {
+      contentType: ext === "jpg" ? "image/jpeg" : `image/${ext}`,
+      upsert: false,
+    });
+    if (uploaded.error) {
+      // Unknown outcome or prior copy: verify existing bytes, never overwrite.
+      const existing = await bucket.download(path);
+      if (
+        existing.error ||
+        !existing.data ||
+        createHash("sha256")
+          .update(Buffer.from(await existing.data.arrayBuffer()))
+          .digest("hex") !== image.sha256
+      )
+        throw new Error("REMOTE_PHOTO_STORAGE");
+    }
+    images.push({
+      url: bucket.getPublicUrl(path).data.publicUrl,
+      alt: image.alt,
+    });
+  }
+  return images;
 }
