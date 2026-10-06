@@ -70,7 +70,7 @@ function m9_local_snapshot($value) {
 }
 add_filter('rest_pre_dispatch', function ($result, $server, $request) {
     if (preg_match('#^/wc/v3/products(?:/|$)#', $request->get_route())
-        && !($request->get_method() === 'POST' && preg_match('#^/wc/v3/products(?:/[1-9][0-9]*/variations)?/?$#', $request->get_route()))
+        && !($request->get_method() === 'POST' && preg_match('#^/wc/v3/products(?:/[1-9][0-9]*/variations|/categories)?/?$#', $request->get_route()))
         && in_array($request->get_method(), array('PUT', 'POST', 'PATCH', 'DELETE'), true)
         && empty($GLOBALS['m9_local_guard_dispatch'])) {
         return new WP_Error('m9_conditional_required', 'Use the guarded local update route.', array('status' => 409));
