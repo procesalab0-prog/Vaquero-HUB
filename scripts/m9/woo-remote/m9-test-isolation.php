@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Mi Tienda SM — Aislamiento de pruebas
  * Description: Bloquea ventas, correo y conexiones salientes sólo en el laboratorio remoto M9.
- * Version: 1.1.3
+ * Version: 1.2.0
  */
 if (!defined('ABSPATH')) { exit; }
 function m9_remote_test_origin() {
@@ -40,7 +40,7 @@ add_filter('wp_insert_post_data', function ($data) {
     return $data;
 }, PHP_INT_MAX);
 add_action('admin_notices', function () {
-    echo '<div class="notice notice-warning"><p><strong>MI TIENDA SM — SÓLO PRUEBAS.</strong> Ventas, pagos, correos, webhooks y conexiones salientes bloqueados. No conectado al programa ni a la tienda real.</p></div>';
+    echo '<div class="notice notice-warning"><p><strong>MI TIENDA SM — SÓLO PRUEBAS.</strong> Ventas, pagos, correos, webhooks y conexiones salientes bloqueados. Conector limitado al programa de pruebas. Tienda real separada.</p></div>';
 });
 add_action('admin_menu', function () {
     add_management_page('Pruebas M9', 'Pruebas M9', 'manage_options', 'm9-test-status', 'm9_remote_test_status');
@@ -58,8 +58,10 @@ function m9_remote_test_status() {
         'Variaciones bloqueadas' => apply_filters('woocommerce_variation_is_purchasable', true) === false,
         'Carrito bloqueado' => apply_filters('woocommerce_add_to_cart_validation', true) === false,
     );
-    echo '<div class="wrap"><h1>Mi Tienda SM — Pruebas M9</h1><p>Protección 1.1.3. Este sitio está separado de la tienda real.</p><ul>';
+    echo '<div class="wrap"><h1>Mi Tienda SM — Pruebas M9</h1><p>Protección 1.2.0. Este sitio está separado de la tienda real.</p><ul>';
     foreach ($checks as $label => $ok) { echo '<li>'.esc_html(($ok ? 'OK — ' : 'FALLO — ').$label).'</li>'; }
-    echo '</ul><p>Conexión con el programa: pendiente. Escrituras de la API Woo bloqueadas.</p></div>';
+    echo '</ul><p>Conector de catálogo y fotos disponible para pruebas. La API general Woo permanece bloqueada.</p></div>';
 }
 require_once __DIR__ . '/catalog-bridge.php';
+
+require_once __DIR__ . '/gallery-write.php';

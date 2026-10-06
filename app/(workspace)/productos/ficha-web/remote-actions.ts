@@ -4,6 +4,7 @@ import {
   remoteWebConfigured,
   processRemoteWeb,
   pullRemotePhotos,
+  pushRemotePhotos,
 } from "@/lib/remote-web-server";
 import { revalidatePath } from "next/cache";
 import type { RemoteWebResult } from "@/lib/remote-web";
@@ -24,6 +25,18 @@ export async function remoteWebAction(
         return {
           error:
             "No se reemplazaron las fotos de la ficha. Comprueba permisos e identidad; si cambiaron en ambos lados o se retiró una foto, requiere revisión.",
+        };
+      }
+    }
+    if (form.get("operation") === "push_photos") {
+      try {
+        const message = await pushRemotePhotos(product);
+        revalidatePath("/productos/ficha-web");
+        return { message, refresh: true };
+      } catch {
+        return {
+          error:
+            "No se confirmó la actualización de fotos. Conserva la ficha: vuelve a consultar con este botón para recuperar el recibo. Los cambios en ambos lados o las fotos retiradas requieren revisión.",
         };
       }
     }

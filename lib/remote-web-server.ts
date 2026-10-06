@@ -1,4 +1,5 @@
 import "server-only";
+import { prepareGalleryPush } from "@/scripts/m9/woo-remote/push-gallery.mjs";
 import { createHash } from "node:crypto";
 import { prepareGalleryPull } from "@/scripts/m9/woo-remote/pull-gallery.mjs";
 import { requirePermission } from "@/lib/auth/authorization";
@@ -212,4 +213,106 @@ export async function pullRemotePhotos(productId: string) {
   if (saved.error) throw new Error("REMOTE_PHOTO_DRAFT_CHANGED");
   await remember(saved.data.revision, images);
   return `Se copiaron ${images.length} fotos de Woo de pruebas a esta ficha.`;
+}
+
+// A durable outbox claims a send once. Unknown outcomes are recovered by receipt,
+// never by replaying a POST with a fresh ID or importing another attachment.
+export async function pushRemotePhotos(productId: string) {
+  if (!remoteWebConfigured()) throw new Error("REMOTE_NOT_CONFIGURED");
+  const { userId, supabase } = await requirePermission("products.read");
+  const status = await supabase.rpc("read_remote_web", {
+    p_product_id: productId,
+  });
+  const draft = await supabase.rpc("read_web_draft", {
+    p_product_id: productId,
+  });
+  if (
+    status.error ||
+    draft.error ||
+    !draft.data.can_edit ||
+    status.data.job?.state !== "SUCCEEDED"
+  )
+    throw new Error("REMOTE_PHOTO_PERMISSION");
+  const admin = createAdminClient();
+  const rpc = async (name: string, params: Record<string, unknown>) => {
+    const result = await admin.rpc(name, params);
+    if (result.error) throw new Error("REMOTE_GALLERY_DATABASE_REVIEW");
+    return result.data;
+  };
+  const parent = status.data.job.id;
+  const client = remoteClient({
+    origin: TEST_ORIGIN,
+    username: process.env.M9_REMOTE_WOO_USERNAME!,
+    password: process.env.M9_REMOTE_WOO_PASSWORD!,
+  });
+  const finish = async (id: string) => {
+    const receipt = await client.galleryUpdateReceipt(id);
+    if (receipt.state !== "SUCCEEDED")
+      throw new Error("REMOTE_GALLERY_RECEIPT_REVIEW");
+    const live = await client.gallery(parent);
+    if (live.revision !== receipt.gallery?.revision)
+      throw new Error("REMOTE_GALLERY_CHANGED_AFTER_SEND");
+    await rpc("finish_remote_gallery_push", {
+      p_job_id: id,
+      p_actor_id: userId,
+      p_receipt: receipt,
+    });
+    return "Fotos recibidas y verificadas en Woo de pruebas.";
+  };
+  const pending = await rpc("begin_remote_gallery_push", {
+    p_parent_id: parent,
+    p_actor_id: userId,
+  });
+  if (pending.job) return finish(pending.job.id);
+  const bound = await rpc("claim_remote_web", {
+    p_job_id: parent,
+    p_actor_id: userId,
+  });
+  const checkpoint = await rpc("remote_gallery_checkpoint", {
+    p_job_id: parent,
+    p_actor_id: userId,
+  });
+  const remote = await client.gallery(parent);
+  const receipt = await client.receipt(parent);
+  const plan = await prepareGalleryPush({
+    packet: bound.packet,
+    receipt,
+    remote,
+    current: draft.data.content,
+    checkpoint: checkpoint.images,
+    readPhoto: async (
+      url: string,
+      _transport?: unknown,
+      isRemote?: boolean,
+    ) => {
+      if (!isRemote) return fetchPhoto(url);
+      const image = remote.images.find((i: { url: string }) => i.url === url);
+      if (!image) throw new Error("REMOTE_PHOTO_IDENTITY");
+      return client.photo(parent, image.id);
+    },
+  });
+  if (plan.unchanged) return "Las fotos ya coinciden con Woo de pruebas.";
+  const queued = await rpc("begin_remote_gallery_push", {
+    p_parent_id: parent,
+    p_actor_id: userId,
+    p_draft_revision: draft.data.revision,
+    p_local_images: draft.data.content.images,
+    p_images: plan.common,
+    p_checkpoint_version: checkpoint.version,
+    p_remote_revision: plan.revision,
+  });
+  if (queued.dispatch) {
+    // Claim precedes network access. A failed response leaves recovery-only state.
+    try {
+      await client.updateGallery({
+        update_id: queued.job.id,
+        parent_id: parent,
+        expected_revision: plan.revision,
+        images: plan.images,
+      });
+    } catch {
+      /* GET below determines outcome; never retry POST automatically. */
+    }
+  }
+  return finish(queued.job.id);
 }

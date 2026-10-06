@@ -1088,3 +1088,17 @@ No cerrar integración completa: baseline persistente y escritura de fotos Mi Ti
 Checkpoint privado por trabajo remoto, sólo servicio con propietario y permisos vigentes comprobados. Guarda SHA/alt/orden y revisión Woo tras verificar bytes y coincidencia con revisión/galería local; serializa mediante bloqueo del trabajo y versión esperada. Repeticiones exactas no incrementan versión. El lector acepta nuevas ediciones remotas si Mi Tienda conserva la última galería común; bloquea cambios locales y retirada de cualquier imagen previa. Una interrupción entre guardado y checkpoint se recupera por igualdad verificada, sin duplicar archivos. No representa transacción distribuida con Woo. Migración20261006155407 aplicada sólo staging; pruebas SQL con rollback verificaron creación, repetición, rechazo de versión anterior/revisión local cambiada y denegación a anon/authenticated.15 pruebas unitarias del lector aprobadas, TypeScript correcto. Falta validación del Preview de esta versión.
 
 Continúan pendientes salida recurrente de fotos Mi Tienda→Woo, familias/categorías remotas y migración de galerías históricas. No declarar cierre total ni100%.
+
+
+### 2026-10-06 — Recepción recurrente comprobada en Preview0.71.3
+
+Commit d09db1f33900a0bc6f7e9e28eae3bc3d3c1dfc74, Preview vaquero-rc8mw0yhe-procesa-lab.vercel.app READY; avatar0.71.3 confirmado. CI298 completó success,270 unitarias aprobadas, lint y build correctos. En Woo remoto se editó nuevamente el texto alternativo de imagen19 del producto18; UI recibió «Foto ilustrativa de bolsa — segunda actualización de prueba M9». Ficha revisión3 y checkpoint versión2; repetir Traer fotos devolvió coincidencia, conservó revisión3/versión2 y un único archivo Storage. Evidencia outputs/m9-cola-remota-2026-10-06/fotos-recurrentes-0713.png. No producción ni existencias.
+
+Pendiente corregir texto de ayuda del panel remoto que todavía menciona exclusivamente fotos del alta inicial: ahora admite la última galería sincronizada. No cerrar toda la conexión: continúan pendientes envío de cambios Mi Tienda→Woo, familias/categorías y galerías de catálogo histórico.
+
+
+### 2026-10-06 — Envío de galerías preparado (0.72.0)
+
+Nuevo botón Enviar fotos a Woo de pruebas. Plan compara galería remota contra checkpoint común y verifica bytes/identidad; bloquea ediciones remotas divergentes, duplicados y retirada de imágenes. Cola privada app.web_remote_gallery_outbox reclama cada envío una vez, conserva revisión de ficha y consulta recibo tras resultados inciertos; no reintenta POST. Confirmación valida producto/código/tienda/galería y guarda checkpoint sólo si sigue vigente la ficha local. Migración20261006161256 aplicada sólo staging; prueba SQL con rollback de reclamación única, recibo incorrecto, confirmación y permisos aprobada.
+
+Plugin1.2.0 incorpora endpoint limitado gallery-updates: verifica aislamiento, propiedad, revisión de galería y tablas InnoDB; prepara copias, bloquea filas de producto/medios, vuelve a comprobar revisión y cambia exclusivamente metadatos de portada/galería dentro de transacción. Texto alternativo modificado crea copia independiente para no alterar medios compartidos. Archivos preparados ante conflicto quedan sin asociar para revisión; no se borran.277 unitarias,34 comprobaciones PHP, lint, TypeScript y build aprobados. Pendiente comprobar actualización remota y recorrido UI; todavía no declarar sincronización completa ni migración. Familias/categorías y galerías históricas siguen pendientes.

@@ -23,11 +23,12 @@ export function RemoteWebPanel({
   const [message, setMessage] = useState("");
   const request = useRef<string | null>(null);
   if (!state?.enabled) return null;
-  async function run(enqueue: boolean, pullPhotos = false) {
+  async function run(enqueue: boolean, pullPhotos = false, pushPhotos = false) {
     setBusy(true);
     setMessage("");
     const form = new FormData();
     form.set("product_id", productId);
+    if (pushPhotos) form.set("operation", "push_photos");
     if (pullPhotos) form.set("operation", "pull_photos");
     if (enqueue) {
       request.current ??= crypto.randomUUID();
@@ -97,11 +98,17 @@ export function RemoteWebPanel({
           >
             Traer fotos de Woo de pruebas
           </button>
+          <button
+            type="button"
+            disabled={busy || dirty}
+            onClick={() => run(false, false, true)}
+          >
+            Enviar fotos a Woo de pruebas
+          </button>
           <p>
-            Trae la galería si la ficha conserva las fotos del alta inicial.
-            Cambios en ambos lados o fotos retiradas requieren revisión. Las
-            copias se guardan en esta ficha; todavía no se envían cambios de
-            fotos hacia Woo.
+            Trae o envía la galería desde la última sincronización comprobada.
+            Cambios en ambos lados o fotos retiradas requieren revisión. Guarda
+            primero la ficha y elige la dirección del cambio.
           </p>
         </>
       )}

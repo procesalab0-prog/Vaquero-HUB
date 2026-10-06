@@ -29,9 +29,9 @@ export function remoteClient({
     requireValue(
       (method === "GET" &&
         (path === "isolation" ||
-          /^(receipts|galleries)\/[0-9a-f-]{36}$/i.test(path) ||
+          /^(receipts|galleries|gallery-updates)\/[0-9a-f-]{36}$/i.test(path) ||
           /^photos\/[0-9a-f-]{36}\/[1-9][0-9]*$/i.test(path))) ||
-        (method === "POST" && path === "drafts"),
+        (method === "POST" && ["drafts", "gallery-updates"].includes(path)),
       "REMOTE_OPERATION_FORBIDDEN",
     );
     const response = await transport(`${origin}/wp-json/m9-test/v1/${path}`, {
@@ -82,6 +82,18 @@ export function remoteClient({
         "INVALID_IMAGE_HASH_OR_SIZE",
       );
       return photo;
+    },
+    galleryUpdateReceipt: (id) => {
+      requireValue(uuid.test(id), "INVALID_REQUEST_ID");
+      return call("GET", `gallery-updates/${id}`);
+    },
+    updateGallery: async (packet) => {
+      requireValue(
+        uuid.test(packet.update_id) && uuid.test(packet.parent_id),
+        "INVALID_REQUEST_ID",
+      );
+      await preflight();
+      return call("POST", "gallery-updates", packet);
     },
     gallery: (id) => {
       requireValue(uuid.test(id), "INVALID_REQUEST_ID");

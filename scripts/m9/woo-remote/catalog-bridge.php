@@ -17,7 +17,7 @@ add_filter('rest_pre_dispatch', function ($result, $server, $request) {
     if (strpos($request->get_route(), '/m9-test/v1/') === 0) {
         do_action('litespeed_control_set_nocache', 'M9 authenticated catalogue');
     }
-    if (current_user_can('m9_test_catalog') && !preg_match('#^/m9-test/v1/(isolation|drafts|(?:receipts|galleries)/[0-9a-f-]{36}|photos/[0-9a-f-]{36}/[1-9][0-9]*)$#i', $request->get_route())) {
+    if (current_user_can('m9_test_catalog') && !preg_match('#^/m9-test/v1/(isolation|drafts|gallery-updates(?:/[0-9a-f-]{36})?|(?:receipts|galleries)/[0-9a-f-]{36}|photos/[0-9a-f-]{36}/[1-9][0-9]*)$#i', $request->get_route())) {
         return new WP_Error('m9_scope_denied', 'Acceso limitado al catálogo de pruebas.', array('status' => 403));
     }
     return $result;
