@@ -9,4 +9,9 @@ export type RemoteWebState = {
     remote_product_id: number | null;
   };
 };
-export type RemoteWebResult = { remote?: RemoteWebState; error?: string };
+export type RemoteWebResult = {
+  remote?: RemoteWebState;
+  message?: string;
+  refresh?: boolean;
+  error?: string;
+};

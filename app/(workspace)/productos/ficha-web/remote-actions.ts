@@ -1,6 +1,11 @@
 "use server";
 import { requirePermission } from "@/lib/auth/authorization";
-import { remoteWebConfigured, processRemoteWeb } from "@/lib/remote-web-server";
+import {
+  remoteWebConfigured,
+  processRemoteWeb,
+  pullRemotePhotos,
+} from "@/lib/remote-web-server";
+import { revalidatePath } from "next/cache";
 import type { RemoteWebResult } from "@/lib/remote-web";
 
 export async function remoteWebAction(
@@ -10,6 +15,18 @@ export async function remoteWebAction(
     if (!remoteWebConfigured()) throw new Error("REMOTE_NOT_CONFIGURED");
     const { supabase } = await requirePermission("products.read");
     const product = String(form.get("product_id"));
+    if (form.get("operation") === "pull_photos") {
+      try {
+        const message = await pullRemotePhotos(product);
+        revalidatePath("/productos/ficha-web");
+        return { message, refresh: true };
+      } catch {
+        return {
+          error:
+            "No se reemplazaron las fotos de la ficha. Comprueba permisos e identidad; si cambiaron en ambos lados o se retiró una foto, requiere revisión.",
+        };
+      }
+    }
     const enqueue = form.get("operation") === "enqueue";
     const { data, error } = enqueue
       ? await supabase.rpc("enqueue_remote_web", {

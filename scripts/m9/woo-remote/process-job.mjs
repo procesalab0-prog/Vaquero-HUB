@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { PROTOCOL, TEST_ORIGIN } from "./client.mjs";
 
-export async function fetchPhoto(url, transport = fetch) {
+export async function fetchPhoto(url, transport = fetch, allowRemote = false) {
   const u = new URL(url);
   if (
     u.protocol !== "https:" ||
@@ -9,6 +9,9 @@ export async function fetchPhoto(url, transport = fetch) {
     u.password ||
     u.port ||
     !(
+      (allowRemote &&
+        u.origin === TEST_ORIGIN &&
+        u.pathname.startsWith("/wp-content/uploads/")) ||
       (u.hostname === "vaquerosm.com" &&
         u.pathname.startsWith("/wp-content/uploads/")) ||
       (u.hostname === "zsezjtswqeijboezvado.supabase.co" &&

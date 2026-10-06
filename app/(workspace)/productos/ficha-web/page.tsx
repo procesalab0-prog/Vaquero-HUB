@@ -78,7 +78,7 @@ export default async function WebPage({
         </p>
       )}
       <WebDraftEditor
-        key={data.catalog.product_id}
+        key={`${data.catalog.product_id}:${draft.revision}`}
         draft={draft}
         remote={remoteResult?.data ?? null}
         remoteAction={remoteWebAction}

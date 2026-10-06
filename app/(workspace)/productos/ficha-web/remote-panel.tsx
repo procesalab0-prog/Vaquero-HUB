@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import type { RemoteWebResult, RemoteWebState } from "@/lib/remote-web";
 export function RemoteWebPanel({
@@ -16,16 +17,18 @@ export function RemoteWebPanel({
   dirty: boolean;
   action: (form: FormData) => Promise<RemoteWebResult>;
 }) {
+  const router = useRouter();
   const [state, setState] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const request = useRef<string | null>(null);
   if (!state?.enabled) return null;
-  async function run(enqueue: boolean) {
+  async function run(enqueue: boolean, pullPhotos = false) {
     setBusy(true);
     setMessage("");
     const form = new FormData();
     form.set("product_id", productId);
+    if (pullPhotos) form.set("operation", "pull_photos");
     if (enqueue) {
       request.current ??= crypto.randomUUID();
       form.set("operation", "enqueue");
@@ -36,7 +39,8 @@ export function RemoteWebPanel({
     try {
       const result = await action(form);
       if (result.remote) setState(result.remote);
-      setMessage(result.error ?? "Estado actualizado.");
+      setMessage(result.error ?? result.message ?? "Estado actualizado.");
+      if (result.refresh) router.refresh();
     } catch {
       setMessage(
         "No se confirmó el envío. Actualiza el estado; tu producto sigue guardado.",
@@ -84,6 +88,23 @@ export function RemoteWebPanel({
       <button type="button" disabled={busy} onClick={() => run(false)}>
         Actualizar estado
       </button>
+      {state.job?.state === "SUCCEEDED" && (
+        <>
+          <button
+            type="button"
+            disabled={busy || dirty}
+            onClick={() => run(false, true)}
+          >
+            Traer fotos de Woo de pruebas
+          </button>
+          <p>
+            Trae la galería si la ficha conserva las fotos del alta inicial.
+            Cambios en ambos lados o fotos retiradas requieren revisión. Las
+            copias se guardan en esta ficha; todavía no se envían cambios de
+            fotos hacia Woo.
+          </p>
+        </>
+      )}
       {dirty && <p>Guarda los cambios de la ficha antes de enviar.</p>}
       <p role="status">{message}</p>
     </section>

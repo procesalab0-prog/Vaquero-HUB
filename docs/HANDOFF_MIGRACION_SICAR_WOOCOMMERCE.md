@@ -1043,3 +1043,17 @@ Usuario completó autorización Vercel CLI. Configurados y verificados M9_REMOTE
 ### 2026-10-06 — Alta simple explícita (0.70.1)
 
 0.70.0 publicado en Preview, avatar/panel remoto confirmados (commit5237d34). Ensayo UI detectó que la matriz exigía COLOR+TALLA y no podía producir el producto sin atributos requerido por el conector; formulario cancelado sin crear registros. Corrección0.70.1: opción explícita «Producto sin talla ni color» sólo al crear, un código nuevo generado por servidor y atributos vacíos; no elimina atributos de productos existentes ni acepta esta modalidad al agregar variantes. El servidor rechaza combinación de modo simple con matriz. Costos de SICAR permanecen intactos; un ensayo sintético podrá usar costo de prueba. Pendiente verificar alta real desde interfaz después del despliegue. No ampliar a familias ni declarar sincronización completa de fotos.
+
+
+### 2026-10-06 — Recorrido UI→Woo remoto aprobado (0.70.1)
+
+Commit8375be36 publicado Preview READY (vaquero-3cx1izyq9-procesa-lab.vercel.app); avatar0.70.1 comprobado. Desde formulario publicado se creó PRUEBA M9 conexión remota0610 (nombre real contiene espacio antes de0610), categoría interna Accesorios, sin atributos, costo SINTÉTICO1/público123.45, textos, una URL de foto ilustrativa y sin categorías web. Producto Mi Tienda e8cfb266-e17f-4482-9756-ac0c1e457b8d, barcode generado2000010001699, SKU1000169-1. Envío automático confirmado SUCCEEDED: trabajo1870ed16-203c-4cc6-8d2b-0228011fb116, Woo remoto18, imagen19, borrador no comprable. Recibo GET independiente validó código/precio/foto/textos; Actualizar estado de UI conservó ID18 y consulta SQL confirmó un solo trabajo. Sin importación de existencias ni escrituras en producción.
+
+Evidencia outputs/m9-cola-remota-2026-10-06/ui-remote-receipt.json y alta-0701-recibida.png. Build, TypeScript y lint dirigido aprobados; CI294 en curso al registrar. Alcance aceptado: alta NUEVA simple desde UI con una imagen. Pendientes: familias/categorías/galerías, actualizaciones posteriores, fotos en ambos sentidos, importación completa y visualización de vínculo por tienda en panel de variante (todavía muestra Sin vínculo WooCommerce porque ese rótulo usa vínculo histórico de producción). No confundir recibo remoto18 con Woo local18 de ensayo anterior. No cerrar M9.
+
+
+### 2026-10-06 — Recepción protegida de galería remota (0.71.0 preparada)
+
+Acción explícita Traer fotos de Woo de pruebas para altas remotas SUCCEEDED propias. Verifica recibo, propietario/permiso vigente, identidad/código, galería completa, SHA de bytes, límite20 fotos/4MB por foto/16MB total, sin redirecciones ni hosts arbitrarios. Descarga sin credenciales de Woo en archivos; copia por hash a product-images con upsertfalse, valida copia previa al reintentar; relee revisión remota antes de guardar y save_web_draft exige revisión/huella local. Mantiene textos/precios y no escribe en Woo. Bloquea cambios locales respecto del alta inicial, salvo repetición exacta, y retirada de foto original; no baseline persistente incremental aún. Puede dejar archivos sin asociar ante conflicto, nunca borra archivos. No garantiza transacción distribuida con ediciones Woo posteriores a la relectura.
+
+12 pruebas de conciliación/copia propuestas aprobadas junto a13 del procesador. Pendiente ensayo UI de copia, actualización de portada del catálogo, baseline incremental y salida de fotos Mi Tienda→Woo. Variantes/categorías siguen pendientes. No declarar conexión bidireccional ni migración completa.
