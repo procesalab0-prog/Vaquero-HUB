@@ -35,15 +35,13 @@ it("requires review when the approved barcode set changes", () => {
   );
 });
 it("does not send the product when the destination policy is missing", async () => {
-  const fetchMock = vi
-    .fn()
-    .mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        environment: "local",
-        url: "http://127.0.0.1:9417",
-      }),
-    });
+  const fetchMock = vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({
+      environment: "local",
+      url: "http://127.0.0.1:9417",
+    }),
+  });
   vi.stubGlobal("fetch", fetchMock);
   const input = exhibition();
   const step = compilePlan(input).steps[0];
