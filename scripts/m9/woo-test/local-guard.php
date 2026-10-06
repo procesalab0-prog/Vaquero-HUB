@@ -26,6 +26,7 @@ add_action('rest_api_init', function () {
         'callback' => function () {
             $response = wp_remote_get('https://example.invalid/m9-isolation-check');
             return array('wordpress' => get_bloginfo('version'), 'woocommerce' => WC_VERSION,
+                'display_policy' => function_exists('m9_display_policy_version') ? m9_display_policy_version() : null,
                 'environment' => wp_get_environment_type(), 'url' => home_url(),
                 'recovery_read_only' => defined('M9_RECOVERY_READ_ONLY') && M9_RECOVERY_READ_ONLY,
                 'cron_disabled' => defined('DISABLE_WP_CRON') && DISABLE_WP_CRON,
@@ -96,6 +97,7 @@ add_action('rest_api_init', function () {
             if (array_diff(array_keys($payload), $allowed))
                 return new WP_Error('m9_field_blocked', 'Unsupported update fields.', array('status' => 400));
             foreach (($payload['meta_data'] ?? array()) as $meta) {
+                if (is_array($meta) && ($meta['key'] ?? '') === '_m9_display_only' && ($meta['value'] ?? '') === 'yes') continue;
                 if (!is_array($meta) || ($meta['key'] ?? '') !== '_mi_tienda_test_operation'
                     || !is_string($meta['value'] ?? null) || !preg_match('/^[a-f0-9]{64}$/', $meta['value']))
                     return new WP_Error('m9_identity_immutable', 'Identity metadata cannot be updated.', array('status' => 400));

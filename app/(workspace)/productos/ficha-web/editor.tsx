@@ -12,6 +12,7 @@ import {
   type WebContent,
 } from "@/lib/web-draft";
 import styles from "./web.module.css";
+import displayPolicies from "@/lib/m9-display-policy.json";
 
 export function WebDraftEditor({
   draft,
@@ -162,6 +163,13 @@ export function WebDraftEditor({
       <h1>Ficha para tienda en línea</h1>
       <p>{draft.catalog.name}</p>
       <p className={styles.notice}>Prueba en staging · Tienda real bloqueada</p>
+      {displayPolicies.products
+        .filter((p) => p.product_id === draft.catalog.product_id)
+        .map((p) => (
+          <p className={styles.notice} key={p.product_id}>
+            {p.message} Esta regla se aplicará al próximo ensayo en el laboratorio.
+          </p>
+        ))}
       <p>
         {revision
           ? `Guardado interno · revisión ${revision}`

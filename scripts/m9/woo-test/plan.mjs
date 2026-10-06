@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import displayPolicies from "../../../lib/m9-display-policy.json" with { type: "json" };
 
 export const VERSION = "m9-woo-local-worker-1";
 export const hash = (value) =>
@@ -91,6 +92,9 @@ export function compilePlan(input) {
     "descriptive_attributes",
   ]);
   const origin = localStore(input.store);
+  const displayPolicy = displayPolicies.products.find(
+    (p) => p.product_id === input.product_id,
+  );
   assert(
     uuid(input.product_id) && positive(input.revision),
     "INVALID_INTERNAL_ID_OR_REVISION",
@@ -204,6 +208,12 @@ export function compilePlan(input) {
       vs.map((v) => v[field]),
       "DUPLICATE_VARIANT_IDENTITY",
     );
+  if (displayPolicy)
+    assert(
+      stable(vs.map((v) => v.barcode).sort()) ===
+        stable([...displayPolicy.barcodes].sort()),
+      "DISPLAY_POLICY_IDENTITY_REVIEW_REQUIRED",
+    );
   unique(
     vs.map((v) =>
       stable([...v.attributes].sort((a, b) => a.name.localeCompare(b.name))),
@@ -245,7 +255,11 @@ export function compilePlan(input) {
   );
   const editorial = {
     name: c.name,
-    description: plainHtml(c.description),
+    description: plainHtml(
+      displayPolicy && !c.description.includes(displayPolicy.message)
+        ? `${c.description}\n\n${displayPolicy.message}`
+        : c.description,
+    ),
     short_description: plainHtml(c.short_description),
     categories: b.categories.map(({ id }) => ({ id })),
     // Existing attachments only: no HTTP image fetch or re-upload during retry.
@@ -263,6 +277,9 @@ export function compilePlan(input) {
         key,
       ]),
     },
+    ...(displayPolicy && key === "parent"
+      ? [{ key: "_m9_display_only", value: "yes" }]
+      : []),
   ];
   const identity = (v) => [
     { key: "_mi_tienda_variant_id", value: v.id },

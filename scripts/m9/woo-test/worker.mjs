@@ -19,6 +19,27 @@ export function wooClient(store, authorization = "") {
         ),
       "UNSUPPORTED_WOO_OPERATION",
     );
+    if (
+      method !== "GET" &&
+      body?.meta_data?.some((m) => m.key === "_m9_display_only")
+    ) {
+      const capability = await fetch(
+        `${origin}/wp-json/m9-local/v1/isolation`,
+        {
+          headers: authorization ? { Authorization: authorization } : {},
+          redirect: "error",
+          signal: AbortSignal.timeout(30000),
+        },
+      );
+      assert(capability.ok, "DISPLAY_POLICY_CAPABILITY_REQUIRED");
+      const isolation = await capability.json();
+      assert(
+        isolation.environment === "local" &&
+          isolation.url === origin &&
+          isolation.display_policy === "m9-display-only-1",
+        "DISPLAY_POLICY_CAPABILITY_REQUIRED",
+      );
+    }
     // Updates must be checked inside the local server's serialized writer.
     // No fallback to an unguarded GET + PUT if the guard is unavailable.
     if (method === "PUT")

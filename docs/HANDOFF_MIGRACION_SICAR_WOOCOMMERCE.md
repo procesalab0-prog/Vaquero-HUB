@@ -901,3 +901,39 @@ Nueva herramienta prepare-revalidation.mjs produce sólo lecturas contra Woo loc
 Recorrido real autorizado: UI staging bolsa10521, revisión3 con nombre temporal→cola→claim38ffe5a3-76dc-4c17-990a-f05b57b38c61→revalidación→Woo local18→recibo SUCCEEDED visible. UI revisión4 restaura nombre→claime9f1db4a-caf5-4746-96f3-6b021bb6f4d0→puente normal sin otra revalidación→mismo ID18 y recibo visible. Campos comerciales originales, cuatro fotos, código10521 y precio8695 conservados; cero solicitudes al repetir worker. Comprobantes anteriores sin modificaciones. Sólo escritura de ficha/cola en staging y borrador Woo local, nunca producción ni existencias. Evidencia outputs/m9-revalidacion-2026-10-05.
 
 194 unitarias locales aprobadas, incluyendo13 nuevas de revalidación; lint dirigido aprobado. Versión preparada0.67.0; despliegue y CI de esta versión pendientes al guardar este registro. CI286 aprobó0.66.0 con181/165/128 pruebas, no sustituye la nueva validación. Staging sigue abierto por control de escritores externos y revisión final del lote; no se declara revalidación productiva.
+
+
+## Entrega0.67.0 verificada — 2026-10-05
+
+Publicadoa258dbd, árbol384ccb731ed90b8a22d60ad517bda3daabd2d5d0. Vercel success, avatar0.67.0 y ficha con revisión4/recibo verificado comprobados. CI287/run37387433446 SUCCESS:194 unitarias,165 integración,128 navegador; formato/lint/tipos/build y base de prueba aprobados. Cadena de recibos anterior→revalidación→envío3→restauración4 verificada por huellas. Recorrido UI de bolsa simple cerrado para este ensayo; no equivale a UI de todas las familias ni control global de escritores. Pendiente validación de escritores externos, alcance final y fuentes frescas antes de cierre/producción. Staging abierto, sin producción ni existencias. Evidencia outputs/m9-revalidacion-2026-10-05/estado-final.json.
+
+
+## Decisiones de dueños recibidas — 2026-10-05
+
+Registradas las seis respuestas en [M9_RESPUESTAS_DUENOS_2026-10-05.md](M9_RESPUESTAS_DUENOS_2026-10-05.md). Talla 60 de Tombstone es una opción del modelo sin mercancía recibida: no crear identidad física ni existencias. Nokota debe ser CABALLERO; corrección reportada, pendiente de exportación fresca. Aprobado el detalle de piedra roja de West Point. Amartigones por talla y color según disponibilidad, con nuevo requisito de exhibición sin compra, pendiente de implementación y prueba de bloqueo también en servidor. Prueba física del lector2396/talla59/$2190 ya cerrada por confirmación anterior. Cintos18057/18058 corresponden a40/42; falta verificar la asignación exacta por código en el archivo corregido. No se sustituye evidencia histórica ni se liberan automáticamente casos. Sólo documentación local, sin cambios de datos, producción, existencias o despliegue. Publicada0.67.0; staging sigue abierto y la estimación no cambia por estas respuestas.
+
+
+## Corte SICAR 6 verificado — 2026-10-05
+
+Archivo recibido Plantilla_Productos (6).xlsx, SHA256 171200f4b21f1a1f11bd977739d3e80a7f191b09977d2cdffcee1a6a4daab12a. Comparación offline reproducible en outputs/m9-corte-sicar6-2026-10-05:16224 filas,91 nuevas,28 precios públicos modificados,155 filas con cambios de inventario excluidas;11 archivos y delta idénticos al repetir. Confirmadas seis tallas Nokota en CABALLERO (11201/3280 corregidos),18057 talla40/$2050 y18058 talla42/$2300 (precio anterior$2050),2396 talla59/$2190 intacto. No crear talla60 de Tombstone. SICAR_ONLY de cintos no se libera automáticamente. Amartigones exhibición sin compra pendiente de implementar y verificar. Woo histórico del1 de octubre, reglas m9-readonly-5 sin incorporación automática de respuestas nuevas. Evidencia casos-verificados.json y reporte.md. Originales intactos; sin producción, staging, Woo, existencias ni despliegue. Publicada0.67.0, staging abierto.
+
+
+## Prototipo de exhibición y revisión de altas — 2026-10-05
+
+Evidencia outputs/m9-exhibicion-2026-10-05. Prototipo PHP exclusivamente local, instalado en mu-plugins del laboratorio9417, sin modificar catálogo ni el puente. Diez comprobaciones en memoria aprobadas de política de compra simple/variante, herencia mediante resolvedor de prueba, no interferencia y hooks Store API. Ruta diagnóstica autenticada, aislamiento de correos/red/pagos verificado. Vista de demostración /m9-exhibicion/ abierta y comprobada; sin tallas/fotos inventadas. NO demuestra carrito/checkout HTTP ni asignación real de política. Pendiente integrar ficha y validar sesiones completas.
+
+91 altas SICAR6 agrupadas:90 SICAR_ONLY,1 CONFLICT por EXISTENCIA_INVALIDA (18086/BCD3782-60CAF26.5). Departamentos37 CABALLERO,36 DAMA,18 UNISEX;28 cambios de precio documentados. Sin coincidencia web no significa error; no se liberan automáticamente. Woo fuente del1 de octubre. Código y existencias originales preservados. Sólo prototipo local y reportes; sin producción, existencias, despliegue o escritura de catálogo staging. Publicada0.67.0; estimación técnica90% mantenida, staging abierto.
+
+
+## Ensayo persistido de carrito — 2026-10-05
+
+Once comprobaciones aprobadas contra Woo local real con cuatro productos sintéticos temporales. Control elegible añadido; exhibición simple y variante heredada rechazadas; carrito previo bloqueado al cambiar política. Store API ejecutada por REST interno dentro de solicitud diagnóstica autenticada:control201,exhibición/variante400 con código woocommerce_rest_product_not_purchasable. No es una sesión de navegador checkout. Se corrigió la expectativa inicial200 del control a201 según código instalado de Woo; no se relajó el rechazo. Productos62–65 eliminados; también58–61 del primer ensayo. Endpoint temporal retirado después del ensayo. Aislamiento posterior aprobado, cero pedidos. Evidencia integracion.json.
+
+Revisión de cierre en estado-cierre.json:la integración ficha→cola→puente→recibo del modo exhibición aún no existe; control de escritores, navegador checkout, fuentes finales y alcance aprobado pendientes. No declarar100%. El90% previo era estimación sin denominador medido; no se usa como aceptación. Sin cambios de aplicación publicada0.67.0, producción o existencias.
+
+
+## Integración de política de exhibición — preparada 0.68.0, 2026-10-05
+
+Regla aprobada de Woo37102/producto200ca5b2-7e5f-44ee-9428-2bceebe282dc/Clave10105 en lib/m9-display-policy.json, compartida por aviso de ficha y compilador del trabajador. No es selector editable ni una regla por nombre. Rechaza cambios del conjunto de códigos y conserva las validaciones existentes de identidad. Añade aviso comercial y metadata _m9_display_only=yes al padre; hijos heredan en Woo. El cliente comprueba capacidad exacta del plugin local antes de escribir; no hay fallback. Guard condicionado admite únicamente activar la metadata, nunca desactivarla. Launcher instala plugin con bloqueo de compra, Store API y carrito. Sin migración de esquema ni modificación de datos staging.
+
+199 unitarias aprobadas (cinco nuevas), lint dirigido, TypeScript y build webpack correctos. Ensayo real del trabajador en Woo local: borrador técnico66 creado y actualizado SUCCEEDED, repetición cero solicitudes, código10105/precio230 y campos de inventario conservados. Se usó imagen sintética existente y nombre explícito de prueba, no ficha comercial definitiva. Evidencia outputs/m9-exhibicion-integrada-2026-10-05/evidencia.json. No equivale a recorrido UI→cola→claim→recibo visible; quedan habilitación/revisión del producto en cola, despliegue Preview y comprobación del avatar0.68.0. Versión preparada0.68.0, publicada sigue0.67.0. Sin producción ni importación de existencias; staging abierto.
