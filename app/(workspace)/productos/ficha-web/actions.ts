@@ -1,4 +1,5 @@
 "use server";
+import { queueEligibleRemoteWeb } from "@/lib/remote-web-server";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "@/lib/auth/authorization";
 import { WEB_STAGING_URL, webContentFromForm } from "@/lib/web-draft";
@@ -16,10 +17,15 @@ export async function saveWebDraft(form: FormData): Promise<SaveWebState> {
       p_request_id: String(form.get("request_id")),
     });
     if (error) throw new Error(error.message);
+    const remoteMessage = await queueEligibleRemoteWeb(
+      String(form.get("product_id")),
+    );
     revalidatePath("/productos/ficha-web");
     return {
       ok: true,
-      message: "Ficha guardada en staging. No se envió a WooCommerce.",
+      message:
+        remoteMessage ??
+        "Ficha guardada en staging. No se envió a WooCommerce.",
       revision: data.revision,
     };
   } catch (error) {

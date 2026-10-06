@@ -3708,3 +3708,104 @@ Revisión de cierre en estado-cierre.json:la integración ficha→cola→puente�
 Regla aprobada de Woo37102/producto200ca5b2-7e5f-44ee-9428-2bceebe282dc/Clave10105 en lib/m9-display-policy.json, compartida por aviso de ficha y compilador del trabajador. No es selector editable ni una regla por nombre. Rechaza cambios del conjunto de códigos y conserva las validaciones existentes de identidad. Añade aviso comercial y metadata _m9_display_only=yes al padre; hijos heredan en Woo. El cliente comprueba capacidad exacta del plugin local antes de escribir; no hay fallback. Guard condicionado admite únicamente activar la metadata, nunca desactivarla. Launcher instala plugin con bloqueo de compra, Store API y carrito. Sin migración de esquema ni modificación de datos staging.
 
 199 unitarias aprobadas (cinco nuevas), lint dirigido, TypeScript y build webpack correctos. Ensayo real del trabajador en Woo local: borrador técnico66 creado y actualizado SUCCEEDED, repetición cero solicitudes, código10105/precio230 y campos de inventario conservados. Se usó imagen sintética existente y nombre explícito de prueba, no ficha comercial definitiva. Evidencia outputs/m9-exhibicion-integrada-2026-10-05/evidencia.json. No equivale a recorrido UI→cola→claim→recibo visible; quedan habilitación/revisión del producto en cola, despliegue Preview y comprobación del avatar0.68.0. Versión preparada0.68.0, publicada sigue0.67.0. Sin producción ni importación de existencias; staging abierto.
+
+
+## Entrega 0.68.1 — exhibición con recorrido completo, 2026-10-05
+
+Publicado d32fbaf58a3605acad14325f1008357666be166e, árbol6bebfec965aa54ace0b810162185ca7533109405. Preview success y avatar0.68.1 comprobados. CI290/run37407202498 SUCCESS:199 unitarias,165 integración,128 navegador, formato/lint/tipos/build. La primera CI288 detectó formato de una prueba y se corrigió.
+
+Categorías del amartigón37102 verificadas por consulta pública:467 Amartigon,270 Caballo,419 Vaquero SM, padres0. Binding preparado mediante función auditada y producto10105 habilitado sólo para laboratorio en staging. UI guardó revisión1 y encoló24aaacd1-53ac-4fed-be13-b41a1d3a324a; claimc0c4d8b4-6206-47fa-850b-6c107aeb3cf7. Puente creó borrador local75 con ocho imágenes, código10105, precio230, metadata de exhibición yes y purchasable=false. Recibo SUCCEEDED f1c147eb02efdeed96e6cd69d3a2f6d162771e3e40df50dd383c6f9428ed0525 registrado y visible en UI. Repetición cero solicitudes, cero campos de existencias enviados, cero pedidos.
+
+El recorrido encontró un409 al crear categoría nueva: guard antiguo bloqueaba esa colección. 0.68.1 permite sólo POST exacto de la colección categorías, manteniendo bloqueo de updates directos de productos. Se comprobó ausencia por slug, guardó diario original y evidencia y retiró sólo la marca del envío rechazado para reanudar. PUT directo al producto75 sigue409 y nombre intacto. Aislamiento de red/correo/pagos validado.
+
+Evidencia outputs/m9-exhibicion-integrada-2026-10-05:claim-ui.json,run-ui/,asset-recovery.json,cierre-funcional.json,entrega-verificada.json,recibo-ui.png y version-0.68.1.png. Cerrado este recorrido de exhibición; staging global sigue abierto por control de escritores externos, alcance final y fuentes del corte. Sin producción, importación de existencias ni merge a main. PR87 continúa borrador.
+
+
+## Catálogo visual de pruebas — preparada 0.69.0, 2026-10-05
+
+Soporte de portadas HTTPS exclusivamente vaquerosm.com/wp-content/uploads/ en productos y ficha, conservando rutas de almacenamiento existentes; aviso persistente únicamente en staging. 207 unitarias, build y lint locales aprobados. Pendientes despliegue y asignación auditada de las 41 portadas conciliadas; no se declara visible hasta verificar Preview. Preparación offline de 16224 filas SICAR6 en outputs/m9-catalogo-completo-pruebas-2026-10-05/catalogo-preparado.json:6363 candidatas,3970 revisión manual,5891 SICAR sin vínculo web para revisión. Ninguna importada por esta preparación; inventario excluido y coste nulo. Woo fuente 1 de octubre, no se considera corte actualizado de hoy. Altas arbitrarias programa→Woo aún requieren ampliar la cola restringida. Sesión Hostinger accesible por Chrome nativo; herramienta staging disponible, sin crear copia todavía ni modificar producción.
+
+
+## Corrección de portadas — 0.69.1, 2026-10-05
+
+La asignación de URL a products.image_path fue rechazada por products_image_path_format y toda la transacción se revirtió:0 portadas almacenadas/0 auditorías de asignación. Se conservó la restricción de almacenamiento. Se implementó read_catalog_covers: consulta sólo de lectura a fuente y vínculo M9 exacto, lote máximo200, usuario activo con products.read, puerta staging, sin acceso anon/service_role. Devuelve41 portadas existentes y respeta fotos manuales; validación adicional de URL en aplicación. Migración20261006032727 aplicada sólo en zsezjtswqeijboezvado. Pruebas SQL de autorización, lote vacío y límite aprobadas; build/tipos y lint dirigidos correctos. Evidencia outputs/m9-catalogo-visual-2026-10-05/verification.json. Commit8c056476b3f9560fa64c99cbc169f1017b521c43 en PR87; Preview/CI292 y visual pendientes al registrar. No importación de catálogo, inventario ni producción.
+
+
+## Verificación visual 0.69.1 y alojamiento remoto — 2026-10-05
+
+Preview success y avatar0.69.1 comprobados. Catálogo muestra fotos de las41 identidades conciliadas mediante lectura; muestra visual2396 conserva talla59/$2190 y foto del sombrero cargada. No se alteraron image_path, códigos, precios ni existencias. CI292 todavía en ejecución. Asesor no reporta read_catalog_covers; conserva avisos globales de funciones y RLS anteriores, no modificados.
+
+Hostinger accesible en Chrome nativo (no vía extensión). Se preparó instalación NUEVA de WordPress con dominio temporal en plan Business existente, sin clonar tienda activa. Formulario «Crea los datos de acceso» pendiente de que usuario establezca contraseña y pulse «Crea desde cero», por política de control de navegador. No creada aún, no Woo remoto operativo ni credenciales nuevas del agente. Captura hostinger-acceso-pruebas.png y consulta pendiente en chat. No sustituir con staging automático que copia conexiones/pedidos sin aislamiento previo. Catálogo completo sigue sólo preparado offline y altas arbitrarias programa→Woo todavía pendientes.
+
+
+## Continuación de alojamiento de pruebas — 2026-10-05
+
+CI292/run37409175801 finalizó SUCCESS para8c056476/0.69.1. Usuario completó creación del WordPress independiente en salmon-nightingale-251188.hostingersite.com; administrador accesible en Chrome. Se inicia instalación oficial de WooCommerce; aún sin conexión al programa ni catálogo cargado remoto. Objetivo solicitado: pruebas listas esta semana, sujeto a verificación; no es autorización de producción.
+
+
+## Woo remoto instalado — 2026-10-05
+
+WooCommerce oficial11.1.2 instalado y activado en WordPress7.1.2 del sitio nuevo salmon-nightingale-251188.hostingersite.com. MonedaMXN guardada; modo Próximamente ampliado a todo el sitio y confirmación de guardado verificada. Sin enlace privado habilitado, sin pasarelas instaladas ni conexión al programa ni productos importados. No declarar aislamiento completo: bloqueo servidor de correo/pedidos pendiente, así como configuración regional, credencial acotada del puente y ensayo de alta nueva. Captura y estado en outputs/m9-woo-remoto-2026-10-05. Tienda real sin cambios.
+
+
+### 2026-10-05 — Preparación del aislamiento remoto (pendiente de instalación)
+
+- Woo remoto independiente: `https://salmon-nightingale-251188.hostingersite.com`; WooCommerce activo, MXN y Próximamente en todo el sitio.
+- Preparado `scripts/m9/woo-remote/m9-test-isolation.php`, fijado exclusivamente a ese origen. Bloquea correo WordPress, HTTP saliente, pagos, webhooks, compra/carrito, guardado de pedidos y escritura REST Woo; fuerza productos publicados a borrador. No modifica el guard local.
+- 15 comprobaciones locales con PHP 8.3 y stubs de WordPress pasaron; evidencia `outputs/m9-woo-remoto-2026-10-05/guard-tests.json`. No equivale a una prueba de integración remota. ZIP listo en ese mismo directorio.
+- Instalación/activación remota pendiente de confirmación en el navegador para complemento propio fuera del directorio oficial. Conexión con el programa, credencial acotada y prueba de alta con imagen pendientes. No importación de existencias ni escrituras en producción.
+
+
+### 2026-10-05 — Aislamiento remoto instalado y activo
+
+Usuario autorizó instalación y activación del complemento propio. Instalado 1.0.0 en salmon-nightingale-251188.hostingersite.com, confirmado “Plugin activado”. Panel Herramientas > Pruebas M9: 8 comprobaciones OK (origen, correo, red saliente, cero pagos, webhooks, compra, variaciones, carrito). Evidencia: outputs/m9-woo-remoto-2026-10-05/aislamiento-activo.png y estado.json. Son comprobaciones de filtros y HTTP saliente, no una compra integral. Conexión con programa continúa pendiente, API Woo de escritura bloqueada. Sin cambios en producción ni importación de existencias.
+
+
+### 2026-10-05 — Puente remoto preparado, NO instalado ni conectado
+
+Preparados scripts/m9/woo-remote/client.mjs y catalog-bridge.php; plugin local 1.1.0 incluye módulo separado. Origen exacto remoto; sólo alta de producto simple en borrador con una imagen binaria validada y recibo por UUID. Sin campos de inventario, sin actualización de productos existentes, sin acceso genérico Woo. Rol m9_test_catalog todavía NO creado remoto; exige contraseña de aplicación de usuario de ese rol y niega otras rutas REST/XML-RPC. Locks persistentes por solicitud/producto; errores requieren revisión, no reenvío automático. No modificar conector localhost.
+
+53 pruebas Vitest aprobadas (13 nuevas y 40 de conectores existentes), lint/formato correctos. 17 comprobaciones PHP con stubs aprobadas: validación, permisos, bloqueo de otros endpoints y repetición/conflictos de recibos. No se ha probado escritura integral con Woo remoto ni adaptación de ficha/cola del programa al nuevo protocolo. Evidencia bridge-server-tests.json, ejecutor test-bridge.mjs en outputs/m9-woo-remoto-2026-10-05. ZIP m9-test-isolation-1.1.0.zip preparado. Chrome abre selector con ZIP válido pero Abrir deshabilitado; se canceló y dejó formulario Subir plugin para intervención del usuario. No se subió/instaló 1.1.0; remoto permanece 1.0.0, protecciones activas. Próximo: cargar actualización, verificarla, preparar cuenta exclusiva/contraseña de aplicación mediante intervención del usuario y probar producto de staging de extremo a extremo. App publicada 0.69.1 sin cambios; sin producción/existencias.
+
+
+### 2026-10-06 — Actualización remota 1.1.0 verificada
+
+Se resolvió bloqueo del selector copiando ZIP idéntico a /tmp/m9-test-isolation.zip. Carga y reemplazo ejecutados en Chrome únicamente en Woo remoto de pruebas; WordPress confirmó actualización con éxito. Herramientas > Pruebas M9 muestra Protección1.1.0 y ocho comprobaciones OK. Evidencia outputs/m9-woo-remoto-2026-10-05/puente-1.1.0-instalado.png. Puente instalado; falta cuenta/contraseña de aplicación exclusiva y ensayo integral desde ficha de programa. Sin credencial nueva, importación de existencias ni cambios en producción. Aplicación publicada permanece0.69.1.
+
+
+### 2026-10-06 — Acceso exclusivo preparado, pendiente de usuario
+
+En Chrome, formulario Agregar usuario del Woo remoto: nombre m9_catalogo_pruebas, perfil M9 — Sólo catálogo de pruebas, aviso por correo desmarcado y contraseña oculta. No se envió el formulario ni se creó credencial. Usuario debe indicar correo que controle y completar/guardar contraseña y crear cuenta por regla de handoff de credenciales del navegador. Después preparar contraseña de aplicación para ese usuario, guardarla de forma privada y verificar denegación de otros endpoints antes del ensayo de producto. Captura acceso-limitado-pendiente.png en outputs/m9-woo-remoto-2026-10-05. Conexión pendiente; producción intacta.
+
+
+### 2026-10-06 — Usuario limitado confirmado y clave de aplicación pendiente
+
+WordPress confirma Nuevo usuario creado. Verificados username m9_catalogo_pruebas y rol M9 — Sólo catálogo de pruebas en lista y edición. Preparado nombre de contraseña de aplicación M9 - Conector Woo de pruebas; NO pulsado Agregar contraseña de aplicación por handoff de credenciales. Plantilla privada auth.json en work/m9-woo-remote/private, directorio0700 y archivo0600, contraseña vacía; no secretos leídos. Usuario debe generar clave y guardarla localmente, fuera del chat y repositorio. Pendiente autorización efectiva de API y ensayo integral. No cambios de producción ni inventario.
+
+
+### 2026-10-06 — Credencial verificada y caché pública corregida
+
+Clave corregida aceptada por diagnóstico remoto, sin imprimir secretos. Accesos autenticados a wc/v3/orders, wc/v3/products y wp/v2/users rechazados403 m9_scope_denied. Detectado diagnóstico en caché LiteSpeed servido sin autenticación (200/x-litespeed-cache:hit); una URL de consulta nueva confirmó401 rest_forbidden, aislando caché como causa. Desactivado LiteSpeed Cache sólo en Woo de pruebas, con confirmación UI. Repetición misma URL: anónimo401, autenticado200, anónimo401; sin hit caché. Evidencia cache-auth-verification.json, remote-preflight.json y cache-desactivada.png en outputs/m9-woo-remoto-2026-10-05. remote-access-checks.json conserva hallazgo inicial fallido para trazabilidad. No reactivar caché sin exclusión de API y regresión autenticado/anónimo. Pendiente envío real de producto simple remoto y adaptación desde ficha/cola del programa. Sin producto creado, sin inventario ni producción modificados; app0.69.1.
+
+
+### 2026-10-06 — Ensayo remoto verificado y alcance funcional aclarado
+
+Usuario reafirma aceptación: alta desde Mi Tienda → producto Woo; fotos añadidas en Mi Tienda o Woo deben aparecer en ambos; migración debe traer fotos Woo a producto correspondiente de Mi Tienda. No considerar cerrado con envíos manuales o script. Vínculos por identidad verificada, nunca sólo nombre; cambios simultáneos en revisión.
+
+Ensayo de transporte remoto con ficha histórica guardada/revisada4 de bolsa f4291151-09fc-429a-9e36-ccc214c32acb, código10521, precio8695: producto remoto14 e imagen15 creados como borrador. Primer intento quedó REVIEW_REQUIRED por comparación estricta de image_id (Woo devuelve string). Corrección plugin1.1.1 normaliza ID a entero y verifica archivo original SHA256, textos/código/precio/meta/estado. 22 comprobaciones PHP aprobadas. Instalado1.1.1 sólo en sitio remoto, confirmación UI de éxito. Reconciliación del MISMO paquete/IDs, sin recrear recursos, terminó SUCCEEDED; repetición mismo recibo/IDs. Conservado estado/error previo para auditoría. Fuente y paquete en outputs/m9-envio-remoto-2026-10-06, reproducción no reenvía automáticamente tras dispatch.
+
+Alcance probado: un producto simple, una portada y textos, sin categorías/galería/variaciones/stock. NO es recorrido nuevo desde UI Mi Tienda → Woo remoto ni integración de cola remota ni sincronización inversa. App publicada0.69.1 aún dice laboratorio local y read_web_draft no acepta URLs del host remoto. No afirmar fotos bidireccionales o catálogo completo migrado. Pendientes: integrar outbox/recibo remoto con creación Mi Tienda (también SICAR_ONLY); admitir galerías, categorías y familias; retorno de fotos con baseline y conflicto, guardar vínculos por tienda, comprobar desde ambas interfaces. Producción intacta y cero importación de existencias.
+
+
+### 2026-10-06 — Lectura remota de fotos y conciliación bidireccional
+
+Requisito funcional explícito en [M9_SINCRONIZACION_CATALOGO_Y_FOTOS.md](M9_SINCRONIZACION_CATALOGO_Y_FOTOS.md): alta desde programa→Woo, fotos desde ambos lados y migración por identidad confirmada. Instalado conector remoto1.1.2: GET de galería por recibo propio SUCCEEDED, valida identidad y archivos originales, devuelve orden/alt/huellas; no catálogo general. Cabeceras privadas/no-store y exclusión LiteSpeed. Lectura real producto14/10521/imagen15 aprobada; secuencia misma URL anónimo401→autenticado200→anónimo401 con no-store. Sin fotos escritas en Mi Tienda.
+
+Nuevo planificador puro de tres versiones con19 pruebas: propone dirección, preserva orden/portada, rechaza duplicados/galerías parciales/identidad distinta y detiene cambios simultáneos o eliminaciones. Revalidación de ambos lados antes de ejecutar; no resuelve aún escrituras concurrentes externas. 239 unitarias completas y32 comprobaciones PHP con stubs aprobadas; lint dirigido correcto. Primer fallo unitario fue fixture it.each mal anidado, corregido sin cambiar regla. Evidencia outputs/m9-fotos-bidireccionales-2026-10-06. Dry-run contra destino vacío SINTÉTICO, no lectura/escritura real de galería Mi Tienda. Cola remota, aplicación de fotos en ambos sentidos y alta desde UI siguen pendientes. App publicada0.69.1 sin cambio/despliegue; plugin de pruebas1.1.2. Sin producción/existencias; staging abierto.
+
+
+### 2026-10-06 — Cola remota preparada y acceso Vercel recuperado
+
+Versión local0.70.0 preparada: cola duradera y recibo visibles en ficha; alta simple elegible se encola al guardar, sólo en staging configurado. Primer alcance: producto nuevo sin vínculo Woo, una variante sin atributos, una foto, sin categorías y textos completos. No reenviar POST ante timeout: recuperar por recibo; conservar literalmente código/precio, no existencias. RPC de claim/huella/confirmación sólo service_role, validación de propietario y permisos actuales. Migración20261006142911 aplicada únicamente a zsezjtswqeijboezvado.16 pruebas SQL transaccionales con rollback aprobadas; siguen41 productos y0 trabajos reales.252 unitarias/39 archivos, TypeScript y compilación final aprobados.
+
+Usuario completó autorización Vercel CLI. Configurados y verificados M9_REMOTE_WOO_ENABLED, M9_REMOTE_WOO_USERNAME y M9_REMOTE_WOO_PASSWORD como secretos exclusivamente Preview + rama codex/m9-staging-review. SUPABASE_SECRET_KEY ya existe en Preview. No valores secretos en repositorio/evidencias. La configuración se incorpora al próximo despliegue; todavía NO demuestra el recorrido interfaz→Woo. Pendientes publicación0.70.0, avatar y ensayo integral; después galerías bidireccionales, categorías/familias y fotos migradas. Producción intacta. No cerrar M9 ni afirmar100%.

@@ -1,4 +1,5 @@
 "use server";
+import { queueEligibleRemoteWeb } from "@/lib/remote-web-server";
 
 import { parseCatalogCents as cents } from "@/lib/catalog-money";
 
@@ -586,15 +587,42 @@ export async function createCatalogProductWithWeb(
     let photoPending = false;
     // Photo upload is independent: a failure must not undo or duplicate the saved product.
     try {
-      await uploadProductImage({
+      const uploadedPath = await uploadProductImage({
         supabase,
         productId: data.product_id,
         image: formData.get("product_image"),
       });
+      if (uploadedPath) {
+        const current = await supabase.rpc("read_web_draft", {
+          p_product_id: data.product_id,
+        });
+        if (current.error) throw new Error("PHOTO_DRAFT_READ_FAILED");
+        if (current.data.content.images.length === 0) {
+          const linked = await supabase.rpc("save_web_draft", {
+            p_product_id: data.product_id,
+            p_content: {
+              ...current.data.content,
+              images: [
+                {
+                  url: supabase.storage
+                    .from("product-images")
+                    .getPublicUrl(uploadedPath).data.publicUrl,
+                  alt: "",
+                },
+              ],
+            },
+            p_revision: current.data.revision,
+            p_fingerprint: current.data.fingerprint,
+            p_request_id: crypto.randomUUID(),
+          });
+          if (linked.error) throw new Error("PHOTO_DRAFT_LINK_FAILED");
+        }
+      }
     } catch {
       photoPending = true;
     }
     revalidatePath(productsPath);
+    await queueEligibleRemoteWeb(data.product_id);
     return { productId: data.product_id, photoPending };
   } catch (error) {
     const message = error instanceof Error ? error.message : "";

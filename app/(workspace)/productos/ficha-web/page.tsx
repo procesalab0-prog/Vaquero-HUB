@@ -1,3 +1,5 @@
+import { remoteWebConfigured } from "@/lib/remote-web-server";
+import { remoteWebAction } from "./remote-actions";
 import Link from "next/link";
 import { requirePermission } from "@/lib/auth/authorization";
 import { WEB_STAGING_URL, type WebDraft } from "@/lib/web-draft";
@@ -5,6 +7,7 @@ import { saveWebDraft, uploadWebPhoto, webLabAction } from "./actions";
 import { WebDraftEditor } from "./editor";
 import { productImageUrl } from "@/lib/product-images";
 export const metadata = { title: "Ficha para tienda en línea" };
+export const maxDuration = 120;
 export const dynamic = "force-dynamic";
 export default async function WebPage({
   searchParams,
@@ -61,6 +64,11 @@ export default async function WebPage({
   const { data: lab } = await supabase.rpc("read_web_lab", {
     p_product_id: draft.catalog.product_id,
   });
+  const remoteResult = remoteWebConfigured()
+    ? await supabase.rpc("read_remote_web", {
+        p_product_id: draft.catalog.product_id,
+      })
+    : null;
   return (
     <>
       {params.foto === "pendiente" && (
@@ -72,6 +80,8 @@ export default async function WebPage({
       <WebDraftEditor
         key={data.catalog.product_id}
         draft={draft}
+        remote={remoteResult?.data ?? null}
+        remoteAction={remoteWebAction}
         lab={lab}
         webLabAction={webLabAction}
         saveWebDraft={saveWebDraft}

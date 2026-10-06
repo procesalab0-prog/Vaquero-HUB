@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { WebFields } from "./fields";
 import type { SaveWebState, WebLabState, WebLabResult } from "@/lib/web-draft";
@@ -12,6 +13,8 @@ import {
   type WebContent,
 } from "@/lib/web-draft";
 import styles from "./web.module.css";
+import { RemoteWebPanel } from "./remote-panel";
+import type { RemoteWebState, RemoteWebResult } from "@/lib/remote-web";
 import displayPolicies from "@/lib/m9-display-policy.json";
 
 export function WebDraftEditor({
@@ -20,13 +23,18 @@ export function WebDraftEditor({
   uploadWebPhoto,
   lab,
   webLabAction,
+  remote,
+  remoteAction,
 }: {
   draft: WebDraft;
+  remote: RemoteWebState | null;
+  remoteAction: (form: FormData) => Promise<RemoteWebResult>;
   lab: WebLabState | null;
   webLabAction: (form: FormData) => Promise<WebLabResult>;
   saveWebDraft: (form: FormData) => Promise<SaveWebState>;
   uploadWebPhoto: (form: FormData) => Promise<{ url?: string; error?: string }>;
 }) {
+  const router = useRouter();
   const [labState, setLabState] = useState(lab);
   const [labBusy, setLabBusy] = useState(false);
   const [labError, setLabError] = useState("");
@@ -54,6 +62,7 @@ export function WebDraftEditor({
       if (state.ok) {
         setRevision(state.revision!);
         setDirty(false);
+        router.refresh();
         requestRef.current = null;
         const refresh = new FormData();
         refresh.set("product_id", draft.catalog.product_id);
@@ -167,7 +176,8 @@ export function WebDraftEditor({
         .filter((p) => p.product_id === draft.catalog.product_id)
         .map((p) => (
           <p className={styles.notice} key={p.product_id}>
-            {p.message} Esta regla se aplicará al próximo ensayo en el laboratorio.
+            {p.message} Esta regla se aplicará al próximo ensayo en el
+            laboratorio.
           </p>
         ))}
       <p>
@@ -185,6 +195,15 @@ export function WebDraftEditor({
             : "El ensayo crea una copia separada en el laboratorio local."}
         </p>
       )}
+      <RemoteWebPanel
+        key={`${remote?.job?.id ?? "new"}:${remote?.job?.state ?? "idle"}:${draft.revision}`}
+        initial={remote}
+        productId={draft.catalog.product_id}
+        revision={revision}
+        fingerprint={draft.fingerprint}
+        dirty={dirty || busy || uploading}
+        action={remoteAction}
+      />
       <form
         ref={formRef}
         onChange={change}

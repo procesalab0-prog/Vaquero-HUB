@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.69.1";
-export const APP_RELEASE = "Catálogo visual y entorno de pruebas";
+export const APP_VERSION = "0.70.0";
+export const APP_RELEASE = "Altas simples en Woo de pruebas";
