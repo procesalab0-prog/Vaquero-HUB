@@ -5,7 +5,10 @@ import { requirePermission } from "@/lib/auth/authorization";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { WEB_STAGING_URL } from "@/lib/web-draft";
 import { remoteClient, TEST_ORIGIN } from "@/scripts/m9/woo-remote/client.mjs";
-import { processRemoteJob } from "@/scripts/m9/woo-remote/process-job.mjs";
+import {
+  fetchPhoto,
+  processRemoteJob,
+} from "@/scripts/m9/woo-remote/process-job.mjs";
 
 export function remoteWebConfigured() {
   return (
@@ -119,6 +122,16 @@ export async function pullRemotePhotos(productId: string) {
     receipt,
     remote,
     current: draft.data.content,
+    readPhoto: async (
+      url: string,
+      _transport?: unknown,
+      remotePhoto?: boolean,
+    ) => {
+      if (!remotePhoto) return fetchPhoto(url);
+      const image = remote.images.find((i: { url: string }) => i.url === url);
+      if (!image) throw new Error("REMOTE_PHOTO_IDENTITY");
+      return client.photo(status.data.job.id, image.id);
+    },
   });
   if (plan.unchanged) return "Las fotos ya coinciden con Woo de pruebas.";
   const images = [];
@@ -136,7 +149,7 @@ export async function pullRemotePhotos(productId: string) {
             ? "webp"
             : null;
     if (!ext) throw new Error("REMOTE_PHOTO_FORMAT");
-    const path = `${productId}/woo-${image.sha256}.${ext}`;
+    const path = `${productId}/${image.sha256}.${ext}`;
     const bucket = supabase.storage.from("product-images");
     const uploaded = await bucket.upload(path, bytes, {
       contentType: ext === "jpg" ? "image/jpeg" : `image/${ext}`,

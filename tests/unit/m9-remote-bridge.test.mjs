@@ -137,3 +137,49 @@ describe("remote test bridge", () => {
     expect(() => client.receipt("../../orders")).toThrow("INVALID_REQUEST_ID");
   });
 });
+
+describe("authenticated original photo read", () => {
+  it("reads only the bound photo route and verifies original bytes", async () => {
+    let seen;
+    const c = remoteClient({
+      origin: TEST_ORIGIN,
+      username: "test",
+      password: "test",
+      transport: async (url, opts) => {
+        seen = { url, opts };
+        return { ok: true, json: async () => packet().image };
+      },
+    });
+    expect(await c.photo(packet().request_id, 19)).toEqual(packet().image);
+    expect(seen.url).toBe(
+      `${TEST_ORIGIN}/wp-json/m9-test/v1/photos/${packet().request_id}/19`,
+    );
+    expect(seen.opts.method).toBe("GET");
+    expect(seen.opts.redirect).toBe("error");
+  });
+  it("rejects altered original bytes", async () => {
+    const c = remoteClient({
+      origin: TEST_ORIGIN,
+      username: "test",
+      password: "test",
+      transport: async () => ({
+        ok: true,
+        json: async () => ({ ...packet().image, sha256: "0".repeat(64) }),
+      }),
+    });
+    await expect(c.photo(packet().request_id, 19)).rejects.toThrow("HASH");
+  });
+  it("rejects an invalid media identity before network access", async () => {
+    const c = remoteClient({
+      origin: TEST_ORIGIN,
+      username: "test",
+      password: "test",
+      transport: () => {
+        throw Error("unexpected network");
+      },
+    });
+    await expect(c.photo(packet().request_id, -1)).rejects.toThrow(
+      "INVALID_PHOTO_ID",
+    );
+  });
+});

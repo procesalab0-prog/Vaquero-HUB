@@ -17,7 +17,7 @@ add_filter('rest_pre_dispatch', function ($result, $server, $request) {
     if (strpos($request->get_route(), '/m9-test/v1/') === 0) {
         do_action('litespeed_control_set_nocache', 'M9 authenticated catalogue');
     }
-    if (current_user_can('m9_test_catalog') && !preg_match('#^/m9-test/v1/(isolation|drafts|(?:receipts|galleries)/[0-9a-f-]{36})$#i', $request->get_route())) {
+    if (current_user_can('m9_test_catalog') && !preg_match('#^/m9-test/v1/(isolation|drafts|(?:receipts|galleries)/[0-9a-f-]{36}|photos/[0-9a-f-]{36}/[1-9][0-9]*)$#i', $request->get_route())) {
         return new WP_Error('m9_scope_denied', 'Acceso limitado al catálogo de pruebas.', array('status' => 403));
     }
     return $result;
@@ -109,6 +109,22 @@ function m9_bridge_gallery($request) {
         'complete'=>true, 'images'=>$images);
     $snapshot['revision'] = hash('sha256', wp_json_encode($snapshot));
     return $snapshot;
+}
+// Deliver original bytes through the authenticated bridge; public media URLs
+// can be transformed by hosting optimizers and are not evidence of original bytes.
+function m9_bridge_photo($request) {
+    $gallery = m9_bridge_gallery($request);
+    if (is_wp_error($gallery)) { return $gallery; }
+    $id = (int)$request['media_id'];
+    foreach ($gallery['images'] as $image) {
+        if ($image['id'] !== $id) { continue; }
+        $bytes = file_get_contents(wp_get_original_image_path($id));
+        if ($bytes === false || strlen($bytes) > 4194304 || hash('sha256', $bytes) !== $image['sha256']) {
+            return new WP_Error('m9_photo_changed','Foto modificada durante la lectura.',array('status'=>409));
+        }
+        return array('sha256'=>$image['sha256'],'base64'=>base64_encode($bytes));
+    }
+    return new WP_Error('m9_photo_not_found','Foto fuera de esta galería.',array('status'=>404));
 }
 function m9_bridge_verified($p, $entry) {
     $id = (int) ($entry['remote_product_id'] ?? 0);
@@ -203,5 +219,6 @@ add_action('rest_api_init', function () {
     register_rest_route('m9-test/v1','/isolation',array('methods'=>'GET','permission_callback'=>'m9_bridge_permission','callback'=>'m9_bridge_isolation'));
     register_rest_route('m9-test/v1','/drafts',array('methods'=>'POST','permission_callback'=>'m9_bridge_permission','callback'=>'m9_bridge_create'));
     register_rest_route('m9-test/v1','/receipts/(?P<id>[0-9a-f-]{36})',array('methods'=>'GET','permission_callback'=>'m9_bridge_permission','callback'=>'m9_bridge_receipt'));
+    register_rest_route('m9-test/v1','/photos/(?P<id>[0-9a-f-]{36})/(?P<media_id>[1-9][0-9]*)',array('methods'=>'GET','permission_callback'=>'m9_bridge_permission','callback'=>'m9_bridge_photo'));
     register_rest_route('m9-test/v1','/galleries/(?P<id>[0-9a-f-]{36})',array('methods'=>'GET','permission_callback'=>'m9_bridge_permission','callback'=>'m9_bridge_gallery'));
 });

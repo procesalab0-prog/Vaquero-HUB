@@ -29,7 +29,8 @@ export function remoteClient({
     requireValue(
       (method === "GET" &&
         (path === "isolation" ||
-          /^(receipts|galleries)\/[0-9a-f-]{36}$/i.test(path))) ||
+          /^(receipts|galleries)\/[0-9a-f-]{36}$/i.test(path) ||
+          /^photos\/[0-9a-f-]{36}\/[1-9][0-9]*$/i.test(path))) ||
         (method === "POST" && path === "drafts"),
       "REMOTE_OPERATION_FORBIDDEN",
     );
@@ -62,6 +63,26 @@ export function remoteClient({
   }
   return {
     preflight,
+    photo: async (id, mediaId) => {
+      requireValue(
+        uuid.test(id) && Number.isSafeInteger(mediaId) && mediaId > 0,
+        "INVALID_PHOTO_ID",
+      );
+      const photo = await call("GET", `photos/${id}/${mediaId}`);
+      requireValue(
+        typeof photo.base64 === "string" && photo.base64.length <= 5592408,
+        "INVALID_IMAGE",
+      );
+      const bytes = Buffer.from(photo.base64, "base64");
+      requireValue(
+        bytes.length > 0 &&
+          bytes.length <= 4194304 &&
+          bytes.toString("base64") === photo.base64 &&
+          createHash("sha256").update(bytes).digest("hex") === photo.sha256,
+        "INVALID_IMAGE_HASH_OR_SIZE",
+      );
+      return photo;
+    },
     gallery: (id) => {
       requireValue(uuid.test(id), "INVALID_REQUEST_ID");
       return call("GET", `galleries/${id}`);
