@@ -115,6 +115,11 @@ export async function pullRemotePhotos(productId: string) {
     username: process.env.M9_REMOTE_WOO_USERNAME!,
     password: process.env.M9_REMOTE_WOO_PASSWORD!,
   });
+  const checkpoint = await admin.rpc("remote_gallery_checkpoint", {
+    p_job_id: status.data.job.id,
+    p_actor_id: userId,
+  });
+  if (checkpoint.error) throw new Error("REMOTE_CHECKPOINT_READ");
   const receipt = await client.receipt(status.data.job.id);
   const remote = await client.gallery(status.data.job.id);
   const plan = await prepareGalleryPull({
@@ -122,6 +127,7 @@ export async function pullRemotePhotos(productId: string) {
     receipt,
     remote,
     current: draft.data.content,
+    checkpoint: checkpoint.data.images,
     readPhoto: async (
       url: string,
       _transport?: unknown,
@@ -133,7 +139,28 @@ export async function pullRemotePhotos(productId: string) {
       return client.photo(status.data.job.id, image.id);
     },
   });
-  if (plan.unchanged) return "Las fotos ya coinciden con Woo de pruebas.";
+  const remember = async (
+    revision: number,
+    images: { url: string; alt: string }[],
+  ) => {
+    const latest = await client.gallery(status.data.job.id);
+    if (latest.revision !== plan.revision)
+      throw new Error("REMOTE_PHOTO_CHANGED");
+    const result = await admin.rpc("remote_gallery_checkpoint", {
+      p_job_id: status.data.job.id,
+      p_actor_id: userId,
+      p_expected_version: checkpoint.data.version,
+      p_draft_revision: revision,
+      p_local_images: images,
+      p_images: plan.common,
+      p_remote_revision: plan.revision,
+    });
+    if (result.error) throw new Error("REMOTE_CHECKPOINT_CHANGED");
+  };
+  if (plan.unchanged) {
+    await remember(draft.data.revision, draft.data.content.images);
+    return "Las fotos ya coinciden con Woo de pruebas.";
+  }
   const images = [];
   for (const image of plan.images) {
     const bytes = Buffer.from(image.base64, "base64");
@@ -183,5 +210,6 @@ export async function pullRemotePhotos(productId: string) {
     p_request_id: crypto.randomUUID(),
   });
   if (saved.error) throw new Error("REMOTE_PHOTO_DRAFT_CHANGED");
+  await remember(saved.data.revision, images);
   return `Se copiaron ${images.length} fotos de Woo de pruebas a esta ficha.`;
 }

@@ -75,3 +75,17 @@ Pendientes concretos para cerrar integración antes de migración completa: 1) p
 ### 2026-10-06 — Portadas desde ficha guardada (0.71.2 preparada)
 
 read_catalog_covers ahora prioriza primera foto de ficha guardada y conserva fallback histórico sólo con vínculo conciliado; excluye productos con image_path propio. Se reutiliza en Productos y Venta, con lotes de máximo200 y destinos de imagen restringidos. No escribe image_path ni sobrescribe cambios concurrentes de portada: lectura de fuente vigente. Una galería guardada vacía no recupera silenciosamente la portada histórica. Migración20261006154347 aplicada sólo staging después de pruebas con rollback: portada almacenada visible y prioridad de imagen explícita conservada. Pendiente confirmación visual de despliegue y contexto Venta (requiere caja de pruebas abierta). No abrir caja ni crear ventas para esa comprobación.
+
+
+### 2026-10-06 — Portada publicada y cierre parcial comprobado
+
+0.71.2 READY en vaquero-nz8oc395s-procesa-lab.vercel.app, commit a448d365808de47ae4698b99ce90379d06cc8bad. Catálogo filtrado PRUEBA M9 muestra foto de bolsa junto a producto/código2000010001699; avatar0.71.2 confirmado. Evidencia portadas: outputs/m9-cola-remota-2026-10-06/portada-0712.png. Lectura también conectada a Venta, sin abrir caja para comprobación visual. No se escribió image_path, no se importaron existencias, no producción. Pruebas SQL con rollback de portada guardada/prioridad de explícita y build/lint/TypeScript correctos; CI296 anterior completó success.
+
+No cerrar integración completa: baseline persistente y escritura de fotos Mi Tienda→Woo, galerías recurrentes con recuperación, categorías/familias y migración completa siguen pendientes. Usuario pide cerrar TODA la parte; esto debe guiar la siguiente ejecución, no sustituirla por un cierre documental del piloto.
+
+
+### 2026-10-06 — Historial persistente de recepción de fotos (0.71.3)
+
+Checkpoint privado por trabajo remoto, sólo servicio con propietario y permisos vigentes comprobados. Guarda SHA/alt/orden y revisión Woo tras verificar bytes y coincidencia con revisión/galería local; serializa mediante bloqueo del trabajo y versión esperada. Repeticiones exactas no incrementan versión. El lector acepta nuevas ediciones remotas si Mi Tienda conserva la última galería común; bloquea cambios locales y retirada de cualquier imagen previa. Una interrupción entre guardado y checkpoint se recupera por igualdad verificada, sin duplicar archivos. No representa transacción distribuida con Woo. Migración20261006155407 aplicada sólo staging; pruebas SQL con rollback verificaron creación, repetición, rechazo de versión anterior/revisión local cambiada y denegación a anon/authenticated.15 pruebas unitarias del lector aprobadas, TypeScript correcto. Falta validación del Preview de esta versión.
+
+Continúan pendientes salida recurrente de fotos Mi Tienda→Woo, familias/categorías remotas y migración de galerías históricas. No declarar cierre total ni100%.

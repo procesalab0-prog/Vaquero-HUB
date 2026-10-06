@@ -102,3 +102,33 @@ describe("remote photo adoption", () => {
     await expect(prepareGalleryPull(f)).rejects.toThrow("IMAGE_REVIEW");
   });
 });
+
+describe("durable common gallery", () => {
+  it("accepts a second remote edit after the first adoption", async () => {
+    const f = fixture();
+    f.current.images.push({ url: "https://local/b.jpg", alt: "Segunda" });
+    f.checkpoint = [
+      { sha256: a, alt: "" },
+      { sha256: b, alt: "Segunda" },
+    ];
+    f.remote.images[1].alt = "Segunda corregida";
+    const plan = await prepareGalleryPull(f);
+    expect(plan.common[1].alt).toBe("Segunda corregida");
+    expect(plan.unchanged).toBe(false);
+  });
+  it("blocks removal of any previously copied image", async () => {
+    const f = fixture();
+    f.current.images.push({ url: "https://local/b.jpg", alt: "Segunda" });
+    f.checkpoint = [
+      { sha256: a, alt: "" },
+      { sha256: b, alt: "Segunda" },
+    ];
+    f.remote.images.pop();
+    await expect(prepareGalleryPull(f)).rejects.toThrow("REMOVAL");
+  });
+  it("preserves a local edit after a common checkpoint", async () => {
+    const f = fixture();
+    f.checkpoint = [{ sha256: a, alt: "Anterior" }];
+    await expect(prepareGalleryPull(f)).rejects.toThrow("BOTH_CHANGED");
+  });
+});

@@ -1,13 +1,14 @@
 import { TEST_ORIGIN } from "./client.mjs";
 import { fetchPhoto } from "./process-job.mjs";
 
-// Only adopt photos into an unchanged initial gallery, or recognize an exact
-// repeat. A later divergent edit requires review until a durable baseline exists.
+// Adopt only against a server-owned common gallery. Changes on both sides and
+// removal of any previously synchronized image require manual review.
 export async function prepareGalleryPull({
   packet,
   receipt,
   remote,
   current,
+  checkpoint = null,
   readPhoto = fetchPhoto,
 }) {
   if (
@@ -60,9 +61,10 @@ export async function prepareGalleryPull({
   }
   const signature = (images) =>
     JSON.stringify(images.map((i) => [i.sha256, i.alt]));
+  const common = incoming.map(({ sha256, alt }) => ({ sha256, alt }));
   if (signature(local) === signature(incoming))
-    return { unchanged: true, images: [], revision: remote.revision };
-  const baseline = [
+    return { unchanged: true, images: [], common, revision: remote.revision };
+  const baseline = checkpoint ?? [
     {
       sha256: receipt.verified.image_sha256,
       alt: packet.content.images[0].alt,
@@ -70,7 +72,12 @@ export async function prepareGalleryPull({
   ];
   if (signature(local) !== signature(baseline))
     throw new Error("GALLERY_BOTH_CHANGED_REVIEW");
-  if (!incoming.some((i) => i.sha256 === baseline[0].sha256))
+  if (baseline.some((old) => !incoming.some((i) => i.sha256 === old.sha256)))
     throw new Error("GALLERY_REMOVAL_REVIEW");
-  return { unchanged: false, images: incoming, revision: remote.revision };
+  return {
+    unchanged: false,
+    images: incoming,
+    common,
+    revision: remote.revision,
+  };
 }
