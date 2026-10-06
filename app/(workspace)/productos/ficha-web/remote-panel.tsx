@@ -61,9 +61,9 @@ export function RemoteWebPanel({
     <section aria-label="WooCommerce de pruebas en internet">
       <h2>WooCommerce de pruebas en internet</h2>
       <p>
-        Ensayo de alta nueva: producto simple, una foto y sin categorías web.
-        Las fichas migradas y las galerías completas todavía requieren el
-        siguiente paso de integración.
+        Envía altas simples o familias habilitadas para pruebas. Las familias
+        conservan cada talla, código, precio, categoría y foto de la ficha. Los
+        productos llegan como borradores a la tienda de pruebas.
       </p>
       {state?.job ? (
         <p>

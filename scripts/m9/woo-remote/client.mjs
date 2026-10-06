@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 export const TEST_ORIGIN =
   "https://salmon-nightingale-251188.hostingersite.com";
+export const FAMILY_PROTOCOL = "m9-remote-family-1";
 export const PROTOCOL = "m9-remote-draft-1";
 const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 function requireValue(ok, code) {
@@ -31,7 +32,8 @@ export function remoteClient({
         (path === "isolation" ||
           /^(receipts|galleries|gallery-updates)\/[0-9a-f-]{36}$/i.test(path) ||
           /^photos\/[0-9a-f-]{36}\/[1-9][0-9]*$/i.test(path))) ||
-        (method === "POST" && ["drafts", "gallery-updates"].includes(path)),
+        (method === "POST" &&
+          ["drafts", "families", "gallery-updates"].includes(path)),
       "REMOTE_OPERATION_FORBIDDEN",
     );
     const response = await transport(`${origin}/wp-json/m9-test/v1/${path}`, {
@@ -102,6 +104,15 @@ export function remoteClient({
     receipt: (id) => {
       requireValue(uuid.test(id), "INVALID_REQUEST_ID");
       return call("GET", `receipts/${id}`);
+    },
+    createFamily: async (packet) => {
+      validateFamilyPacket(packet);
+      const state = await preflight();
+      requireValue(
+        state.family_protocol === FAMILY_PROTOCOL,
+        "REMOTE_FAMILY_UNAVAILABLE",
+      );
+      return call("POST", "families", packet);
     },
     createDraft: async (packet) => {
       validatePacket(packet);
@@ -178,6 +189,159 @@ export function validatePacket(p) {
       bytes.toString("base64") === p.image.base64 &&
       createHash("sha256").update(bytes).digest("hex") === p.image.sha256,
     "INVALID_IMAGE_HASH_OR_SIZE",
+  );
+  return p;
+}
+
+export function validateFamilyPacket(p) {
+  const fields = [
+    "protocol",
+    "request_id",
+    "product_id",
+    "revision",
+    "name",
+    "description",
+    "short_description",
+    "barcode",
+    "variants",
+    "categories",
+    "images",
+    "descriptive_attributes",
+  ];
+  requireValue(
+    p &&
+      Object.keys(p).length === fields.length &&
+      Object.keys(p).every((k) => fields.includes(k)),
+    "INVALID_FAMILY_FIELDS",
+  );
+  requireValue(
+    p.protocol === FAMILY_PROTOCOL && p.barcode === `M9-P-${p.product_id}`,
+    "INVALID_FAMILY_IDENTITY",
+  );
+  requireValue(
+    Array.isArray(p.variants) &&
+      p.variants.length >= 2 &&
+      p.variants.length <= 100,
+    "INVALID_FAMILY_VARIANTS",
+  );
+  requireValue(
+    Array.isArray(p.images) && p.images.length >= 1 && p.images.length <= 20,
+    "INVALID_FAMILY_IMAGES",
+  );
+  let total = 0;
+  for (const image of p.images) {
+    requireValue(
+      Object.keys(image).sort().join(",") === "alt,base64,sha256" &&
+        typeof image.alt === "string" &&
+        image.alt.length <= 240,
+      "INVALID_FAMILY_IMAGE",
+    );
+    validatePacket({
+      protocol: PROTOCOL,
+      request_id: p.request_id,
+      product_id: p.product_id,
+      revision: p.revision,
+      name: p.name,
+      description: p.description,
+      short_description: p.short_description,
+      barcode: p.barcode,
+      price_cents: 0,
+      image: { base64: image.base64, sha256: image.sha256 },
+    });
+    total += Buffer.from(image.base64, "base64").length;
+  }
+  requireValue(
+    total <= 16777216 &&
+      new Set(p.images.map((i) => i.sha256)).size === p.images.length,
+    "FAMILY_IMAGE_LIMIT_OR_DUPLICATE",
+  );
+  const ids = new Set(),
+    codes = new Set(),
+    combinations = new Set();
+  let keys = null;
+  for (const v of p.variants) {
+    requireValue(
+      Object.keys(v).sort().join(",") ===
+        "attributes,barcode,price_cents,variant_id" && uuid.test(v.variant_id),
+      "INVALID_FAMILY_VARIANT",
+    );
+    requireValue(
+      typeof v.barcode === "string" &&
+        v.barcode === v.barcode.trim() &&
+        v.barcode.length > 0 &&
+        v.barcode.length <= 100 &&
+        v.barcode !== p.barcode,
+      "INVALID_FAMILY_BARCODE",
+    );
+    requireValue(
+      Number.isSafeInteger(v.price_cents) &&
+        v.price_cents >= 0 &&
+        v.price_cents <= 100000000,
+      "INVALID_PRICE",
+    );
+    requireValue(
+      v.attributes &&
+        !Array.isArray(v.attributes) &&
+        Object.keys(v.attributes).length >= 1 &&
+        Object.keys(v.attributes).length <= 3,
+      "INVALID_FAMILY_ATTRIBUTES",
+    );
+    const entries = Object.entries(v.attributes).sort(([a], [b]) =>
+      a < b ? -1 : a > b ? 1 : 0,
+    );
+    requireValue(
+      entries.every(
+        ([k, val]) =>
+          ["TALLA", "COLOR", "LARGO"].includes(k) &&
+          typeof val === "string" &&
+          val.length > 0 &&
+          val.length <= 100 &&
+          val === val.trim(),
+      ),
+      "INVALID_FAMILY_ATTRIBUTES",
+    );
+    const shape = JSON.stringify(entries.map(([k]) => k)),
+      combination = JSON.stringify(entries);
+    requireValue(
+      keys === null || shape === keys,
+      "FAMILY_ATTRIBUTE_KEYS_DIFFER",
+    );
+    keys = shape;
+    requireValue(
+      !ids.has(v.variant_id) &&
+        !codes.has(v.barcode) &&
+        !combinations.has(combination),
+      "FAMILY_DUPLICATE_IDENTITY",
+    );
+    ids.add(v.variant_id);
+    codes.add(v.barcode);
+    combinations.add(combination);
+  }
+  requireValue(
+    Array.isArray(p.categories) &&
+      p.categories.length <= 20 &&
+      new Set(p.categories).size === p.categories.length &&
+      p.categories.every(
+        (c) =>
+          typeof c === "string" &&
+          c.length <= 240 &&
+          c.split(" > ").every((n) => n.length > 0 && n === n.trim()),
+      ),
+    "INVALID_FAMILY_CATEGORIES",
+  );
+  requireValue(
+    Array.isArray(p.descriptive_attributes) &&
+      p.descriptive_attributes.length <= 10 &&
+      p.descriptive_attributes.every(
+        (a) =>
+          Object.keys(a).sort().join(",") === "name,option,variation" &&
+          a.variation === false &&
+          typeof a.name === "string" &&
+          a.name.length > 0 &&
+          typeof a.option === "string" &&
+          a.option.length > 0,
+      ),
+    "INVALID_DESCRIPTIVE_ATTRIBUTES",
   );
   return p;
 }

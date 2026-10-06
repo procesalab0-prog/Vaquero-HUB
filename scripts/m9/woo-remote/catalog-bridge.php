@@ -17,7 +17,7 @@ add_filter('rest_pre_dispatch', function ($result, $server, $request) {
     if (strpos($request->get_route(), '/m9-test/v1/') === 0) {
         do_action('litespeed_control_set_nocache', 'M9 authenticated catalogue');
     }
-    if (current_user_can('m9_test_catalog') && !preg_match('#^/m9-test/v1/(isolation|drafts|gallery-updates(?:/[0-9a-f-]{36})?|(?:receipts|galleries)/[0-9a-f-]{36}|photos/[0-9a-f-]{36}/[1-9][0-9]*)$#i', $request->get_route())) {
+    if (current_user_can('m9_test_catalog') && !preg_match('#^/m9-test/v1/(isolation|drafts|families|gallery-updates(?:/[0-9a-f-]{36})?|(?:receipts|galleries)/[0-9a-f-]{36}|photos/[0-9a-f-]{36}/[1-9][0-9]*)$#i', $request->get_route())) {
         return new WP_Error('m9_scope_denied', 'Acceso limitado al catálogo de pruebas.', array('status' => 403));
     }
     return $result;
@@ -37,7 +37,7 @@ function m9_bridge_permission() {
 function m9_bridge_isolation() {
     $outbound = wp_remote_get('https://example.invalid/m9-isolation');
     return array(
-        'protocol' => 'm9-remote-draft-1', 'origin' => rtrim(home_url(), '/'),
+        'family_protocol' => 'm9-remote-family-1', 'protocol' => 'm9-remote-draft-1', 'origin' => rtrim(home_url(), '/'),
         'mail_blocked' => apply_filters('pre_wp_mail', null, array()) === false,
         'outbound_blocked' => is_wp_error($outbound) && $outbound->get_error_code() === 'm9_test_outbound_blocked',
         'purchase_blocked' => apply_filters('woocommerce_is_purchasable', true) === false,
@@ -87,6 +87,7 @@ function m9_bridge_gallery($request) {
         $product->get_meta('_mi_tienda_barcode') !== $entry['verified']['barcode']) {
         return new WP_Error('m9_gallery_identity_changed', 'Identidad modificada; requiere revisión.', array('status'=>409));
     }
+    if (($entry['protocol'] ?? '') === 'm9-remote-family-1' && !m9_family_identity($entry)) { return new WP_Error('m9_family_changed','Familia modificada; requiere revisión.',array('status'=>409)); }
     $cover = (int)$product->get_image_id('edit');
     $ids = array_merge($cover ? array($cover) : array(), array_map('intval', $product->get_gallery_image_ids('edit')));
     if (count($ids) > 20 || count(array_unique($ids)) !== count($ids)) {

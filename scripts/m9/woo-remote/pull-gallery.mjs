@@ -64,12 +64,13 @@ export async function prepareGalleryPull({
   const common = incoming.map(({ sha256, alt }) => ({ sha256, alt }));
   if (signature(local) === signature(incoming))
     return { unchanged: true, images: [], common, revision: remote.revision };
-  const baseline = checkpoint ?? [
-    {
-      sha256: receipt.verified.image_sha256,
-      alt: packet.content.images[0].alt,
-    },
-  ];
+  const baseline = checkpoint ??
+    receipt.verified.images ?? [
+      {
+        sha256: receipt.verified.image_sha256,
+        alt: packet.content.images[0].alt,
+      },
+    ];
   if (signature(local) !== signature(baseline))
     throw new Error("GALLERY_BOTH_CHANGED_REVIEW");
   if (baseline.some((old) => !incoming.some((i) => i.sha256 === old.sha256)))

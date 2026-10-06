@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { PROTOCOL, TEST_ORIGIN } from "./client.mjs";
+import { PROTOCOL, FAMILY_PROTOCOL, TEST_ORIGIN } from "./client.mjs";
 
 export async function fetchPhoto(url, transport = fetch, allowRemote = false) {
   const u = new URL(url);
@@ -73,26 +73,56 @@ export async function processRemoteJob({
   let receipt;
   if (claim.dispatch === true) {
     const p = claim.packet;
-    if (p.content.images.length !== 1 || p.content.categories.length !== 0)
-      throw new Error("REMOTE_CONTENT_SCOPE");
-    const image = await photoReader(p.content.images[0].url);
-    await rpc("bind_remote_web_image", {
-      p_job_id: jobId,
-      p_claim_id: claim.claim_id,
-      p_sha256: image.sha256,
-    });
-    receipt = await client.createDraft({
-      protocol: PROTOCOL,
-      request_id: jobId,
-      product_id: p.product_id,
-      revision: p.revision,
-      name: p.content.name,
-      description: p.content.description,
-      short_description: p.content.short_description,
-      barcode: p.barcode,
-      price_cents: p.price_cents,
-      image,
-    });
+    if (p.protocol === FAMILY_PROTOCOL) {
+      const images = [];
+      let total = 0;
+      for (const source of p.content.images) {
+        const image = await photoReader(source.url);
+        total += Buffer.from(image.base64, "base64").length;
+        if (total > 16777216) throw new Error("FAMILY_IMAGE_LIMIT");
+        images.push({ ...image, alt: source.alt });
+      }
+      await rpc("bind_remote_web_gallery", {
+        p_job_id: jobId,
+        p_claim_id: claim.claim_id,
+        p_images: images.map(({ sha256, alt }) => ({ sha256, alt })),
+      });
+      receipt = await client.createFamily({
+        protocol: FAMILY_PROTOCOL,
+        request_id: jobId,
+        product_id: p.product_id,
+        revision: p.revision,
+        name: p.content.name,
+        description: p.content.description,
+        short_description: p.content.short_description,
+        barcode: p.barcode,
+        variants: p.variants,
+        categories: p.content.categories,
+        images,
+        descriptive_attributes: p.descriptive_attributes,
+      });
+    } else {
+      if (p.content.images.length !== 1 || p.content.categories.length !== 0)
+        throw new Error("REMOTE_CONTENT_SCOPE");
+      const image = await photoReader(p.content.images[0].url);
+      await rpc("bind_remote_web_image", {
+        p_job_id: jobId,
+        p_claim_id: claim.claim_id,
+        p_sha256: image.sha256,
+      });
+      receipt = await client.createDraft({
+        protocol: PROTOCOL,
+        request_id: jobId,
+        product_id: p.product_id,
+        revision: p.revision,
+        name: p.content.name,
+        description: p.content.description,
+        short_description: p.content.short_description,
+        barcode: p.barcode,
+        price_cents: p.price_cents,
+        image,
+      });
+    }
   } else {
     receipt = await client.receipt(jobId);
   }
