@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { wooImageUrl } from "./woo-image-url";
 
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 const extensions = new Map([
@@ -14,6 +15,7 @@ export function productImageUrl(
   path: string | null | undefined,
 ) {
   if (!path) return undefined;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(path)) return wooImageUrl(path);
   return supabase.storage.from("product-images").getPublicUrl(path).data
     .publicUrl;
 }

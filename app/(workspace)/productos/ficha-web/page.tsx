@@ -3,6 +3,7 @@ import { requirePermission } from "@/lib/auth/authorization";
 import { WEB_STAGING_URL, type WebDraft } from "@/lib/web-draft";
 import { saveWebDraft, uploadWebPhoto, webLabAction } from "./actions";
 import { WebDraftEditor } from "./editor";
+import { productImageUrl } from "@/lib/product-images";
 export const metadata = { title: "Ficha para tienda en línea" };
 export const dynamic = "force-dynamic";
 export default async function WebPage({
@@ -45,12 +46,13 @@ export default async function WebPage({
       </section>
     );
   const draft = data as WebDraft;
-  if (!draft.content.images.length && draft.catalog.image_path) {
+  const cover = productImageUrl(supabase, draft.catalog.image_path);
+  if (!draft.content.images.length && cover) {
     draft.content = {
       ...draft.content,
       images: [
         {
-          url: `${WEB_STAGING_URL}/storage/v1/object/public/product-images/${draft.catalog.image_path}`,
+          url: cover,
           alt: "",
         },
       ],
