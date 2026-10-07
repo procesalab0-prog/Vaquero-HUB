@@ -7,6 +7,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { SalesReport } from "../reportes/reports-workspace";
 import { INVENTORY_SNAPSHOT_LIMIT, summarizeInventory } from "@/lib/inventory-summary";
 import { DashboardGreeting } from "./dashboard-greeting";
+import { MigrationQuestions } from "./migration-questions";
 
 export const metadata: Metadata = { title: "Inicio" };
 
@@ -76,6 +77,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   return <section className="module-page dashboard-page">
     <div className="section-heading"><DashboardGreeting dateLabel={currentDateLabel()} /><Link className="primary-button" href={link("/pos")}><ShoppingCart aria-hidden="true" />Nueva venta</Link></div>
     {!configured ? <div className="notice-banner">Vista de demostración: las cifras reales aparecerán al conectar la tienda.</div> : null}
+    <MigrationQuestions />
     {configured && !location ? <div className="inline-error" role="alert">Selecciona una sucursal para consultar sus datos.</div> : null}
     {errors.length ? <div className="inline-error" role="alert">{errors.join(" ")}</div> : null}
     <div className="metric-grid">

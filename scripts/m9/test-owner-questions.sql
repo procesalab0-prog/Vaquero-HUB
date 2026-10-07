@@ -1,0 +1,48 @@
+-- Run only with three loaded/released fixture questions inside a rollback transaction.
+create temporary table owner_test_baseline as select (select count(*) from app.m9_rows) managed,(select count(*) from public.variants) variants;
+do $$
+declare actor uuid; cut text; id text; other_id text; inbox jsonb; saved jsonb; rev integer;
+begin
+ select updated_by into actor from app.web_product_drafts limit 1;
+ if actor is null then raise exception 'TEST_ACTOR_REQUIRED'; end if;
+ select cut_sha into cut from app.m9_review_cuts where ready order by created_at desc,cut_sha limit 1;
+ select question_id into id from app.m9_owner_questions where cut_sha=cut and batch=1 order by question_id limit 1;
+ select question_id into other_id from app.m9_owner_questions where cut_sha=cut and batch is null order by question_id limit 1;
+ if id is null or other_id is null then raise exception 'TEST_RELEASED_AND_RESERVED_REQUIRED'; end if;
+ perform set_config('request.jwt.claim.sub','',true);
+ begin perform public.m9_owner_inbox(); raise exception 'TEST_ANON_ACCEPTED'; exception when sqlstate '42501' then null; end;
+ perform set_config('request.jwt.claim.sub',actor::text,true);
+ if not app.has_perm('products.update') then raise exception 'TEST_EDITOR_REQUIRED'; end if;
+ inbox:=public.m9_owner_inbox('','','all',false,1);
+ assert (inbox->>'total')::int=3,'ONLY_RELEASED_VISIBLE';
+ assert jsonb_array_length(inbox->'rows')=3,'BOUNDED_PAGE';
+ assert (public.m9_owner_inbox(other_id,'','all',false,1)->>'total')::int=0,'RESERVED_NOT_SEARCHABLE';
+ begin perform public.m9_save_owner_answer(cut,other_id,0,'11111111-1111-4111-8111-111111111111','SAME_MODEL','',''); raise exception 'TEST_RESERVED_ACCEPTED'; exception when others then if sqlerrm<>'M9_QUESTION_REQUIRED' then raise; end if; end;
+ saved:=public.m9_save_owner_answer(cut,id,0,'11111111-1111-4111-8111-111111111112','UNSURE','','');
+ assert saved->>'approved_for_import'='0','ANSWER_IS_NOT_APPROVAL';
+ assert (public.m9_owner_inbox('','','pending',false,1)->>'total')::int=3,'UNSURE_REMAINS_PENDING';
+ saved:=public.m9_save_owner_answer(cut,id,0,'11111111-1111-4111-8111-111111111112','UNSURE','','');
+ assert saved->>'replayed'='true','IDEMPOTENT_RETRY';
+ begin perform public.m9_save_owner_answer(cut,id,0,'11111111-1111-4111-8111-111111111112','SAME_MODEL','',''); raise exception 'TEST_CHANGED_RETRY_ACCEPTED'; exception when others then if sqlerrm<>'M9_REQUEST_CHANGED' then raise; end if; end;
+ begin perform public.m9_save_owner_answer(cut,id,0,'11111111-1111-4111-8111-111111111113','SAME_MODEL','',''); raise exception 'TEST_STALE_REVISION_ACCEPTED'; exception when others then if sqlerrm<>'M9_ANSWER_CHANGED' then raise; end if; end;
+ begin perform public.m9_save_owner_answer(cut,id,1,'11111111-1111-4111-8111-111111111114','CORRECTION','',''); raise exception 'TEST_EMPTY_CORRECTION_ACCEPTED'; exception when others then if sqlerrm<>'INVALID_OWNER_ANSWER' then raise; end if; end;
+ begin perform public.m9_save_owner_answer(cut,id,1,'11111111-1111-4111-8111-111111111114','APPROVED','',''); raise exception 'TEST_APPROVAL_ACCEPTED'; exception when others then if sqlerrm<>'INVALID_OWNER_ANSWER' then raise; end if; end;
+ saved:=public.m9_save_owner_answer(cut,id,1,'11111111-1111-4111-8111-111111111115','SAME_MODEL','Sólo prueba reversible','Modelo de ensayo');
+ assert (saved->>'revision')::int=2,'APPEND_REVISION';
+ assert (public.m9_owner_inbox('','','pending',false,1)->>'total')::int=2,'PENDING_DECREMENTS';
+ assert (select count(*) from app.m9_owner_answers where question_id=id and cut_sha=cut)=2,'HISTORY_PRESERVED';
+ begin perform app.release_m9_question_batch(cut,array[other_id]); raise exception 'TEST_OVERLOAD_ACCEPTED'; exception when others then if sqlerrm<>'M9_BATCH_STILL_OPEN' then raise; end if; end;
+ begin perform app.release_m9_question_batch(cut,array[id,id]); raise exception 'TEST_DUPLICATE_BATCH_ACCEPTED'; exception when others then if sqlerrm<>'INVALID_QUESTION_BATCH' then raise; end if; end;
+ begin perform public.m9_owner_inbox('','','invalid',false,1); raise exception 'TEST_INVALID_FILTER_ACCEPTED'; exception when others then if sqlerrm<>'INVALID_REVIEW_FILTER' then raise; end if; end;
+ begin perform public.m9_owner_inbox('','','all',false,0); raise exception 'TEST_ZERO_PAGE_ACCEPTED'; exception when others then if sqlerrm<>'INVALID_REVIEW_FILTER' then raise; end if; end;
+ update app.m9_owner_questions set evidence=jsonb_set(evidence,'{members,0,source_evidence,description}','"CHANGED"') where cut_sha=cut and question_id=id;
+ begin perform public.m9_save_owner_answer(cut,id,2,'11111111-1111-4111-8111-111111111116','SAME_MODEL','',''); raise exception 'TEST_CHANGED_EVIDENCE_ACCEPTED'; exception when others then if sqlerrm<>'M9_QUESTION_STALE' then raise; end if; end;
+ assert not has_table_privilege('authenticated','app.m9_owner_answers','SELECT,INSERT,UPDATE,DELETE'),'NO_DIRECT_ANSWERS';
+ assert not has_table_privilege('anon','app.m9_owner_questions','SELECT'),'NO_ANON_QUESTIONS';
+ assert not has_function_privilege('anon','public.m9_owner_inbox(text,text,text,boolean,integer)','EXECUTE'),'NO_ANON_READER';
+ assert not has_function_privilege('authenticated','app.release_m9_question_batch(text,text[])','EXECUTE'),'NO_USER_RELEASE';
+ assert not has_function_privilege('authenticated','app.load_m9_owner_questions(text,jsonb)','EXECUTE'),'NO_USER_LOAD';
+ assert (select managed from owner_test_baseline)=(select count(*) from app.m9_rows),'CATALOG_UNCHANGED';
+ assert (select variants from owner_test_baseline)=(select count(*) from public.variants),'VARIANTS_UNCHANGED';
+end $$;
+select 25 as controls_passed;

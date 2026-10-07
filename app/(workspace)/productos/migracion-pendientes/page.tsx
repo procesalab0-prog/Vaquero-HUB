@@ -72,6 +72,7 @@ export default async function PendingPage({
       <header>
         <Link href="/productos/migracion">← Catálogo conciliado</Link>
         <h1>Todo SICAR: catálogo por revisar</h1>
+        <p><Link href="/productos/migracion-dudas">Responder preguntas por modelo →</Link></p>
         <p>
           {result.source_count.toLocaleString("es-MX")} registros en el corte ·{" "}
           {result.managed_count.toLocaleString("es-MX")} incorporados ·{" "}
