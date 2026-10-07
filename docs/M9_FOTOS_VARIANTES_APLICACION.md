@@ -86,3 +86,7 @@ que todavía leen únicamente el snapshot original: esos lectores anteriores
 siguen mostrando la retención histórica hasta adaptarlos. La sincronización
 independiente de fotos de variantes hacia Woo requiere su propio ensayo.
 La comprobación visual del Preview debe registrarse por separado del build local.
+
+## Cierre verificado
+
+Preview 0.75.0 publicado y comprobado con foto cargada del código416. Repetición51partes completada, cero altas adicionales y auditoría sin incremento. Dos preparaciones de 54 archivos idénticos. Fuentes/borradores/filas y todas las categorías conservados, cero fuentes desactualizadas. Lectura autenticada y rechazo sin sesión/lote201 aprobados. Evidencia visual y verificacion.json en la raíz indicada. El asesor informa RLS sin políticas de acceso directo, intencional para esta tabla privada. CI de GitHub se consulta separadamente; no equiparar Vercel publicado con suite remota terminada.

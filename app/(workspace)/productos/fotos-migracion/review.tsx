@@ -3,8 +3,10 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 export function GalleryMigration({
   items,
+  buttonLabel = "Copiar fotos conciliadas",
   copyMigrationGallery,
 }: {
+  buttonLabel?: string;
   items: { id: string; name: string }[];
   copyMigrationGallery: (
     id: string,
@@ -45,7 +47,7 @@ export function GalleryMigration({
         productos comprobados.
       </p>
       <button type="button" disabled={running} onClick={run}>
-        Copiar fotos conciliadas
+        {buttonLabel}
       </button>
       {running && (
         <button

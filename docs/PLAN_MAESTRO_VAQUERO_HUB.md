@@ -4012,3 +4012,17 @@ de imágenes, 189,102,844 bytes de red; cero escrituras staging/Woo/producción,
 inventario, DDL, permisos, colas o despliegue. Cobertura 7,709/16,224=47.516%,
 8,515 pendientes. Detalle [M9_FOTOS_VARIANTES_COMPLETO.md](M9_FOTOS_VARIANTES_COMPLETO.md).
 Sol suficiente; Astra para fase operativa final.
+
+
+### 2026-10-06 — Fotos por variante registradas y visibles en staging
+
+5,928 variantes/1,017 familias registradas; 5,815 con foto propia, 113 sin foto propia. Se completan 599 vínculos complementarios conservando la fuente original; seis reservas excluidas. Migración 20261007014932 aplicada exclusivamente a staging, tabla privada y lector autorizado. Piloto8, carga/repetición51 partes, 21 controles SQL, 465 unitarias, build/TypeScript/lint aprobados. Lectura autenticada y rechazos sin sesión/lote excesivo comprobados.
+
+Preview0.75.0 verificado visualmente: código416/talla22/$1,450 con imagen cargada. No son copias nuevas en Storage: referencias originales verificadas por SHA256/bytes/MIME. Catálogo/fuentes/borradores/categorías conservados; cero inventario, Woo o producción. Cobertura sigue7,709/16,224=47.516%. Próximo: copia autenticada, adaptación de preparadores y ensayo de envío independiente de fotos por variante. Detalle [M9_FOTOS_VARIANTES_APLICACION.md](M9_FOTOS_VARIANTES_APLICACION.md); evidencia outputs/m9-fotos-variantes-aplicacion-2026-10-06/.
+
+Publicación: commit remoto f55bee0e9f97fea6d4e953f95241d33dc5025e18 tiene árbol idéntico al local f7d2711 (83b79fcad7b8507a9768168f7b555ce326b9e314). El remoto consolida20commits que no estaban publicados. No forzar envío ni resetear historial local. Sol suficiente; Astra para pedidos/devoluciones/inventario y auditoría operativa.
+
+
+### 2026-10-06 — Copia autenticada de fotos por variante
+
+0.76.0 implementa copia por familia, bytes/SHA/MIME, límite16MB, rutas por SHA, guardado sin upsert y vínculo transaccional con expectativas completas. Nueva tabla privada, reader con fallback, fuente original conservada. 1,013 familias/5,815 variantes con foto elegibles; no afirmar aplicación total antes del cierre cuantitativo. Página fotos-migracion paginada para superar1,000 filas, proceso independiente de la galería general. Migración20261007020520 aplicada sólo staging. 475unitarias/66archivos y8controles SQL rollback; CI304 anteriorSUCCESS. Detalle [M9_FOTOS_VARIANTES_STORAGE.md](M9_FOTOS_VARIANTES_STORAGE.md). Evidencia outputs/m9-fotos-variantes-storage-2026-10-06/. Sin Woo, producción, existencias ni merge.
