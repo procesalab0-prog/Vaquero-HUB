@@ -1,4 +1,5 @@
 "use client";
+import { ProcesaLabCredit } from "@/components/procesalab-credit";
 
 import { useState } from "react";
 import { NotificationSettings } from "@/components/notification-settings";
@@ -325,6 +326,7 @@ export function SettingsWorkspace({
           </div>
         </div>
       </div>
+      <footer className="settings-developer-credit"><ProcesaLabCredit /></footer>
       {saved ? (
         <div className="pos-toast" role="status">
           <span>

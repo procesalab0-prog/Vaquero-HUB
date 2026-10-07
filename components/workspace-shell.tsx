@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { ProcesaLabCredit } from "@/components/procesalab-credit";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -299,6 +300,7 @@ export function WorkspaceShell({
           <LogOut aria-hidden="true" strokeWidth={1.8} />
           <span>Salir</span>
         </button>
+        <div className="rail-developer-credit"><ProcesaLabCredit dark /></div>
       </aside>
 
       <div className="workspace-content">
@@ -439,7 +441,7 @@ export function WorkspaceShell({
             <small>{APP_RELEASE}</small>
             <code>Siempre al día 🤠</code>
             <div className="version-credit">
-              Creado por <strong>ProcesaLab</strong>
+              <ProcesaLabCredit dark />
             </div>
           </div>
           <p>

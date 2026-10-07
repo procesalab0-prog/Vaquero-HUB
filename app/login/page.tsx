@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { ProcesaLabCredit } from "@/components/procesalab-credit";
 
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { login } from "./actions";
@@ -72,7 +73,8 @@ export default async function LoginPage({
             <a className="primary-button" href="/inicio">Continuar a la demostración</a>
           </div>
         )}
-        <small className="login-security">Acceso protegido por rol y sucursal · Creado por ProcesaLab</small>
+        <small className="login-security">Acceso protegido por rol y sucursal</small>
+        <footer className="login-developer-credit"><ProcesaLabCredit /></footer>
       </section>
     </main>
   );

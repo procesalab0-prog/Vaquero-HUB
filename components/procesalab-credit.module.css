@@ -1,0 +1,11 @@
+.credit { display: block; font-size: 12px; line-height: 1.4; color: #625e56; }
+.dark { color: #d9d3c9; }
+.credit a { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; min-height: 44px; color: inherit; text-decoration: none; }
+.credit a:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; border-radius: 4px; }
+.credit .logo { display: inline-flex; align-items: center; gap: .46em; font-size: 11px; opacity: .78; transition: opacity .2s; }
+.credit a:hover .logo, .credit a:focus-visible .logo { opacity: 1; }
+.credit .logo img { display: block; flex: none; width: auto; max-width: none; height: 1em; margin: 0; object-fit: contain; }
+.credit .logo .gear { height: 1.43em; animation: procesalab-turn 9s linear infinite; }
+@keyframes procesalab-turn { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .credit .logo .gear { animation: none; } .credit .logo { transition: none; } }
+@media print { .credit { display: none !important; } }
