@@ -1,9 +1,11 @@
+import {parseMeasureQuantity,quantityUnit,type MeasureUnit} from './measure-units';
 export type ReturnableSaleItem = {
+  measureUnit?: MeasureUnit;
   sale_item_id: string;
-  variant_id: string;
+  variant_id: string | null;
   product_name: string;
   variant_description: string;
-  sku: string;
+  sku: string | null;
   quantity: number;
   remaining_quantity: number;
   paid_line_cents: number;
@@ -11,7 +13,7 @@ export type ReturnableSaleItem = {
 };
 
 export type OriginalPayment = {
-  method_code: "CASH" | "CARD" | "TRANSFER";
+  method_code: "CASH" | "CARD" | "TRANSFER" | "USD";
   method_name: string;
   amount_cents: number;
   requires_reference: boolean;
@@ -34,6 +36,7 @@ export type ReturnableSale = {
 };
 
 export type ExchangeVariant = {
+  measureUnit?: MeasureUnit;
   id: string;
   productName: string;
   brand: string;
@@ -99,22 +102,20 @@ export function databaseErrorText(error: unknown) {
 }
 
 export function unitExchangeValue(item: ReturnableSaleItem) {
-  const sold = Number(item.quantity);
-  const remaining = Number(item.remaining_quantity);
-  const paid = Number(item.paid_line_cents);
-  const alreadyReturned = Number(item.already_returned_cents);
-  return remaining === 1 ? paid - alreadyReturned : Math.floor(paid / sold);
+  return selectedReturnValue(item,Math.min(1,Number(item.remaining_quantity)));
 }
 
 export function selectedReturnValue(
   item: ReturnableSaleItem,
   quantity: number,
 ) {
-  const sold = Number(item.quantity);
-  const remaining = Number(item.remaining_quantity);
+  const sold = Math.round(Number(item.quantity)*1000);
+  const remaining = Math.round(Number(item.remaining_quantity)*1000);
+  const requested=Math.round(quantity*1000);
   const paid = Number(item.paid_line_cents);
   const alreadyReturned = Number(item.already_returned_cents);
-  return quantity === remaining
+  if(parseMeasureQuantity(String(quantity),quantityUnit(item))===null||requested>remaining||!Number.isSafeInteger(sold)||sold<=0||!Number.isSafeInteger(paid)) return 0;
+  return requested === remaining
     ? paid - alreadyReturned
-    : Math.floor((paid * quantity) / sold);
+    : Number(BigInt(paid)*BigInt(requested)/BigInt(sold));
 }

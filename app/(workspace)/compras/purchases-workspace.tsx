@@ -14,6 +14,15 @@ import {
   X,
 } from "lucide-react";
 import { saveActiveLocationPreference } from "@/lib/location-preference";
+import { publishWorkspaceNotification } from "@/lib/workspace-notifications";
+import {
+  measureQuantityStep,
+  parseMeasureQuantity,
+  quantityUnit,
+  summarizeMeasureQuantities,
+  type MeasureUnit,
+} from "@/lib/measure-units";
+import { PurchasePdfDialog } from "./purchase-pdf-dialog";
 import {
   QuickProductForm,
   type PurchaseAttributeValue,
@@ -37,6 +46,7 @@ export type VariantView = {
   sku: string;
   attributes: string;
   costCents: number;
+  measureUnit?: MeasureUnit;
 };
 export type PurchaseOrderView = {
   id: string;
@@ -59,6 +69,7 @@ export type PurchaseOrderView = {
     received_qty: number;
     remaining_qty: number;
     unit_cost_cents: number;
+    measure_unit?: MeasureUnit;
   }>;
 };
 export type ReceiptView = {
@@ -75,15 +86,46 @@ export type ReceiptView = {
     product_name: string;
     qty: number;
     unit_cost_cents: number;
+    measure_unit?: MeasureUnit;
   }>;
 };
-type Location = { id: string; name: string; code: string };
+type Location = {
+  id: string;
+  name: string;
+  code: string;
+  address?: string | null;
+  phone?: string | null;
+};
 type Tab = "ordenes" | "recibir" | "proveedores" | "recepciones";
 
 const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
   currency: "MXN",
 });
+const quantities = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 3 });
+function measureSummary(
+  items: Array<{ measure_unit?: MeasureUnit; qty: number }>,
+) {
+  return summarizeMeasureQuantities(
+    items.map((item) => ({
+      measureUnit: item.measure_unit,
+      availableQuantity: item.qty,
+      reservedQuantity: 0,
+    })),
+  )
+    .map(
+      (group) =>
+        `${quantities.format(group.availableQuantity)} ${group.unit.name}`,
+    )
+    .join(" · ");
+}
+function canLabelUnit(item: { measure_unit?: MeasureUnit; qty: number }) {
+  return (
+    quantityUnit({ measureUnit: item.measure_unit }).decimal_places === 0 &&
+    Number.isSafeInteger(item.qty) &&
+    item.qty > 0
+  );
+}
 const statusLabels = {
   ORDERED: "Pendiente",
   PARTIALLY_RECEIVED: "Recepción parcial",
@@ -110,6 +152,8 @@ export function PurchasesWorkspace({
   categories,
   attributeValues,
   canCreateProducts,
+  canShareSupplierPdf = false,
+  prepareSupplierOrderShareAction,
 }: {
   suppliers: SupplierView[];
   orders: PurchaseOrderView[];
@@ -129,6 +173,8 @@ export function PurchasesWorkspace({
   categories: PurchaseCategory[];
   attributeValues: PurchaseAttributeValue[];
   canCreateProducts: boolean;
+  canShareSupplierPdf?: boolean;
+  prepareSupplierOrderShareAction: typeof import("./actions").prepareSupplierOrderShare;
 }) {
   const router = useRouter();
   const validTab = (
@@ -146,6 +192,8 @@ export function PurchasesWorkspace({
   const [notice, setNotice] = useState("");
   const [isPending, startTransition] = useTransition();
   const [orderOpen, setOrderOpen] = useState(false);
+  const [pdfOrder, setPdfOrder] = useState<PurchaseOrderView | null>(null);
+  const currentPdfOrder = orders.find((order) => order.id === pdfOrder?.id);
   const [supplierOpen, setSupplierOpen] = useState(false);
   const [quickProductOpen, setQuickProductOpen] = useState(false);
   const [orderDetails, setOrderDetails] = useState({
@@ -192,8 +240,31 @@ export function PurchasesWorkspace({
   ) {
     setNotice("");
     startTransition(async () => {
-      const result = await task();
+      let result: {
+        ok: boolean;
+        message: string;
+        data?: Record<string, unknown>;
+      };
+      try {
+        result = await task();
+      } catch {
+        // A lost response does not prove the transaction was rolled back.
+        result = {
+          ok: false,
+          message:
+            "No pudimos confirmar la respuesta. Revisa el historial antes de repetir la operación.",
+        };
+      }
       setNotice(result.message);
+      if (!preview && activeLocationId)
+        void publishWorkspaceNotification({
+          title: result.ok
+            ? "Compras: operación confirmada"
+            : "Revisa la operación de compras",
+          message: result.message,
+          locationId: activeLocationId,
+          kind: result.ok ? "success" : "error",
+        });
       if (result.ok) done?.(result);
     });
   }
@@ -250,7 +321,9 @@ export function PurchasesWorkspace({
       "mi-tienda-label-selection",
       JSON.stringify(
         Object.fromEntries(
-          receipt.items.map((item) => [item.variant_id, item.qty]),
+          receipt.items
+            .filter(canLabelUnit)
+            .map((item) => [item.variant_id, item.qty]),
         ),
       ),
     );
@@ -345,18 +418,34 @@ export function PurchasesWorkspace({
                       Orden #{order.folio} · {order.supplierName}
                     </h3>
                     <p>
-                      {order.receivedQty} de {order.orderedQty} piezas recibidas
+                      Recibido:{" "}
+                      {measureSummary(
+                        order.items.map((item) => ({
+                          measure_unit: item.measure_unit,
+                          qty: item.received_qty,
+                        })),
+                      )}
+                      {" · Pedido: "}
+                      {measureSummary(
+                        order.items.map((item) => ({
+                          measure_unit: item.measure_unit,
+                          qty: item.ordered_qty,
+                        })),
+                      )}
                       · {money.format(order.totalCents / 100)}
                     </p>
                   </div>
                   <div className="purchase-progress">
                     <span
                       style={{
-                        width: `${order.orderedQty ? (order.receivedQty / order.orderedQty) * 100 : 0}%`,
+                        width: `${order.items.length ? (order.items.reduce((sum, item) => sum + (item.ordered_qty ? item.received_qty / item.ordered_qty : 0), 0) / order.items.length) * 100 : 0}%`,
                       }}
                     />
                   </div>
                   <div className="purchase-actions">
+                    <button onClick={() => setPdfOrder(order)}>
+                      PDF para proveedor
+                    </button>
                     {canReceive &&
                       (order.status === "ORDERED" ||
                         order.status === "PARTIALLY_RECEIVED") && (
@@ -403,7 +492,7 @@ export function PurchasesWorkspace({
           <div className="purchase-toolbar">
             <div>
               <h2>Recepción rápida</h2>
-              <p>Captura de corrido; las cantidades son piezas enteras.</p>
+              <p>Captura de corrido según la unidad de cada producto.</p>
             </div>
           </div>
           {!receivingOrder ? (
@@ -418,7 +507,15 @@ export function PurchasesWorkspace({
                     <strong>Orden #{order.folio}</strong>
                     <small>{order.supplierName}</small>
                   </span>
-                  <span>{order.orderedQty - order.receivedQty} pendientes</span>
+                  <span>
+                    {measureSummary(
+                      order.items.map((item) => ({
+                        measure_unit: item.measure_unit,
+                        qty: item.remaining_qty,
+                      })),
+                    )}{" "}
+                    pendientes
+                  </span>
                 </button>
               ))}
               {!openOrders.length && (
@@ -440,9 +537,29 @@ export function PurchasesWorkspace({
                     qty: receiveQty[item.id] ?? 0,
                   }))
                   .filter((item) => item.qty > 0);
+                if (
+                  receivingOrder.items.some(
+                    (item) =>
+                      parseMeasureQuantity(
+                        String(receiveQty[item.id] ?? 0),
+                        quantityUnit({ measureUnit: item.measure_unit }),
+                        true,
+                      ) === null,
+                  )
+                ) {
+                  setNotice(
+                    "Revisa las cantidades según la unidad de cada producto.",
+                  );
+                  return;
+                }
                 const labelCounts = Object.fromEntries(
                   receivingOrder.items
-                    .filter((item) => (receiveQty[item.id] ?? 0) > 0)
+                    .filter((item) =>
+                      canLabelUnit({
+                        measure_unit: item.measure_unit,
+                        qty: receiveQty[item.id] ?? 0,
+                      }),
+                    )
                     .map((item) => [item.variant_id, receiveQty[item.id]]),
                 );
                 run(
@@ -460,7 +577,8 @@ export function PurchasesWorkspace({
                     );
                     setReceivingOrder(null);
                     setReceiveQty({});
-                    router.push("/etiquetas?desde=recepcion");
+                    if (Object.keys(labelCounts).length)
+                      router.push("/etiquetas?desde=recepcion");
                   },
                 );
               }}
@@ -492,6 +610,11 @@ export function PurchasesWorkspace({
                 </button>
               </div>
               <div className="receive-table">
+                <p className="form-hint">
+                  Al recibir, el costo se actualiza por promedio ponderado con
+                  las existencias de todas las sucursales, incluidas reservas y
+                  tránsito. Los costos de ventas anteriores no cambian.
+                </p>
                 <div className="receive-row receive-header">
                   <span>Producto</span>
                   <span>Pedido</span>
@@ -502,16 +625,26 @@ export function PurchasesWorkspace({
                   <label className="receive-row" key={item.id}>
                     <span>
                       <strong>{item.product_name}</strong>
-                      <small>{item.sku}</small>
+                      <small>
+                        {item.sku} ·{" "}
+                        {quantityUnit({ measureUnit: item.measure_unit }).name}
+                      </small>
                     </span>
                     <span>{item.ordered_qty}</span>
                     <span>{item.received_qty}</span>
                     <input
-                      inputMode="numeric"
+                      aria-label={`Recibir ${item.product_name}`}
+                      inputMode={
+                        item.measure_unit?.decimal_places === 3
+                          ? "decimal"
+                          : "numeric"
+                      }
                       type="number"
                       min="0"
                       max={item.remaining_qty}
-                      step="1"
+                      step={measureQuantityStep(
+                        quantityUnit({ measureUnit: item.measure_unit }),
+                      )}
                       value={receiveQty[item.id] ?? 0}
                       onChange={(event) =>
                         setReceiveQty((current) => ({
@@ -592,19 +725,24 @@ export function PurchasesWorkspace({
                     Orden #{receipt.orderFolio} · {receipt.supplierName}
                   </h3>
                   <p>
-                    {receipt.items.reduce((sum, item) => sum + item.qty, 0)}{" "}
-                    piezas · {receipt.receivedByName} ·{" "}
+                    {measureSummary(receipt.items)} · {receipt.receivedByName} ·{" "}
                     {new Date(receipt.createdAt).toLocaleString("es-MX")}
                   </p>
                 </div>
-                <Link
-                  className="secondary-button"
-                  href="/etiquetas?desde=recepcion"
-                  onClick={() => printReceiptLabels(receipt)}
-                >
-                  <Printer />
-                  Imprimir etiquetas
-                </Link>
+                {receipt.items.some(canLabelUnit) ? (
+                  <Link
+                    className="secondary-button"
+                    href="/etiquetas?desde=recepcion"
+                    onClick={() => printReceiptLabels(receipt)}
+                  >
+                    <Printer />
+                    Imprimir etiquetas
+                  </Link>
+                ) : (
+                  <span className="form-hint">
+                    Etiquetas por pieza no aplican a esta recepción.
+                  </span>
+                )}
               </article>
             ))}
             {!receipts.length && (
@@ -617,6 +755,24 @@ export function PurchasesWorkspace({
         </div>
       )}
 
+      {currentPdfOrder && (
+        <PurchasePdfDialog
+          key={`${activeLocationId}:${currentPdfOrder.id}`}
+          order={currentPdfOrder}
+          supplier={suppliers.find(
+            (supplier) => supplier.id === currentPdfOrder.supplierId,
+          )}
+          location={
+            locations.find((location) => location.id === activeLocationId) ?? {
+              name: "",
+            }
+          }
+          canShare={canShareSupplierPdf}
+          locationId={activeLocationId}
+          prepareShareAction={prepareSupplierOrderShareAction}
+          onClose={() => setPdfOrder(null)}
+        />
+      )}
       {orderOpen && !quickProductOpen && (
         <div className="modal-backdrop">
           <div
@@ -637,6 +793,20 @@ export function PurchasesWorkspace({
             <form
               onSubmit={(event) => {
                 event.preventDefault();
+                if (
+                  orderLines.some(
+                    (line) =>
+                      parseMeasureQuantity(
+                        String(line.qty),
+                        quantityUnit(line.variant),
+                      ) === null,
+                  )
+                ) {
+                  setNotice(
+                    "Revisa las cantidades según la unidad de cada producto.",
+                  );
+                  return;
+                }
                 run(
                   () =>
                     createPurchaseOrderAction({
@@ -749,12 +919,16 @@ export function PurchasesWorkspace({
                       </small>
                     </span>
                     <label>
-                      Piezas
+                      Cantidad · {quantityUnit(line.variant).name}
                       <input
                         type="number"
-                        inputMode="numeric"
-                        min="1"
-                        step="1"
+                        inputMode={
+                          line.variant.measureUnit?.decimal_places === 3
+                            ? "decimal"
+                            : "numeric"
+                        }
+                        min={measureQuantityStep(quantityUnit(line.variant))}
+                        step={measureQuantityStep(quantityUnit(line.variant))}
                         value={line.qty}
                         onChange={(event) =>
                           setOrderLines((current) =>
@@ -771,7 +945,10 @@ export function PurchasesWorkspace({
                       />
                     </label>
                     <label>
-                      Costo por pieza
+                      Costo por{" "}
+                      {quantityUnit(line.variant).name.toLocaleLowerCase(
+                        "es-MX",
+                      )}
                       <input
                         type="number"
                         inputMode="decimal"

@@ -4,12 +4,14 @@ import { resolveActiveLocation } from "@/lib/auth/active-location";
 import { getWorkspaceSession } from "@/lib/auth/workspace-session";
 import { mockVariants } from "@/lib/mock-data";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import type { MeasureUnit } from "@/lib/measure-units";
 import {
   cancelPurchaseOrder,
   createPurchaseProduct,
   createPurchaseOrder,
   receivePurchaseOrder,
   saveSupplier,
+  prepareSupplierOrderShare,
 } from "./actions";
 import {
   PurchasesWorkspace,
@@ -45,7 +47,13 @@ const previewAttributeValues: PurchaseAttributeValue[] = [
   })),
 ];
 
-type Location = { id: string; name: string; code: string };
+type Location = {
+  id: string;
+  name: string;
+  code: string;
+  address?: string | null;
+  phone?: string | null;
+};
 
 export default async function PurchasesPage({
   searchParams,
@@ -64,6 +72,7 @@ export default async function PurchasesPage({
     return (
       <PurchasesWorkspace
         saveSupplierAction={saveSupplier}
+        prepareSupplierOrderShareAction={prepareSupplierOrderShare}
         createPurchaseOrderAction={createPurchaseOrder}
         receivePurchaseOrderAction={receivePurchaseOrder}
         cancelPurchaseOrderAction={cancelPurchaseOrder}
@@ -81,7 +90,33 @@ export default async function PurchasesPage({
             isActive: true,
           },
         ]}
-        orders={[]}
+        orders={[
+          {
+            id: "demo-order",
+            folio: 1,
+            status: "ORDERED",
+            supplierId: "demo-provider",
+            supplierName: "Proveedor León",
+            expectedAt: null,
+            notes: "Demostración: esta orden no está guardada.",
+            createdAt: "2026-10-01T12:00:00Z",
+            orderedQty: 2,
+            receivedQty: 0,
+            totalCents: 100000,
+            items: [
+              {
+                id: "demo-order-item",
+                variant_id: variants[0].id,
+                sku: variants[0].sku,
+                product_name: variants[0].name,
+                ordered_qty: 2,
+                received_qty: 0,
+                remaining_qty: 2,
+                unit_cost_cents: 50000,
+              },
+            ],
+          },
+        ]}
         receipts={[]}
         variants={variants}
         locations={[{ id: "preview", name: "La Piedad", code: "LP" }]}
@@ -165,7 +200,13 @@ export default async function PurchasesPage({
       (location): location is Location & { type: string; is_active: boolean } =>
         Boolean(location?.is_active && location.type !== "TRANSIT"),
     )
-    .map(({ id, name, code }) => ({ id, name, code }));
+    .map(({ id, name, code, address, phone }) => ({
+      id,
+      name,
+      code,
+      address,
+      phone,
+    }));
   const activeLocation = await resolveActiveLocation(
     locations,
     params.ubicacion,
@@ -174,6 +215,7 @@ export default async function PurchasesPage({
     return (
       <PurchasesWorkspace
         saveSupplierAction={saveSupplier}
+        prepareSupplierOrderShareAction={prepareSupplierOrderShare}
         createPurchaseOrderAction={createPurchaseOrder}
         receivePurchaseOrderAction={receivePurchaseOrder}
         cancelPurchaseOrderAction={cancelPurchaseOrder}
@@ -196,15 +238,15 @@ export default async function PurchasesPage({
     );
 
   const [ordersResult, receiptsResult, variantsResult] = await Promise.all([
-    supabase.rpc("list_purchase_orders", {
+    supabase.rpc("list_purchase_orders_v2", {
       p_location_id: activeLocation.id,
       p_limit: 100,
     }),
-    supabase.rpc("list_purchase_receipts", {
+    supabase.rpc("list_purchase_receipts_v2", {
       p_location_id: activeLocation.id,
       p_limit: 50,
     }),
-    supabase.rpc("get_inventory_snapshot", {
+    supabase.rpc("get_inventory_snapshot_v2", {
       p_location_id: activeLocation.id,
       p_query: "",
       p_limit: 500,
@@ -264,12 +306,14 @@ export default async function PurchasesPage({
         (variant.attributes ?? {}) as Record<string, string>,
       ).join(" · "),
       costCents: 0,
+      measureUnit: variant.measure_unit as MeasureUnit,
     }),
   );
 
   return (
     <PurchasesWorkspace
       saveSupplierAction={saveSupplier}
+      prepareSupplierOrderShareAction={prepareSupplierOrderShare}
       createPurchaseOrderAction={createPurchaseOrder}
       receivePurchaseOrderAction={receivePurchaseOrder}
       cancelPurchaseOrderAction={cancelPurchaseOrder}
@@ -283,6 +327,11 @@ export default async function PurchasesPage({
       canManage={permissionSet.has("purchases.manage")}
       canReceive={permissionSet.has("purchases.receive")}
       canCreateProducts={permissionSet.has("products.create")}
+      canShareSupplierPdf={
+        (Array.isArray(profile.roles)
+          ? profile.roles[0]?.code
+          : profile.roles?.code) === "ADMIN"
+      }
       categories={(categoriesResult.data ?? []) as PurchaseCategory[]}
       attributeValues={
         (attributeValuesResult.data ?? []) as PurchaseAttributeValue[]

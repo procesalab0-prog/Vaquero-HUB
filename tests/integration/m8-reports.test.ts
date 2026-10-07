@@ -207,4 +207,68 @@ describe.sequential("M8: reportes de ventas e inventario", () => {
     expect(sales.error?.message).toContain("NOT_AUTHORIZED");
     expect(inventory.error?.message).toContain("NOT_AUTHORIZED");
   });
+
+  it("filtra clasificación independiente sin atribuir pagos completos al producto", async () => {
+    const variant = await state
+      .server!.from("variants")
+      .select("product_id")
+      .eq("id", state.variantId)
+      .single();
+    const product = await state
+      .server!.from("products")
+      .select("id,name,category_id")
+      .eq("id", variant.data!.product_id)
+      .single();
+    const updated = await state.admin!.rpc("update_catalog_product_v2", {
+      p_product_id: product.data!.id,
+      p_name: product.data!.name,
+      p_category_id: product.data!.category_id,
+      p_department_name: "CABALLERO QA",
+    });
+    expect(updated.error).toBeNull();
+    const args = {
+      p_location_id: state.locationId,
+      p_from: "2026-01-01T00:00:00Z",
+      p_to: "2026-12-31T00:00:00Z",
+      p_category_id: product.data!.category_id,
+      p_department: "CABALLERO QA",
+    };
+    const report = await state.admin!.rpc("get_sales_report_v2", args);
+    expect(report.error).toBeNull();
+    expect(report.data.scope).toBe("PRODUCT_LINES");
+    expect(report.data.summary.net_cents).toBe(20000);
+    expect(report.data.summary.payment_total_cents).toBeNull();
+    expect(report.data.payments).toEqual([]);
+    const absent = await state.admin!.rpc("get_sales_report_v2", {
+      ...args,
+      p_department: "NO ASIGNADO QA",
+    });
+    expect(absent.error).toBeNull();
+    expect(absent.data.summary.sale_count).toBe(0);
+    const denied = await state.cashier!.rpc("get_sales_report_v2", args);
+    expect(denied.error?.message).toContain("NOT_AUTHORIZED");
+  });
+  it("consulta unidades sin abrir sus tablas ni conceder alta al cajero", async () => {
+    const listed = await state.cashier!.rpc("list_measure_units");
+    expect(listed.error).toBeNull();
+    expect(listed.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "PIECE", decimal_places: 0 }),
+        expect.objectContaining({ code: "KILO", decimal_places: 3 }),
+      ]),
+    );
+    const input = {
+      p_code: `U${runCode}`,
+      p_name: "Caja QA",
+      p_decimal_places: 0,
+    };
+    const denied = await state.cashier!.rpc("create_measure_unit", input);
+    expect(denied.error?.message).toContain("NOT_AUTHORIZED");
+    const created = await state.admin!.rpc("create_measure_unit", input);
+    expect(created.error).toBeNull();
+    const duplicate = await state.admin!.rpc("create_measure_unit", input);
+    expect(duplicate.error?.message).toContain("MEASURE_UNIT_CODE_TAKEN");
+    const direct = await state.admin!.from("measure_units").select("code");
+    expect(direct.error).not.toBeNull();
+  });
 });

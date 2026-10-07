@@ -25,6 +25,7 @@ import type { WorkspaceIdentity } from "@/lib/auth/types";
 import { WorkspaceContext } from "@/components/workspace-context";
 import { LA_PIEDAD_STORE } from "@/lib/business-profile";
 import { pickActiveLocation, saveActiveLocationPreference } from "@/lib/location-preference";
+import { WORKSPACE_NOTIFICATION_EVENT, type WorkspaceNotification } from "@/lib/workspace-notifications";
 
 const navigation: Array<{
   href: string;
@@ -81,6 +82,8 @@ export function WorkspaceShell({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notices, setNotices] = useState<WorkspaceNotification[]>([]);
+  const [noticeToast, setNoticeToast] = useState<WorkspaceNotification | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(true);
@@ -91,6 +94,20 @@ export function WorkspaceShell({
     initialLocationId,
   );
   const activeLocationId = activeLocation?.id ?? "";
+  const locationNotices = notices.filter((notice) => notice.locationId === activeLocationId);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const receive = (event: Event) => {
+      const notice = (event as CustomEvent<WorkspaceNotification>).detail;
+      if (!notice || notice.locationId !== activeLocationId) return;
+      setNotices((current) => [notice, ...current.filter((item) => item.id !== notice.id)].slice(0, 20));
+      setNoticeToast(notice);
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => setNoticeToast(null), 5000);
+    };
+    window.addEventListener(WORKSPACE_NOTIFICATION_EVENT, receive);
+    return () => { window.removeEventListener(WORKSPACE_NOTIFICATION_EVENT, receive); if (timer) clearTimeout(timer); };
+  }, [activeLocationId]);
   useEffect(() => {
     saveActiveLocationPreference(activeLocationId);
   }, [activeLocationId]);
@@ -294,7 +311,7 @@ export function WorkspaceShell({
               }}
             >
               <Bell aria-hidden="true" strokeWidth={1.8} />
-              <span aria-hidden="true" />
+              {locationNotices.length ? <span aria-hidden="true" /> : null}
             </button>
             <button
               className="active-user"
@@ -327,22 +344,10 @@ export function WorkspaceShell({
               <X aria-hidden="true" />
             </button>
           </header>
-          <article>
-            <span className="notification-dot warning" />
-            <div>
-              <strong>Última pieza</strong>
-              <p>Bota Cuadra café, talla 26.</p>
-            </div>
-            <small>Ahora</small>
-          </article>
-          <article>
-            <span className="notification-dot" />
-            <div>
-              <strong>Caja en orden</strong>
-              <p>La sesión lleva 8 ventas registradas.</p>
-            </div>
-            <small>14:32</small>
-          </article>
+          {locationNotices.length ? locationNotices.map((notice) => <article key={notice.id}>
+            <span className="notification-dot" /><div><strong>{notice.title}</strong><p>{notice.message}</p></div>
+            <small>{new Date(notice.createdAt).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}</small>
+          </article>) : <p>No hay avisos en esta sesión para la sucursal seleccionada.</p>}
           <Link
             href={locationHref("/inventario")}
             onClick={() => setNotificationsOpen(false)}
@@ -351,6 +356,7 @@ export function WorkspaceShell({
           </Link>
         </aside>
       ) : null}
+      {noticeToast?.locationId === activeLocationId ? <aside className="workspace-notification-toast" data-kind={noticeToast.kind ?? "success"} role={noticeToast.kind === "error" ? "alert" : "status"}><strong>{noticeToast.title}</strong><span>{noticeToast.message}</span><button type="button" aria-label="Cerrar aviso" onClick={() => setNoticeToast(null)}><X aria-hidden="true" /></button></aside> : null}
       {profileOpen ? (
         <aside
           className="profile-popover"

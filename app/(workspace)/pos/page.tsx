@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { PosWorkspace } from "./pos-workspace";
+import { prepareUsdExchange } from "./usd-actions";
 import { mockVariants } from "@/lib/mock-data";
 import { resolveActiveLocation } from "@/lib/auth/active-location";
 import { requirePermission } from "@/lib/auth/authorization";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { productImageUrl } from "@/lib/product-images";
+import type { ProductVariant } from "@/lib/domain";
 import {
   authorizeOverdueCredit,
   authorizeSaleDiscount,
@@ -15,6 +17,7 @@ import {
   getPosCustomerCredit,
   holdPosDraft,
   requestSalePrint,
+  resolvePosScan,
   resumePosDraft,
   savePosCurrentDraft,
   verifyPosLoyaltyCode,
@@ -43,8 +46,27 @@ export default async function PosPage({
   searchParams: Promise<{ ubicacion?: string }>;
 }) {
   if (!isSupabaseConfigured())
-    return <PosWorkspace variants={mockVariants} preview />;
-  const { supabase, profile } = await requirePermission("pos.sell");
+    return <PosWorkspace variants={mockVariants} preview canAccessTransfers />;
+  const { supabase, profile, roleId } = await requirePermission("pos.sell");
+  const transferPermissions = await supabase
+    .from("role_permissions")
+    .select("permission_code")
+    .eq("role_id", roleId)
+    .in("permission_code", [
+      "inventory.read",
+      "transfers.create",
+      "transfers.approve",
+      "transfers.receive",
+    ]);
+  const transferCodes = new Set(
+    (transferPermissions.data ?? []).map((row) => row.permission_code),
+  );
+  const canAccessTransfers =
+    !transferPermissions.error &&
+    transferCodes.has("inventory.read") &&
+    ["transfers.create", "transfers.approve", "transfers.receive"].some(
+      (code) => transferCodes.has(code),
+    );
   const params = await searchParams;
   const locations = (profile?.user_locations ?? []).flatMap((entry) =>
     Array.isArray(entry.locations)
@@ -64,13 +86,20 @@ export default async function PosPage({
     register_name?: string;
   } | null;
   if (!cashSession?.id || !cashSession.location_id) {
-    return <PosWorkspace variants={[]} cashSession={null} />;
+    return (
+      <PosWorkspace
+        variants={[]}
+        cashSession={null}
+        canAccessTransfers={canAccessTransfers}
+      />
+    );
   }
   if (activeLocation?.id && activeLocation.id !== cashSession.location_id) {
     return (
       <PosWorkspace
         variants={[]}
         cashSession={null}
+        canAccessTransfers={canAccessTransfers}
         status="La caja abierta pertenece a otra sucursal. Cierra el turno o vuelve a esa sucursal."
       />
     );
@@ -111,6 +140,7 @@ export default async function PosPage({
           }
         }
         status="pos-no-disponible"
+        canAccessTransfers={canAccessTransfers}
       />
     );
   }
@@ -126,7 +156,7 @@ export default async function PosPage({
       productImageUrl(supabase, product.image_path),
     ]),
   );
-  const variants = ((catalogResult.data ?? []) as CatalogRow[])
+  const initialVariants = ((catalogResult.data ?? []) as CatalogRow[])
     .filter((row) => row.is_active)
     .map((row) => ({
       id: row.variant_id,
@@ -141,10 +171,21 @@ export default async function PosPage({
       stock: stocks.get(row.variant_id) ?? 0,
       image: images.get(row.product_id),
     }));
+  const requestedIds = [...new Set([
+    ...initialVariants.map((variant) => variant.id),
+    ...((draftsResult.data ?? []) as PosDraftPayload[]).flatMap((draft) => draft.items.filter(item => !item.quick).map((item) => item.variant_id)),
+  ])];
+  const expanded = await supabase.rpc("get_pos_variants", { p_cash_session_id: cashSession.id, p_variant_ids: requestedIds });
+  if (expanded.error) return <PosWorkspace variants={[]} cashSession={cashSession as { id: string; location_id: string; register_name: string }} status="No fue posible recuperar el catálogo y tus tickets en espera. Recarga antes de vender." />;
+  const variants = ((expanded.data ?? []) as Array<ProductVariant & { productId: string }>).map((variant) => ({ ...variant, image: images.get(variant.productId) }));
   return (
     <PosWorkspace
       variants={variants}
+      usdEnabled={(await supabase.rpc("usd_checkout_available")).data === true}
+      prepareUsdAction={prepareUsdExchange}
+      canAccessTransfers={canAccessTransfers}
       initialDrafts={(draftsResult.data ?? []) as PosDraftPayload[]}
+      canCaptureQuickCost={['ADMIN','MANAGER'].includes((Array.isArray(profile?.roles) ? profile.roles[0] : profile?.roles)?.code ?? '')}
       cashSession={
         cashSession as {
           id: string;
@@ -153,6 +194,7 @@ export default async function PosPage({
         }
       }
       createSaleAction={createPosSale}
+      resolveScanAction={resolvePosScan}
       verifyLoyaltyCodeAction={verifyPosLoyaltyCode}
       getCustomerCreditAction={getPosCustomerCredit}
       authorizeDiscountAction={authorizeSaleDiscount}

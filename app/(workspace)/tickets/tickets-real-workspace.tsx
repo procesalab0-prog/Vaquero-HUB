@@ -37,6 +37,7 @@ import {
 } from "@/components/receipt-print-options";
 
 type TicketItem = {
+  measureUnit?: import('@/lib/measure-units').MeasureUnit;
   line_number: number;
   product_name: string;
   variant_description: string;
@@ -76,6 +77,7 @@ export type Ticket = {
   };
   items: TicketItem[];
   payments: TicketPayment[];
+  usd_tender?: import('@/components/thermal-receipt').UsdReceiptTender | null;
 };
 type CancelResult =
   { ok: true; folio: string } | { ok: false; code: string; message: string };
@@ -130,7 +132,7 @@ export function TicketsRealWorkspace({
   searchExchangeVariantsAction?: (input: {
     query: string;
     priceCents: number;
-    excludeVariantId: string;
+    excludeVariantId: string | null;
   }) => Promise<ExchangeSearchResult>;
   authorizeReturnAction?: (input: {
     employeeCode: string;
@@ -213,6 +215,7 @@ export function TicketsRealWorkspace({
       code: item.sku,
       quantity: Number(item.quantity),
       unitPrice: Number(item.unit_price_cents) / 100,
+      unitName: item.measureUnit?.name,
     })) ?? [];
   const payments = selected?.payments ?? [];
   const method = payments.map((item) => item.method_name).join(" + ");
@@ -247,6 +250,7 @@ export function TicketsRealWorkspace({
       const { createTicketPdf, downloadTicketPdf } =
         await import("@/lib/ticket-pdf");
       const { blob, fileName } = await createTicketPdf({
+        usdTender: selected.usd_tender,
         mode: receiptMode,
         folio: selected.folio,
         soldAt: formatReceiptDate(new Date(selected.sold_at)),
@@ -257,6 +261,7 @@ export function TicketsRealWorkspace({
         registerName: selected.register_name,
         lines: receiptItems.map((item) => ({
           name: item.product_name,
+          unitName: item.measureUnit?.name,
           variant: item.variant_description,
           code: item.sku,
           quantity: Number(item.quantity),
@@ -303,6 +308,7 @@ export function TicketsRealWorkspace({
       const { createCommercialPdf, downloadCommercialPdf } =
         await import("@/lib/commercial-pdf");
       const { blob, fileName } = await createCommercialPdf({
+        usdTender: selected.usd_tender,
         kind: "SALE",
         folio: selected.folio,
         date: formatReceiptDate(new Date(selected.sold_at)),
@@ -310,7 +316,7 @@ export function TicketsRealWorkspace({
         address: selected.location.address,
         phone: selected.location.phone,
         lines: selected.items.map((item) => ({
-          description: `${item.product_name} - ${item.variant_description || "Unica"}`,
+          description: `${item.product_name} - ${item.variant_description || "Unica"}${item.measureUnit ? ` · ${item.measureUnit.name}` : ""}`,
           code: item.sku,
           quantity: Number(item.quantity),
           unitPriceCents: Number(item.unit_price_cents),
@@ -573,6 +579,7 @@ export function TicketsRealWorkspace({
                   discount={Number(selected.discount_cents) / 100}
                   total={Number(selected.total_cents) / 100}
                   method={method}
+                  usdTender={selected.usd_tender}
                   paymentDetails={
                     receiptMode === "sale"
                       ? selected.payments.map((payment) => ({

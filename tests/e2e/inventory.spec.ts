@@ -1,5 +1,57 @@
 import { expect, test } from "@playwright/test";
 
+test("el conteo de piezas conserva pasos enteros y rechaza medias piezas", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  await page.setViewportSize({ width: 768, height: 1024 });
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("/inventario");
+  await page.getByRole("button", { name: "Conteos" }).click();
+  const dialog = page.getByRole("dialog", { name: "Conteos" });
+  const quantity = dialog.getByLabel("Cantidad física");
+  await expect(dialog.getByText("Cantidad física · Pieza")).toBeVisible();
+  await expect(quantity).toHaveAttribute("step", "1");
+  await quantity.fill("0.5");
+  await quantity.press("Enter");
+  await expect(dialog.getByText("0 de 20 capturadas")).toBeVisible();
+  expect(
+    await quantity.evaluate(
+      (element: HTMLInputElement) => element.validity.stepMismatch,
+    ),
+  ).toBe(true);
+  await quantity.fill("1");
+  await quantity.press("Enter");
+  await expect(dialog.getByText("1 de 20 capturadas")).toBeVisible();
+  await expect(dialog).not.toContainText("0 capturas");
+  expect(errors).toEqual([]);
+  await page.screenshot({ path: "/private/tmp/inventory-units-count-768.png" });
+});
+
+test("buscar un código despliega su variante sin abrir grupos a mano", async ({
+  page,
+}) => {
+  await page.goto("/inventario");
+  await page.getByRole("button", { name: "Desplegar variantes" }).click();
+  const code = (
+    await page
+      .locator(".inventory-row:not(.table-header) code")
+      .first()
+      .innerText()
+  ).trim();
+  await page.getByRole("button", { name: "Contraer variantes" }).click();
+  await page.getByRole("textbox", { name: "Buscar inventario" }).fill(code);
+  await expect(
+    page.locator(".inventory-row:not(.table-header)").first(),
+  ).toBeVisible();
+  await expect(
+    page.locator(".inventory-product-group").first(),
+  ).toHaveAttribute("open", "");
+  await expect(
+    page.locator(".inventory-row:not(.table-header) code").first(),
+  ).toHaveText(code);
+});
+
 test("muestra inventario usable sin desbordar la pantalla", async ({
   page,
 }) => {
@@ -9,6 +61,7 @@ test("muestra inventario usable sin desbordar la pantalla", async ({
     page.getByRole("main").getByRole("heading", { name: "Inventario" }),
   ).toBeVisible();
   await expect(page.getByText("Disponibles para vender")).toBeVisible();
+  await page.locator(".inventory-product-group > summary").first().click();
   await expect(
     page.locator(".inventory-row:not(.table-header)").first(),
   ).toBeVisible();
@@ -45,6 +98,7 @@ test("captura 20 variantes seguidas con Enter y sin recargar", async ({
     dialog.getByRole("button", { name: "Cerrar y aplicar" }),
   ).toBeEnabled();
   await expect(page.locator("html")).toHaveJSProperty("scrollWidth", 390);
+  await page.screenshot({ path: "/private/tmp/inventory-units-count-390.png" });
 });
 
 test("filtra mercancía al solicitar un traspaso y conserva lo elegido", async ({
@@ -81,6 +135,7 @@ for (const viewport of [
       height: viewport.height,
     });
     await page.goto("/inventario");
+    await page.getByRole("button", { name: "Desplegar variantes" }).click();
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     await expect(page.locator("html")).toHaveJSProperty(
       "scrollWidth",

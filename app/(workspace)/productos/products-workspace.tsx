@@ -1,4 +1,5 @@
 "use client";
+import { QuickSaleCatalog, type QuickSaleListResult, type QuickSaleSnapshot } from "@/components/quick-sale-catalog";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -18,6 +19,11 @@ import {
 } from "lucide-react";
 
 import { BarcodeScanner } from "@/components/barcode-scanner";
+import {
+  ProductUnitEditor,
+  type SetProductUnitResult,
+} from "@/components/product-unit-editor";
+import type { MeasureUnit } from "@/lib/measure-units";
 import type { CatalogImportState } from "@/lib/catalog-import-shared";
 import type { BatchActionResult, ProductVariant } from "@/lib/domain";
 import { CatalogBatchActions } from "./catalog-batch-actions";
@@ -38,6 +44,7 @@ type AttributeValue = {
 
 type Props = {
   initialVariants: ProductVariant[];
+  quickSaleListAction?: (locationId: string) => Promise<QuickSaleListResult>;
   categories: Category[];
   attributeValues: AttributeValue[];
   preview?: boolean;
@@ -69,6 +76,12 @@ type Props = {
     formData: FormData,
   ) => Promise<CatalogImportState>;
   initialImportState?: CatalogImportState;
+  measureUnits?: MeasureUnit[];
+  setProductUnitAction?: (input: {
+    productId: string;
+    code: string;
+    expectedCode: string;
+  }) => Promise<SetProductUnitResult>;
 };
 
 type ModalMode = "create" | "add";
@@ -167,6 +180,9 @@ export function ProductsWorkspace({
   previewImportAction,
   commitImportAction,
   initialImportState,
+  measureUnits = [],
+  setProductUnitAction,
+  quickSaleListAction,
 }: Props) {
   const availableCategories = categories.length
     ? categories
@@ -176,6 +192,7 @@ export function ProductsWorkspace({
     : previewValues;
   const [variants, setVariants] = useState(initialVariants);
   const [modalMode, setModalMode] = useState<ModalMode | null>(null);
+  const [quickSeed, setQuickSeed] = useState<QuickSaleSnapshot | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
   const [barcodeOpen, setBarcodeOpen] = useState(false);
@@ -395,6 +412,7 @@ export function ProductsWorkspace({
   }
 
   function openCreateModal() {
+    setQuickSeed(null);
     resetVariantSelection();
     setSelectedCategory("");
     setModalMode("create");
@@ -505,6 +523,8 @@ export function ProductsWorkspace({
               productName: name,
               brand,
               categoryId,
+              departmentName:
+                String(formData.get("department_name") ?? "").trim() || null,
               description,
               productActive: formData.get("is_active") === "on",
             }
@@ -592,7 +612,7 @@ export function ProductsWorkspace({
   }
 
   return (
-    <section className="module-page">
+    <section className="module-page products-page">
       <div className="section-heading">
         <div>
           <p className="eyebrow">M2 · Catálogo</p>
@@ -602,42 +622,49 @@ export function ProductsWorkspace({
           </p>
         </div>
         <div className="heading-actions">
-          {previewImportAction && commitImportAction && initialImportState ? (
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={() => setImportOpen(true)}
-            >
-              <Upload aria-hidden="true" />
-              Carga masiva
-            </button>
-          ) : null}
-          <Link className="secondary-button" href="/etiquetas">
-            <Tags aria-hidden="true" />
-            Etiquetas
-          </Link>
-          {preview || registerBarcodeAction ? (
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={openBarcodeModal}
-              disabled={variants.length === 0}
-            >
-              <Barcode aria-hidden="true" />
-              Registrar código
-            </button>
-          ) : null}
-          {preview || addVariantsAction ? (
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={openAddModal}
-              disabled={products.length === 0}
-            >
-              <Plus aria-hidden="true" />
-              Agregar variantes
-            </button>
-          ) : null}
+          <details className="catalog-secondary-actions">
+            <summary>Más acciones</summary>
+            <div className="catalog-secondary-menu">
+              {previewImportAction &&
+              commitImportAction &&
+              initialImportState ? (
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => setImportOpen(true)}
+                >
+                  <Upload aria-hidden="true" />
+                  Carga masiva
+                </button>
+              ) : null}
+              <Link className="secondary-button" href="/etiquetas">
+                <Tags aria-hidden="true" />
+                Etiquetas
+              </Link>
+              {preview || registerBarcodeAction ? (
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={openBarcodeModal}
+                  disabled={variants.length === 0}
+                >
+                  <Barcode aria-hidden="true" />
+                  Registrar código
+                </button>
+              ) : null}
+              {preview || addVariantsAction ? (
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={openAddModal}
+                  disabled={products.length === 0}
+                >
+                  <Plus aria-hidden="true" />
+                  Agregar variantes
+                </button>
+              ) : null}
+            </div>
+          </details>
           {preview || createAction ? (
             <button
               className="primary-button"
@@ -671,6 +698,7 @@ export function ProductsWorkspace({
           {statusMessages[status]}
         </div>
       ) : null}
+      {quickSaleListAction ? <QuickSaleCatalog loadAction={quickSaleListAction} onChoose={item => { openCreateModal(); setQuickSeed(item); }} /> : null}
       <div className="notice">
         <strong>Códigos protegidos</strong>
         <span>
@@ -797,7 +825,13 @@ export function ProductsWorkspace({
               {item.color} · {item.size}
             </span>
             <span>{money.format(item.price)}</span>
-            <span className="stock-number out">Se activa en M3</span>
+            <Link
+              className="text-button"
+              href="/inventario"
+              aria-label={`Consultar inventario de ${item.productName}, ${item.color}, talla ${item.size}`}
+            >
+              Consultar
+            </Link>
             {canEdit ? (
               <button
                 className="table-edit-button"
@@ -871,7 +905,7 @@ export function ProductsWorkspace({
                   <>
                     <label className="wide-field">
                       <span>Nombre del producto</span>
-                      <input name="product_name" required />
+                      <input name="product_name" defaultValue={quickSeed?.product_name ?? ''} required />
                     </label>
                     <label>
                       <span>Marca</span>
@@ -939,6 +973,7 @@ export function ProductsWorkspace({
                   <span>Precio</span>
                   <input
                     name="price"
+                    defaultValue={quickSeed ? (Number(quickSeed.unit_price_cents) / 100).toFixed(2) : undefined}
                     inputMode="decimal"
                     min="0"
                     step="0.01"
@@ -1321,6 +1356,19 @@ export function ProductsWorkspace({
                         rows={3}
                       />
                     </label>
+                    <label className="wide-field">
+                      <span>Departamento (opcional)</span>
+                      <input
+                        name="department_name"
+                        defaultValue={editingVariant.departmentName ?? ""}
+                        maxLength={100}
+                        placeholder="Departamento de la tienda"
+                      />
+                      <small>
+                        Independiente de la categoría. Se usa para filtrar
+                        reportes; no se deduce de los códigos.
+                      </small>
+                    </label>
                     <label className="toggle-field wide-field">
                       <input
                         type="checkbox"
@@ -1335,6 +1383,26 @@ export function ProductsWorkspace({
               </form>
             ) : null}
 
+            {setProductUnitAction &&
+            editingVariant.productId &&
+            measureUnits.length ? (
+              <ProductUnitEditor
+                key={editingVariant.productId}
+                productId={editingVariant.productId}
+                initialCode={editingVariant.measureUnitCode ?? "PIECE"}
+                units={measureUnits}
+                action={setProductUnitAction}
+                onSaved={(code) =>
+                  setVariants((current) =>
+                    current.map((variant) =>
+                      variant.productId === editingVariant.productId
+                        ? { ...variant, measureUnitCode: code }
+                        : variant,
+                    ),
+                  )
+                }
+              />
+            ) : null}
             <fieldset className="edit-section identity-section">
               <legend>Identidad protegida</legend>
               <p>Se muestra para verificarla, pero no puede editarse.</p>

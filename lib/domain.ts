@@ -3,6 +3,11 @@ export type ProductVariant = {
   /** Identificadores del catálogo real; se omiten en datos de demostración antiguos. */
   productId?: string;
   categoryId?: string;
+  departmentName?: string | null;
+  measureUnitCode?: string;
+  measureUnit?: import("./measure-units").MeasureUnit;
+  /** Cart-only commercial snapshot; this ID is never a catalog identity. */
+  quick?: import("./quick-product").QuickProduct;
   description?: string;
   productActive?: boolean;
   productName: string;
@@ -65,6 +70,7 @@ export type BatchActionResult = {
 };
 
 export type InventoryItem = {
+  measureUnit?: import("./measure-units").MeasureUnit;
   variantId: string;
   productId: string;
   productName: string;
@@ -113,6 +119,7 @@ export type InventoryCount = {
 };
 
 export type InventoryTransferItem = {
+  measureUnit?: import("./measure-units").MeasureUnit;
   variantId: string;
   productName: string;
   sku: string;

@@ -13,6 +13,9 @@ import type {
   ReturnableSaleItem,
 } from "@/lib/returns";
 import { selectedReturnValue, unitExchangeValue } from "@/lib/returns";
+import {measureLineCents,quantityUnit} from '@/lib/measure-units';
+import { MeasureQuantityInput } from '@/components/measure-quantity-input';
+import { publishWorkspaceNotification } from "@/lib/workspace-notifications";
 
 const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
@@ -27,7 +30,7 @@ type Props = {
   searchAction: (input: {
     query: string;
     priceCents: number;
-    excludeVariantId: string;
+    excludeVariantId: string | null;
   }) => Promise<ExchangeSearchResult>;
   authorizeAction: (input: {
     employeeCode: string;
@@ -41,6 +44,7 @@ type Props = {
     quantity: number;
     condition: "RESELLABLE" | "DAMAGED";
     outputVariantId?: string | null;
+    outputQuantity?: number;
     chargePayments: Array<{
       method_code: "CASH" | "CARD" | "TRANSFER";
       amount_cents: number;
@@ -66,6 +70,9 @@ export function ReturnExchangeDialog({
   const [mode, setMode] = useState<"RETURN" | "EXCHANGE">("RETURN");
   const [itemId, setItemId] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [outputQuantity,setOutputQuantity]=useState(1);
+  const [inputQuantityValid, setInputQuantityValid] = useState(true);
+  const [outputQuantityValid, setOutputQuantityValid] = useState(true);
   const [condition, setCondition] = useState<"RESELLABLE" | "DAMAGED">(
     "RESELLABLE",
   );
@@ -96,7 +103,7 @@ export function ReturnExchangeDialog({
     ? selectedReturnValue(selectedItem, quantity)
     : 0;
   const deliveredCents =
-    mode === "EXCHANGE" ? (selectedOutput?.priceCents ?? 0) : 0;
+    mode === "EXCHANGE" && selectedOutput ? measureLineCents(selectedOutput.priceCents,outputQuantity,quantityUnit(selectedOutput))??0 : 0;
   const differenceCents = deliveredCents - returnedCents;
   const debtReductionCents =
     differenceCents < 0
@@ -119,9 +126,9 @@ export function ReturnExchangeDialog({
       setSale(prepared.sale);
       setSessionId(prepared.cashSessionId);
       const first = prepared.sale.items.find(
-        (item) => Number(item.remaining_quantity) >= 1,
+        (item) => Number(item.remaining_quantity) > 0,
       );
-      if (first) setItemId(first.sale_item_id);
+      if (first) {setItemId(first.sale_item_id);setQuantity(Math.min(1,Number(first.remaining_quantity)));}
     });
     return () => {
       active = false;
@@ -143,6 +150,9 @@ export function ReturnExchangeDialog({
   }
 
   async function submit() {
+    if (!inputQuantityValid || (mode === "EXCHANGE" && !outputQuantityValid)) {
+      setError("Corrige las cantidades antes de autorizar la operación."); return;
+    }
     if (
       !sale ||
       !selectedItem ||
@@ -172,6 +182,7 @@ export function ReturnExchangeDialog({
       quantity,
       condition,
       outputVariantId: mode === "EXCHANGE" ? selectedOutput?.id : null,
+      outputQuantity: mode==='EXCHANGE'?outputQuantity:undefined,
       chargePayments:
         differenceCents > 0
           ? [
@@ -195,7 +206,11 @@ export function ReturnExchangeDialog({
     });
     setBusy(false);
     setManagerPin("");
-    if (!created.ok) return setError(created.message);
+    if (!created.ok) {
+      void publishWorkspaceNotification({ title: "Revisa el cambio o devolución", message: created.message, locationId: sale.location_id, kind: "error" });
+      return setError(created.message);
+    }
+    void publishWorkspaceNotification({ id: `return:${created.id}`, title: created.type === "RETURN" ? "Devolución registrada" : "Cambio registrado", message: `Documento ${created.folio} guardado.`, locationId: sale.location_id, kind: "success" });
     setResult(created);
   }
 
@@ -325,7 +340,7 @@ export function ReturnExchangeDialog({
               </div>
               <div className="exchange-item-list">
                 {sale.items
-                  .filter((item) => Number(item.remaining_quantity) >= 1)
+                  .filter((item) => Number(item.remaining_quantity) > 0)
                   .map((item) => (
                     <button
                       className={
@@ -337,7 +352,9 @@ export function ReturnExchangeDialog({
                       key={item.sale_item_id}
                       onClick={() => {
                         setItemId(item.sale_item_id);
-                        setQuantity(1);
+                        setQuantity(Math.min(1,Number(item.remaining_quantity)));
+                        setInputQuantityValid(true);
+                        setOutputQuantityValid(true);
                         setOutputId("");
                       }}
                     >
@@ -352,7 +369,7 @@ export function ReturnExchangeDialog({
                           {money.format(unitExchangeValue(item) / 100)}
                         </strong>
                         <small>
-                          {Number(item.remaining_quantity)} disponible(s)
+                          {Number(item.remaining_quantity)} {quantityUnit(item).name} disponible(s)
                         </small>
                       </span>
                     </button>
@@ -362,7 +379,7 @@ export function ReturnExchangeDialog({
                 <div className="return-item-options">
                   <label>
                     <span>Cantidad</span>
-                    <select
+                    {quantityUnit(selectedItem).decimal_places===3?<MeasureQuantityInput key={selectedItem.sale_item_id} value={quantity} unit={quantityUnit(selectedItem)} maximum={Number(selectedItem.remaining_quantity)} label="Cantidad a devolver" onValue={setQuantity} onValidity={setInputQuantityValid}/>:<select
                       value={quantity}
                       onChange={(event) =>
                         setQuantity(Number(event.target.value))
@@ -376,7 +393,7 @@ export function ReturnExchangeDialog({
                           </option>
                         ),
                       )}
-                    </select>
+                    </select>}
                   </label>
                   <label>
                     <span>Estado</span>
@@ -444,7 +461,7 @@ export function ReturnExchangeDialog({
                       }
                       type="button"
                       key={variant.id}
-                      onClick={() => setOutputId(variant.id)}
+                      onClick={() => {setOutputId(variant.id);setOutputQuantity(Math.min(1,variant.stock));setOutputQuantityValid(true);}}
                     >
                       <span>
                         <strong>{variant.productName}</strong>
@@ -463,6 +480,9 @@ export function ReturnExchangeDialog({
                     </button>
                   ))}
                 </div>
+                {selectedOutput ? <label className="return-item-options">Cantidad a entregar ({quantityUnit(selectedOutput).name})
+                  <MeasureQuantityInput key={selectedOutput.id} value={outputQuantity} unit={quantityUnit(selectedOutput)} maximum={selectedOutput.stock} label="Cantidad a entregar" onValue={setOutputQuantity} onValidity={setOutputQuantityValid}/>
+                </label>:null}
               </section>
             ) : null}
             {selectedItem && (mode === "RETURN" || selectedOutput) ? (
@@ -512,7 +532,7 @@ export function ReturnExchangeDialog({
                     {sale.payments.map((payment) => (
                       <label key={payment.method_code}>
                         <span>
-                          {payment.method_name} · hasta{" "}
+                          {payment.method_code === 'USD' ? 'Dólares · devolución en pesos a tasa original' : payment.method_name} · hasta{" "}
                           {money.format(Number(payment.amount_cents) / 100)}
                         </span>
                         {payment.requires_reference ? (
@@ -636,6 +656,7 @@ export function ReturnExchangeDialog({
               type="button"
               disabled={
                 busy ||
+                !inputQuantityValid || (mode === "EXCHANGE" && !outputQuantityValid) ||
                 !sale?.within_window ||
                 !selectedItem ||
                 (mode === "EXCHANGE" && !selectedOutput) ||

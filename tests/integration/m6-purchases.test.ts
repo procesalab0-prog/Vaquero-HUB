@@ -27,6 +27,20 @@ function publicClient() {
   });
 }
 
+async function currentVariantCost() {
+  const result = await state.manager!.client.rpc("search_catalog", {
+    p_query: runCode,
+    p_limit: 10,
+  });
+  expect(result.error).toBeNull();
+  const variant = result.data.find(
+    (row: { variant_id: string }) => row.variant_id === state.variantId,
+  );
+  expect(variant).toBeDefined();
+  expect(variant.cost_cents).not.toBeNull();
+  return Number(variant.cost_cents);
+}
+
 describe.sequential("M6: compras, proveedores y recepción", () => {
   beforeAll(async () => {
     const server = createClient(url, secretKey, {
@@ -116,7 +130,7 @@ describe.sequential("M6: compras, proveedores y recepción", () => {
     state.supplierId = supplier.data;
   }, 30_000);
 
-  it("una orden no mueve inventario", async () => {
+  it("una orden no mueve inventario ni modifica el costo", async () => {
     const order = await state.manager!.client.rpc("create_purchase_order", {
       p_supplier_id: state.supplierId,
       p_location_id: state.locationId,
@@ -140,6 +154,7 @@ describe.sequential("M6: compras, proveedores y recepción", () => {
       p_limit: 10,
     });
     expect(Number(snapshot.data[0].qty)).toBe(0);
+    expect(await currentVariantCost()).toBe(10000);
   });
 
   it("una recepción parcial mueve exactamente lo recibido", async () => {
@@ -157,6 +172,7 @@ describe.sequential("M6: compras, proveedores y recepción", () => {
       p_limit: 10,
     });
     expect(Number(snapshot.data[0].qty)).toBe(4);
+    expect(await currentVariantCost()).toBe(12000);
     const orders = await state.manager!.client.rpc("list_purchase_orders", {
       p_location_id: state.locationId,
       p_limit: 10,
@@ -186,6 +202,50 @@ describe.sequential("M6: compras, proveedores y recepción", () => {
       p_limit: 10,
     });
     expect(Number(snapshot.data[0].qty)).toBe(8);
+  });
+
+  it("pondera una recepción parcial y un replay no cambia el costo", async () => {
+    const oldCost = await currentVariantCost();
+    const order = await state.manager!.client.rpc("create_purchase_order", {
+      p_supplier_id: state.supplierId,
+      p_location_id: state.locationId,
+      p_items: [
+        { variant_id: state.variantId, qty: 2, unit_cost_cents: 20000 },
+      ],
+      p_expected_at: null,
+      p_notes: null,
+    });
+    expect(order.error).toBeNull();
+    const item = await state
+      .manager!.client.from("purchase_items")
+      .select("id")
+      .eq("purchase_order_id", order.data.id)
+      .single();
+    expect(item.error).toBeNull();
+    const input = {
+      p_order_id: order.data.id,
+      p_items: [{ purchase_item_id: item.data!.id, qty: 1 }],
+      p_idempotency_key: crypto.randomUUID(),
+      p_notes: null,
+    };
+    expect(
+      (await state.warehouse!.client.rpc("receive_purchase_order", input))
+        .error,
+    ).toBeNull();
+    expect(
+      (await state.warehouse!.client.rpc("receive_purchase_order", input))
+        .error,
+    ).toBeNull();
+    expect(await currentVariantCost()).toBe(
+      Math.round((8 * oldCost + 20000) / 9),
+    );
+    const stock = await state.manager!.client.rpc("get_inventory_snapshot", {
+      p_location_id: state.locationId,
+      p_query: runCode,
+      p_limit: 10,
+    });
+    expect(stock.error).toBeNull();
+    expect(Number(stock.data[0].qty)).toBe(9);
   });
 
   it("el cajero no puede leer ni crear compras", async () => {
