@@ -28,3 +28,6 @@ Las preguntas con opción múltiple ya funcionan en Preview, de tres en tres. El
 Evidencia en `outputs/m9-escritor-fotos-variantes-2026-10-07/` del workspace principal: script reproducible de sólo lectura, corrida-1/2, comparación, controles PHP, conservación de staging y captura de opciones. Comando del ensayo: `node scripts/m9/woo-remote/test-variant-photo-write.mjs ../m9-woo-runtime`. El runtime y la credencial privada deben existir; no se empaquetan ni se imprimen secretos.
 
 Cero modificaciones en Woo de pruebas o producción, cero escrituras Supabase, sin existencias/pedidos/pagos, sin despliegue ni merge. Preview permanece0.78.0. Sol suficiente para este bloque; Astra para inventario operativo, pedidos/devoluciones y auditoría final.
+
+
+Actualización 7 de octubre: preparación seguida de instalación y ensayo real completado para las dos familias; estado actual en [M9_COLA_FOTOS_VARIANTES.md](M9_COLA_FOTOS_VARIANTES.md). No extender la afirmación a otras familias.
