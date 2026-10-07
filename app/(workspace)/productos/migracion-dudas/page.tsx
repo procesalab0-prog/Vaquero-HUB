@@ -114,7 +114,7 @@ export default async function OwnerQuestionsPage({
     error: "No se confirmó el guardado. Revisa tu permiso e intenta de nuevo.",
   };
   return (
-    <section className={styles.review}>
+    <section className={`${styles.review} ${styles.questions}`}>
       <header>
         <Link href="/productos/migracion-pendientes">
           ← Catálogo por revisar
@@ -130,14 +130,8 @@ export default async function OwnerQuestionsPage({
             : ""}
         </p>
         <p>
-          Las demás preguntas se enviarán después. No necesitas revisar todo el
-          catálogo: contesta sólo estas tarjetas. «No lo sé todavía» conserva la
-          pregunta pendiente para consultarla.
-        </p>
-        <p>
-          Son propuestas del último archivo recibido. Responder registra su
-          aclaración; después contrastaremos los datos. No aprueba una
-          importación ni cambia códigos, precios o existencias.
+          Responde sólo estas tarjetas. Las demás preguntas se enviarán después.
+          «No lo sé todavía» deja la pregunta pendiente para consultarla.
         </p>
       </header>
       {messages[value("resultado")] && (
@@ -202,7 +196,10 @@ export default async function OwnerQuestionsPage({
               {item.department} · {item.members.length} tallas/códigos
             </p>
             <h3>{item.question}</h3>
-            <p>{item.help}</p>
+            <p>
+              Si también cambia el color, la línea o el modelo, elige «Hay algo
+              que corregir» y explica la diferencia.
+            </p>
             <p>
               <strong>Ejemplos:</strong>{" "}
               {item.members
