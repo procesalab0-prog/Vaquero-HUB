@@ -112,6 +112,7 @@ test("el rechazo queda encima del modal y no mezcla avisos de otra sucursal", as
   await page.goto("/pos");
   const mobileCart = page.locator(".mobile-cart-toggle");
   if (await mobileCart.isVisible()) await mobileCart.click();
+  await page.locator(".sale-tools summary").click();
   await page
     .getByRole("button", { name: "Producto rápido", exact: true })
     .click();

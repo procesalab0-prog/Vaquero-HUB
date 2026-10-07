@@ -10,6 +10,9 @@ export const ACCENT_COLORS: Record<string, string> = {
   vino: "#8E2A1C",
   cuero: "#9A5D32",
   noche: "#241E1B",
+  mezclilla: "#244F73",
+  bosque: "#305541",
+  cobre: "#8A461F",
 };
 
 function mix(hex: string, factor: number, towards: number) {

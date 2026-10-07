@@ -11,18 +11,28 @@ import {
   ArrowLeft,
   Boxes,
   CircleDollarSign,
-  Grid2X2,
   House,
   LogOut,
   MapPin,
   Menu,
-  Package,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ChevronDown,
+  ReceiptText,
+  Users,
+  CalendarClock,
+  FileText,
+  Truck,
+  Tags,
+  ChartNoAxesCombined,
+  Settings,
   ShoppingCart,
   X,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { WesternBootIcon, WesternHatIcon, WesternBadgeIcon, type WorkspaceIcon } from "@/components/vaquero-icons";
 import type { WorkspaceIdentity } from "@/lib/auth/types";
 import { WorkspaceContext } from "@/components/workspace-context";
+import { WorkspaceModuleMenu } from "@/components/workspace-module-menu";
 import { LA_PIEDAD_STORE } from "@/lib/business-profile";
 import { pickActiveLocation, saveActiveLocationPreference } from "@/lib/location-preference";
 import { WORKSPACE_NOTIFICATION_EVENT, type WorkspaceNotification } from "@/lib/workspace-notifications";
@@ -30,15 +40,15 @@ import { WORKSPACE_NOTIFICATION_EVENT, type WorkspaceNotification } from "@/lib/
 const navigation: Array<{
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon: WorkspaceIcon;
   secondary?: boolean;
 }> = [
   { href: "/inicio", label: "Inicio", icon: House },
   { href: "/pos", label: "Venta", icon: ShoppingCart },
-  { href: "/productos", label: "Productos", icon: Package },
+  { href: "/productos", label: "Productos", icon: WesternBootIcon },
   { href: "/inventario", label: "Inventario", icon: Boxes },
   { href: "/caja", label: "Caja", icon: CircleDollarSign },
-  { href: "/mas", label: "Más", icon: Grid2X2 },
+  { href: "/mas", label: "Más", icon: WesternHatIcon },
 ];
 
 const demoIdentity: WorkspaceIdentity = {
@@ -50,6 +60,18 @@ const demoIdentity: WorkspaceIdentity = {
   locations: [LA_PIEDAD_STORE],
   openCashSession: { locationId: LA_PIEDAD_STORE.id, registerName: "Caja 01" },
 };
+
+const moreNavigation: Array<{ path: string; title: string; icon: WorkspaceIcon; tone: string }> = [
+  { path: "/tickets", title: "Tickets y devoluciones", icon: ReceiptText, tone: "sand" },
+  { path: "/clientes", title: "Clientes", icon: Users, tone: "blue" },
+  { path: "/apartados", title: "Apartados", icon: CalendarClock, tone: "gold" },
+  { path: "/cotizaciones", title: "Cotizaciones", icon: FileText, tone: "blue" },
+  { path: "/compras", title: "Compras y proveedores", icon: Truck, tone: "green" },
+  { path: "/etiquetas", title: "Etiquetas", icon: Tags, tone: "sand" },
+  { path: "/reportes", title: "Reportes", icon: ChartNoAxesCombined, tone: "green" },
+  { path: "/administracion", title: "Usuarios y permisos", icon: WesternBadgeIcon, tone: "gold" },
+  { path: "/ajustes", title: "Ajustes y apariencia", icon: Settings, tone: "sand" },
+];
 
 function moduleTitle(pathname: string) {
   if (pathname.startsWith("/inicio")) return "Inicio";
@@ -87,6 +109,7 @@ export function WorkspaceShell({
   const [profileOpen, setProfileOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(true);
+  const [navigationCompact, setNavigationCompact] = useState(false);
   const activeIdentity = identity ?? demoIdentity;
   const activeLocation = pickActiveLocation(
     activeIdentity.locations,
@@ -194,7 +217,7 @@ export function WorkspaceShell({
   }
 
   return (
-    <div className="workspace-shell">
+    <div className={`workspace-shell workspace-redesign${navigationCompact ? " navigation-compact" : ""}`}>
       <aside className="nav-rail" aria-label="Navegación principal">
         <Link
           className="rail-brand"
@@ -209,7 +232,12 @@ export function WorkspaceShell({
             priority
           />
         </Link>
-        <nav className="rail-links">
+        <span className="rail-wordmark">Mi Tienda <small>VAQUERO SM · LA ESENCIA ESTÁ AQUÍ</small></span>
+        <button className="rail-collapse" type="button" aria-label={navigationCompact ? "Ampliar navegación" : "Contraer navegación"} aria-expanded={!navigationCompact} aria-controls="workspace-navigation" onClick={() => setNavigationCompact((value) => !value)}>
+          {navigationCompact ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
+          <span>Contraer menú</span>
+        </button>
+        <nav className="rail-links" id="workspace-navigation">
           {navigation.map(({ href, label, icon: Icon }) => {
             const morePath = [
               "/mas",
@@ -220,16 +248,42 @@ export function WorkspaceShell({
               "/ajustes",
               "/administracion",
               "/clientes",
+              "/compras",
+              "/reportes",
             ];
             const active =
               href === "/mas"
                 ? morePath.some((path) => pathname.startsWith(path))
                 : pathname.startsWith(href);
+            if (href === "/mas") return (
+              <details className="rail-more" key={label}>
+                <summary className={active ? "rail-link active" : "rail-link"} aria-label="Más opciones" title="Más opciones" onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  const details = event.currentTarget.closest("details");
+                  if (details) details.open = false;
+                  event.currentTarget.focus();
+                }
+              }}>
+                  <WesternHatIcon /><span>Más</span><ChevronDown className="rail-more-chevron" aria-hidden="true" />
+                </summary>
+                <div className="rail-submenu">
+                  <div className="rail-submenu-heading"><p className="rail-submenu-title">Todo en tu tienda</p><button type="button" aria-label="Cerrar más opciones" onClick={(event) => { const details = event.currentTarget.closest("details"); if (details) { details.open = false; details.querySelector("summary")?.focus(); } }}><X aria-hidden="true" /></button></div>
+                  {moreNavigation.map(({path, title, icon: Icon, tone}) => <Link key={path} href={locationHref(path)} aria-current={pathname.startsWith(path) ? "page" : undefined} onClick={(event) => {
+                    const details = event.currentTarget.closest("details");
+                    if (details) details.open = false;
+                  }}><span className={`rail-module-icon ${tone}`}><Icon aria-hidden="true" strokeWidth={1.8} /></span><span>{title}</span></Link>)}
+                  <Link className="rail-all-modules" href={locationHref("/mas")} onClick={(event) => { const details = event.currentTarget.closest("details"); if (details) details.open = false; }}>Ver todos los módulos</Link>
+                </div>
+              </details>
+            );
             return (
               <Link
                 className={active ? "rail-link active" : "rail-link"}
                 href={locationHref(href)}
                 key={label}
+                aria-label={label}
+                aria-current={active ? "page" : undefined}
+                title={label}
               >
                 <Icon aria-hidden="true" strokeWidth={1.8} />
                 <span>{label}</span>
@@ -300,6 +354,7 @@ export function WorkspaceShell({
             En línea
           </div>
           <div className="topbar-actions">
+            <WorkspaceModuleMenu locationId={activeLocationId} />
             <button
               className="icon-button notification-trigger"
               type="button"

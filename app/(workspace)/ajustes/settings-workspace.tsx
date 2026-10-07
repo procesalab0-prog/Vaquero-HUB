@@ -17,6 +17,7 @@ import { useWorkspace } from "@/components/workspace-context";
 import { BUSINESS_PROFILE, LA_PIEDAD_STORE } from "@/lib/business-profile";
 import {
   ACCENT_EVENT,
+  ACCENT_COLORS,
   ACCENT_STORAGE_KEY,
   applyAccent,
   storedAccent,
@@ -634,6 +635,7 @@ function AppearanceSettings({
         <button
           className={accent === "" ? "selected identidad" : "identidad"}
           type="button"
+          aria-pressed={accent === ""}
           onClick={() => setAccent("")}
         >
           <span />
@@ -643,6 +645,7 @@ function AppearanceSettings({
         <button
           className={accent === "vino" ? "selected vino" : "vino"}
           type="button"
+          aria-pressed={accent === "vino"}
           onClick={() => setAccent("vino")}
         >
           <span />
@@ -652,6 +655,7 @@ function AppearanceSettings({
         <button
           className={accent === "cuero" ? "selected cuero" : "cuero"}
           type="button"
+          aria-pressed={accent === "cuero"}
           onClick={() => setAccent("cuero")}
         >
           <span />
@@ -661,13 +665,25 @@ function AppearanceSettings({
         <button
           className={accent === "noche" ? "selected noche" : "noche"}
           type="button"
+          aria-pressed={accent === "noche"}
           onClick={() => setAccent("noche")}
         >
           <span />
           <strong>Noche</strong>
           <small>Alto contraste</small>
         </button>
+        {[
+          ["mezclilla", "Mezclilla", "Azul profundo"],
+          ["bosque", "Bosque", "Verde de campo"],
+          ["cobre", "Cobre", "Tierra y tradición"],
+        ].map(([value, label, description]) => (
+          <button key={value} className={accent === value ? "selected" : ""} type="button" aria-pressed={accent === value} onClick={() => setAccent(value)}>
+            <span style={{ background: ACCENT_COLORS[value] }} />
+            <strong>{label}</strong><small>{description}</small>
+          </button>
+        ))}
       </div>
+      <p className="appearance-hint">Tu paleta cambia la navegación, los botones y los detalles de la tienda. Se guarda en este dispositivo; no cambia los impresos.</p>
       <div className="settings-form">
         <label>
           <span>Tamaño del texto del programa</span>

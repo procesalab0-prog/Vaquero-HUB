@@ -1,4 +1,5 @@
 "use client";
+import { useSearchParams } from "next/navigation";
 
 import { INVENTORY_SNAPSHOT_LIMIT, summarizeInventory } from "@/lib/inventory-summary";
 import { groupInventory } from "@/lib/inventory-groups";
@@ -681,13 +682,17 @@ export function InventoryWorkspace({
   status?: string;
   preview?: boolean;
 }) {
+  const searchParams = useSearchParams();
+  const requestedCode = searchParams.get("codigo") ?? "";
   const inventorySummary = summarizeInventory(items);
   const { identity } = useWorkspace();
   const [showMovements, setShowMovements] = useState(false);
   const [showCounts, setShowCounts] = useState(false);
   const [showTransfers, setShowTransfers] = useState(initialShowTransfers && (canCreateTransfer || canApproveTransfer || canReceiveTransfer));
   const [adjusting, setAdjusting] = useState<InventoryItem | null>(null);
-  const [query, setQuery] = useState("");
+  const [searchDraft, setSearchDraft] = useState({ source: requestedCode, value: requestedCode });
+  const query = searchDraft.source === requestedCode ? searchDraft.value : requestedCode;
+  const setQuery = (value: string) => setSearchDraft({ source: requestedCode, value });
   const [filter, setFilter] = useState("all");
   const [expandAll, setExpandAll] = useState(false);
   const deferredQuery = useDeferredValue(query);
@@ -844,6 +849,7 @@ export function InventoryWorkspace({
           ].map(([value, label]) => (
             <button
               className={filter === value ? "selected" : ""}
+              aria-pressed={filter === value}
               type="button"
               onClick={() => setFilter(value)}
               key={value}
@@ -871,7 +877,7 @@ export function InventoryWorkspace({
             open={expandAll || Boolean(deferredQuery.trim()) || filter !== "all"}>
             <summary>
               <strong>{group.name}<small>{group.brand}</small></strong>
-              <span>{group.items.length} variantes{deferredQuery.trim() || filter !== "all" ? " coincidentes" : ""}</span>
+              <span>{group.items.length} variantes{deferredQuery.trim() || filter !== "all" ? " coincidentes" : ""}<small className="inventory-group-health">{group.items.filter(item => item.availableQuantity <= 0).length} agotadas · {group.items.filter(item => item.reservedQuantity > 0).length} con reserva</small></span>
             </summary>
         {group.items.map((item) => {
           const tone =

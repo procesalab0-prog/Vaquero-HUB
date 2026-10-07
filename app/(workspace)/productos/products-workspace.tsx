@@ -3,7 +3,8 @@ import { QuickSaleCatalog, type QuickSaleListResult, type QuickSaleSnapshot } fr
 
 import Image from "next/image";
 import Link from "next/link";
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useWorkspace } from "@/components/workspace-context";
+import { Fragment, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   Barcode,
@@ -184,6 +185,8 @@ export function ProductsWorkspace({
   setProductUnitAction,
   quickSaleListAction,
 }: Props) {
+  const { activeLocation } = useWorkspace();
+  const inventoryHref = (code: string) => `/inventario?${new URLSearchParams({ codigo: code, ...(activeLocation ? { ubicacion: activeLocation.id } : {}) })}`;
   const availableCategories = categories.length
     ? categories
     : previewCategories;
@@ -191,6 +194,7 @@ export function ProductsWorkspace({
     ? attributeValues
     : previewValues;
   const [variants, setVariants] = useState(initialVariants);
+  const [expandedVariantIds, setExpandedVariantIds] = useState<string[]>([]);
   const [modalMode, setModalMode] = useState<ModalMode | null>(null);
   const [quickSeed, setQuickSeed] = useState<QuickSaleSnapshot | null>(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -311,6 +315,16 @@ export function ProductsWorkspace({
   const selectedVariants = variants.filter((variant) =>
     selectedVariantIds.includes(variant.id),
   );
+  const variantFamilies = useMemo(() => {
+    const families = new Map<string, ProductVariant[]>();
+    for (const item of variants) {
+      const key = item.productId ?? `${item.brand}:${item.productName}`;
+      const family = families.get(key) ?? [];
+      family.push(item);
+      families.set(key, family);
+    }
+    return families;
+  }, [variants]);
   const allVisibleSelected =
     filteredVariants.length > 0 &&
     filteredVariants.every((variant) =>
@@ -790,6 +804,7 @@ export function ProductsWorkspace({
           {canEdit ? <span>Acciones</span> : null}
         </div>
         {filteredVariants.map((item) => (
+          <Fragment key={item.id}>
           <div
             className={`table-row selectable${canEdit ? " editable" : ""}`}
             key={item.id}
@@ -812,13 +827,17 @@ export function ProductsWorkspace({
                   <PackageOpen aria-hidden="true" />
                 )}
               </span>
+              <button type="button" className="catalog-inline-detail" aria-expanded={expandedVariantIds.includes(item.id)} aria-controls={`family-${item.id}`} onClick={() => {
+                setExpandedVariantIds(current => current.includes(item.id) ? current.filter(id => id !== item.id) : [...current, item.id]);
+              }}>
               <strong>
                 {item.productName}
                 {item.isActive === false ? (
                   <em className="variant-inactive">Dada de baja</em>
                 ) : null}
                 <small>{item.brand}</small>
-              </strong>
+              </strong><span>{expandedVariantIds.includes(item.id) ? "▾ Ocultar variantes" : "▸ Ver variantes"}</span>
+              </button>
             </div>
             <code>{item.legacyCode}</code>
             <span>
@@ -827,7 +846,7 @@ export function ProductsWorkspace({
             <span>{money.format(item.price)}</span>
             <Link
               className="text-button"
-              href="/inventario"
+              href={inventoryHref(item.legacyCode)}
               aria-label={`Consultar inventario de ${item.productName}, ${item.color}, talla ${item.size}`}
             >
               Consultar
@@ -844,6 +863,15 @@ export function ProductsWorkspace({
               </button>
             ) : null}
           </div>
+          {expandedVariantIds.includes(item.id) ? <div id={`family-${item.id}`} className="catalog-variant-list" role="region" aria-label={`Variantes de ${item.productName}`}>
+            {(variantFamilies.get(item.productId ?? `${item.brand}:${item.productName}`) ?? []).map(option => <div key={option.id}>
+              <strong>{option.color} · {option.size}</strong>
+              <code>{option.legacyCode}</code>
+              <span>{money.format(option.price)}{option.isActive === false ? " · Baja" : ""}</span>
+              <Link href={inventoryHref(option.legacyCode)}>Ver existencias</Link>
+            </div>)}
+          </div> : null}
+          </Fragment>
         ))}
         {filteredVariants.length === 0 ? (
           <div className="admin-empty">

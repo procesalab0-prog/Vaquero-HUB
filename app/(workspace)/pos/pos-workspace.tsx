@@ -155,19 +155,26 @@ const frequentCategories = [
 const EMPTY_POS_DRAFTS: PosDraftPayload[] = [];
 
 function ProductCard({
-  variant,
+  options,
+  quantities,
   onAdd,
 }: {
-  variant: ProductVariant;
-  onAdd: () => void;
+  options: ProductVariant[];
+  quantities: Map<string, number>;
+  onAdd: (variant: ProductVariant) => void;
 }) {
-  const soldOut = initialCartQuantity(variant) === 0 || variant.isActive === false;
+  const [selectedId, setSelectedId] = useState(options[0].id);
+  const variant = options.find((option) => option.id === selectedId) ?? options[0];
+  const inCart = quantities.get(variant.id) ?? 0;
+  const soldOut = initialCartQuantity(variant) === 0 || variant.isActive === false || inCart >= variant.stock;
   return (
+    <article className="pos-product-family">
     <button
       className="product-card"
       type="button"
       disabled={soldOut}
-      onClick={onAdd}
+      onClick={() => onAdd(variant)}
+      aria-label={`Agregar ${variant.productName}, ${variant.color}, talla ${variant.size}`}
     >
       <span className="product-card-media">
         {variant.image ? (
@@ -183,7 +190,7 @@ function ProductCard({
             <small>Foto pendiente</small>
           </>
         )}
-        {soldOut ? <em>Agotado</em> : null}
+        {soldOut ? <em>{inCart > 0 ? "Todo en carrito" : "Agotado"}</em> : null}
       </span>
       <span className="product-card-copy">
         <strong>{variant.productName}</strong>
@@ -197,8 +204,18 @@ function ProductCard({
             {variant.stock === 1 ? "Última" : `${variant.stock} pzas`}
           </small>
         </span>
+        {inCart > 0 ? <small className="product-in-cart">✓ {inCart} en carrito</small> : null}
       </span>
     </button>
+    {options.length > 1 ? <div className="pos-variant-picker" role="group" aria-label={`Variantes de ${variant.productName}`}>
+      <span>Elige color y talla · después agrega</span>
+      {options.map((option) => <button type="button" key={option.id} aria-pressed={option.id === variant.id}
+        onClick={() => setSelectedId(option.id)}>
+        <strong>{option.size || "Única"}</strong><small>{option.color || "Sin color"}</small>
+        <small>{option.stock <= 0 ? "Agotado" : money.format(option.price)}</small>
+      </button>)}
+    </div> : null}
+    </article>
   );
 }
 
@@ -777,6 +794,18 @@ export function PosWorkspace({
         .includes(term),
     );
   }, [activeCategory, query, showCatalog, variants]);
+
+  const resultFamilies = useMemo(() => {
+    const families = new Map<string, ProductVariant[]>();
+    for (const variant of results) {
+      const key = variant.productId ?? `${variant.brand}:${variant.productName}`;
+      const family = families.get(key) ?? [];
+      family.push(variant);
+      families.set(key, family);
+    }
+    return [...families.entries()];
+  }, [results]);
+  const cartQuantities = useMemo(() => new Map(cart.map((line) => [line.variant.id, line.quantity])), [cart]);
 
   const subtotal = activeQuote?.pricing ? Number(activeQuote.pricing.subtotal_cents) / 100 : cart.reduce(
     (sum, line) => sum + cartLineCents(line)/100,
@@ -1751,10 +1780,11 @@ export function PosWorkspace({
           <button
             className="catalog-button"
             type="button"
+            aria-label="Catálogo"
             onClick={() => setShowCatalog(true)}
           >
             <ListFilter aria-hidden="true" strokeWidth={1.8} />
-            Catálogo
+            <span>Catálogo</span>
           </button>
         </div>
 
@@ -1778,7 +1808,7 @@ export function PosWorkspace({
               <div className="catalog-results-heading">
                 <div>
                   <span>Catálogo</span>
-                  <strong>{results.length} resultados</strong>
+                  <strong>{resultFamilies.length} productos · {results.length} variantes</strong>
                 </div>
                 <button
                   type="button"
@@ -1792,11 +1822,12 @@ export function PosWorkspace({
                 </button>
               </div>
               <div className="product-grid">
-                {results.map((variant) => (
+                {resultFamilies.map(([familyId, options]) => (
                   <ProductCard
-                    key={variant.id}
-                    variant={variant}
-                    onAdd={() => addVariant(variant)}
+                    key={`${familyId}:${options.map(option => option.id).join(",")}`}
+                    options={options}
+                    quantities={cartQuantities}
+                    onAdd={addVariant}
                   />
                 ))}
               </div>
@@ -1878,6 +1909,8 @@ export function PosWorkspace({
           </button>
         </header>
 
+        <details className="sale-tools">
+          <summary>Herramientas de venta <span>Espera · producto rápido · más</span></summary>
         <div className="draft-toolbar">
           {canAccessTransfers ? (
             <button
@@ -1921,6 +1954,7 @@ export function PosWorkspace({
           </button>
           {draftStatus ? <small role="status">{draftStatus}</small> : null}
         </div>
+        </details>
 
         <button
           className={
@@ -2059,9 +2093,27 @@ export function PosWorkspace({
               setCheckoutOpen(true);
             }}
           >
+            <Image className="pay-brand" src="/brand/emblema-blanco.png" alt="" width={40} height={28} />
             Cobrar
             <ChevronRight aria-hidden="true" />
           </button>
+          <div className="quick-payment-actions" role="group" aria-label="Accesos rápidos de cobro">
+            {([
+              { method: "cash", label: "Efectivo", Icon: Banknote },
+              { method: "card", label: "Tarjeta", Icon: CreditCard },
+              { method: "transfer", label: "Transfer.", Icon: Landmark },
+              { method: "split", label: "Dividido", Icon: ArrowRightLeft },
+            ] as const).map(({ method, label, Icon }) => <button key={method} className={`quick-pay-${method}`} type="button" aria-label={`Cobrar con ${method === "transfer" ? "transferencia" : label.toLowerCase()}`} disabled={cart.length === 0 || draftBusy || hasInvalidQuantity || submitting} onClick={() => {
+              setCashMode(method === "cash");
+              setSplitMode(method === "split");
+              setPaymentUsed(method === "split" ? "cash" : method);
+              setCashInput("");
+              setPaymentReference("");
+              setSaleError("");
+              setCartDrawerOpen(false);
+              setCheckoutOpen(true);
+            }}><Icon aria-hidden="true" /><span>{label}</span></button>)}
+          </div>
           {hasInvalidQuantity ? <p role="alert">Revisa las cantidades: deben ser positivas, no superar existencias y tener hasta tres decimales.</p> : null}
           <div className="sale-extras">
             <button

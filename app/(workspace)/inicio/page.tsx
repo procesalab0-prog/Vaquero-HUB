@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { AlertTriangle, ArrowRight, CircleDollarSign, PackagePlus, PackageCheck, ShoppingCart, Store, Tags } from "lucide-react";
 import { resolveActiveLocation } from "@/lib/auth/active-location";
 import { getWorkspaceSession } from "@/lib/auth/workspace-session";
@@ -84,6 +85,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   return <section className="module-page dashboard-page">
     <MigrationQuestions />
+    <div className="vaquero-welcome">
+      <div className="vaquero-welcome-copy"><span>VAQUERO SM</span><strong>La esencia está en los detalles.</strong><p>Tu equipo, tu tienda, tu día.</p></div>
+      <Image src="/brand/logo-vaquerosm-blanco.png" alt="Vaquero SM" width={210} height={140} priority />
+    </div>
     <div className="section-heading"><DashboardGreeting dateLabel={currentDateLabel()} /><Link className="primary-button" href={link("/pos")}><ShoppingCart aria-hidden="true" />Nueva venta</Link></div>
     {!configured ? <div className="notice-banner">Vista de demostración: las cifras reales aparecerán al conectar la tienda.</div> : null}
     {configured && !location ? <div className="inline-error" role="alert">Selecciona una sucursal para consultar sus datos.</div> : null}

@@ -126,7 +126,7 @@ for (const route of [
   test(`conserva ${route} dentro del teléfono vertical`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(route);
-    await expect(page.locator("main")).toBeVisible();
+    await expect(page.locator(".workspace-main")).toBeVisible();
     expect(
       await page.locator("html").evaluate((element) => element.scrollWidth),
     ).toBeLessThanOrEqual(390);

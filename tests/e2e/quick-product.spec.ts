@@ -15,6 +15,7 @@ for (const width of [390, 768, 1440]) {
     await search.press("Enter");
     const mobileCart = page.locator(".mobile-cart-toggle");
     if (await mobileCart.isVisible()) await mobileCart.click();
+    await page.locator(".sale-tools summary").click();
     await page
       .getByRole("button", { name: "Producto rápido", exact: true })
       .click();
