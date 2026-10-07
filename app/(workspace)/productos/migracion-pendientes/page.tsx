@@ -88,6 +88,7 @@ export default async function PendingPage({
         </p>
       </header>
       <form
+        key={href(result.page)}
         method="get"
         className={styles.filters}
         action="/productos/migracion-pendientes"
