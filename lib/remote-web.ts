@@ -1,6 +1,7 @@
 export type RemoteWebState = {
   enabled: boolean;
   eligible: boolean;
+  variant_photos_enabled?: boolean;
   reason?: string | null;
   job: null | {
     id: string;

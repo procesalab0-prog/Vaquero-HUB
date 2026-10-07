@@ -1,4 +1,5 @@
 import "server-only";
+import { processRemoteVariantPhotos } from "@/scripts/m9/woo-remote/process-variant-photos.mjs";
 import { prepareGalleryPush } from "@/scripts/m9/woo-remote/push-gallery.mjs";
 import { createHash } from "node:crypto";
 import { prepareGalleryPull } from "@/scripts/m9/woo-remote/pull-gallery.mjs";
@@ -19,6 +20,54 @@ export function remoteWebConfigured() {
     !!process.env.M9_REMOTE_WOO_PASSWORD &&
     !!process.env.SUPABASE_SECRET_KEY
   );
+}
+const variantPhotoPilots = new Set([
+  "97c82026-b3cc-4c60-8f22-13d7c00fb33a",
+  "ba239bba-7691-43cc-9c76-8768a1af9f21",
+]);
+export async function remoteVariantPhotosAvailable(parentId?: string) {
+  if (!parentId || !variantPhotoPilots.has(parentId) || !remoteWebConfigured())
+    return false;
+  try {
+    const client = remoteClient({
+      origin: TEST_ORIGIN,
+      username: process.env.M9_REMOTE_WOO_USERNAME!,
+      password: process.env.M9_REMOTE_WOO_PASSWORD!,
+    });
+    await client.variantPhotoWritePreflight();
+    return true;
+  } catch {
+    return false;
+  }
+}
+export async function pushRemoteVariantPhotos(productId: string) {
+  if (!remoteWebConfigured()) throw Error("REMOTE_NOT_CONFIGURED");
+  const { userId, supabase } = await requirePermission("products.update");
+  const status = await supabase.rpc("read_remote_web", {
+    p_product_id: productId,
+  });
+  const parent = status.data?.job?.id;
+  if (
+    status.error ||
+    status.data?.job?.state !== "SUCCEEDED" ||
+    !variantPhotoPilots.has(parent)
+  )
+    throw Error("VARIANT_PHOTO_PILOT_ONLY");
+  const admin = createAdminClient();
+  return processRemoteVariantPhotos({
+    parentId: parent,
+    actorId: userId,
+    rpc: async (name: string, params: Record<string, unknown>) => {
+      const result = await admin.rpc(name, params);
+      if (result.error) throw Error("VARIANT_PHOTO_DATABASE_REVIEW");
+      return result.data;
+    },
+    client: remoteClient({
+      origin: TEST_ORIGIN,
+      username: process.env.M9_REMOTE_WOO_USERNAME!,
+      password: process.env.M9_REMOTE_WOO_PASSWORD!,
+    }),
+  });
 }
 export async function processRemoteWeb(jobId: string) {
   if (!remoteWebConfigured()) throw new Error("REMOTE_NOT_CONFIGURED");

@@ -23,11 +23,17 @@ export function RemoteWebPanel({
   const [message, setMessage] = useState("");
   const request = useRef<string | null>(null);
   if (!state?.enabled) return null;
-  async function run(enqueue: boolean, pullPhotos = false, pushPhotos = false) {
+  async function run(
+    enqueue: boolean,
+    pullPhotos = false,
+    pushPhotos = false,
+    variantPhotos = false,
+  ) {
     setBusy(true);
     setMessage("");
     const form = new FormData();
     form.set("product_id", productId);
+    if (variantPhotos) form.set("operation", "push_variant_photos");
     if (pushPhotos) form.set("operation", "push_photos");
     if (pullPhotos) form.set("operation", "pull_photos");
     if (enqueue) {
@@ -39,7 +45,11 @@ export function RemoteWebPanel({
     }
     try {
       const result = await action(form);
-      if (result.remote) setState(result.remote);
+      if (result.remote)
+        setState({
+          ...result.remote,
+          variant_photos_enabled: state?.variant_photos_enabled,
+        });
       setMessage(result.error ?? result.message ?? "Estado actualizado.");
       if (result.refresh) router.refresh();
     } catch {
@@ -110,6 +120,21 @@ export function RemoteWebPanel({
             Cambios en ambos lados o fotos retiradas requieren revisión. Guarda
             primero la ficha y elige la dirección del cambio.
           </p>
+          {state.variant_photos_enabled && (
+            <>
+              <button
+                type="button"
+                disabled={busy || dirty}
+                onClick={() => run(false, false, false, true)}
+              >
+                Comprobar y enviar fotos por talla
+              </button>
+              <p>
+                Ensayo de las tallas revisadas. Conserva las que no tienen foto
+                propia y consulta la misma solicitud si se interrumpe el envío.
+              </p>
+            </>
+          )}
         </>
       )}
       {dirty && <p>Guarda los cambios de la ficha antes de enviar.</p>}

@@ -1,5 +1,8 @@
 import { readVariantPhotos } from "@/lib/variant-photos";
-import { remoteWebConfigured } from "@/lib/remote-web-server";
+import {
+  remoteWebConfigured,
+  remoteVariantPhotosAvailable,
+} from "@/lib/remote-web-server";
 import { remoteWebAction } from "./remote-actions";
 import Link from "next/link";
 import { requirePermission } from "@/lib/auth/authorization";
@@ -74,6 +77,9 @@ export default async function WebPage({
         p_product_id: draft.catalog.product_id,
       })
     : null;
+  if (remoteResult?.data)
+    remoteResult.data.variant_photos_enabled =
+      await remoteVariantPhotosAvailable(remoteResult.data.job?.id);
   return (
     <>
       {params.foto === "pendiente" && (

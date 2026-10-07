@@ -5,6 +5,7 @@ import {
   processRemoteWeb,
   pullRemotePhotos,
   pushRemotePhotos,
+  pushRemoteVariantPhotos,
 } from "@/lib/remote-web-server";
 import { revalidatePath } from "next/cache";
 import type { RemoteWebResult } from "@/lib/remote-web";
@@ -16,6 +17,18 @@ export async function remoteWebAction(
     if (!remoteWebConfigured()) throw new Error("REMOTE_NOT_CONFIGURED");
     const { supabase } = await requirePermission("products.read");
     const product = String(form.get("product_id"));
+    if (form.get("operation") === "push_variant_photos") {
+      try {
+        const message = await pushRemoteVariantPhotos(product);
+        revalidatePath("/productos/ficha-web");
+        return { message, refresh: true };
+      } catch {
+        return {
+          error:
+            "No se confirmó el envío de fotos por talla. Conserva la ficha y consulta de nuevo con este botón: recuperará la misma solicitud. Si la evidencia cambió, necesita revisión.",
+        };
+      }
+    }
     if (form.get("operation") === "pull_photos") {
       try {
         const message = await pullRemotePhotos(product);

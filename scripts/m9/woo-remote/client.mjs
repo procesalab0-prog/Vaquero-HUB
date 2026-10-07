@@ -30,12 +30,17 @@ export function remoteClient({
     requireValue(
       (method === "GET" &&
         (path === "isolation" ||
-          /^(receipts|galleries|gallery-updates|variant-photos)\/[0-9a-f-]{36}$/i.test(
+          /^(receipts|galleries|gallery-updates|variant-photos|variant-photo-assignments)\/[0-9a-f-]{36}$/i.test(
             path,
           ) ||
           /^photos\/[0-9a-f-]{36}\/[1-9][0-9]*$/i.test(path))) ||
         (method === "POST" &&
-          ["drafts", "families", "gallery-updates"].includes(path)),
+          [
+            "drafts",
+            "families",
+            "gallery-updates",
+            "variant-photo-assignments",
+          ].includes(path)),
       "REMOTE_OPERATION_FORBIDDEN",
     );
     const response = await transport(`${origin}/wp-json/m9-test/v1/${path}`, {
@@ -67,6 +72,32 @@ export function remoteClient({
   }
   return {
     preflight,
+    variantPhotoWritePreflight: async () => {
+      const state = await preflight();
+      requireValue(
+        state.variant_photo_write_protocol ===
+          "m9-remote-variant-photo-write-1",
+        "VARIANT_PHOTO_WRITER_UNAVAILABLE",
+      );
+      return state;
+    },
+    assignVariantPhotos: async (packet) => {
+      const { validateVariantPhotoPacket } =
+        await import("./variant-photo-packet.mjs");
+      validateVariantPhotoPacket(packet);
+      const state = await preflight();
+      requireValue(
+        state.variant_photo_write_protocol ===
+          "m9-remote-variant-photo-write-1",
+        "VARIANT_PHOTO_WRITER_UNAVAILABLE",
+      );
+      return call("POST", "variant-photo-assignments", packet);
+    },
+    variantPhotoReceipt: async (id) => {
+      requireValue(uuid.test(id), "INVALID_REQUEST_ID");
+      await preflight();
+      return call("GET", `variant-photo-assignments/${id}`);
+    },
     variantPhotos: async (id) => {
       requireValue(
         [
