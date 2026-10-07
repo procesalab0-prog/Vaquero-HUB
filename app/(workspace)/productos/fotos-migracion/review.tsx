@@ -5,10 +5,14 @@ export function GalleryMigration({
   items,
   buttonLabel = "Copiar fotos conciliadas",
   copyMigrationGallery,
+  variantCopies = false,
+  concurrency = 1,
 }: {
   buttonLabel?: string;
-  items: { id: string; name: string }[];
-  copyMigrationGallery: (
+  items: { id: string; name: string; done?: boolean }[];
+  variantCopies?: boolean;
+  concurrency?: number;
+  copyMigrationGallery?: (
     id: string,
   ) => Promise<{ ok: boolean; message: string }>;
 }) {
@@ -21,21 +25,45 @@ export function GalleryMigration({
     stop.current = false;
     setRunning(true);
     try {
-      for (const item of items) {
-        if (stop.current) break;
-        if (results[item.id]?.ok) continue;
-        let result;
-        try {
-          result = await copyMigrationGallery(item.id);
-        } catch {
-          result = {
-            ok: false,
-            message:
-              "No se confirmó el resultado. Puedes volver a comprobarlo sin duplicar archivos.",
-          };
+      let cursor = 0;
+      async function worker() {
+        while (cursor < items.length) {
+          const item = items[cursor++];
+          if (stop.current) break;
+          if (item.done || results[item.id]?.ok) continue;
+          let result;
+          try {
+            if (variantCopies) {
+              const response = await fetch("/api/productos/fotos-variantes", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ productId: item.id }),
+              });
+              if (!response.ok) throw Error("COPY_RESPONSE");
+              result = await response.json();
+              if (
+                typeof result.ok !== "boolean" ||
+                typeof result.message !== "string"
+              )
+                throw Error("COPY_RESPONSE");
+            } else if (copyMigrationGallery)
+              result = await copyMigrationGallery(item.id);
+            else throw Error("COPY_HANDLER");
+          } catch {
+            result = {
+              ok: false,
+              message:
+                "No se confirmó el resultado. Puedes volver a comprobarlo sin duplicar archivos.",
+            };
+          }
+          setResults((previous) => ({ ...previous, [item.id]: result }));
         }
-        setResults((previous) => ({ ...previous, [item.id]: result }));
       }
+      await Promise.all(
+        Array.from({ length: Math.max(1, Math.min(4, concurrency)) }, () =>
+          worker(),
+        ),
+      );
     } finally {
       setRunning(false);
     }
@@ -43,10 +71,16 @@ export function GalleryMigration({
   return (
     <>
       <p role="status">
-        {Object.values(results).filter((r) => r.ok).length} de {items.length}{" "}
-        productos comprobados.
+        {items.filter((item) => item.done || results[item.id]?.ok).length} de{" "}
+        {items.length} productos comprobados.
       </p>
-      <button type="button" disabled={running} onClick={run}>
+      <button
+        type="button"
+        disabled={
+          running || items.every((item) => item.done || results[item.id]?.ok)
+        }
+        onClick={run}
+      >
         {buttonLabel}
       </button>
       {running && (
@@ -56,7 +90,7 @@ export function GalleryMigration({
             stop.current = true;
           }}
         >
-          Detener después del producto actual
+          Detener después de los productos en curso
         </button>
       )}
       <ul>
@@ -65,7 +99,9 @@ export function GalleryMigration({
             <Link href={`/productos/ficha-web?producto=${item.id}`}>
               {item.name}
             </Link>{" "}
-            — {results[item.id]?.message ?? "Pendiente"}
+            —{" "}
+            {results[item.id]?.message ??
+              (item.done ? "Fotos ya guardadas en Mi Tienda." : "Pendiente")}
             {results[item.id] && !results[item.id].ok
               ? " · Revisión manual"
               : ""}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { copyMigrationGallery, copyVariantPhotos } from "./actions";
+import { copyMigrationGallery } from "./actions";
 import { requirePermission } from "@/lib/auth/authorization";
 import { WEB_STAGING_URL } from "@/lib/web-draft";
 import { GalleryMigration } from "./review";
@@ -62,16 +62,13 @@ export default async function Page() {
       ) : (
         <GalleryMigration
           buttonLabel="Copiar fotos de variantes"
-          copyMigrationGallery={copyVariantPhotos}
-          items={variants.data
-            .filter(
-              (r: { variants: number; copied: number }) =>
-                r.copied < r.variants,
-            )
-            .map((r: { product_id: string; name: string }) => ({
-              id: r.product_id,
-              name: r.name,
-            }))}
+          variantCopies
+          concurrency={4}
+          items={variants.data.map((r: Row) => ({
+            id: r.product_id,
+            name: r.name,
+            done: r.copied >= r.variants,
+          }))}
         />
       )}
     </section>
