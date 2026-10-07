@@ -76,3 +76,20 @@ Esta versión es candidata y no está publicada en main.
 Un Preview que herede la base compartida de M9 todavía no tiene este esquema:
 no usarlo para operaciones de aceptación hasta asignarle una base compatible.
 Las pruebas locales no autorizan importar existencias ni escribir en Woo real.
+
+## Corrección detectada al preparar la publicación
+
+La base alojada del principal tenía 95 migraciones. El ensayo local 95 → 123
+pasó también con las 171 pruebas Auth/PostgREST. Una función antigua alojada
+tenía el mismo comportamiento pero condiciones en una sola línea; el parche
+de producto rápido insertaba un comentario de línea que impedía compilarla.
+Se añade `20261007232704_quick_product_source_layout_compatibility.sql`:
+normaliza sólo esa definición reconocida, sin cambiar su comportamiento. En
+el principal se aplica antes de producto rápido; en reconstrucciones frescas
+se omite porque producto rápido ya está aplicado. Se probó la definición exacta
+alojada y el parche original en una transacción local revertida. No se editó
+ninguna migración heredada. El conjunto pasa a 124 migraciones.
+
+Las capturas del navegador ahora usan rutas propias de Playwright, compatibles
+con Linux y Mac. La primera CI falló sólo al guardar diez capturas en `/private/tmp`;
+la lógica de los 186 recorridos ya había pasado localmente.

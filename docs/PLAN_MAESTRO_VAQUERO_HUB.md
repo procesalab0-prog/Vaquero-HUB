@@ -3353,3 +3353,15 @@ Validación 0.55.5: revisión visual del icono; compilación de producción/Type
 - M9 continúa separado. Su integración posterior tiene siete archivos comunes;
   debe combinarse con tres vías, conservando fichas web, fotos, permisos, códigos
   heredados y datos. No sustituir su rama por esta candidata.
+
+### Publicación 0.56.0 — compatibilidad del esquema alojado
+
+- La base del principal tenía 95 migraciones, no las 101 del main local. Se ensayó
+  95 → 123 con Auth/PostgREST real y preservación de códigos, saldos y respuestas.
+- Se añade una migración nueva de compatibilidad de formato para la función
+  antigua de cambios: ejecutarla antes de `pos_quick_product` en esa base; en una
+  reconstrucción ya actualizada no hace cambios. No se reescribe SQL heredado.
+- La corrección se probó con la definición exacta alojada en una transacción
+  local que se revirtió. No modifica las reglas financieras ni datos históricos.
+- Las capturas de Playwright usan `test.info().outputPath` para funcionar en
+  Linux y Mac y separar proyectos/reintentos. USD y fracciones siguen apagados.
