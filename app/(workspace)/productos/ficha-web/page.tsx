@@ -1,3 +1,4 @@
+import { readVariantPhotos } from "@/lib/variant-photos";
 import { remoteWebConfigured } from "@/lib/remote-web-server";
 import { remoteWebAction } from "./remote-actions";
 import Link from "next/link";
@@ -49,6 +50,10 @@ export default async function WebPage({
       </section>
     );
   const draft = data as WebDraft;
+  const variantPhotos = await readVariantPhotos(
+    supabase,
+    draft.catalog.variants.map((v) => v.id),
+  );
   const cover = productImageUrl(supabase, draft.catalog.image_path);
   if (!draft.content.images.length && cover) {
     draft.content = {
@@ -79,6 +84,7 @@ export default async function WebPage({
       )}
       <WebDraftEditor
         key={`${data.catalog.product_id}:${draft.revision}`}
+        variantPhotos={Object.fromEntries(variantPhotos)}
         draft={draft}
         remote={remoteResult?.data ?? null}
         remoteAction={remoteWebAction}

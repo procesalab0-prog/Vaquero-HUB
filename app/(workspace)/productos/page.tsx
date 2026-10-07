@@ -1,3 +1,4 @@
+import { readVariantPhotos } from "@/lib/variant-photos";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { mockVariants } from "@/lib/mock-data";
@@ -147,6 +148,10 @@ export default async function ProductsPage({
     supabase,
     ((catalogResult.data ?? []) as CatalogRow[]).map((row) => row.product_id),
   );
+  const variantPhotos = await readVariantPhotos(
+    supabase,
+    ((catalogResult.data ?? []) as CatalogRow[]).map((row) => row.variant_id),
+  );
   const canUpdate = permissions.has("products.update");
   const canCreate = permissions.has("products.create");
   const canSeeCost =
@@ -174,6 +179,7 @@ export default async function ProductsPage({
     stock: 0,
     image:
       productImageUrl(supabase, products.get(row.product_id)?.image_path) ??
+      variantPhotos.get(row.variant_id)?.[0]?.url ??
       covers.get(row.product_id),
   }));
 

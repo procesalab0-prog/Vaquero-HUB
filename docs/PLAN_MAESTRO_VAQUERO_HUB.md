@@ -3905,3 +3905,110 @@ Migraciones20261006164859 y20261006165605 aplicadas exclusivamente staging; tabl
 El usuario ratifica que TODO el catálogo SICAR debe entrar a Mi Tienda, incluidos los productos ausentes de WooCommerce. SICAR conserva autoridad durante la migración y sus códigos de barras no se reemplazan. Woo aporta imágenes, textos e identidades verificadas; no limita el universo del catálogo. Los casos ambiguos quedan pendientes de revisión, no se excluyen definitivamente ni se agrupan por suposición.
 
 Al terminar y habilitar la operación, Mi Tienda será el inventario central: compras de Woo deben reflejar su descuento una sola vez, incluyendo tratamiento comprobado de cancelaciones/devoluciones, y altas nuevas de Mi Tienda deben generar su contraparte Woo. El ensayo actual conserva borradores y envío supervisado; no demuestra todavía automatización de pedidos/inventario. La migración histórica y las altas operativas son procesos distintos: importar un producto ya vinculado no debe recrearlo en Woo. Producción y existencias siguen sin autorización de escritura en esta fase de pruebas.
+
+
+### 2026-10-06 — Registro vivo: revisión masiva de fuentes y secciones M9
+
+Revisión de 44 cambios Woo contra fuentes/borradores guardados, 331 filas retenidas por secciones y renovación de 8541 pendientes con Woo del 6 de octubre y SICAR6. Cuatro familias/26 variantes con evidencia para revisión técnica de referencias amplias (sin aprobar ni quitar controles), 21 familias con secciones distintas para dueños y 22 IDs por identidad/otros controles. Seis galerías, 35→50 referencias, preparadas para ensayo; ninguna reemplazada. Dos fuentes ya actualizadas no se vuelven a proponer. Las 7683 variantes anteriores permanecen exactas; cero inventario. 249 archivos definitivos reproducibles, 434 unitarias y lint aprobados. Cero altas/actualizaciones en este bloque; 47.4% del catálogo, no avance global. Sin despliegue, nuevos envíos ni cambios operativos. Ver [M9_REVISION_CAMBIOS_Y_SECCIONES.md](M9_REVISION_CAMBIOS_Y_SECCIONES.md).
+
+
+### 2026-10-06 — Registro vivo: carga de cuatro familias y galerías actualizadas
+
+26 variantes nuevas en staging tras revisión técnica de alcance y plan original, rollback, aplicación y repetición; las 7683 anteriores permanecen exactas. Cuatro fichas/18 fotos únicas nuevas (19 referencias Woo con una URL repetida). Seis galerías de camisas ampliadas 35→50 fotos, preservando las 35 anteriores, alt y textos; edición por UI revisión1→2 y copia→3. Las 68 referencias finales de diez fichas quedaron verificadas por bytes/orden. Total: 7709 variantes=47.5% del catálogo, 8515 pendientes y cero inventario. Renovar fuentes invalidó seis bindings por diseño: 1232 válidos/seis invalidados, revisión protegida pendiente; sin reactivación silenciosa. Colas3/1/9 sin cambios. 438 unitarias/62 archivos y lint aprobados. Sin despliegue ni producción. Ver [M9_CARGA_SECCIONES_GALERIAS.md](M9_CARGA_SECCIONES_GALERIAS.md).
+
+
+### 2026-10-06 — Meta superior al 50% y revisión prioritaria de 405 variantes
+
+El usuario pidió superar el 50% en una entrega. No se alcanzó: cobertura real
+7,709/16,224 = 47.516%, cero altas nuevas. Se necesitan 404 variantes para
+8,113. Nuevo `prepare-coverage-review.mjs`: reutiliza preparación SICAR,
+familias y auditoría; prioriza 68 propuestas / 405 filas. Sólo con respuestas
+humanas y aceptación del plan vigente permitirían 8,114 = 50.012%. Las 67
+mayores reúnen 401; mínimo 68 dentro del conjunto. No confundir propuestas
+con aprobaciones.
+
+Las 5,937 sólo SICAR siguen completas: 400 propuestas T. / 1,322 filas y
+4,615 sin separar. Hay 302 propuestas / 966 filas sin observaciones adicionales
+tras verificar taxonomía, nombres de los 1,499 padres, registros base, miembros
+T. adicionales y retenciones previas. CAWRNIÑO3587 conserva cuatro códigos
+pendientes. Partición de 16,224: 7,709 cargadas, 405 prioritarias, 561 en otras
+propuestas, 356 T. con observaciones, 4,615 sin separar y 2,578 en revisión Woo.
+Todas las plantillas permanecen pendientes y el planificador las rechaza.
+Auditoría aplicada: 7,709 exactas / cero diferencias. Último Woo: 7,704 exactas
+/ cinco reservas.
+
+Preflight original repetido: 22 candidatas reservadas en siete padres, cero
+preparadas y cero nuevas por alcance de sección. Expediente completo actualizado:
+8,515 pendientes / 5,773 casos; primeros 20 reúnen 612 filas. Usa la referencia
+aplicada explícita y pendientes del último Woo; no es nueva conciliación canónica.
+Lecturas nuevas de staging antes/después idénticas en UUID/current/stored/nombres,
+cero saldos y movimientos. Sin DDL, escrituras, permisos, colas, fotos, despliegue,
+merge, cambios Woo o producción. Los seis bindings invalidados siguen pendientes.
+
+Evidencia `outputs/m9-meta-50-2026-10-06/`: corridas 4/5 definitivas con 12
+archivos idénticos; expedientes 1/2 con 240 idénticos; verificación y 551 huellas.
+Corridas 1–3 intermedias. 450 unitarias / 63 archivos y lint aprobados; 12 pruebas
+nuevas. HTML numerado y consulta.txt para revisión conjunta; sin afirmar revisión
+visual ni sortear el bloqueo file previo. Detalle [M9_META_COBERTURA.md](M9_META_COBERTURA.md).
+Siguiente: respuestas por familia, contraste de fuentes y nuevo plan/ensayo/carga
+en staging. No contar preparación como carga. Sol suficiente; Astra para pedidos,
+inventario central y auditoría operativa.
+
+
+### 2026-10-06 — Revisión técnica integral y conservación del catálogo
+
+Se cerraron seis verificaciones de categorías invalidadas por cambios sólo de
+galería: 1,238 válidas / cero invalidadas. Procedimiento privado SECURITY INVOKER,
+expectativas completas, captura reciente, vínculos y catálogo bloqueados;
+27 controles transaccionales antes de aplicar y seis UNCHANGED al repetir.
+Seis auditorías; mappings/categorías, fuentes y borradores preservados. Migración
+local 20261007012536 / registro remoto 20261007012747, sólo staging.
+
+Revisor editorial sobre 44 padres: 23 diferencias de orden/formato con idéntica
+pertenencia, una categoría fuera del alcance público reservada, 27 precios
+SICAR preservados y seis fotos de variante / cinco archivos comprobados pero
+no aplicados. Conexión Woo de pruebas: tres recibos y un recibo de galería
+previos correctos; nueve fotos coinciden en bytes/orden/alt (ocho copias staging,
+una referencia pública). Sin crear productos ni enviar trabajos nuevos.
+
+Conciliador reproducido: diez salidas canónicas exactas; renovación 3/4 con
+23 archivos idénticos y 16,224 UNCHANGED al repetir el mismo corte. Es replay de
+exports recibidos, no descarga nueva. Referencia histórica al último Woo:
+179 cambios sólo de metadatos; auditoría de catálogo conserva cinco reservas
+por publicación. No confundir ambas medidas. Cobertura 7,709/16,224=47.516%,
+8,515 pendientes, cero altas. Catálogo/UUID/fuentes/borradores preservados,
+colas 3/1/9 sin cambios y cero inventario. 455 pruebas / 64 archivos y lint
+aprobados. Sin producción, escrituras Woo, pedidos, despliegue, push o merge;
+frontend sigue 0.74.0.
+
+Evidencia outputs/m9-revision-tecnica-integral-2026-10-06/, verificacion.json y
+huellas. Detalle [M9_REVISION_TECNICA_INTEGRAL.md](M9_REVISION_TECNICA_INTEGRAL.md).
+Siguen pendientes las identidades SICAR_ONLY, categorías nuevas/fuera de alcance,
+fotos por variante y cambios editoriales reales. Sol suficiente; Astra para
+pedidos, devoluciones, inventario central y corte operativo final.
+
+
+### 2026-10-06 — Cruce completo de fotos de variantes
+
+Nuevo preparador de sólo lectura `prepare-variant-photos.mjs`: revisa las 7,709
+variantes cargadas contra SICAR/Woo canónico, current/stored, Clave1 literal,
+UUID, padre, variación y fuente guardada. 5,329 referencias aptas con 1,029 URLs
+comprobadas y 1,026 archivos únicos guardados localmente; cero fallos. 4,584
+referencias coinciden con portada / 745 difieren, sin inferir foto faltante ni
+fusionar variantes por compartir imagen. 1,407 sin foto propia y 368 simples.
+
+605 retenidas: 599 variantes de 159 familias requieren completar evidencia web
+ya guardada (trabajo técnico, no preguntas nuevas ni altas), cinco reservas
+conocidas Woo33002 draft y código11755 sin vínculo de fuente completo. No se
+reescribieron fuentes/borradores ni se importaron esas fotos al programa. Sigue
+pendiente almacenamiento, lectura y envío independiente por variante con ensayo
+staging; no confundir el cache local con una función ya visible.
+
+Dos corridas de siete archivos idénticos; diez pruebas nuevas y suite completa
+465/65 archivos con lint aprobado. Evidencia outputs/m9-fotos-variantes-completo-2026-10-06/,
+verificacion.json, cache por SHA256 y backlog por familia. Usa snapshot de cierre
+previo, sin nueva lectura de base ni exportación de productos. Sólo GET público
+de imágenes, 189,102,844 bytes de red; cero escrituras staging/Woo/producción,
+inventario, DDL, permisos, colas o despliegue. Cobertura 7,709/16,224=47.516%,
+8,515 pendientes. Detalle [M9_FOTOS_VARIANTES_COMPLETO.md](M9_FOTOS_VARIANTES_COMPLETO.md).
+Sol suficiente; Astra para fase operativa final.

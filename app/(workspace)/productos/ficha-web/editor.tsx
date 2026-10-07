@@ -19,6 +19,7 @@ import displayPolicies from "@/lib/m9-display-policy.json";
 
 export function WebDraftEditor({
   draft,
+  variantPhotos,
   saveWebDraft,
   uploadWebPhoto,
   lab,
@@ -27,6 +28,7 @@ export function WebDraftEditor({
   remoteAction,
 }: {
   draft: WebDraft;
+  variantPhotos: Record<string, Array<{ url: string; alt: string }>>;
   remote: RemoteWebState | null;
   remoteAction: (form: FormData) => Promise<RemoteWebResult>;
   lab: WebLabState | null;
@@ -410,6 +412,19 @@ export function WebDraftEditor({
           {draft.catalog.variants.map((v) => (
             <article key={v.id}>
               <strong>Código {v.barcode}</strong>
+              {variantPhotos[v.id]?.length > 0 && (
+                <div className={styles.gallery}>
+                  {variantPhotos[v.id].map((photo) => (
+                    <Image
+                      key={photo.url}
+                      src={photo.url}
+                      alt={photo.alt || `Foto del código ${v.barcode}`}
+                      width={180}
+                      height={180}
+                    />
+                  ))}
+                </div>
+              )}
               <p>
                 {Object.entries(v.attributes)
                   .map(([k, value]) => `${k}: ${value}`)
