@@ -1575,3 +1575,60 @@ Publicación: commit remoto f55bee0e9f97fea6d4e953f95241d33dc5025e18 tiene árbo
 ### 2026-10-06 — Copia autenticada de fotos por variante
 
 0.76.0 implementa copia por familia, bytes/SHA/MIME, límite16MB, rutas por SHA, guardado sin upsert y vínculo transaccional con expectativas completas. Nueva tabla privada, reader con fallback, fuente original conservada. 1,013 familias/5,815 variantes con foto elegibles; no afirmar aplicación total antes del cierre cuantitativo. Página fotos-migracion paginada para superar1,000 filas, proceso independiente de la galería general. Migración20261007020520 aplicada sólo staging. 475unitarias/66archivos y8controles SQL rollback; CI304 anteriorSUCCESS. Detalle [M9_FOTOS_VARIANTES_STORAGE.md](M9_FOTOS_VARIANTES_STORAGE.md). Evidencia outputs/m9-fotos-variantes-storage-2026-10-06/. Sin Woo, producción, existencias ni merge.
+
+
+### 2026-10-06 — Copia total de fotos propias de variantes conciliadas
+
+Cierre0.76.2:5,815variantes/1,013familias con copias en staging Storage.1,037objetos comprobados por GET público:SHA256/bytes/MIME coinciden todos, cero fallos. Dos preparaciones idénticas; piloto55/9, ampliación autenticada1013/1013 y repetición completa5815:0altas/0auditoría extra.1,013auditorías de copia. Tabla de evidencia original conserva5,928filas;113sin foto no reciben imágenes inventadas y seis reservas siguen excluidas.
+
+Catálogo/fuentes/borradores/categorías y colas conservan sus huellas/cantidades; cero inventario.475unitarias/66archivos,8controles SQL rollback,lint/tipos/build y CI307/run37561269888SUCCESS. Preview0.76.2 y foto416/talla22/$1,450 desde Storage comprobados. Detectados/corregidos en navegador el listado JSON y contador persistente.
+
+Cobertura de catálogo sigue7,709/16,224=47.516%,8,515pendientes. Próximo: lectores complementarios599, envío independiente de fotos por variante a Woo de pruebas y conciliación retenida. Detalle[M9_FOTOS_VARIANTES_STORAGE.md](M9_FOTOS_VARIANTES_STORAGE.md); outputs/m9-fotos-variantes-storage-2026-10-06/verificacion.json,bytes-todas.json,cierre.json,conservacion.json,reporte.md y capturas. Local7712926/remoto76d767cf1e177bd29187c347f534205385c26900/árbol d7c1a6b3b579cdc15fd144b78b6320218f1479e6; documentación de cierre posterior local. Sin producción,Woo,existencias o merge.Sol suficiente;Astra para fase operativa.
+
+
+### 2026-10-06 — Lectura complementaria de599variantes conciliadas
+
+Analizador de fotos reconoce599evidencias/159familias ya registradas, sin
+reescribir fuentes ni aprobar identidades. Consulta actual de staging confirma
+huellas completas de fuente/catálogo por familia; compara código literal,
+UUID/IDs, precio/atributos, export y bytes locales.486con foto y113sin foto.
+Reporte completo7,709:5,815con foto,1,520sin foto,368simples,seisreservas conocidas.
+Cuatro corridas/siete archivos idénticos;479unitarias/66archivos y lint aprobados.
+Reutiliza exports/cache recibidos, sin nueva exportación Woo ni nueva descarga
+Storage. Cero escrituras de base, Woo, producción, inventario, colas o despliegue.
+Preview0.76.2 sin cambios. Cobertura47.516%,8,515pendientes, cero altas nuevas.
+Sigue ensayo de envío independiente de fotos por variante a Woo de pruebas y
+conciliación retenida. Lectura editorial histórica queda intacta, no inventar
+precios anteriores con evidencia fotográfica. Sol suficiente;Astra para fase
+operativa. Detalle[M9_LECTURA_COMPLEMENTARIA_VARIANTES.md](M9_LECTURA_COMPLEMENTARIA_VARIANTES.md).
+Evidencia outputs/m9-lectura-complementaria-2026-10-06/ en workspace principal.
+
+
+### 2026-10-06 — Ensayo local de envío de foto propia por talla
+
+Cinco variantes locales24–28 de familia23 con foto propia19, códigos10581–10585 y precio$820 conservados. Se distingue portada heredada de imagen propia. Cero archivos nuevos; cinco repeticiones sin nueva escritura. Primer recibo incierto recuperado con contexto/paquete originales sin reenviar foto. 22controles locales,483unitarias/67archivos y lint aprobados; bloqueo de aislamiento verificado y evidencia visual guardada.
+
+Dos diagnósticos completos idénticos de5,815fotos:5,002referencias en galería exportada,720requieren adjunto independiente,93referencias duplicadas/16padres en revisión técnica. Son referencias de export, no adjuntos remotos actualmente comprobados. Piloto remoto:9candidatas requieren lectura actual;10324/2XL sin foto propia. Sin ampliar autorizaciones.
+
+Sólo laboratorio local real; NO conexión publicada por talla todavía. Cero escrituras Woo remoto/producción/Supabase/inventario, sin despliegue. Preview0.76.2; cobertura7,709/16,224=47.516%,8,515pendientes. Sigue protocolo remoto acotado y cola de ficha para piloto ya autorizado. Detalle [M9_ENSAYO_FOTOS_POR_VARIANTE.md](M9_ENSAYO_FOTOS_POR_VARIANTE.md); evidencia outputs/m9-foto-variante-ensayo-2026-10-06/ en workspace principal. Sol suficiente;Astra para fase operativa final.
+
+
+### 2026-10-06 — Preparación del lector remoto de fotos por variante
+
+Preparado plugin1.3.3 (NO instalado): lector GET de foto propia acotado a los dos recibos de familia remota existentes, identidad/precio/atributos y doble captura estable; no heredada. Cliente GET con aislamiento y preparador independiente de bytes/source/recibo/contexto, sin despacho ni sustitución automática.503unitarias/68archivos,20nuevas;23controles PHP con fixtures aislados (no Woo remoto real);lint/formato y dosZIPidénticos. Chrome confirma protección remota actual1.3.2 y ocho bloqueosOK. No activar el plugin antiguo1.0.0 ni duplicar funciones de la instalación vigente.
+
+Cero instalación remota, consultas nuevas de fotos remotas, cambios Supabase/producción/inventario/despliegue. Preview0.76.2; catálogo7,709/16,224=47.516%. Pendiente instalar lector en ruta vigente, conectar lectura Preview, cola persistente/escritor condicional y ensayo remoto real de10variantes; no afirmar conexión por talla terminada. Detalle [M9_PREPARACION_FOTOS_REMOTAS_VARIANTES.md](M9_PREPARACION_FOTOS_REMOTAS_VARIANTES.md); outputs/m9-preparacion-remota-fotos-2026-10-06/ en workspace principal. Sol suficiente;Astra para fase operativa.
+
+
+### 2026-10-06 — Lector remoto instalado y diez variantes verificadas
+
+Actualización real del plugin vigente1.3.2→1.3.3 en Woo independiente de pruebas, sin duplicarlo ni ampliar permisos. Panel con ocho proteccionesOK. Recibos/galerías antes y después idénticos; diez variantes mantienen códigos/tallas/precios. Lectura real own_image_id=0 en todas: nueve candidatas de adjunto existente verificadas contra dos archivos originales locales;10324/2XL sin foto propia. Siete adjuntos autenticados con SHA del recibo; sólo dos se compararon además byte por byte con cache local. Cinco controles remotos de permisos aprobados:401/200/401,fuera de piloto403,API general403.
+
+Instalación y lectura cerradas, NO asignación remota ni conexión por talla publicada. Siguen escritor condicional, cola persistente y acción de ficha para las dos familias autorizadas. Sólo archivos del conector/ZIP técnico actualizados; cero cambios de productos, Supabase, producción, inventario, pedidos o pagos. Sin despliegue;Preview0.76.2;catálogo7,709/16,224=47.516%,8,515pendientes. Detalle [M9_LECTOR_REMOTO_VARIANTES_VERIFICADO.md](M9_LECTOR_REMOTO_VARIANTES_VERIFICADO.md); evidencia outputs/m9-lector-remoto-aplicacion-2026-10-06/ en workspace principal. Sol suficiente;Astra para fase operativa.
+
+
+### 2026-10-07 — Carga completa de pendientes a revisión de staging
+
+8,515registros de evidencia cargados en35lotes; repetición0nuevos/8,515sin cambios. Incluye5,937SICAR_ONLY. Con7,709conciliados cubre16,224filas para consulta, NO16,224productos aprobados: cobertura de catálogo sigue47.516%. Sin aprobar familias, inferir tallas, crear variantes ni inventario. CAWRNIÑO3587 sigue pendiente. Catálogo/UUIDs/fuentes/borradores conservados por huella; ceroWoo/producción/saldos/movimientos.
+
+Nueva consulta autenticada products.read en/productos/migracion-pendientes,20porpágina,426páginas,búsqueda literal/lector; sólo corte completo y guardasSTAGING. Tablas privadasRLSsinpermisosdirectos; payloadrechazaexistencias/costos/aprobaciones.19controlesSQLrollback,503unitarias/68archivos,lint/tipos/buildaprobados. Preparada0.77.0; publicación/verificaciónPreviewporconfirmar. Detalle [M9_CARGA_REVISION_COMPLETA.md](M9_CARGA_REVISION_COMPLETA.md);outputs/m9-carga-revision-completa-2026-10-07/. Siguevalidaragrupaciones/conflictosycargarsóloaprobados; conectar fotosportalla. Solsuficiente;Astrasecciónoperativa.

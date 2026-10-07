@@ -2,7 +2,7 @@ begin;
 
 select set_config('request.jwt.claim.sub','46f5c785-cf64-4a5e-bca9-18a904754c89',true);
 do $test$
-declare pid uuid; ctx jsonb; items jsonb; r jsonb; audit_count bigint;
+declare pid uuid; ctx jsonb; items jsonb; r jsonb; audit_count bigint; expected_created integer;
 begin
 select e.product_id into pid from app.web_variant_photo_evidence e where jsonb_array_length(e.photos)>0
 and not exists(select 1 from app.web_variant_photo_evidence x cross join lateral jsonb_array_elements(x.photos) i
@@ -11,6 +11,7 @@ and not exists(select 1 from app.web_variant_photo_evidence x cross join lateral
  and o.metadata->>'size'=i->>'bytes' and o.metadata->>'mimetype'=i->>'mime')) limit 1;
 if pid is null then raise exception 'NO_EXISTING_STORAGE_FIXTURE';end if;
 ctx:=app.variant_photo_copy_context(pid);
+select count(*) into expected_created from jsonb_array_elements(ctx->'items') i where jsonb_array_length(i->'photos')>0 and i->'stored'='null'::jsonb;
 select jsonb_agg(jsonb_build_object('variant_id',i->>'variant_id','photos',(select jsonb_agg(jsonb_build_object('url',
 'https://zsezjtswqeijboezvado.supabase.co/storage/v1/object/public/product-images/'||pid::text||'/'||(p->>'sha256')||'.'||
 case p->>'mime' when 'image/jpeg' then 'jpg' when 'image/png' then 'png' else 'webp' end,'alt',p->>'alt') order by n)
@@ -23,7 +24,7 @@ exception when others then if sqlerrm<>'INVALID_VARIANT_PHOTO_COPY_PACKET' then 
 begin perform app.save_variant_photo_copies(pid,ctx->>'catalog_hash',ctx->>'evidence_hash',jsonb_set(items,'{0,photos,0,url}','"https://evil.example/a.png"'));raise exception 'EXPECTED_ORIGIN';
 exception when others then if sqlerrm<>'VARIANT_PHOTO_COPY_STORAGE_REVIEW' then raise;end if;end;
 r:=app.save_variant_photo_copies(pid,ctx->>'catalog_hash',ctx->>'evidence_hash',items);
-if (r->>'created')::int<>jsonb_array_length(items) then raise exception 'CREATE_FAILED';end if;
+if (r->>'created')::int<>expected_created then raise exception 'CREATE_FAILED';end if;
 select count(*) into audit_count from public.audit_log;
 r:=app.save_variant_photo_copies(pid,ctx->>'catalog_hash',ctx->>'evidence_hash',items);
 if (r->>'created')::int<>0 or (r->>'unchanged')::int<>jsonb_array_length(items) or audit_count<>(select count(*) from public.audit_log) then raise exception 'REPEAT_FAILED';end if;

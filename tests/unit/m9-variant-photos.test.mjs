@@ -222,3 +222,142 @@ it("requires staging, empty inventories and complete pagination", () => {
     expect(() => prepareVariantPhotos(...f)).toThrow();
   }
 });
+
+function supplementalFixture() {
+  const f = fixture();
+  f[1].products[0].source.snapshot.variants = [];
+  f[1].products[0].source.snapshot.source_status = "publish";
+  const c = f[0].rows[0].current;
+  f.push({
+    project_id: f[0].project_id,
+    inventory_balances: 0,
+    inventory_movements: 0,
+    evidence: [
+      {
+        variant_id: "v",
+        product_id: "p",
+        barcode: c.barcode,
+        woo_product_id: 10,
+        woo_variation_id: 11,
+        supplemental: true,
+        revision: 1,
+        export_sha256: createHash("sha256")
+          .update(JSON.stringify(f[3], null, 2) + "\n")
+          .digest("hex"),
+        catalog_fingerprint: "a".repeat(32),
+        source_fingerprint: "b".repeat(32),
+        source_variant: {
+          id: 11,
+          status: "publish",
+          attributes: [],
+          images: f[4][0].url,
+        },
+        photos: [
+          {
+            url: f[4][0].url,
+            sha256: f[4][0].sha256,
+            bytes: f[4][0].bytes,
+            mime: f[4][0].mime,
+            alt: "",
+          },
+        ],
+      },
+    ],
+    parents: [
+      {
+        product_id: "p",
+        catalog_hash: "a".repeat(32),
+        source_hash: "b".repeat(32),
+        snapshot: structuredClone(f[1].products[0].source.snapshot),
+        catalog: {
+          product_id: "p",
+          active: true,
+          variants: [{ ...c, id: "v", active: true }],
+        },
+      },
+    ],
+  });
+  return f;
+}
+it("reads registered complementary evidence without rewriting the historical source", () => {
+  const f = supplementalFixture(),
+    before = JSON.stringify(f);
+  const result = prepareVariantPhotos(...f);
+  expect(result.items[0].state).toBe("VARIATION_BYTES_VERIFIED");
+  expect(result.summary.supplemental_sources_used).toBe(1);
+  expect(result.items[0].source_photo_changed).toBe(false);
+  expect(result.items[0].supplemental_evidence_fingerprint).toMatch(
+    /^[a-f0-9]{64}$/,
+  );
+  expect(result).toEqual(prepareVariantPhotos(...f));
+  expect(JSON.stringify(f)).toBe(before);
+  expect(result.import_allowed).toBe(false);
+  expect(result.send_allowed).toBe(false);
+  expect(prepareVariantPhotos(...f.slice(0, 5)).items[0].state).toBe(
+    "REVIEW_REQUIRED",
+  );
+});
+it("retains review for stale, conflicting or incomplete complementary evidence", () => {
+  for (const change of [
+    (f) => (f[5].evidence[0].catalog_fingerprint = "c".repeat(32)),
+    (f) => (f[5].evidence[0].source_fingerprint = "c".repeat(32)),
+    (f) => (f[5].evidence[0].export_sha256 = "c".repeat(64)),
+    (f) => (f[5].evidence[0].barcode = "1"),
+    (f) => (f[5].evidence[0].product_id = "other"),
+    (f) => (f[5].evidence[0].woo_variation_id = 12),
+    (f) => (f[5].evidence[0].supplemental = false),
+    (f) => (f[5].parents[0].snapshot.woo_product_id = 12),
+    (f) => f[5].parents[0].catalog.variants[0].price_cents++,
+    (f) => (f[5].parents[0].catalog.variants[0].active = false),
+    (f) =>
+      f[5].parents[0].catalog.variants.push(
+        structuredClone(f[5].parents[0].catalog.variants[0]),
+      ),
+    (f) =>
+      (f[5].evidence[0].source_variant.attributes = [
+        { name: "Talla", option: "28" },
+      ]),
+    (f) => (f[5].evidence[0].source_variant.status = "private"),
+    (f) => (f[5].evidence[0].photos[0].sha256 = "c".repeat(64)),
+    (f) => f[5].evidence[0].photos[0].bytes++,
+    (f) => (f[5].evidence[0].photos[0].mime = "image/png"),
+    (f) => (f[5].evidence[0].photos = []),
+    (f) =>
+      f[1].products[0].source.snapshot.variants.push({
+        barcode: "0001",
+        woo_variation_id: 12,
+      }),
+    (f) => (f[2][0].fields.precio1 = "1"),
+    (f) => (f[3].products[0].status = "draft"),
+  ]) {
+    const f = supplementalFixture();
+    change(f);
+    expect(prepareVariantPhotos(...f).items[0].state).toBe("REVIEW_REQUIRED");
+    expect(prepareVariantPhotos(...f).downloads).toEqual([]);
+  }
+});
+it("complementary no-photo records never inherit the parent's cover", () => {
+  const f = supplementalFixture();
+  f[3].products[0].variations[0].images = "";
+  f[5].evidence[0].source_variant.images = "";
+  f[5].evidence[0].photos = [];
+  f[5].evidence[0].export_sha256 = createHash("sha256")
+    .update(JSON.stringify(f[3], null, 2) + "\n")
+    .digest("hex");
+  const result = prepareVariantPhotos(...f);
+  expect(result.items[0].state).toBe("NO_VARIATION_PHOTO");
+  expect(result.items[0].photos).toEqual([]);
+  expect(result.summary.supplemental_sources_used).toBe(1);
+});
+it("rejects duplicate complementary identities and non-isolated evidence contexts", () => {
+  for (const change of [
+    (f) => f[5].evidence.push(structuredClone(f[5].evidence[0])),
+    (f) => f[5].parents.push(structuredClone(f[5].parents[0])),
+    (f) => (f[5].project_id = "production"),
+    (f) => (f[5].inventory_movements = 1),
+  ]) {
+    const f = supplementalFixture();
+    change(f);
+    expect(() => prepareVariantPhotos(...f)).toThrow();
+  }
+});

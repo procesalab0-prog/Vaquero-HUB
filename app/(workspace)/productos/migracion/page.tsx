@@ -62,6 +62,11 @@ export default async function MigrationPage({
       <Link href="/productos/fotos-migracion">
         Copiar fotos del catálogo conciliado
       </Link>
+      <p>
+        <Link href="/productos/migracion-pendientes">
+          Consultar todo el catálogo pendiente de SICAR
+        </Link>
+      </p>
       <MigrationReview data={data as ReviewData} filters={filters} />
     </>
   );

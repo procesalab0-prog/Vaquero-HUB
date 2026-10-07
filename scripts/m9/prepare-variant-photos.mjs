@@ -42,6 +42,7 @@ export function prepareVariantPhotos(
   canonical,
   woo,
   proofs = [],
+  supplemental = null,
 ) {
   if (
     snapshot.project_id !== "zsezjtswqeijboezvado" ||
@@ -114,6 +115,37 @@ export function prepareVariantPhotos(
   }
   const audit = auditStagedCatalog(snapshot, canonical);
   const audits = new Map(audit.results.map((r) => [r.variant_id, r]));
+  // Optional read-only export of the private, previously registered evidence.
+  // It can complete an absent source entry, never replace a conflicting entry
+  // or approve an identity that fails the independent SICAR audit.
+  if (
+    supplemental &&
+    (supplemental.project_id !== snapshot.project_id ||
+      supplemental.inventory_balances !== 0 ||
+      supplemental.inventory_movements !== 0)
+  )
+    throw Error("ISOLATED_SUPPLEMENTAL_CONTEXT_REQUIRED");
+  const evidence = unique(
+    supplemental?.evidence ?? [],
+    "variant_id",
+    "DUPLICATE_SUPPLEMENTAL_VARIANT",
+  );
+  unique(
+    supplemental?.evidence ?? [],
+    "barcode",
+    "DUPLICATE_SUPPLEMENTAL_BARCODE",
+  );
+  unique(
+    supplemental?.evidence ?? [],
+    "woo_variation_id",
+    "DUPLICATE_SUPPLEMENTAL_WOO_VARIATION",
+  );
+  const evidenceParents = unique(
+    supplemental?.parents ?? [],
+    "product_id",
+    "DUPLICATE_SUPPLEMENTAL_PARENT",
+  );
+  const exportHash = hash(JSON.stringify(woo, null, 2) + "\n");
   const items = snapshot.rows
     .map((row) => {
       const c = row.current,
@@ -142,9 +174,69 @@ export function prepareVariantPhotos(
       if (variant && variant.variant.status !== "publish")
         reasons.push("VARIATION_NOT_PUBLISHED");
       const saved = source?.variants?.filter((v) => v.barcode === c.barcode);
+      const extra = evidence.get(row.variant_id),
+        extraParent = evidenceParents.get(row.product_id),
+        catalogVariants = extraParent?.catalog?.variants?.filter(
+          (v) => v.id === row.variant_id,
+        ),
+        registeredVariant =
+          catalogVariants?.length === 1 ? catalogVariants[0] : null;
+      const supplementalValid = Boolean(
+        extra &&
+        extra.supplemental === true &&
+        extra.revision === 1 &&
+        extra.product_id === row.product_id &&
+        extra.barcode === c.barcode &&
+        extra.woo_product_id === c.woo_product_id &&
+        extra.woo_variation_id === c.woo_variation_id &&
+        extra.export_sha256 === exportHash &&
+        /^[a-f0-9]{32}$/.test(extra.catalog_fingerprint) &&
+        /^[a-f0-9]{32}$/.test(extra.source_fingerprint) &&
+        extra.catalog_fingerprint === extraParent?.catalog_hash &&
+        extra.source_fingerprint === extraParent?.source_hash &&
+        stable(extraParent?.snapshot) === stable(source) &&
+        source?.source_status === "publish" &&
+        extraParent?.catalog?.product_id === row.product_id &&
+        extraParent?.catalog?.active === true &&
+        registeredVariant?.active === true &&
+        [
+          "barcode",
+          "department",
+          "section",
+          "attributes",
+          "price_cents",
+          "woo_product_id",
+          "woo_variation_id",
+        ].every((k) => stable(registeredVariant?.[k]) === stable(c[k])) &&
+        variant &&
+        stable(extra.source_variant) ===
+          stable({
+            id: variant.variant.id,
+            status: variant.variant.status,
+            attributes: variant.variant.attributes ?? [],
+            images: variant.variant.images,
+          }) &&
+        Array.isArray(extra.photos) &&
+        extra.photos.map((p) => p.url).join(", ") === variant.variant.images &&
+        extra.photos.every((p) => {
+          const proof = proofByUrl.get(p.url);
+          return (
+            proof &&
+            p.sha256 === proof.sha256 &&
+            p.bytes === proof.bytes &&
+            p.mime === proof.mime &&
+            typeof p.alt === "string" &&
+            p.alt.length <= 240
+          );
+        }) &&
+        saved?.length === 0,
+      );
+      if (extra && !supplementalValid)
+        reasons.push("SUPPLEMENTAL_EVIDENCE_REVIEW");
       if (
-        saved?.length !== 1 ||
-        saved[0].woo_variation_id !== c.woo_variation_id
+        !supplementalValid &&
+        (saved?.length !== 1 ||
+          saved[0].woo_variation_id !== c.woo_variation_id)
       )
         reasons.push("SAVED_SOURCE_VARIANT_REVIEW");
       if (parent && !["simple", "variable"].includes(parent.type))
@@ -188,6 +280,11 @@ export function prepareVariantPhotos(
         reasons: reasons.sort(),
         catalog_fingerprint: hash(stable(row)),
         source_fingerprint: source ? hash(stable(source)) : null,
+        supplemental_source_used: supplementalValid && reasons.length === 0,
+        supplemental_evidence_fingerprint:
+          supplementalValid && reasons.length === 0
+            ? hash(stable(extra))
+            : null,
         current_sicar_price_cents: c.price_cents,
         attributes: c.attributes,
         source_photo_changed:
@@ -228,7 +325,7 @@ export function prepareVariantPhotos(
       downloads.set(photo.url, entry);
     }
   return {
-    version: "m9-variant-photo-evidence-1",
+    version: "m9-variant-photo-evidence-2",
     mode: "OFFLINE_READ_ONLY",
     items,
     downloads: [...downloads.values()].sort((a, b) =>
@@ -252,6 +349,8 @@ export function prepareVariantPhotos(
         .flatMap((i) => i.photos)
         .filter((p) => !p.same_as_parent_cover).length,
       source_photo_changes: items.filter((i) => i.source_photo_changed).length,
+      supplemental_sources_used: items.filter((i) => i.supplemental_source_used)
+        .length,
       writes: 0,
     },
     ...blocked,

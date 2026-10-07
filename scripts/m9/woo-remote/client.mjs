@@ -30,7 +30,9 @@ export function remoteClient({
     requireValue(
       (method === "GET" &&
         (path === "isolation" ||
-          /^(receipts|galleries|gallery-updates)\/[0-9a-f-]{36}$/i.test(path) ||
+          /^(receipts|galleries|gallery-updates|variant-photos)\/[0-9a-f-]{36}$/i.test(
+            path,
+          ) ||
           /^photos\/[0-9a-f-]{36}\/[1-9][0-9]*$/i.test(path))) ||
         (method === "POST" &&
           ["drafts", "families", "gallery-updates"].includes(path)),
@@ -65,6 +67,17 @@ export function remoteClient({
   }
   return {
     preflight,
+    variantPhotos: async (id) => {
+      requireValue(
+        [
+          "97c82026-b3cc-4c60-8f22-13d7c00fb33a",
+          "ba239bba-7691-43cc-9c76-8768a1af9f21",
+        ].includes(id),
+        "VARIANT_PHOTO_PILOT_REQUIRED",
+      );
+      await preflight();
+      return call("GET", `variant-photos/${id}`);
+    },
     photo: async (id, mediaId) => {
       requireValue(
         uuid.test(id) && Number.isSafeInteger(mediaId) && mediaId > 0,

@@ -30,6 +30,10 @@ const displayPolicy = await readFile(
   new URL("./display-only.php", import.meta.url),
   "utf8",
 );
+const variantPhotos = await readFile(
+  new URL("./variant-photos.php", import.meta.url),
+  "utf8",
+);
 // Playground 3.1.56 listens without a host argument. Restrict every TCP listener
 // in this dedicated process before importing/starting it; do not expose admin on LAN.
 const originalListen = Server.prototype.listen;
@@ -97,6 +101,11 @@ const blueprint = {
       step: "writeFile",
       path: "/wordpress/wp-content/mu-plugins/m9-local-guard.php",
       data: guard,
+    },
+    {
+      step: "writeFile",
+      path: "/wordpress/wp-content/mu-plugins/m9-local-variant-photos.php",
+      data: variantPhotos,
     },
     ...(!installed
       ? [

@@ -44,3 +44,32 @@ outputs/m9-fotos-variantes-storage-2026-10-06/, workspace principal.
 La suite remota anterior CI304 terminó SUCCESS. No confundir la preparación de
 este flujo con haber copiado ya las 5,815 fotos. Comprobar resultados de staging
 antes de afirmar el alcance ejecutado. Sin producción, Woo, inventario o merge.
+
+## Ajustes de la comprobación en navegador
+
+0.76.1 corrigió el listado general: read_migration_galleries devuelve un JSON
+agregado y no requiere paginación de filas; sólo el nuevo listado tabular se
+pagina. 0.76.2 conserva las familias completadas en el contador tras actualizar
+la página. El proceso de variantes usa hasta cuatro familias independientes en
+paralelo, con pausa que espera las solicitudes en curso. Ruta POST del mismo
+origen, JSON y UUID único, autorización y staging comprobados nuevamente en
+la acción; nunca recibe archivos/URLs/precios del cliente. La galería general
+conserva su proceso anterior. Build/tipos/lint repetidos tras estos cambios.
+
+Piloto real:55variantes/9familias, repetición cero cambios. Se descargaron seis
+archivos públicos desde Storage y sus bytes/SHA coinciden con la evidencia.
+Comprobación visual de código416/talla22/$1,450: imagen cargada desde staging
+Storage. Ampliación supervisada en curso; usar cierre.json para alcance final.
+Publicación final: local7712926, remoto76d767cf1e177bd29187c347f534205385c26900,
+árbol idéntico d7c1a6b3b579cdc15fd144b78b6320218f1479e6. No forzar historial.
+
+Aviso informativo de tabla privada: [RLS sin políticas de acceso directo](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy). El acceso autorizado se valida en el RPC; no se habilita acceso directo para eliminar el aviso.
+
+
+### 2026-10-06 — Copia total de fotos propias de variantes conciliadas
+
+Cierre0.76.2:5,815variantes/1,013familias con copias en staging Storage.1,037objetos comprobados por GET público:SHA256/bytes/MIME coinciden todos, cero fallos. Dos preparaciones idénticas; piloto55/9, ampliación autenticada1013/1013 y repetición completa5815:0altas/0auditoría extra.1,013auditorías de copia. Tabla de evidencia original conserva5,928filas;113sin foto no reciben imágenes inventadas y seis reservas siguen excluidas.
+
+Catálogo/fuentes/borradores/categorías y colas conservan sus huellas/cantidades; cero inventario.475unitarias/66archivos,8controles SQL rollback,lint/tipos/build y CI307/run37561269888SUCCESS. Preview0.76.2 y foto416/talla22/$1,450 desde Storage comprobados. Detectados/corregidos en navegador el listado JSON y contador persistente.
+
+Cobertura de catálogo sigue7,709/16,224=47.516%,8,515pendientes. Próximo: lectores complementarios599, envío independiente de fotos por variante a Woo de pruebas y conciliación retenida. Detalle[M9_FOTOS_VARIANTES_STORAGE.md](M9_FOTOS_VARIANTES_STORAGE.md); outputs/m9-fotos-variantes-storage-2026-10-06/verificacion.json,bytes-todas.json,cierre.json,conservacion.json,reporte.md y capturas. Local7712926/remoto76d767cf1e177bd29187c347f534205385c26900/árbol d7c1a6b3b579cdc15fd144b78b6320218f1479e6; documentación de cierre posterior local. Sin producción,Woo,existencias o merge.Sol suficiente;Astra para fase operativa.

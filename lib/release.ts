@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.76.2";
-export const APP_RELEASE = "Familias completas en Woo de pruebas";
+export const APP_VERSION = "0.77.0";
+export const APP_RELEASE = "Catálogo SICAR completo para revisión";
