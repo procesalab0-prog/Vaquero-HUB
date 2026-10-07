@@ -51,6 +51,8 @@ for (const width of [390, 768, 1440]) {
       ),
     ).toBe(true);
     expect(errors).toEqual([]);
-    await page.screenshot({ path: `/private/tmp/quick-product-${width}.png` });
+    await page.screenshot({
+      path: test.info().outputPath(`quick-product-${width}.png`),
+    });
   });
 }

@@ -25,7 +25,9 @@ test("el conteo de piezas conserva pasos enteros y rechaza medias piezas", async
   await expect(dialog.getByText("1 de 20 capturadas")).toBeVisible();
   await expect(dialog).not.toContainText("0 capturas");
   expect(errors).toEqual([]);
-  await page.screenshot({ path: "/private/tmp/inventory-units-count-768.png" });
+  await page.screenshot({
+    path: test.info().outputPath("inventory-units-count-768.png"),
+  });
 });
 
 test("buscar un código despliega su variante sin abrir grupos a mano", async ({
@@ -98,7 +100,9 @@ test("captura 20 variantes seguidas con Enter y sin recargar", async ({
     dialog.getByRole("button", { name: "Cerrar y aplicar" }),
   ).toBeEnabled();
   await expect(page.locator("html")).toHaveJSProperty("scrollWidth", 390);
-  await page.screenshot({ path: "/private/tmp/inventory-units-count-390.png" });
+  await page.screenshot({
+    path: test.info().outputPath("inventory-units-count-390.png"),
+  });
 });
 
 test("filtra mercancía al solicitar un traspaso y conserva lo elegido", async ({
