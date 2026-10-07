@@ -16,13 +16,11 @@ export default async function Page() {
     variants: number;
     copied: number;
   };
-  async function load(
-    name: "read_migration_galleries" | "list_variant_photo_copies",
-  ) {
+  async function load() {
     const rows: Row[] = [];
     for (let start = 0; start < 20000; start += 1000) {
       const { data, error } = await supabase
-        .rpc(name)
+        .rpc("list_variant_photo_copies")
         .order("product_id")
         .range(start, start + 999);
       if (error) return { data: [], error: true };
@@ -34,8 +32,8 @@ export default async function Page() {
     return { data: [], error: true };
   }
   const [{ data, error }, variants] = await Promise.all([
-    load("read_migration_galleries"),
-    load("list_variant_photo_copies"),
+    supabase.rpc("read_migration_galleries"),
+    load(),
   ]);
   if (error) return <p>No se pudo consultar el catálogo conciliado.</p>;
   return (
