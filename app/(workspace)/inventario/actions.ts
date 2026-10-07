@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requirePermission } from "@/lib/auth/authorization";
+import { parseQuantityTransport } from "@/lib/measure-units";
 
 const inventoryPath = "/inventario";
 
@@ -12,8 +13,7 @@ function textField(formData: FormData, name: string) {
 }
 
 function numberField(formData: FormData, name: string) {
-  const value = Number(textField(formData, name));
-  return Number.isFinite(value) ? value : null;
+  return parseQuantityTransport(textField(formData, name), true);
 }
 
 function errorStatus(error: unknown) {
@@ -27,6 +27,8 @@ function errorStatus(error: unknown) {
         ? error.message
         : "";
   if (message.includes("STALE_INVENTORY")) return "inventario-desactualizado";
+  if (message.includes("INVALID_MEASURE_QUANTITY"))
+    return "inventario-cantidad-invalida";
   if (message.includes("INSUFFICIENT_STOCK")) return "inventario-reservado";
   if (
     message.includes("NOT_AUTHORIZED") ||
@@ -67,18 +69,18 @@ function jsonItems(formData: FormData, field = "items") {
       return null;
     const items = parsed.map((item) => {
       const candidate = item as { variant_id?: unknown; qty?: unknown };
+      const qty = parseQuantityTransport(String(candidate.qty ?? ""), true);
+      if (qty === null) throw new Error("INVALID_MEASURE_QUANTITY");
       return {
         variant_id: String(candidate.variant_id ?? ""),
-        qty: Number(candidate.qty),
+        qty,
       };
     });
     return items.every(
       (item) =>
         item.variant_id &&
-        Number.isFinite(item.qty) &&
-        Number.isSafeInteger(item.qty) &&
         item.qty >= 0 &&
-        item.qty <= 999999999,
+        item.qty <= 999999999.999,
     )
       ? items
       : null;
@@ -104,10 +106,8 @@ export async function applyInventoryAdjustment(formData: FormData) {
       !locationId ||
       expectedQuantity === null ||
       expectedQuantity < 0 ||
-      !Number.isSafeInteger(expectedQuantity) ||
       countedQuantity === null ||
       countedQuantity < 0 ||
-      !Number.isSafeInteger(countedQuantity) ||
       !reason
     ) {
       status = "inventario-datos-invalidos";
@@ -169,8 +169,7 @@ export async function recordInventoryCountItem(formData: FormData) {
       !countId ||
       !variantId ||
       countedQuantity === null ||
-      countedQuantity < 0 ||
-      !Number.isSafeInteger(countedQuantity)
+      countedQuantity < 0
     )
       throw new Error("INVALID_COUNT_QUANTITY");
     const { error } = await supabase.rpc("record_inventory_count_item", {
@@ -200,8 +199,7 @@ export async function recordInventoryCountItemInline(formData: FormData) {
       !countId ||
       !variantId ||
       countedQuantity === null ||
-      countedQuantity < 0 ||
-      !Number.isSafeInteger(countedQuantity)
+      countedQuantity < 0
     )
       throw new Error("INVALID_COUNT_QUANTITY");
     const { error } = await supabase.rpc("record_inventory_count_item", {

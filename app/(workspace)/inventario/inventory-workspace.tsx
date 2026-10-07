@@ -1,6 +1,8 @@
 "use client";
 
 import { INVENTORY_SNAPSHOT_LIMIT, summarizeInventory } from "@/lib/inventory-summary";
+import { groupInventory } from "@/lib/inventory-groups";
+import { measureQuantityStep, parseMeasureQuantity, quantityUnit, summarizeMeasureQuantities } from "@/lib/measure-units";
 
 import {
   ArrowDownLeft,
@@ -65,6 +67,11 @@ const statusMessages: Record<
   "inventario-datos-invalidos": {
     title: "Revisa el conteo y el motivo",
     copy: "No se guardó ningún cambio.",
+    tone: "error",
+  },
+  "inventario-cantidad-invalida": {
+    title: "Revisa la cantidad y su unidad",
+    copy: "Piezas y pares requieren enteros; las unidades fraccionarias admiten hasta tres decimales. No se guardó ningún cambio.",
     tone: "error",
   },
   "inventario-no-disponible": {
@@ -229,6 +236,7 @@ function ContinuousCountCapture({
     items[0];
   const [variantId, setVariantId] = useState(firstPending?.variantId ?? "");
   const [quantity, setQuantity] = useState("");
+  const selectedUnit = quantityUnit(items.find(item => item.variantId === variantId) ?? {});
   const [query, setQuery] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -270,14 +278,14 @@ function ContinuousCountCapture({
   function submitCapture(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isPending) return;
-    const countedQuantity = Number(quantity);
+    const countedQuantity = parseMeasureQuantity(quantity, selectedUnit, true);
     if (
       !variantId ||
       quantity === "" ||
-      !Number.isSafeInteger(countedQuantity) ||
+      countedQuantity === null ||
       countedQuantity < 0
     ) {
-      setFeedback("Escribe una cantidad entera mayor o igual a cero.");
+      setFeedback(selectedUnit.decimal_places === 0 ? "Escribe una cantidad entera mayor o igual a cero." : "Escribe una cantidad mayor o igual a cero con hasta tres decimales.");
       return;
     }
     const formData = new FormData();
@@ -368,14 +376,14 @@ function ContinuousCountCapture({
           </select>
         </label>
         <label>
-          <span>Cantidad física</span>
+          <span>Cantidad física · {selectedUnit.name}</span>
           <input
             ref={quantityRef}
             aria-label="Cantidad física"
             type="number"
             min="0"
-            step="1"
-            inputMode="numeric"
+            step={measureQuantityStep(selectedUnit)}
+            inputMode={selectedUnit.decimal_places === 3 ? "decimal" : "numeric"}
             value={quantity}
             onChange={(event) => setQuantity(event.target.value)}
             required
@@ -468,18 +476,18 @@ function TransferItemForm({
           <label key={item.variantId}>
             <span>
               {item.productName}
-              <small>{item.sku}</small>
+              <small>{item.sku} · {quantityUnit(item).name}</small>
             </span>
             <input
               type="number"
-              min={mode === "prepare" ? 1 : 0}
+              min={mode === "prepare" ? measureQuantityStep(quantityUnit(item)) : 0}
               max={
                 mode === "prepare"
                   ? item.requestedQuantity
                   : (item.sentQuantity ?? item.requestedQuantity)
               }
-              step="1"
-              inputMode="numeric"
+              step={measureQuantityStep(quantityUnit(item))}
+              inputMode={quantityUnit(item).decimal_places === 3 ? "decimal" : "numeric"}
               value={quantities[item.variantId] ?? 0}
               onChange={(event) =>
                 setQuantities((current) => ({
@@ -573,15 +581,15 @@ function NewTransferForm({
               {item.productName}
               <small>
                 {variantDescription(item)} ·{" "}
-                {formatQuantity(item.availableQuantity)} disponibles
+                {formatQuantity(item.availableQuantity)} {quantityUnit(item).name} disponibles
               </small>
             </span>
             <input
               type="number"
               min="0"
               max={item.availableQuantity}
-              step="1"
-              inputMode="numeric"
+              step={measureQuantityStep(quantityUnit(item))}
+              inputMode={quantityUnit(item).decimal_places === 3 ? "decimal" : "numeric"}
               value={quantities[item.variantId] ?? 0}
               onChange={(event) =>
                 setQuantities((current) => ({
@@ -631,6 +639,7 @@ export function InventoryWorkspace({
   canCreateTransfer = false,
   canApproveTransfer = false,
   canReceiveTransfer = false,
+  initialShowTransfers = false,
   adjustmentAction,
   createCountAction,
   recordCountAction,
@@ -657,6 +666,7 @@ export function InventoryWorkspace({
   canCreateTransfer?: boolean;
   canApproveTransfer?: boolean;
   canReceiveTransfer?: boolean;
+  initialShowTransfers?: boolean;
   adjustmentAction?: ServerAction;
   createCountAction?: ServerAction;
   recordCountAction?: InlineCountAction;
@@ -675,22 +685,18 @@ export function InventoryWorkspace({
   const { identity } = useWorkspace();
   const [showMovements, setShowMovements] = useState(false);
   const [showCounts, setShowCounts] = useState(false);
-  const [showTransfers, setShowTransfers] = useState(false);
+  const [showTransfers, setShowTransfers] = useState(initialShowTransfers && (canCreateTransfer || canApproveTransfer || canReceiveTransfer));
   const [adjusting, setAdjusting] = useState<InventoryItem | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
+  const [expandAll, setExpandAll] = useState(false);
   const deferredQuery = useDeferredValue(query);
   const activeLocation = locations.find(
     (location) => location.id === activeLocationId,
   );
-  const availableUnits = items.reduce(
-    (total, item) => total + item.availableQuantity,
-    0,
-  );
-  const reservedUnits = items.reduce(
-    (total, item) => total + item.reservedQuantity,
-    0,
-  );
+  const unitTotals = summarizeMeasureQuantities(items);
+  const availableUnits = unitTotals.map(group => `${formatQuantity(group.availableQuantity)} ${group.unit.name}`).join(" · ") || "0";
+  const reservedUnits = unitTotals.map(group => `${formatQuantity(group.reservedQuantity)} ${group.unit.name}`).join(" · ") || "0";
   const filteredItems = useMemo(() => {
     const term = deferredQuery.trim().toLocaleLowerCase("es-MX");
     return items.filter((item) => {
@@ -709,11 +715,12 @@ export function InventoryWorkspace({
       const matchesStatus =
         filter === "all" ||
         (filter === "available" && item.availableQuantity > 1) ||
-        (filter === "last" && item.availableQuantity === 1) ||
+        (filter === "last" && item.availableQuantity > 0 && item.availableQuantity <= 1) ||
         (filter === "out" && item.availableQuantity <= 0);
       return matchesText && matchesStatus;
     });
   }, [deferredQuery, filter, items]);
+  const productGroups = useMemo(() => groupInventory(filteredItems), [filteredItems]);
   const message = status ? statusMessages[status] : undefined;
 
   return (
@@ -792,11 +799,11 @@ export function InventoryWorkspace({
       <div className="summary-grid inventory-summary">
         <article>
           <span>Disponibles para vender</span>
-          <strong>{formatQuantity(availableUnits)}</strong>
+          <strong>{availableUnits}</strong>
         </article>
         <article>
-          <span>Piezas reservadas</span>
-          <strong>{formatQuantity(reservedUnits)}</strong>
+          <span>Cantidades reservadas</span>
+          <strong>{reservedUnits}</strong>
         </article>
         <article>
           <span>Variantes agotadas</span>
@@ -832,7 +839,7 @@ export function InventoryWorkspace({
           {[
             ["all", "Todos"],
             ["available", "Disponible"],
-            ["last", "Última"],
+            ["last", "1 unidad o menos"],
             ["out", "Agotado"],
           ].map(([value, label]) => (
             <button
@@ -845,6 +852,9 @@ export function InventoryWorkspace({
             </button>
           ))}
         </div>
+        <button type="button" className="secondary-button" onClick={() => setExpandAll((value) => !value)}>
+          {expandAll ? "Contraer variantes" : "Desplegar variantes"}
+        </button>
       </div>
 
       <div className="data-table inventory-table">
@@ -856,11 +866,18 @@ export function InventoryWorkspace({
           <span>Físico</span>
           <span>Acción</span>
         </div>
-        {filteredItems.map((item) => {
+        {productGroups.map((group) => (
+          <details className="inventory-product-group" key={`${activeLocationId}:${group.productId}:${deferredQuery}:${filter}:${expandAll}`}
+            open={expandAll || Boolean(deferredQuery.trim()) || filter !== "all"}>
+            <summary>
+              <strong>{group.name}<small>{group.brand}</small></strong>
+              <span>{group.items.length} variantes{deferredQuery.trim() || filter !== "all" ? " coincidentes" : ""}</span>
+            </summary>
+        {group.items.map((item) => {
           const tone =
             item.availableQuantity <= 0
               ? "out"
-              : item.availableQuantity === 1
+              : item.availableQuantity <= 1
                 ? "low"
                 : "good";
           return (
@@ -875,7 +892,7 @@ export function InventoryWorkspace({
                 </strong>
               </div>
               <code data-label="Código">{item.code}</code>
-              <span data-label="Variante">{variantDescription(item)}</span>
+              <span data-label="Variante">{variantDescription(item)} · {quantityUnit(item).name}</span>
               <span data-label="Disponible" className={`stock-number ${tone}`}>
                 {formatQuantity(item.availableQuantity)}
               </span>
@@ -904,6 +921,8 @@ export function InventoryWorkspace({
             </div>
           );
         })}
+          </details>
+        ))}
         {filteredItems.length === 0 ? (
           <div className="inventory-empty">
             <PackageOpen aria-hidden="true" />
@@ -972,14 +991,14 @@ export function InventoryWorkspace({
                 ) : null}
               </div>
               <label>
-                <span>¿Cuántas piezas contaste?</span>
+                <span>¿Cuánto contaste? · {quantityUnit(adjusting).name}</span>
                 <input
                   name="counted_quantity"
                   type="number"
                   min="0"
-                  max="999999999"
-                  step="1"
-                  inputMode="numeric"
+                  max="999999999.999"
+                  step={measureQuantityStep(quantityUnit(adjusting))}
+                  inputMode={quantityUnit(adjusting).decimal_places === 3 ? "decimal" : "numeric"}
                   defaultValue={adjusting.quantity}
                   required
                 />
@@ -1142,8 +1161,8 @@ export function InventoryWorkspace({
                       <div>
                         <strong>Conteo #{count.folio}</strong>
                         <small>
-                          {formatDate(count.createdAt)} · {count.items.length}{" "}
-                          capturas
+                          {formatDate(count.createdAt)}
+                          {!active ? ` · ${count.items.length} capturas` : ""}
                         </small>
                       </div>
                       <span

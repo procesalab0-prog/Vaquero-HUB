@@ -12,6 +12,22 @@ test("abre Mi Tienda SM y conserva la navegación principal", async ({
   ).toBeVisible();
 });
 
+test("las notas de Inicio no simulan un guardado sin conexión", async ({
+  page,
+}) => {
+  await page.goto("/inicio");
+  const notes = page.getByRole("region", { name: "Notas rápidas" });
+  await notes.scrollIntoViewIfNeeded();
+  await expect(notes.getByLabel("Nueva nota")).toBeDisabled();
+  await expect(
+    notes.getByRole("button", { name: "Guardar nota" }),
+  ).toBeDisabled();
+  await expect(
+    notes.getByText(/inicia sesión en una tienda conectada/i),
+  ).toBeVisible();
+  await expect(notes.getByLabel("Visibilidad")).toHaveValue("personal");
+});
+
 for (const viewport of [
   { name: "teléfono vertical", width: 390, height: 844 },
   { name: "iPad vertical", width: 768, height: 1024 },

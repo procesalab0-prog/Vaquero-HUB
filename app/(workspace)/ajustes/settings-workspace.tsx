@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { NotificationSettings } from "@/components/notification-settings";
 import Link from "next/link";
 import {
   Barcode,
@@ -22,7 +23,7 @@ import {
 } from "@/lib/accent";
 
 type Section =
-  "business" | "stores" | "pos" | "tickets" | "labels" | "appearance";
+  "business" | "stores" | "pos" | "tickets" | "labels" | "appearance" | "notifications";
 type Branch = {
   id: number | string;
   name: string;
@@ -36,6 +37,7 @@ const tabs: Array<{
   description: string;
   icon: typeof Store;
 }> = [
+  { id: "notifications", label: "Notificaciones", description: "Avisos y prueba de sonido", icon: MonitorCog },
   {
     id: "business",
     label: "Negocio",
@@ -238,6 +240,7 @@ export function SettingsWorkspace({
           ))}
         </nav>
         <div className="settings-panel" onChange={capturePreference}>
+          <div hidden={section !== "notifications"}><NotificationSettings /></div>
           <div hidden={section !== "business"}>
             <BusinessSettings
               phone={currentLocation.phone ?? ""}

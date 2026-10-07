@@ -6,7 +6,16 @@
 > Para entender el proyecto antes de tocarlo, empezar por
 > [`ESTADO_Y_CONTINUIDAD.md`](ESTADO_Y_CONTINUIDAD.md).
 >
-> Última actualización: 2026-09-21, al revisar el rediseño y las claves de etiqueta.
+> Última actualización: 2026-10-02, avance local de cantidades comerciales y aceptación operativa.
+
+## Integración candidata del 7 de octubre de 2026
+
+Las mejoras locales completas están preservadas en una rama de integración
+con main e45ef5b, versión candidata 0.56.0. La aceptación local usa Auth y
+PostgREST reales en Docker, en puertos exclusivos; no ocupa staging de M9.
+Consulta `INTEGRACION_MEJORAS_2026_10_07.md` para evidencia y compuertas.
+Esto actualiza el pendiente histórico de Auth local; incluye ensayo incremental local 101 → 123, pero no acredita aceptación
+alojada ni habilita dólares o asignación fraccionaria.
 
 ## Cómo usar esta cola
 
@@ -47,6 +56,518 @@ abrir un selector por cada variante. El mismo criterio aplica a conteos,
 traspasos y otras capturas repetitivas.
 
 ## Regla nueva, salida de la revisión de M2
+
+### Pendientes operativos recibidos el 1 de octubre de 2026
+
+#### Cierre del desarrollo local USD — 2 de octubre (no publicado)
+
+- Integración preparada en Venta: captura con teclado, referencia FIX obtenida
+  sólo desde servidor, importe USD original, equivalencia y cambio en MXN.
+  El botón sólo aparece si la base habilita el módulo; la acción del servidor
+  vuelve a comprobarlo antes de consultar Banxico. No admite crédito, puntos
+  ni conversión de cotizaciones en esta primera interfaz USD.
+- Devoluciones autorizadas conservan el reparto original, pero la parte USD
+  sale en pesos por el importe MXN histórico, sin tomar la tasa actual.
+  Repetición idempotente, token de un uso, rechazo de exceso e insuficiencia
+  de efectivo con reversión total comprobados en la base aislada. Cancelación
+  USD también restituye pesos y nunca saca billetes USD del libro extranjero.
+- Corte con captura ciega separada MXN/USD, diferencias y motivo. La necesidad
+  de contar USD procede del libro de caja: sigue presente aunque todas las
+  ventas USD hayan sido canceladas o devueltas. No se revela el esperado en
+  la consulta de sesión; se obtiene después de enviar ambos conteos.
+- Ticket térmico, reimpresión y PDF térmico/formal incluyen recibido USD,
+  tasa, equivalencia y cambio. El ticket de regalo excluye estos datos.
+  Los dos PDF de QA se renderizaron y revisaron sin recortes ni superposición.
+- 122 migraciones reconstruidas; pruebas nativas de cobro, devolución y corte
+  correctas, con dos conexiones reales para costos, conteos y concurrencia de
+  stock, cambio y cierre. Auth/Storage siguen siendo auxiliares sintéticos.
+  `test:usd-input` verifica React real en Chromium: teclado, coma, precisión,
+  efectivo insuficiente, cambio, confirmación y privacidad del regalo.
+- **No es cierre de aceptación ni autorización de despliegue.** El interruptor
+  USD y la asignación fraccionaria siguen apagados. Faltan el token de Banxico
+  y una base de aceptación con Auth/PostgREST real. La rama staging identificada
+  es compartida con M9: confirmar su disponibilidad o usar una independiente
+  antes de aplicar estas migraciones. No tocar el importador ni datos de M9.
+- Los apuntes anteriores se conservan como historial de bloques, no como
+  descripción del estado actual. No se subió este conjunto a main.
+- Regresión final local: 113 pruebas unitarias, 186 recorridos de navegador
+  sobre compilación de producción, tipos, lint, formato y reconstrucción de
+  las 122 migraciones correctos. La captura decimal y USD también pasan en
+  pruebas React/Chromium aisladas. No acredita Safari, hardware ni Auth real.
+
+#### Cantidades comerciales y documentos — avance local, 2 de octubre
+
+- Migraciones nuevas hacia delante para cotizaciones, venta, devolución parcial,
+  apartados y documentos con unidades. No se modifica una migración desplegada.
+  Cantidades originales incompatibles se rechazan, sin redondearlas en silencio;
+  importes se redondean por renglón a centavos. La última devolución parcial
+  devuelve exactamente los centavos restantes del renglón original.
+- Reportes e Inicio separan piezas, kilos y metros: no suman unidades distintas
+  como si fueran piezas. El resumen mixto devuelve cantidades agrupadas y un
+  total escalar nulo. El historial de tickets, consulta exacta y recibo incluyen
+  la unidad; el PDF comercial la identifica sin revelar costos.
+- Verificación local: 118 migraciones reconstruidas en PostgreSQL aislado;
+  cotización personalizada y conversión idempotente, espera, venta, cancelación,
+  tres devoluciones fraccionarias que restituyen el importe exacto, apartado,
+  abono, entrega sin recobro, reportes mixtos e historial comprobados ejecutando.
+  Se mantienen pruebas con dos conexiones reales para saldos, conteos y costos.
+- Crédito fraccionario comprobado: vender 0.5 a crédito por 6,173 centavos no
+  ingresa dinero en caja; abonar 1,000 sí. Dos devoluciones de 0.25 reducen
+  primero la deuda de 5,173 a 2,087 y después a cero; sólo la segunda devuelve
+  los 1,000 realmente abonados. Inventario restaurado sin regalar dinero.
+- Captura decimal conserva texto incompleto y bloquea cobro, apartado y espera
+  hasta corregirlo. `pnpm test:measure-input` prueba el componente React real en
+  Chromium: `1.` conservado, `1.2` válido, cero/exceso/4 decimales rechazados,
+  coma decimal aceptada y sin desbordar 390 px. Prueba aislada, no Auth real.
+- 93 pruebas unitarias, tipos, lint y compilación correctos. La suite completa
+  pasó 186 pruebas con dos procesos; la primera corrida con cinco procesos tuvo
+  cinco tiempos de espera, luego los nueve recorridos móviles aislados y la
+  repetición completa pasaron. La última compilación repitió los 186 recorridos
+  en verde; formato también correcto. No se oculta la primera ejecución.
+- **Todavía no publicado ni habilitado el producto fraccionario.** La fixture
+  fraccionaria se prepara exclusivamente en QA aislado. Falta aceptación con
+  Auth/PostgREST real y captura fraccionaria completa en interfaz; no equivale
+  a staging ni autoriza saltarse la compuerta de asignación de unidades.
+- Dólares: reembolso en MXN a la tasa original aprobado por el propietario
+  el 2 de octubre. Base local de referencia FIX preparada: tablas cerradas e
+  inmutables, consulta sólo de servidor, ajuste autorizado por gerencia y tasa
+  vinculada a la caja propia. La reconstrucción de 119 migraciones y la prueba
+  de dos conexiones concurrentes sobre la misma referencia pasaron.
+  Verificación adicional: 104 pruebas unitarias, tipos, lint, formato y
+  compilación correctos. La consulta del servidor comprueba la caja propia
+  antes de acceder a Banxico y no inventa una tasa si falta la referencia.
+  Falta configurar el token oficial, completar el libro USD, cobro, corte y
+  devolución en MXN con tasa original. El método USD sigue desactivado; esta
+  preparación no se presenta como un cobro implementado.
+  Siguiente bloque local: motor privado de cobro USD, todavía sin permiso de
+  ejecución para la aplicación y con compuerta apagada. Reusa el motor de venta,
+  guarda tasa original y dólares recibidos en libro separado, descuenta sólo
+  el cambio MXN del cajón y exige los documentos relacionados al confirmar.
+  La corrida aislada de 120 migraciones comprobó repetición idempotente, pago
+  mixto USD/tarjeta, rechazo de cambio insuficiente con reversión total y dos
+  cobros paralelos con cambio para uno solo. El corte y las devoluciones USD
+  siguen bloqueados mientras se completa su integración, sin afectar ventas
+  normales. No se habilitó ni publicó esta preparación.
+  Bloque siguiente local: cierre privado con conteos MXN/USD separados, en
+  una sola transacción. Exige motivo para diferencias en cualquiera de las
+  monedas y devuelve el esperado sólo después de capturar y cerrar. El cierre
+  anterior no puede saltarse el conteo USD; el documento no se edita ni borra.
+  121 migraciones reconstruidas en QA aislado: faltante USD de 100 centavos,
+  reversión de ambos documentos ante rechazo MXN, otra caja rechazada y dos
+  cierres concurrentes (uno sólo confirmado) comprobados ejecutando.
+  Todavía falta devolución USD en pesos, pantalla/recibo y aceptación con
+  Auth/PostgREST real. La compuerta de cobro y los permisos de ejecución del
+  cierre privado siguen cerrados; no equivale a una entrega publicada.
+  M9 sigue en el chat de Astra; no se modifica su importador.
+- Se identificó una rama Supabase `staging` existente mediante consulta de
+  sólo lectura. No se aplicaron cambios remotos ni se supone que esté libre del
+  trabajo paralelo de M9. Coordinar su uso antes de la aceptación Auth/PostgREST.
+
+#### Avance local adicional — producto rápido, 1 de octubre
+
+- Captura en Venta de nombre, cantidad entera y precio; costo opcional sólo
+  ADMIN/MANAGER, comprobado en servidor. Identificador interno de renglón,
+  nunca variante, SKU ni código de barras. El costo omitido se distingue de
+  un costo registrado de cero mediante `quick_cost_recorded`.
+- Carritos mixtos, borrador actual y espera conservan los datos. Los tickets
+  muestran el nombre y el importe sin inventar código. Un renglón rápido no
+  puede usarse como apartado ni añadirse a una cotización ya aprobada.
+- Cancelaciones y devoluciones autorizadas conservan los mismos controles de
+  dinero; sólo las variantes reales mueven inventario. La devolución parcial
+  dañada de un producto rápido tampoco crea existencia ni merma ficticia.
+- Productos permite recuperar nombre/precio de los últimos 100 renglones
+  rápidos de la sucursal para preparar un alta normal con `products.create`.
+  Esa alta no reescribe la venta original ni carga inventario automáticamente.
+- Migración nueva `20261002013734_pos_quick_product.sql`, sólo local. El cambio
+  reutiliza el motor privado de cobro mediante sustituciones verificadas; si
+  una definición anterior no coincide, la migración falla y revierte completa.
+- SQL nativo: cobro mixto, idempotencia, cancelación, devolución parcial con
+  autorización de un uso, espera y rechazo de costo por cajera comprobados
+  reconstruyendo todas las migraciones. Auth/Storage siguen siendo auxiliares
+  sintéticos: no equivale a una prueba Auth/PostgREST en staging.
+- Formulario y carrito comprobados visualmente en Chromium a 390, 768 y 1440
+  px; 77 pruebas unitarias, tipos, lint y compilación de producción correctos.
+  La prueba UI de recuperación/alta con Supabase real sigue pendiente.
+- No publicado: quedan cantidades fraccionarias completas, dólares y cierre
+  de aceptación. M9 sigue separado con Astra; no se modifica su importador.
+
+#### Preparación de precisión por unidad — sólo local, 1 de octubre
+
+- `20261002015327_measure_quantity_rpc_precision.sql` valida la cantidad
+  original antes de convertir a `numeric(12,3)` o entero, en cobro, borradores,
+  cotizaciones, apartados, conteos, ajustes y traspasos. Rechaza NaN/infinito,
+  unidad inexistente y precisión incompatible; no redondea en silencio.
+- No habilita kilos/metros ni cambia unidades de productos con historial.
+  Siguen pendientes las columnas/capturas de compra fraccionarias, centavos
+  por renglón y recorridos completos de reserva, entrega y devolución.
+- La regresión de producción local terminó con 180 pruebas de navegador
+  aprobadas; cubre también el nuevo carrito rápido en escritorio y teléfono.
+  No acredita hardware, Safari, audio físico ni Auth/PostgREST reales.
+
+#### Avisos operativos y compras por unidad — sólo local, 1 de octubre
+
+- Compras, apertura/movimientos/cierre de Caja y Cambios/Devoluciones publican
+  avisos al recibir la respuesta del servidor, además de Venta. Rechazos con
+  categoría de error, accesibles y por encima de modales, sin mezclarlos entre
+  sucursales. Una respuesta perdida en Compras pide revisar el historial antes
+  de repetir: no afirma que se haya revertido la transacción.
+- Sonido optativo por navegador, con activación explícita. Las pruebas de
+  audio simulado verifican programación, deduplicación y segundo plano; no
+  certifican altavoces ni Safari/PWA. No hay push ni avisos remotos entre equipos.
+- Migración nueva `20261002020415_measure_purchase_quantities.sql`: columnas de
+  compra/recepción conservan precisión, RPC valida según unidad y listado v2
+  redondea centavos por renglón. El listado entero anterior rechaza pedidos
+  fraccionarios en vez de redondearlos. La página de Compras usa v2.
+- Verificados: 110 migraciones limpias en PostgreSQL local, regresiones de
+  compra/recepción que rechazan fracciones en Par y cantidades con más de tres
+  decimales, listado v2 con unidad e importes, y concurrencia real de costos.
+  Auth/Storage son auxiliares sintéticos, no aceptación real en staging.
+- 81 pruebas unitarias y ocho de navegador para avisos aprobadas; comprobado
+  rechazo visible encima de un modal en teléfono vertical y audio bloqueado.
+- Sigue bloqueada la asignación de kilos/metros: faltan recorridos fraccionarios
+  completos de caja/venta, cotización, reserva, entrega, devolución y pantallas.
+  No modificar esta compuerta sólo porque el almacenamiento de compras admita
+  decimales. Dólares sigue pendiente, incluida la moneda de reembolso autorizada
+  que se consultó con Emmanuel. Ninguno de estos bloques se publicó en main.
+- Regresión final de este bloque: compilación de producción, tipos y lint en
+  verde, 81 pruebas unitarias, 182 de navegador y reconstrucción SQL con 110
+  migraciones. Los números anteriores de esta cola corresponden a entregas
+  locales previas, no al estado final de esta corrida.
+
+#### Inventario y capturas de Compras por unidad — sólo local, 1 de octubre
+
+- Nuevas migraciones `20261002032359_inventory_measure_quantity_guards.sql`,
+  `20261002033012_inventory_measure_snapshot.sql` y
+  `20261002034219_purchase_measure_metadata.sql`. Cantidades sin redondeo previo
+  de columna, guardas por unidad real, metadatos autorizados en inventario,
+  traspasos, pedidos y recepciones. Se conserva el historial y la bitácora sellada.
+  La vista privada dependiente se recrea dentro de la misma transacción,
+  conservando su consulta, `security_invoker` y permisos cerrados.
+- Conteos, ajustes, solicitudes/preparación/recepción de traspasos y Compras
+  muestran unidad y paso correcto: enteros para pieza/par, hasta tres decimales
+  para unidades fraccionarias. Los rechazos explican la cantidad y la unidad.
+  Resúmenes separados por unidad: no se suman kilos, metros y piezas en un
+  supuesto total de piezas. El progreso de compras promedia avance por renglón.
+- El PDF del proveedor muestra la unidad por renglón y suma importes redondeados
+  a centavos como el servidor. Prueba visual mixta: 1.25 y 0.625 kilos a $123.45,
+  más dos piezas a $500, total $1,231.47. Logo, columnas y cantidades renderizados
+  y revisados. No es un documento real ni acredita entrada de inventario.
+- Recepciones fraccionarias no crean etiquetas automáticas por pieza ni llevan
+  al lote de etiquetas si no hay renglones de unidades enteras. WhatsApp consulta
+  el pedido por el API v2 autorizado, sin redondear cantidades del API antiguo.
+- PostgreSQL nativo local: 113 migraciones limpias. Compra de 1.25, recepciones
+  parciales/idempotentes de 0.625, conteo con diferencia de −0.125, traspaso de
+  0.5, recepción de 0.375 y 0.125 en tránsito; total global igual al libro.
+  Dos conexiones realmente paralelas ajustando el mismo saldo decimal: una
+  aplica y otra recibe `STALE_INVENTORY`. Se rechazan cuatro decimales, doble
+  recepción y escritura directa; metadatos de unidad y permisos comprobados.
+- **No habilitar todavía kilos/metros en productos.** La fixture fraccionaria
+  se preparó únicamente en una base temporal QA vacía, con bypass explícito
+  del guard de asignación para probar el backend. La API pública sigue rechazando
+  `UNIT_FRACTIONAL_FLOW_PENDING`. No es una aceptación de venta/retorno decimal,
+  Auth/Storage son auxiliares sintéticos y no hubo corrida real en staging.
+- Próximo bloque: cobro, borradores, cotizaciones, apartados y devoluciones
+  fraccionarias completos, importes por renglón y precisión de tickets/reportes,
+  antes de abrir la compuerta de asignación. Dólares conserva la decisión
+  pendiente de moneda del reembolso. M9 queda con Astra, sin tocar su importador.
+- No publicado ni cerrado el punto 14. Versión pública sin cambiar; no subir
+  estos bloques parciales a main antes de completar la lista autorizada.
+- Verificación de este bloque: 89 pruebas unitarias y 186 de navegador en
+  Chromium de escritorio/teléfono, tipos, lint y compilación de producción;
+  inspección visual de conteos a 390/768 px y PDF mixto renderizado. La prueba
+  real con Auth/PostgREST y unidades fraccionarias en staging sigue pendiente.
+
+Lista consolidada en el Plan Maestro, sección «Pendientes de Mi Tienda SM —
+1 de octubre de 2026». No constituye una certificación de funciones existentes
+ni autoriza desplegar toda la lista en una sola entrega.
+
+- [ ] Auditar y corregir ergonomía de Productos, Venta, Inventario, Caja y
+      Compras/Proveedores; priorizar computadora y después tableta sin perder
+      teléfono vertical, identidad crema/negro ni controles financieros.
+- [ ] Consolidar acciones principales, formularios, estados y navegación con
+      teclado; comprobar escala de texto, solapamientos y scroll de modales.
+- [ ] Cotizaciones personalizadas: nombre libre, precios y descuentos propios
+      del documento sólo por administradores; vigencia configurable y
+      autorización para excepciones. Ver reglas aprobadas en el Plan Maestro.
+- [ ] Verificar escaneo directo de productos al carrito y conservar escaneo de
+      tickets como consulta, no como producto.
+- [ ] Diseñar producto rápido sin alta ni código, con datos recuperables para
+      alta posterior. Cajera/gerente, sin movimiento de inventario, costo
+      opcional sólo para gerencia; no reescribir ventas al catalogarlo después.
+- [ ] Notas rápidas en Inicio, total en tickets en espera y acceso a traspasos
+      desde Venta conservando permisos y sucursal activa.
+- [ ] PDF formal de la orden de compra existente; nombre opcional por renglón
+      sin modificar catálogo. Campos seleccionables; WhatsApp sólo para admins.
+- [ ] Unidades de medida configurables: pieza/par enteros, kilo/metro hasta tres
+      decimales y catálogo ampliable sin conversiones implícitas.
+- [ ] Incorporar prioridad de información comercial de WooCommerce en M9,
+      sin convertirla en autoridad automática sobre stock, costos o códigos.
+- [ ] Reportes filtrables por categoría/departamento, con los permisos actuales.
+
+Estos pendientes amplían trabajo existente; no reemplazan las compuertas de
+M9 ni los pendientes financieros de dólares y promedio ponderado. Las mejoras
+de ergonomía operativa se atienden durante los módulos, no se relegan al
+rediseño cosmético final. Las notificaciones con sonido conservan su pendiente
+independiente más abajo.
+
+Respuestas de Emmanuel registradas el 1 de octubre: notas personales o
+compartidas por sucursal y editables sólo por su autor; WooCommerce como
+referencia comercial y reportes con departamento/categoría separados. Ver el
+detalle en «Reglas confirmadas por Emmanuel» del Plan Maestro. No inventar
+vigencia numérica ni permisos para borrar notas ajenas. Publicar en main sólo
+después de completar y verificar la lista, no los bloques parciales.
+
+### Primera entrega de ergonomía — implementación local, 1 de octubre
+
+- Productos: encabezado y filas compactos en computadora, acciones secundarias
+  agrupadas en «Más acciones», buscador fijo y texto contenido en sus columnas.
+  El aviso obsoleto «Se activa en M3» se sustituyó por acceso a Inventario.
+- Venta: corregida la distribución de cinco bloques del carrito; sólo la lista
+  ocupa la fila flexible, con total y cobro dentro del panel. Tickets en espera
+  muestran total estimado con precios actuales y descuento guardado; si falta
+  una variante, se indica que el total necesita validación. El cobro sigue
+  validando precios, existencias y autorización de descuentos.
+- Inventario: filtros/buscador fijos en computadora, tabla con desplazamiento
+  propio y encabezados visibles, cantidades alineadas. Compras y apertura de
+  Caja: espacio compactado, sin cambiar transacciones ni conteo ciego.
+- Verificación local: 32 pruebas de navegador en verde (catálogo, venta,
+  inventario, compras y ventanas móviles), más comprobaciones de tipos y lint.
+  Son pruebas en Chromium y entorno de demostración; no certifican Safari,
+  operaciones reales, permisos de producción ni el total de un ticket en espera
+  persistido en Supabase.
+- No está publicado en main. La lista de 16 puntos sigue abierta: no se han
+  implementado entonces producto rápido, unidades, notas, cotizaciones personalizadas,
+  PDF de proveedor ni el resto de mejoras funcionales.
+
+### Segunda entrega operativa — implementación local, 1 de octubre
+
+- Escanear un código exacto de producto en Venta agrega la variante al carrito,
+  con el buscador enfocado o mediante lector USB sin foco. Conserva ceros
+  iniciales, rechaza códigos ambiguos/desconocidos y no supera la existencia
+  cargada. Un folio de ticket sigue abriendo la compra, no agrega mercancía.
+- Limitación explícita: este camino reconoce el código principal o SKU de las
+  variantes cargadas. Venta carga como máximo 500 variantes; ampliar la búsqueda
+  en servidor y reconocer códigos alternativos requiere una entrega adicional.
+- Acceso a Traspasos desde Venta: visible con `inventory.read` y algún permiso
+  de traspaso, conserva sucursal y abre directamente el diálogo existente.
+  Antes de navegar guarda el carrito real y se queda en Venta si falla.
+  La demostración impide abandonar un carrito porque no puede persistirlo.
+- Verificación: 40 pruebas de Chromium y 8 del proyecto móvil en verde;
+  comprobación de tipos y lint. Lecturas de permisos y persistencia de carrito
+  en producción pendientes de prueba con usuarios reales; no se modificaron
+  permisos, tablas, funciones de dinero ni inventario.
+- Reportes por categoría/departamento siguen pendientes. Filtrar sólo la tabla
+  visible daría totales incorrectos y resultados incompletos por los límites;
+  debe hacerse dentro de la consulta antes de resumir y limitar.
+- No publicado en main. Estos resultados no cierran la lista completa de 16
+  puntos ni certifican Safari o hardware físico.
+
+### Tercera entrega — notas de Inicio, implementación local, 1 de octubre
+
+- Notas personales ligadas a la cuenta y compartidas ligadas a la sucursal
+  activa; autor y fecha visibles, edición únicamente por autor. No se añadió
+  borrado ni posibilidad de cambiar una nota privada a compartida.
+- Tabla con RLS y sin acceso directo para clientes: lectura/escritura por RPC
+  autorizada, identidad derivada de sesión activa. Administración tampoco puede
+  consultar notas privadas ajenas por RPC. El texto no se copia a la bitácora
+  general para no volver a exponerlo por esa vía.
+- La edición bloquea la fila y verifica su revisión; otra pestaña no puede
+  sobrescribir silenciosamente un cambio. Rechaza sucursal inaccesible/inactiva
+  o tránsito, texto vacío y más de 2,000 caracteres.
+- Lista acotada a las 100 notas más recientes, con aviso explícito al alcanzar
+  el límite. Las notas personales se muestran en cualquier sucursal de la cuenta.
+- Migración nueva `20261001164132_workspace_notes.sql`, sin editar migraciones
+  anteriores ni aplicarla a producción. Probada en PostgreSQL embebido aislado
+  con datos sintéticos y auxiliares de identidad/alcance de prueba: privacidad,
+  autoría, revisión, validación y privilegios correctos. Esto no sustituye
+  reconstruir las migraciones completas ni probar Auth/PostgREST en staging.
+- Añadidas pruebas de integración con usuarios reales para la suite local/CI;
+  no ejecutadas aún, porque no hay Docker/Supabase local en este equipo. Las 51
+  pruebas unitarias (tres nuevas) y 28 pruebas Chromium de Inicio y regresión pasaron; tipos
+  y lint también. La pantalla en navegador se comprobó en demostración, sin
+  fingir que una nota se guarda cuando no existe conexión.
+- Sin publicar en main. Faltan cotizaciones personalizadas, producto rápido,
+  unidades, PDF de proveedor, filtros de reportes y completar la ergonomía y
+  búsqueda de códigos fuera de las primeras 500 variantes antes del cierre.
+
+### Cuarta entrega — ampliación del escaneo, implementación local, 1 de octubre
+
+- Búsqueda exacta en servidor por SKU o cualquier código registrado, sin el
+  límite de las primeras 500 variantes. Rechaza coincidencias ambiguas,
+  inexistentes, productos inactivos y mercancía reservada/sin disponibilidad.
+- RPC autorizada por `pos.sell`, caja abierta propia y sucursal accesible;
+  sin costos en la respuesta ni nuevos permisos de lectura sobre tablas.
+- Recuperación de variantes de los borradores actuales/en espera fuera del
+  catálogo inicial, con existencia obtenida por ID. El carrito conserva sus
+  productos al recargar. Los escaneos remotos se procesan en una cola y sus
+  resultados se ignoran si se abre un diálogo o cambia la caja durante la espera.
+- Migración nueva `20261001232459_pos_exact_scanner_lookup.sql`; no aplicada a
+  producción. Probada en PostgreSQL aislado con 601 variantes sintéticas,
+  códigos alternativos, ceros iniciales, SKU, cantidades reservadas, permisos,
+  caja propia y recuperación por ID. Falta integración Auth/PostgREST en staging.
+- No modifica códigos existentes, costos, importadores ni reglas de M9.
+  Emmanuel confirmó que M9 se trabaja en paralelo en otro chat con Astra.
+  Mantener separación; no publicar esta rama parcial a main.
+- Cotizaciones personalizadas siguen pendientes: inspeccionado el recorrido
+  cotización → borrador → cobro. Honrar precios propios exige cambio autorizado
+  en el cálculo de venta, no sólo agregar campos o alterar el PDF.
+
+### Quinta entrega — PDF de proveedor, implementación local, 1 de octubre
+
+- Botón «PDF para proveedor» en la orden guardada. Documento A4 con logo,
+  identidad crema/negro, estado de la orden y campos opcionales seleccionables:
+  tienda/proveedor, folio/fecha, destino, códigos, costos/total, entrega, notas,
+  condiciones e información de impuestos. No modifica inventario ni dinero.
+- Nombre opcional por producto únicamente en la presentación del PDF; no cambia
+  catálogo, códigos ni orden original. Se avisa que estas personalizaciones no
+  se guardan y se descartan al cerrar. Unidades actuales: piezas; el catálogo de
+  unidades y la captura fraccionaria siguen pendientes del punto 14.
+- Impuestos son información textual, no importes inventados que se suman a la
+  orden. Cantidades/costos salen de la orden existente. Logo conserva proporción,
+  texto largo se envuelve y las órdenes extensas pasan a páginas siguientes,
+  con encabezados y numeración: prueba de 100 productos, último renglón y total
+  comprobados por extracción y revisión visual de PDF.
+- WhatsApp sólo disponible para ADMIN, después de descargar. La acción en
+  servidor exige `purchases.manage`, rol ADMIN actual y consulta autorizada de
+  la orden en la sucursal; teléfono y folio se leen de la base, no del navegador.
+  Abre mensaje; el usuario debe adjuntar el PDF. No hay envío automático.
+- Pruebas unitarias del documento/enlace y de la acción con dependencias
+  simuladas: administrador, rechazo de gerente, orden ajena/sucursal prohibida,
+  falta de sesión y teléfono inválido. Falta comprobar Auth/PostgREST con usuarios
+  reales; estas simulaciones no certifican los permisos de staging/producción.
+- 61 pruebas unitarias, 56 de navegador (Compras, Productos, Venta e Inicio),
+  tipos y lint en verde. Descarga y formulario comprobados
+  en Chromium a 1440×900, 768×1024 y 390×844: botones alcanzables, sin scroll
+  horizontal ni errores de página. No certifica Safari o envío físico por WhatsApp.
+- Sin subir a main ni tocar M9. Restan cotizaciones personalizadas, producto
+  rápido, unidades, reportes por departamento/categoría y cierre integral de
+  ergonomía. La publicación continúa condicionada a completar toda la lista.
+
+### Sexta entrega — cotizaciones personalizadas, implementación local, 1 de octubre
+
+- Nombre libre sin alta de cliente, precio unitario y descuento por renglón
+  exclusivos de ADMIN; el catálogo no se modifica. El servidor y la base
+  verifican el rol, no sólo la visibilidad de los controles.
+- Cotización guarda precio original, cotizado, descuento y total. Conversión
+  usa el mismo motor monetario de ventas, con contexto de cotización privado;
+  la API de venta normal no acepta ese contexto ni puede saltarse el PIN.
+- Dentro de la vigencia se cobra el snapshot aprobado aunque cambie el precio
+  actual. Productos inactivos o sin existencia siguen bloqueados. El carrito
+  muestra el mismo total y no permite editar cantidades/precios de la propuesta.
+- Excepción de vigencia: ADMIN, nueva fecha explícita y motivo obligatorio,
+  auditados. No se inventa un número fijo de días. Borradores de cotización
+  recuperan precios aprobados y no permiten alterar el contenido vinculado.
+- PDF comercial paginado, logo proporcional y precio original/cotizado/
+  descuento por renglón. Revisado documento sintético de 100 productos,
+  incluyendo el último y total; no corta silenciosamente la lista.
+- Migración nueva `20261001235017_personalized_quote_prices.sql`. Pruebas
+  financieras en PostgreSQL aislado con helpers sintéticos: catálogo sin mutar,
+  snapshot, descuento, caja, stock, duplicado y permisos. No sustituyen Auth,
+  reconstrucción completa ni conexiones concurrentes reales en staging.
+- 11 pruebas de Chromium de Venta/cotizaciones pasan con un trabajador;
+  hubo un timeout intermitente al abrir catálogo en la primera corrida paralela.
+  Captura comprobada a 1440×900, 768×1024 y 390×844. Suite de integración
+  ampliada para conversión concurrente; todavía no ejecutada aquí.
+- Sin subir a main. Producto rápido, unidades, reportes y cierre integral
+  permanecen abiertos; M9 sigue reservado al otro chat de Astra.
+
+### Séptima entrega — reportes y variantes agrupadas, implementación local, 1 de octubre
+
+- Categoría y departamento independientes, combinables con sucursal, fechas
+  y búsqueda. Clasificación actual del catálogo, no inferida del código de SICAR.
+  Departamento opcional editable desde Productos, con permiso y bitácora.
+- Al filtrar renglones, los importes se suman sólo de los artículos coincidentes;
+  no se presentan los pagos del ticket completo como cobro atribuible al filtro.
+- Migración nueva `20261002001711_report_classification_filters.sql`. Pruebas
+  de PostgreSQL aislado comprueban filtros, sumas, permisos y sucursal;
+  helpers de Auth sintéticos: no sustituye la suite completa en staging.
+- Tres pruebas Chromium de filtros/URL, recarga y navegación pasan en
+  computadora, tableta y teléfono. Datos de demostración identificados.
+- Inventario agrupa por ID de producto, no por nombre, y permite desplegar
+  todas las variantes. Buscar código despliega automáticamente coincidencias.
+  Seis pruebas Chromium pasan, incluyendo 20 conteos con Enter y traspasos.
+- TypeScript, lint y 73 pruebas unitarias pasan. Sin publicar en main;
+  producto rápido, unidades y cierre integral siguen abiertos. M9 sin tocar.
+
+### Unidades — fundación local en curso, 1 de octubre
+
+- Migración aditiva `20261002011354_measure_units_foundation.sql`: catálogo
+  cerrado, pieza/par enteros y kilo/metro hasta tres decimales; alta extensible
+  con permiso de alta de catálogo y bitácora. Definiciones no editables ni
+  borrables, incluso privilegiadamente, para no reinterpretar cantidades.
+- Productos existentes conservan PIECE. No habilita todavía venta fraccionaria
+  en esta fundación: esas rutas requieren adaptar conjuntamente
+  borradores, recepciones, conteos, traspasos, apartados y devoluciones.
+- Validación decimal y cálculo exacto de centavos preparados. Fundación SQL
+  ejecutada en PostgreSQL aislado con Auth sintético; no es prueba completa de
+  los flujos. Punto 14 permanece abierto, sin publicar ni tocar M9.
+
+Regresión de esta entrega: build de producción correcto tras permitir la
+descarga de las fuentes existentes; 86 pruebas Chromium de escritorio y 86
+de emulación táctil pasan en producción (172 en total),
+incluida tarjeta de Mi Vaquero y funcionamiento sin conexión. La corrida de
+desarrollo tuvo un bloqueo del panel de Next.js en esa tarjeta (84 pasan,
+una falla y una omitida); en producción no se reproduce. No se cambiaron
+tipografías para resolverlo. Faltan pruebas reales de Auth/base reconstruida,
+concurrencia y sonido en dispositivos físicos antes de certificar despliegue.
+TypeScript y lint pasan; 75 pruebas unitarias pasan después de incorporar
+validadores de unidades. La suite de integración incorpora el catálogo de
+unidades, pero no se ejecutó aquí contra Supabase real.
+
+### Promedio ponderado — implementación local, 1 de octubre
+
+- Decisión confirmada por Emmanuel. La recepción calcula el costo vigente de
+  cada variante con las cantidades físicas globales, incluidas reservas y
+  tránsito; crear una orden no cambia costos ni inventario.
+- Migración hacia delante `20261002005207_purchase_weighted_average_cost.sql`.
+  Fuente del costo: orden y recepción reales, no un importe libre del cliente.
+  Cálculo, movimiento y bitácora pertenecen a la misma transacción. Repetir la
+  misma recepción conserva su resultado, sin ponderar dos veces.
+- No se reescriben costos históricos de ventas, órdenes ni recepciones.
+  La interfaz explica el alcance global y refresca Productos, Venta y Reportes.
+- Pruebas SQL aisladas pasan con reservas, tránsito, recepción parcial,
+  idempotencia, rechazo y auditoría. Nuevas regresiones Auth/PostgREST preparadas
+  en M6; todavía no ejecutadas contra staging. No publicado en main.
+
+### Asignación de unidades y verificación ampliada — local, 1 de octubre
+
+- Catálogo de unidades disponible desde Productos: nuevas claves y nombres,
+  enteros o tres decimales, permisos de alta y bitácora. No finge guardado en
+  demostración ni habilita cobro fraccionario por registrar una definición.
+- Migración `20261002011416_measure_unit_assignment.sql`: asignación de unidades
+  enteras a productos todavía sin saldos, movimientos ni documentos; cambio
+  protegido con revisión esperada y bitácora. No convierte piezas en pares.
+  Kilo/metro permanecen deshabilitados hasta adaptar todos los recorridos.
+- Se regeneró únicamente el nombre de la fundación local no publicada para
+  ordenar dependencias antes de la asignación; ninguna migración de main cambió.
+- 106 migraciones reconstruyeron en PostgreSQL nativo 17 antes de añadir
+  asignación. Prueba de costo con dos conexiones paralelas y ubicaciones
+  distintas: el segundo proceso esperó un candado real y la existencia/costo
+  global cuadraron. No sustituye Auth/PostgREST de staging.
+- Recorrido sobre esquema completo y permisos del proyecto: cotización con
+  precio autorizado, cambio posterior de catálogo, venta y recepción ponderada;
+  privacidad de notas y rechazo al cajero en alta de unidades. Identidad Auth
+  simulada sólo mediante claims de prueba, sin sustituir funciones del proyecto.
+- El catálogo de unidades pasa dos pruebas Chromium (escritorio/teléfono).
+  En esa entrega, punto 14 seguía abierto por fracciones; producto rápido,
+  dólares y aceptación integral estaban pendientes. Producto rápido se implementó
+  después, como consta al principio de esta cola. No subir la rama parcial a main.
+
+Verificación reproducible: `pnpm test:sql:native`, con `QA_DATABASE_URL`
+apuntando a una base local **vacía** cuyo nombre empiece por `qa_`. El script
+rechaza servidores remotos y bases que ya tengan tablas; no elimina bases ni
+lee secretos de la aplicación. Aplica todas las migraciones y comprueba el
+recorrido autorizado, privacidad, protección de unidades, idempotencia y un
+candado real entre conexiones de ubicaciones distintas. `pg` es dependencia
+exclusivamente de desarrollo. Esa corrida pasó con **107 migraciones**; la
+verificación más reciente figura al principio de esta cola.
+Se conservan los datos QA para inspección; Auth y Storage son auxiliares de
+prueba, no los servicios reales. Estas pruebas no certifican PostgREST ni SMTP.
+
+Regresión actual: compilación de producción, TypeScript y lint correctos;
+75 pruebas unitarias y 174 pruebas Chromium de producción local pasan
+(87 escritorio y 87 emulación táctil). La prueba física de audio y Safari siguen
+abiertas. Ninguna de estas comprobaciones publica código ni migra producción.
 
 **Los campos de aterrizaje de la migración sólo los escribe el importador
 de M9: `legacy_sicar_code`, `woocommerce_product_id`,
@@ -1708,3 +2229,36 @@ antes de las pruebas, así que ahí no falla; en local, una segunda corrida sin
 - [ ] Registrar explícitamente la tarifa de mayoreo para excluirla sin inferir
       por precio.
 - [ ] Añadir controles administrativos de lanzamiento y configuración.
+
+## Pendiente operativo — notificaciones con sonido
+
+Solicitud de Emmanuel del 30 de septiembre de 2026. Implementación local
+iniciada el 1 de octubre, sin desplegar. La campana antes mostraba dos avisos
+fijos de demostración; se retiraron y ahora sólo recoge avisos de esta sesión
+para la sucursal seleccionada. Venta, cancelación y alta de apartado confirmadas
+publican avisos; agregar artículos al carrito no provoca sonidos repetitivos.
+
+En Ajustes hay activación/desactivación persistente en este navegador y botón
+de prueba que siempre muestra aviso visual. Audio requiere gesto explícito y
+aplicación visible. Si el navegador lo bloquea, informa el bloqueo y no anuncia
+reproducción. Los avisos aparecen sobre modales, y la campana se habilita también
+en teléfono. No se implementó push del sistema ni alertas entre dispositivos.
+
+Tres pruebas Chromium pasan: escritorio, teléfono, preferencia persistente,
+aviso visual y tratamiento del bloqueo. Audio simulado comprueba programación
+del tono; no demuestra sonido físico, Safari ni PWA instalada. Esas pruebas
+humanas y la ampliación a otros módulos siguen abiertas.
+
+- [ ] Revisar las notificaciones actuales: el usuario reporta que la prueba no
+      funciona. Reproducir y determinar la causa antes de modificar el flujo.
+- [ ] Añadir sonido configurable, con opción de activarlo, desactivarlo y
+      probarlo desde Ajustes mediante un botón explícito.
+- [ ] La prueba debe emitir una notificación visible y un sonido audible;
+      informar si el navegador bloquea el audio o faltan permisos, sin anunciar
+      éxito cuando no se reprodujo.
+- [ ] Verificar escritorio, teléfono, iPad y PWA instalada. Diferenciar audio
+      con la aplicación abierta de notificaciones del sistema en segundo plano,
+      cuya disponibilidad depende del navegador y del dispositivo.
+- [ ] Mantener el aviso visual aunque el sonido esté desactivado. No dar por
+      cerrado el pendiente hasta probar una notificación real y el botón de
+      prueba, evitando avisos duplicados.

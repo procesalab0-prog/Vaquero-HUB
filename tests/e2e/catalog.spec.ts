@@ -2,6 +2,36 @@ import { expect, test } from "@playwright/test";
 
 test.use({ viewport: { width: 390, height: 844 } });
 
+for (const viewport of [
+  { width: 390, height: 844 },
+  { width: 768, height: 1024 },
+  { width: 1280, height: 800 },
+]) {
+  test(`acciones de catálogo accesibles sin desbordar a ${viewport.width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/productos");
+    await expect(
+      page.getByRole("button", { name: "Nuevo producto" }),
+    ).toBeVisible();
+    const secondary = page.locator(".catalog-secondary-actions summary");
+    await secondary.focus();
+    await page.keyboard.press("Enter");
+    await expect(
+      page.getByRole("button", { name: "Registrar código" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Agregar variantes" }),
+    ).toBeVisible();
+    await expect(page.locator("html")).toHaveJSProperty(
+      "scrollWidth",
+      viewport.width,
+    );
+    await expect(page.getByText("Se activa en M3")).toHaveCount(0);
+  });
+}
+
 test("genera una matriz de colores y tallas desde una sola captura en móvil", async ({
   page,
 }) => {
@@ -67,6 +97,7 @@ test("agrega variantes y bloquea combinaciones que ya existen", async ({
   page,
 }) => {
   await page.goto("/productos");
+  await page.getByText("Más acciones", { exact: true }).click();
   await page.getByRole("button", { name: "Agregar variantes" }).click();
 
   const dialog = page.getByRole("dialog", { name: "Agregar variantes" });
@@ -104,6 +135,7 @@ test("registra un código físico desde una pantalla táctil", async ({
   page,
 }) => {
   await page.goto("/productos");
+  await page.getByText("Más acciones", { exact: true }).click();
   await page.getByRole("button", { name: "Registrar código" }).click();
 
   const dialog = page.getByRole("dialog", { name: "Registrar código" });
@@ -317,4 +349,24 @@ test("edita datos y precio sin habilitar SKU ni código", async ({ page }) => {
   await dialog.getByRole("button", { name: "Cambiar precio" }).click();
   await expect(page.getByText("$2,499.00").first()).toBeVisible();
   await expect(page.locator("html")).toHaveJSProperty("scrollWidth", 390);
+});
+test("catálogo de unidades distingue enteros y decimales sin fingir altas en demostración", async ({
+  page,
+}) => {
+  await page.goto("/productos");
+  await page.getByText("Unidades de medida", { exact: true }).click();
+  const catalog = page.locator(".measure-unit-catalog");
+  await expect(catalog.getByText("Pieza", { exact: true })).toBeVisible();
+  await expect(catalog.getByText("Metro", { exact: true })).toBeVisible();
+  await expect(
+    catalog.getByText(/operación fraccionaria sigue en preparación/),
+  ).toBeVisible();
+  await expect(
+    catalog.getByRole("button", { name: "Agregar unidad" }),
+  ).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
 });

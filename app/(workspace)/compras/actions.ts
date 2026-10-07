@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 
 import { requirePermission } from "@/lib/auth/authorization";
 import { uploadProductImage } from "@/lib/product-images";
+import { supplierWhatsAppUrl } from "@/lib/purchase-pdf";
+import { parseQuantityTransport } from "@/lib/measure-units";
 
 type ActionResult = {
   ok: boolean;
@@ -11,12 +13,71 @@ type ActionResult = {
   data?: Record<string, unknown>;
 };
 
+export async function prepareSupplierOrderShare(input: {
+  orderId: string;
+  locationId: string;
+}): Promise<{ ok: true; url: string } | { ok: false; message: string }> {
+  try {
+    const { supabase, profile } = await requirePermission("purchases.manage");
+    const role = Array.isArray(profile.roles)
+      ? profile.roles[0]
+      : profile.roles;
+    if (role?.code !== "ADMIN") throw new Error("NOT_AUTHORIZED");
+    if (!input?.orderId || !input?.locationId) throw new Error("INVALID_ORDER");
+    // This RPC checks branch access. Do not trust a supplier ID or phone from the browser.
+    const { data, error } = await supabase.rpc("list_purchase_orders_v2", {
+      p_location_id: input.locationId,
+      p_limit: 100,
+    });
+    if (error) throw error;
+    const order = (
+      data as Array<{
+        order_id: string;
+        supplier_id: string;
+        folio: number;
+      }> | null
+    )?.find((row) => row.order_id === input.orderId);
+    if (!order) throw new Error("INVALID_ORDER");
+    const supplier = await supabase
+      .from("suppliers")
+      .select("phone")
+      .eq("id", order.supplier_id)
+      .single();
+    if (supplier.error) throw supplier.error;
+    const url = supplierWhatsAppUrl(
+      supplier.data.phone ?? "",
+      Number(order.folio),
+    );
+    if (!url)
+      return {
+        ok: false,
+        message:
+          "El proveedor no tiene un teléfono válido. Revisa su ficha antes de enviar.",
+      };
+    return { ok: true, url };
+  } catch {
+    return {
+      ok: false,
+      message:
+        "No fue posible preparar el envío. Sólo administración puede hacerlo y la orden debe pertenecer a una sucursal accesible.",
+    };
+  }
+}
+
 function clean(value: unknown) {
   return String(value ?? "").trim();
 }
 
 function failure(error: unknown, fallback: string): ActionResult {
-  const message = error instanceof Error ? error.message : "";
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" &&
+          error !== null &&
+          "message" in error &&
+          typeof error.message === "string"
+        ? error.message
+        : "";
   if (message.includes("NOT_AUTHORIZED"))
     return {
       ok: false,
@@ -28,6 +89,12 @@ function failure(error: unknown, fallback: string): ActionResult {
     return {
       ok: false,
       message: "Cada variante debe aparecer una sola vez en la orden.",
+    };
+  if (message.includes("INVALID_MEASURE_QUANTITY"))
+    return {
+      ok: false,
+      message:
+        "Revisa la cantidad según la unidad: piezas y pares enteros; unidades fraccionarias hasta tres decimales.",
     };
   if (message.includes("RECEIPT_EXCEEDS_ORDER"))
     return {
@@ -191,8 +258,7 @@ export async function createPurchaseOrder(input: {
       input.items.some(
         (item) =>
           !item.variantId ||
-          !Number.isSafeInteger(item.qty) ||
-          item.qty < 1 ||
+          parseQuantityTransport(String(item.qty)) === null ||
           !Number.isSafeInteger(item.unitCostCents) ||
           item.unitCostCents < 0,
       )
@@ -233,13 +299,25 @@ export async function receivePurchaseOrder(input: {
 }): Promise<ActionResult> {
   try {
     const { supabase } = await requirePermission("purchases.receive");
+    if (
+      input.items.some(
+        (item) => parseQuantityTransport(String(item.qty), true) === null,
+      )
+    )
+      return {
+        ok: false,
+        message:
+          "Revisa las cantidades recibidas; no se permiten negativos ni más de tres decimales.",
+      };
     const items = input.items.filter((item) => item.qty > 0);
     if (
       !input.orderId ||
       !input.idempotencyKey ||
       !items.length ||
       items.some(
-        (item) => !item.purchaseItemId || !Number.isSafeInteger(item.qty),
+        (item) =>
+          !item.purchaseItemId ||
+          parseQuantityTransport(String(item.qty)) === null,
       )
     ) {
       return { ok: false, message: "Captura al menos una cantidad recibida." };
@@ -257,6 +335,9 @@ export async function receivePurchaseOrder(input: {
     revalidatePath("/compras");
     revalidatePath("/inventario");
     revalidatePath("/etiquetas");
+    revalidatePath("/productos");
+    revalidatePath("/pos");
+    revalidatePath("/reportes");
     return {
       ok: true,
       message: `Recepción #${(data as { folio?: number } | null)?.folio ?? ""} guardada. El inventario ya fue actualizado.`,

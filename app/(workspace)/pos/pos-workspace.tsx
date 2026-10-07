@@ -1,5 +1,9 @@
 "use client";
 
+import type { QuotePosPricing } from "@/lib/quote-pos";
+import { UsdCheckout, type UsdTenderInput } from "@/components/usd-checkout";
+import { publishWorkspaceNotification } from "@/lib/workspace-notifications";
+
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -29,6 +33,10 @@ import {
   X,
 } from "lucide-react";
 import type { CartLine, PaymentMethod, ProductVariant } from "@/lib/domain";
+import {cartLineCents,cartQuantityStep,changeCartQuantity,initialCartQuantity} from "@/lib/cart-measures";
+import {quantityUnit} from "@/lib/measure-units";
+import { MeasureQuantityInput } from "@/components/measure-quantity-input";
+import { parseQuickProduct, posItemInput, posItemVariant, quickProductVariant, type PosItemInput } from "@/lib/quick-product";
 import {
   formatReceiptDate,
   ThermalReceipt,
@@ -44,11 +52,7 @@ import {
   useReceiptBoldPreference,
 } from "@/components/receipt-print-options";
 
-type PosDraftItemInput = {
-  variant_id: string;
-  quantity: number;
-  gift_receipt: boolean;
-};
+type PosDraftItemInput = PosItemInput;
 
 type PosDraftPayload = {
   id: string;
@@ -57,21 +61,23 @@ type PosDraftPayload = {
   items: PosDraftItemInput[];
   discount_percent: number;
   quote_id?: string | null;
+  quote_pricing?: QuotePosPricing | null;
   held_at: string | null;
   updated_at: string;
   customer: CustomerSummary | null;
 };
 
 type SalePaymentInput = {
-  method_code: "CASH" | "CARD" | "TRANSFER" | "CREDIT" | "LOYALTY";
+  method_code: "CASH" | "CARD" | "TRANSFER" | "CREDIT" | "LOYALTY" | "USD";
   amount_cents: number;
   tendered_cents?: number;
   reference?: string;
 };
 type SaleActionInput = {
+  usd?: UsdTenderInput;
   idempotencyKey: string;
   cashSessionId: string;
-  items: Array<{ variant_id: string; quantity: number; gift_receipt: boolean }>;
+  items: PosItemInput[];
   payments: SalePaymentInput[];
   customerId?: string | null;
   quoteId?: string | null;
@@ -113,12 +119,14 @@ type LoyaltyRedemption = {
   saleTotalCents: number;
 };
 type StoredReceipt = {
+  usd_tender?: import('@/components/thermal-receipt').UsdReceiptTender | null;
   subtotal_cents: number;
   discount_cents: number;
   total_cents: number;
   cashier_name: string;
   location: { name: string; address: string | null; phone: string | null };
   items: Array<{
+    measureUnit?: import('@/lib/measure-units').MeasureUnit;
     product_name: string;
     variant_description: string;
     sku: string;
@@ -153,7 +161,7 @@ function ProductCard({
   variant: ProductVariant;
   onAdd: () => void;
 }) {
-  const soldOut = variant.stock === 0;
+  const soldOut = initialCartQuantity(variant) === 0 || variant.isActive === false;
   return (
     <button
       className="product-card"
@@ -201,7 +209,11 @@ export function PosWorkspace({
   initialDrafts = EMPTY_POS_DRAFTS,
   cashSession,
   preview = false,
+  usdEnabled = false,
+  prepareUsdAction,
   status,
+  canAccessTransfers = false,
+  canCaptureQuickCost = false,
   createSaleAction,
   verifyLoyaltyCodeAction,
   getCustomerCreditAction,
@@ -214,12 +226,21 @@ export function PosWorkspace({
   holdDraftAction,
   resumeDraftAction,
   discardDraftAction,
+  resolveScanAction,
 }: {
   variants: ProductVariant[];
+  resolveScanAction?: (input: {
+    code: string;
+    cashSessionId: string;
+  }) => Promise<import("@/lib/pos-scan").PosScanResult>;
   initialDrafts?: PosDraftPayload[];
   cashSession?: CashSession | null;
   preview?: boolean;
+  usdEnabled?: boolean;
+  prepareUsdAction?: (sessionId: string) => Promise<{ok:true;quote:import('@/lib/usd-exchange').UsdExchangeQuote} | {ok:false;message:string}>;
   status?: string;
+  canAccessTransfers?: boolean;
+  canCaptureQuickCost?: boolean;
   createSaleAction?: (input: SaleActionInput) => Promise<SaleActionResult>;
   verifyLoyaltyCodeAction?: (input: {
     customerId: string;
@@ -300,34 +321,50 @@ export function PosWorkspace({
   const { boldReceipt, setBoldReceipt } = useReceiptBoldPreference();
   const router = useRouter();
   const { identity, activeLocation } = useWorkspace();
+  const [resolvedVariants, setResolvedVariants] = useState<ProductVariant[]>(
+    [],
+  );
   const variantsById = useMemo(
-    () => new Map(variants.map((variant) => [variant.id, variant])),
-    [variants],
+    () =>
+      new Map(
+        [...variants, ...resolvedVariants].map((variant) => [
+          variant.id,
+          variant,
+        ]),
+      ),
+    [variants, resolvedVariants],
   );
   const currentDraft = initialDrafts.find(
     (draft) => draft.status === "CURRENT",
   );
-  const quoteId = currentDraft?.quote_id ?? null;
+  const [activeQuote, setActiveQuote] = useState<{ id: string; pricing: QuotePosPricing | null } | null>(currentDraft?.quote_id ? { id: currentDraft.quote_id, pricing: currentDraft.quote_pricing ?? null } : null);
+  const quoteId = activeQuote?.id ?? null;
+  const scanQueue = useRef(Promise.resolve());
+  const scanContext = useRef({ blocked: false, sessionId: cashSession?.id });
   const restoredCart = useMemo(
     () =>
       (currentDraft?.items ?? []).flatMap((item) => {
-        const variant = variantsById.get(item.variant_id);
+        const variant = posItemVariant(item, variantsById);
         return variant
           ? [
               {
-                variant,
+                variant: currentDraft?.quote_pricing ? { ...variant, price: Number(currentDraft.quote_pricing.items.find(price => price.variant_id === item.variant_id)?.unit_price_cents ?? variant.price * 100) / 100 } : variant,
                 quantity: item.quantity,
                 giftReceipt: item.gift_receipt,
               },
             ]
           : [];
       }),
-    [currentDraft?.items, variantsById],
+    [currentDraft, variantsById],
   );
   const [query, setQuery] = useState("");
   const [showCatalog, setShowCatalog] = useState(false);
   const [activeCategory, setActiveCategory] = useState("");
   const [cart, setCart] = useState<CartLine[]>(restoredCart);
+  const [invalidQuantities, setInvalidQuantities] = useState<Record<string, boolean>>({});
+  const hasInvalidQuantity = cart.some(line => invalidQuantities[line.variant.id]);
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [quickError, setQuickError] = useState("");
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [toast, setToast] = useState("");
@@ -424,17 +461,174 @@ export function PosWorkspace({
   const layawayIdempotencyKey = useRef(crypto.randomUUID());
 
   useKeyboardBarcodeScanner(
-    (rawCode) => {
-      const code = rawCode.trim().toLocaleUpperCase("es-MX");
-      if (isTicketReceiptCode(code)) {
-        router.push(`/tickets?escanear=${encodeURIComponent(code)}`);
+    scanSaleCode,
+    !checkoutOpen &&
+      !quickOpen &&
+      !completed &&
+      !layawayOpen &&
+      !heldTicketsOpen &&
+      !customerLookupOpen &&
+      !extraDialog &&
+      !draftBusy,
+  );
+
+  useEffect(() => {
+    scanContext.current = {
+      blocked: Boolean(
+        checkoutOpen || quickOpen ||
+        completed ||
+        layawayOpen ||
+        heldTicketsOpen ||
+        customerLookupOpen ||
+        extraDialog ||
+        draftBusy,
+      ),
+      sessionId: cashSession?.id,
+    };
+    return () => {
+      scanContext.current.blocked = true;
+    };
+  }, [
+    checkoutOpen, quickOpen,
+    completed,
+    layawayOpen,
+    heldTicketsOpen,
+    customerLookupOpen,
+    extraDialog,
+    draftBusy,
+    cashSession?.id,
+  ]);
+
+  function scanSaleCode(rawCode: string) {
+    if (
+      checkoutOpen || quickOpen ||
+      completed ||
+      layawayOpen ||
+      heldTicketsOpen ||
+      customerLookupOpen ||
+      extraDialog ||
+      draftBusy
+    )
+      return;
+    const code = rawCode.trim().toLocaleUpperCase("es-MX");
+    if (!code) return;
+    if (isTicketReceiptCode(code)) {
+      router.push(`/tickets?escanear=${encodeURIComponent(code)}`);
+      return;
+    }
+    const matches = variants.filter((variant) =>
+      [variant.legacyCode, variant.sku].some(
+        (value) => value?.trim().toLocaleUpperCase("es-MX") === code,
+      ),
+    );
+    if (matches.length !== 1) {
+      if (!matches.length && resolveScanAction && cashSession?.id) {
+        const sessionId = cashSession.id;
+        scanQueue.current = scanQueue.current
+          .then(async () => {
+            if (
+              scanContext.current.blocked ||
+              scanContext.current.sessionId !== sessionId
+            )
+              return;
+            const result = await resolveScanAction({
+              code,
+              cashSessionId: sessionId,
+            });
+            if (
+              scanContext.current.blocked ||
+              scanContext.current.sessionId !== sessionId
+            )
+              return;
+            if (!result.ok) {
+              setSaleError(result.message);
+              return;
+            }
+            setResolvedVariants((current) => [
+              ...current.filter((variant) => variant.id !== result.variant.id),
+              result.variant,
+            ]);
+            setSaleError("");
+            addVariant(result.variant);
+            setQuery("");
+          })
+          .catch(() =>
+            setSaleError(
+              "No fue posible consultar el código. Inténtalo nuevamente.",
+            ),
+          );
         return;
       }
       setQuery(code);
       setShowCatalog(true);
-    },
-    !checkoutOpen && !completed && !layawayOpen && !heldTicketsOpen,
-  );
+      setSaleError(
+        matches.length
+          ? "Este código coincide con más de una variante. Selecciona el producto correcto."
+          : "No encontramos este código entre los productos disponibles. Busca el producto en el catálogo.",
+      );
+      return;
+    }
+    const variant = matches[0];
+    const quantityInCart =
+      cart.find((line) => line.variant.id === variant.id)?.quantity ?? 0;
+    if (variant.isActive === false || quantityInCart >= variant.stock) {
+      setSaleError("No hay más existencia disponible para este producto.");
+      return;
+    }
+    setSaleError("");
+    addVariant(variant);
+    setQuery("");
+  }
+
+  async function openTransfersFromSale() {
+    if (
+      !canAccessTransfers ||
+      draftOperationRef.current ||
+      submittingRef.current
+    )
+      return;
+    draftOperationRef.current = true;
+    setDraftBusy(true);
+    setSaleError("");
+    if (draftTimer.current) window.clearTimeout(draftTimer.current);
+    try {
+      if (!preview && cart.length && !quoteId) {
+        if (!cashSession?.id || !saveDraftAction) {
+          setSaleError(
+            "No fue posible guardar la venta antes de abrir Traspasos.",
+          );
+          return;
+        }
+        await draftSaveChain.current;
+        const result = await saveDraftAction({
+          cashSessionId: cashSession.id,
+          items: cart.map(posItemInput),
+          customerId: selectedCustomer?.id ?? null,
+          discountPercent,
+        });
+        if (!result.ok) {
+          setSaleError(result.message);
+          return;
+        }
+      } else if (preview && cart.length) {
+        setSaleError(
+          "La demostración no guarda el carrito. Vacíalo antes de abrir Traspasos.",
+        );
+        return;
+      }
+      const params = new URLSearchParams({ accion: "traspasos" });
+      const locationId = activeLocation?.id ?? cashSession?.location_id;
+      if (locationId) params.set("ubicacion", locationId);
+      router.push(`/inventario?${params.toString()}`);
+    } catch {
+      setSaleError(
+        "No fue posible guardar la venta. Sigue en esta pantalla e intenta nuevamente.",
+      );
+    } finally {
+      draftOperationRef.current = false;
+      setDraftBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (!cashMode) return;
@@ -447,6 +641,7 @@ export function PosWorkspace({
 
   async function submitLayaway() {
     if (draftOperationRef.current || layawayBusy) return;
+    if (hasInvalidQuantity) { setLayawayError("Corrige las cantidades antes de apartar."); return; }
     if (
       !createLayawayAction ||
       !cashSession ||
@@ -494,13 +689,14 @@ export function PosWorkspace({
     }
     draftOperationRef.current = false;
     setCart([]);
+    setInvalidQuantities({});
     setDiscountPercent(0);
     setDiscountAuthorization(null);
     setSelectedCustomer(null);
     setLayawayOpen(false);
     setLayawayNotes("");
     layawayIdempotencyKey.current = crypto.randomUUID();
-    notify(`Apartado ${result.folio} creado · mercancía reservada`);
+    notify(`Apartado ${result.folio} creado · mercancía reservada`, true);
     router.refresh();
   }
 
@@ -513,16 +709,12 @@ export function PosWorkspace({
   );
 
   useEffect(() => {
-    if (preview || !cashSession?.id || !saveDraftAction || completed) return;
+    if (preview || !cashSession?.id || !saveDraftAction || completed || quoteId) return;
     if (draftTimer.current) window.clearTimeout(draftTimer.current);
     const revision = ++draftRevision.current;
     const snapshot = {
       cashSessionId: cashSession.id,
-      items: cart.map((line) => ({
-        variant_id: line.variant.id,
-        quantity: line.quantity,
-        gift_receipt: line.giftReceipt,
-      })),
+      items: cart.map(posItemInput),
       customerId: selectedCustomer?.id ?? null,
       discountPercent,
     };
@@ -551,9 +743,13 @@ export function PosWorkspace({
     preview,
     saveDraftAction,
     selectedCustomer?.id,
+    quoteId,
   ]);
 
   const results = useMemo(() => {
+    const activeVariants = variants.filter(
+      (variant) => variant.isActive !== false,
+    );
     const term = query.trim().toLocaleLowerCase("es-MX");
     if (!showCatalog && !term && !activeCategory) return [];
     if (activeCategory) {
@@ -561,14 +757,14 @@ export function PosWorkspace({
         (item) => item.label === activeCategory,
       );
       if (category)
-        return variants.filter((variant) =>
+        return activeVariants.filter((variant) =>
           category.terms.some((word) =>
             variant.productName.toLocaleLowerCase("es-MX").includes(word),
           ),
         );
     }
-    if (!term) return variants;
-    return variants.filter((variant) =>
+    if (!term) return activeVariants;
+    return activeVariants.filter((variant) =>
       [
         variant.productName,
         variant.brand,
@@ -582,11 +778,11 @@ export function PosWorkspace({
     );
   }, [activeCategory, query, showCatalog, variants]);
 
-  const subtotal = cart.reduce(
-    (sum, line) => sum + line.variant.price * line.quantity,
+  const subtotal = activeQuote?.pricing ? Number(activeQuote.pricing.subtotal_cents) / 100 : cart.reduce(
+    (sum, line) => sum + cartLineCents(line)/100,
     0,
   );
-  const discountAmount = (subtotal * discountPercent) / 100;
+  const discountAmount = activeQuote?.pricing ? Number(activeQuote.pricing.discount_cents) / 100 : Math.round(Math.round(subtotal*100)*discountPercent/100)/100;
   const total = subtotal - discountAmount;
   const totalCents = Math.round(total * 100);
   const activeLoyaltyRedemption =
@@ -597,16 +793,18 @@ export function PosWorkspace({
   const loyaltyValueCents = activeLoyaltyRedemption?.valueCents ?? 0;
   const amountDueCents = Math.max(0, totalCents - loyaltyValueCents);
   const amountDue = amountDueCents / 100;
-  const quantity = cart.reduce((sum, line) => sum + line.quantity, 0);
+  const hasMeasuredItems=cart.some(line=>quantityUnit(line.variant).decimal_places===3);
+  const quantity = hasMeasuredItems?cart.length:cart.reduce((sum, line) => sum + line.quantity, 0);
   const giftCount = cart.filter((line) => line.giftReceipt).length;
   const cashTendered = Number(cashInput.replace(",", ".") || 0);
   const change = Math.max(0, cashTendered - amountDue);
   const receiptLines: ReceiptLine[] = cart.map((line) => ({
     name: line.variant.productName,
-    variant: `${line.variant.color} · ${line.variant.size}`,
+    variant: line.variant.quick ? "Producto rápido" : `${line.variant.color} · ${line.variant.size}`,
     code: line.variant.legacyCode,
     quantity: line.quantity,
     unitPrice: line.variant.price,
+    unitName: line.variant.measureUnit?quantityUnit(line.variant).name:undefined,
   }));
   const paymentLabels: Record<PaymentMethod, string> = {
     cash: "Efectivo",
@@ -653,22 +851,26 @@ export function PosWorkspace({
     notify(`${result.points} puntos aplicados`);
   }
 
-  function notify(message: string) {
+  function notify(message: string, important = false) {
+    if (important && activeLocation) void publishWorkspaceNotification({ title: "Operación confirmada", message, locationId: activeLocation.id });
     setToast(message);
     if (toastTimer.current) window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(""), 2600);
   }
 
   function addVariant(variant: ProductVariant) {
-    if (variant.stock < 1) return;
+    if (quoteId) { notify("Esta cotización conserva sus artículos y precios aprobados."); return; }
+    if (draftOperationRef.current) return;
+    if (invalidQuantities[variant.id]) { notify("Corrige la cantidad escrita antes de agregar más."); return; }
+    if (variant.isActive === false || initialCartQuantity(variant)===0) return;
     setCart((current) => {
       const existing = current.find((line) => line.variant.id === variant.id);
       if (!existing)
-        return [...current, { variant, quantity: 1, giftReceipt: false }];
+        return [...current, { variant, quantity: initialCartQuantity(variant), giftReceipt: false }];
       if (existing.quantity >= variant.stock) return current;
       return current.map((line) =>
         line.variant.id === variant.id
-          ? { ...line, quantity: line.quantity + 1 }
+          ? { ...line, quantity: changeCartQuantity(variant,line.quantity,1) }
           : line,
       );
     });
@@ -680,6 +882,12 @@ export function PosWorkspace({
     id: string,
     action: "increase" | "decrease" | "gift" | "remove",
   ) {
+    if (quoteId) { notify("Esta cotización conserva sus artículos y precios aprobados."); return; }
+    if (draftOperationRef.current) return;
+    if (invalidQuantities[id] && (action === "increase" || action === "decrease")) {
+      notify("Corrige la cantidad escrita antes de usar las flechas."); return;
+    }
+    if (action === "remove") setInvalidQuantities(current => ({ ...current, [id]: false }));
     setCart((current) =>
       current.flatMap((line) => {
         if (line.variant.id !== id) return [line];
@@ -687,29 +895,29 @@ export function PosWorkspace({
         if (action === "gift")
           return [{ ...line, giftReceipt: !line.giftReceipt }];
         if (action === "increase") {
+          if (line.variant.isActive === false) return [line];
           return [
             {
               ...line,
-              quantity: Math.min(line.quantity + 1, line.variant.stock),
+              quantity: changeCartQuantity(line.variant,line.quantity,cartQuantityStep(line.variant)),
             },
           ];
         }
-        return line.quantity === 1
+        const next=changeCartQuantity(line.variant,line.quantity,-cartQuantityStep(line.variant));
+        return next===0
           ? []
-          : [{ ...line, quantity: line.quantity - 1 }];
+          : [{ ...line, quantity: next }];
       }),
     );
   }
 
   function draftItems(): PosDraftItemInput[] {
-    return cart.map((line) => ({
-      variant_id: line.variant.id,
-      quantity: line.quantity,
-      gift_receipt: line.giftReceipt,
-    }));
+    return cart.map(posItemInput);
   }
 
   async function holdCurrentSale() {
+    if (hasInvalidQuantity) { notify("Corrige las cantidades antes de guardar el ticket en espera."); return; }
+    if (quoteId) { notify("Cobra o descarta la cotización antes de poner otra venta en espera."); return; }
     if (
       draftOperationRef.current ||
       !cashSession?.id ||
@@ -756,6 +964,7 @@ export function PosWorkspace({
     ]);
     setCart([]);
     setSelectedCustomer(null);
+    setInvalidQuantities({});
     setDiscountPercent(0);
     setDiscountAuthorization(null);
     idempotencyKey.current = crypto.randomUUID();
@@ -785,14 +994,15 @@ export function PosWorkspace({
       return;
     }
     const missing: string[] = [];
+    const resumedQuote = result.draft.quote_id ? { id: result.draft.quote_id, pricing: result.draft.quote_pricing ?? null } : null;
     const nextCart = result.draft.items.flatMap((item) => {
-      const variant = variantsById.get(item.variant_id);
+      const variant = posItemVariant(item, variantsById);
       if (!variant) {
         missing.push(item.variant_id);
         return [];
       }
       return [
-        { variant, quantity: item.quantity, giftReceipt: item.gift_receipt },
+        { variant: resumedQuote?.pricing ? { ...variant, price: Number(resumedQuote.pricing.items.find(price => price.variant_id === item.variant_id)?.unit_price_cents ?? variant.price * 100) / 100 } : variant, quantity: item.quantity, giftReceipt: item.gift_receipt },
       ];
     });
     if (!nextCart.length) {
@@ -800,6 +1010,8 @@ export function PosWorkspace({
       return;
     }
     setCart(nextCart);
+    setInvalidQuantities({});
+    setActiveQuote(resumedQuote);
     setSelectedCustomer(result.draft.customer);
     setDiscountPercent(Number(result.draft.discount_percent ?? 0));
     setDiscountAuthorization(null);
@@ -838,11 +1050,17 @@ export function PosWorkspace({
     payments: SalePaymentInput[],
     receiptLabel = paymentLabels[method],
     dueDate?: string,
+    usd?: UsdTenderInput,
   ) {
     if (submittingRef.current) return;
+    if (hasInvalidQuantity) { setSaleError("Corrige las cantidades antes de cobrar."); return; }
 
     if (!preview && !cashSession?.id) {
       setSaleError("Abre una caja antes de cobrar.");
+      return;
+    }
+    if (quoteId && !activeQuote?.pricing) {
+      setSaleError("No se pudo recuperar el precio aprobado. Recarga la cotización antes de cobrar.");
       return;
     }
     if (discountPercent > 0 && !discountAuthorization) {
@@ -874,13 +1092,10 @@ export function PosWorkspace({
         return;
       }
       const result = await createSaleAction({
+        usd,
         idempotencyKey: idempotencyKey.current,
         cashSessionId: cashSession!.id,
-        items: cart.map((line) => ({
-          variant_id: line.variant.id,
-          quantity: line.quantity,
-          gift_receipt: line.giftReceipt,
-        })),
+        items: cart.map(posItemInput),
         payments: salePayments,
         customerId: selectedCustomer?.id ?? null,
         quoteId,
@@ -902,6 +1117,7 @@ export function PosWorkspace({
         return;
       }
       setSaleFolio(result.folio);
+      if (activeLocation) void publishWorkspaceNotification({ id: `sale:${result.saleId}`, title: "Venta registrada", message: `Ticket ${result.folio} guardado.`, locationId: activeLocation.id });
       setSaleId(result.saleId);
       setStoredReceipt(result.receipt as StoredReceipt | null);
       setReceiptDate(formatReceiptDate(new Date(result.soldAt)));
@@ -1084,7 +1300,9 @@ export function PosWorkspace({
   }
 
   function newSale() {
+    setActiveQuote(null);
     setCart([]);
+    setInvalidQuantities({});
     setCompleted(false);
     setQuery("");
     setShowCatalog(false);
@@ -1145,6 +1363,7 @@ export function PosWorkspace({
   }
 
   async function applyDiscount() {
+    if (quoteId) { setDiscountError("El descuento aprobado ya está incluido en la cotización."); return; }
     const value = Math.min(100, Math.max(0, Number(discountInput)));
     if (!Number.isFinite(value)) return;
     if (value > 0 && !preview) {
@@ -1223,7 +1442,7 @@ export function PosWorkspace({
     }
     setCancelled(true);
     setCancelDialogOpen(false);
-    notify(`Venta ${result.folio || saleFolio} cancelada`);
+    notify(`Venta ${result.folio || saleFolio} cancelada`, true);
   }
 
   if (!preview && !cashSession) {
@@ -1253,6 +1472,7 @@ export function PosWorkspace({
         code: item.sku,
         quantity: Number(item.quantity),
         unitPrice: Number(item.unit_price_cents) / 100,
+        unitName: item.measureUnit?.name,
       })) ?? receiptLines;
     const officialGiftLines = officialLines.filter(
       (_, index) =>
@@ -1387,6 +1607,7 @@ export function PosWorkspace({
                           .join(" + ")
                       : receiptPaymentLabel
                   }
+                  usdTender={storedReceipt?.usd_tender}
                   paymentDetails={
                     receiptMode === "sale"
                       ? officialPayments.map((payment) => ({
@@ -1505,11 +1726,21 @@ export function PosWorkspace({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key !== "Enter") return;
-                const code = query.trim().toLocaleUpperCase("es-MX");
-                if (!isTicketReceiptCode(code)) return;
+                if (event.key !== "Enter" && event.key !== "Tab") return;
+                if (event.key === "Tab") {
+                  const code = query.trim().toLocaleUpperCase("es-MX");
+                  if (
+                    !isTicketReceiptCode(code) &&
+                    !variants.some((variant) =>
+                      [variant.legacyCode, variant.sku].some(
+                        (value) => value?.toLocaleUpperCase("es-MX") === code,
+                      ),
+                    )
+                  )
+                    return;
+                }
                 event.preventDefault();
-                router.push(`/tickets?escanear=${encodeURIComponent(code)}`);
+                scanSaleCode(query);
               }}
               onFocus={() => setShowCatalog(true)}
               placeholder="Escanea el código o busca por nombre, SKU o marca"
@@ -1648,6 +1879,16 @@ export function PosWorkspace({
         </header>
 
         <div className="draft-toolbar">
+          {canAccessTransfers ? (
+            <button
+              type="button"
+              disabled={draftBusy}
+              onClick={() => void openTransfersFromSale()}
+            >
+              <ArrowRightLeft aria-hidden="true" />
+              {draftBusy ? "Guardando…" : "Traspasos"}
+            </button>
+          ) : null}
           {!preview ? (
             <button
               className="returns-shortcut"
@@ -1674,6 +1915,10 @@ export function PosWorkspace({
             En espera
             <b>{heldDrafts.length}</b>
           </button>
+          <button type="button" disabled={Boolean(quoteId) || draftBusy || (!preview && !cashSession?.id)}
+            onClick={() => { setQuickError(""); setQuickOpen(true); }}>
+            Producto rápido
+          </button>
           {draftStatus ? <small role="status">{draftStatus}</small> : null}
         </div>
 
@@ -1682,6 +1927,7 @@ export function PosWorkspace({
             selectedCustomer ? "sale-customer selected" : "sale-customer"
           }
           type="button"
+          disabled={draftBusy || Boolean(quoteId)}
           onClick={() => setCustomerLookupOpen(true)}
         >
           <UserRoundPlus aria-hidden="true" />
@@ -1723,8 +1969,7 @@ export function PosWorkspace({
                   <div>
                     <strong>{line.variant.productName}</strong>
                     <small>
-                      {line.variant.color} · {line.variant.size} ·{" "}
-                      <code>{line.variant.legacyCode}</code>
+                      {line.variant.quick ? "Producto rápido · sin código ni movimiento de inventario" : <>{line.variant.color} · {line.variant.size} · <code>{line.variant.legacyCode}</code></>}
                     </small>
                   </div>
                   <button
@@ -1756,7 +2001,15 @@ export function PosWorkspace({
                     >
                       <Minus aria-hidden="true" />
                     </button>
-                    <strong>{line.quantity}</strong>
+                    {quantityUnit(line.variant).decimal_places===3 ? <label>
+                      <span className="sr-only">Cantidad de {line.variant.productName} en {quantityUnit(line.variant).name}</span>
+                      <MeasureQuantityInput value={line.quantity} unit={quantityUnit(line.variant)} maximum={line.variant.stock} label={`Cantidad de ${line.variant.productName} en ${quantityUnit(line.variant).name}`} disabled={Boolean(quoteId)||draftBusy}
+                        onValidity={valid=>setInvalidQuantities(current=>({...current,[line.variant.id]:!valid}))}
+                        onValue={next=>{
+                          setCart(current=>current.map(item=>item.variant.id===line.variant.id?{...item,quantity:next}:item));
+                        }}/>
+                      <small>{quantityUnit(line.variant).name}</small>
+                    </label>:<strong>{line.quantity}</strong>}
                     <button
                       type="button"
                       aria-label="Aumentar cantidad"
@@ -1775,7 +2028,7 @@ export function PosWorkspace({
                     <Gift aria-hidden="true" />
                     Regalo
                   </button>
-                  <b>{money.format(line.variant.price * line.quantity)}</b>
+                  <b>{money.format(activeQuote?.pricing ? Number(activeQuote.pricing.items.find(price => price.variant_id === line.variant.id)?.line_total_cents ?? cartLineCents(line)) / 100 : cartLineCents(line)/100)}</b>
                 </div>
               </article>
             ))
@@ -1784,7 +2037,7 @@ export function PosWorkspace({
 
         <footer className="sale-summary">
           <div>
-            <span>Subtotal ({quantity} artículos)</span>
+            <span>Subtotal ({quantity} {hasMeasuredItems?'renglones':'artículos'})</span>
             <span>{money.format(subtotal)}</span>
           </div>
           <div>
@@ -1800,7 +2053,7 @@ export function PosWorkspace({
           <button
             className="pay-button"
             type="button"
-            disabled={cart.length === 0}
+            disabled={cart.length === 0 || draftBusy || hasInvalidQuantity}
             onClick={() => {
               setCartDrawerOpen(false);
               setCheckoutOpen(true);
@@ -1809,10 +2062,11 @@ export function PosWorkspace({
             Cobrar
             <ChevronRight aria-hidden="true" />
           </button>
+          {hasInvalidQuantity ? <p role="alert">Revisa las cantidades: deben ser positivas, no superar existencias y tener hasta tres decimales.</p> : null}
           <div className="sale-extras">
             <button
               type="button"
-              disabled={cart.length === 0}
+              disabled={cart.length === 0 || Boolean(quoteId)}
               onClick={() => {
                 setDiscountInput(String(discountPercent || ""));
                 setExtraDialog("discount");
@@ -1822,7 +2076,7 @@ export function PosWorkspace({
             </button>
             <button
               type="button"
-              disabled={cart.length === 0}
+              disabled={cart.length === 0 || Boolean(quoteId)}
               onClick={() => {
                 setCart((current) =>
                   current.map((line) => ({ ...line, giftReceipt: true })),
@@ -1835,7 +2089,7 @@ export function PosWorkspace({
             <button
               type="button"
               disabled={
-                cart.length === 0 || !createLayawayAction || layawayBusy
+                cart.length === 0 || hasInvalidQuantity || !createLayawayAction || layawayBusy || Boolean(quoteId) || cart.some(line => line.variant.quick)
               }
               title="Reserva la mercancía sin registrar una venta ni mover la caja."
               onClick={() => {
@@ -1989,6 +2243,21 @@ export function PosWorkspace({
                 <article key={draft.id}>
                   <div>
                     <strong>{draft.label ?? "Ticket en espera"}</strong>
+                    <strong>
+                      {draft.quote_pricing ? `Total cotizado: ${money.format(Number(draft.quote_pricing.total_cents) / 100)}` : draft.items.every((item) =>
+                        Boolean(posItemVariant(item, variantsById)),
+                      )
+                        ? `Total estimado: ${money.format(
+                            draft.items.reduce(
+                              (sum, item) =>
+                                sum +
+                                cartLineCents({variant:posItemVariant(item,variantsById)!,quantity:item.quantity})/100,
+                              0,
+                            ) *
+                              (1 - Number(draft.discount_percent) / 100),
+                          )}`
+                        : "Total pendiente de validar"}
+                    </strong>
                     <span>
                       {draft.items.reduce(
                         (sum, item) => sum + item.quantity,
@@ -2052,6 +2321,31 @@ export function PosWorkspace({
         <div className="inline-error operation-feedback" role="alert">
           {saleError ||
             "No fue posible cargar el punto de venta. Intenta de nuevo."}
+        </div>
+      ) : null}
+
+      {quickOpen ? (
+        <div className="modal-backdrop">
+          <form className="checkout-modal compact-modal" role="dialog" aria-modal="true" aria-labelledby="quick-product-title"
+            onSubmit={event => {
+              event.preventDefault();
+              if (quoteId || draftOperationRef.current) return;
+              const data = new FormData(event.currentTarget);
+              const parsed = parseQuickProduct(String(data.get('name') ?? ''), String(data.get('price') ?? ''), String(data.get('quantity') ?? ''), canCaptureQuickCost ? String(data.get('cost') ?? '') : undefined);
+              if (!parsed) { setQuickError('Revisa nombre, cantidad entera y precio con máximo dos decimales.'); return; }
+              if (cart.length >= 100) { setQuickError('El ticket admite hasta 100 renglones.'); return; }
+              setCart(current => [...current, { variant: quickProductVariant(crypto.randomUUID(), parsed.quick), quantity: parsed.quantity, giftReceipt: false }]);
+              setQuickOpen(false); notify('Producto rápido agregado. No modifica inventario.');
+            }}>
+            <h2 id="quick-product-title">Producto rápido</h2>
+            <p>Se cobra sin darlo de alta ni generar un código. Sus datos quedan en el ticket para registrarlo después; no cambia existencias.</p>
+            <label>Nombre <input name="name" required maxLength={160} /></label>
+            <label>Cantidad <input name="quantity" type="number" min="1" max="999" step="1" defaultValue="1" required /></label>
+            <label>Precio unitario <input name="price" type="number" min="0.01" max="1000000" step="0.01" required /></label>
+            {canCaptureQuickCost ? <label>Costo unitario (opcional) <input name="cost" type="number" min="0" max="1000000" step="0.01" /></label> : null}
+            {quickError ? <p role="alert">{quickError}</p> : null}
+            <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setQuickOpen(false)}>Cancelar</button><button type="submit" className="primary-button">Agregar al carrito</button></div>
+          </form>
         </div>
       ) : null}
 
@@ -2155,6 +2449,7 @@ export function PosWorkspace({
             paymentUsed !== "credit" ? (
               <>
                 <p>Selecciona el método registrado en la venta.</p>
+                {!preview && cashSession && usdEnabled && prepareUsdAction ? <UsdCheckout prepareAction={prepareUsdAction} sessionId={cashSession.id} totalCents={amountDueCents} disabled={submitting||hasInvalidQuantity||Boolean(quoteId)||Boolean(activeLoyaltyRedemption)} onConfirm={async usd=>{await submitSale('cash',[{method_code:'USD',amount_cents:amountDueCents}],'Dólares USD',undefined,usd);}} /> : null}
                 <div className="payment-options">
                   <button
                     className="payment-cash"
@@ -2328,9 +2623,7 @@ export function PosWorkspace({
                     }}
                     placeholder="0.00"
                   />
-                  <small
-                    className={cashTendered >= amountDue ? "enough" : ""}
-                  >
+                  <small className={cashTendered >= amountDue ? "enough" : ""}>
                     {cashTendered >= amountDue
                       ? `Cambio: ${money.format(change)}`
                       : `Faltan ${money.format(amountDue - cashTendered)}`}
@@ -2373,9 +2666,7 @@ export function PosWorkspace({
                 </button>
               </div>
             )}
-            {amountDueCents > 0 &&
-            !cashMode &&
-            paymentUsed === "credit" ? (
+            {amountDueCents > 0 && !cashMode && paymentUsed === "credit" ? (
               <div className="credit-checkout-summary">
                 <div>
                   <span>Cliente</span>
@@ -2416,8 +2707,7 @@ export function PosWorkspace({
                   disabled={
                     submitting ||
                     !creditDueDate ||
-                    amountDueCents >
-                      Number(creditSummary?.available_cents ?? 0)
+                    amountDueCents > Number(creditSummary?.available_cents ?? 0)
                   }
                   onClick={() => completeSale("credit")}
                 >

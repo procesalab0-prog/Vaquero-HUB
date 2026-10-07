@@ -159,6 +159,8 @@ export default async function ReportsPage({
     hasta?: string;
     agrupacion?: string;
     busqueda?: string;
+    categoria?: string;
+    departamento?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -173,6 +175,8 @@ export default async function ReportsPage({
     to: validReportDate(params.hasta, defaults.to),
     grouping,
     query: (params.busqueda ?? "").trim().slice(0, 100),
+    categoryId: params.categoria ?? "",
+    department: (params.departamento ?? "").trim().slice(0, 100),
   } as const;
 
   if (!isSupabaseConfigured()) {
@@ -182,6 +186,8 @@ export default async function ReportsPage({
         locations={[previewLocation]}
         activeLocationId={previewLocation.id}
         filters={filters}
+        classifications={{ categories: [{ id: "preview-botas", name: "Botas" }], departments: ["CABALLERO"] }}
+        preview
         sales={tab === "ventas" ? previewSales() : undefined}
         inventory={tab === "inventario" ? previewInventory() : undefined}
       />
@@ -216,10 +222,12 @@ export default async function ReportsPage({
   }
 
   if (tab === "inventario") {
-    const result = await supabase.rpc("get_inventory_report", {
+    const [result, taxonomy] = await Promise.all([supabase.rpc("get_inventory_report_v2", {
       p_location_id: activeLocation.id,
       p_query: filters.query,
-    });
+      p_category_id: filters.categoryId || null,
+      p_department: filters.department || null,
+    }), supabase.rpc("get_report_classifications")]);
     return (
       <ReportsWorkspace
         tab={tab}
@@ -227,19 +235,22 @@ export default async function ReportsPage({
         activeLocationId={activeLocation.id}
         filters={filters}
         inventory={result.data as InventoryReport | null}
-        status={result.error?.message}
+        classifications={taxonomy.data as { categories: Array<{ id: string; name: string }>; departments: string[] } ?? undefined}
+        status={result.error?.message ?? taxonomy.error?.message}
       />
     );
   }
 
   const range = reportDateRange(filters.from, filters.to);
-  const result = await supabase.rpc("get_sales_report", {
+  const [result, taxonomy] = await Promise.all([supabase.rpc("get_sales_report_v2", {
     p_location_id: activeLocation.id,
     p_from: range.from,
     p_to: range.to,
     p_grouping: filters.grouping,
     p_query: filters.query,
-  });
+    p_category_id: filters.categoryId || null,
+    p_department: filters.department || null,
+  }), supabase.rpc("get_report_classifications")]);
   return (
     <ReportsWorkspace
       tab={tab}
@@ -247,7 +258,8 @@ export default async function ReportsPage({
       activeLocationId={activeLocation.id}
       filters={filters}
       sales={result.data as SalesReport | null}
-      status={result.error?.message}
+      classifications={taxonomy.data as { categories: Array<{ id: string; name: string }>; departments: string[] } ?? undefined}
+      status={result.error?.message ?? taxonomy.error?.message}
     />
   );
 }

@@ -3,6 +3,7 @@ import { BUSINESS_PROFILE, LA_PIEDAD_STORE } from "@/lib/business-profile";
 import { receiptPageStyle } from "@/lib/printing";
 import { LabelBarcode } from "@/components/label-barcode";
 import { giftFolioFromSale } from "@/lib/ticket-folios";
+import { measureLineCents } from "@/lib/measure-units";
 
 export type ReceiptLine = {
   name: string;
@@ -10,6 +11,7 @@ export type ReceiptLine = {
   code: string;
   quantity: number;
   unitPrice: number;
+  unitName?: string;
 };
 
 export type ReceiptPayment = {
@@ -26,7 +28,9 @@ type ReceiptLocation = {
   phone: string | null;
 };
 
+export type UsdReceiptTender = { received_usd_cents: number; rate_million: number; equivalent_mxn_cents: number; change_mxn_cents: number; reference_date?: string; refund_currency?: string };
 type ThermalReceiptProps = {
+  usdTender?: UsdReceiptTender | null;
   mode: "sale" | "gift";
   folio: string;
   date: string;
@@ -50,6 +54,11 @@ const number = new Intl.NumberFormat("es-MX", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
+
+function lineAmount(item: ReceiptLine) {
+  const cents = measureLineCents(Math.round(item.unitPrice * 100), item.quantity, { code: "RECEIPT", name: item.unitName ?? "Pieza", decimal_places: 3 });
+  return cents === null ? "—" : number.format(cents / 100);
+}
 
 export function formatReceiptDate(date = new Date()) {
   return new Intl.DateTimeFormat("es-MX", {
@@ -77,6 +86,7 @@ export function ThermalReceipt({
   tendered,
   change = 0,
   paymentDetails = [],
+  usdTender,
   reprintLabel,
   cashierName = "Salomon",
   registerName = "Caja 01",
@@ -166,10 +176,10 @@ export function ThermalReceipt({
               {mode === "sale" ? (
                 <div className="receipt-critical-copy">
                   <span>
-                    {item.quantity} × {number.format(item.unitPrice)} ·{" "}
+                    {item.quantity}{item.unitName?` ${item.unitName}`:''} × {number.format(item.unitPrice)} ·{" "}
                     <code>{item.code}</code>
                   </span>
-                  <b>{number.format(item.quantity * item.unitPrice)}</b>
+                  <b>{lineAmount(item)}</b>
                 </div>
               ) : (
                 <code>{item.code}</code>
@@ -182,8 +192,8 @@ export function ThermalReceipt({
           <section className="thermal-totals">
             <div>
               <span>
-                Subtotal ({items.reduce((sum, item) => sum + item.quantity, 0)}{" "}
-                art.)
+                Subtotal ({items.some(item=>item.unitName)?items.length:items.reduce((sum, item) => sum + item.quantity, 0)}{" "}
+                {items.some(item=>item.unitName)?'renglones':'art.'})
               </span>
               <span>{number.format(subtotal)}</span>
             </div>
@@ -211,7 +221,13 @@ export function ThermalReceipt({
                 <span>{number.format(tendered ?? total)}</span>
               </div>
             )}
-            {method.toLocaleLowerCase("es-MX") === "efectivo" ? (
+            {usdTender ? <>
+              <div><span>Recibido USD</span><span>{number.format(Number(usdTender.received_usd_cents) / 100)}</span></div>
+              <div><span>Tasa MXN / USD</span><span>{Number(usdTender.rate_million) / 1000000}</span></div>
+              <div><span>Equivalente MXN</span><span>{number.format(Number(usdTender.equivalent_mxn_cents) / 100)}</span></div>
+              <div><span>Cambio MXN</span><span>{number.format(Number(usdTender.change_mxn_cents) / 100)}</span></div>
+            </> : null}
+            {!usdTender && method.toLocaleLowerCase("es-MX") === "efectivo" ? (
               <div>
                 <span>Cambio</span>
                 <span>{number.format(change)}</span>

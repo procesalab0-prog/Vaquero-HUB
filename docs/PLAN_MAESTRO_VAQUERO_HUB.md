@@ -1,5 +1,114 @@
 MI TIENDA SM — CONTEXTO MAESTRO DEL PROYECTO
 
+## Pendientes de Mi Tienda SM — 1 de octubre de 2026
+
+Solicitud consolidada de Emmanuel. Diseño orientado primero a computadora y
+después a tableta, conservando la identidad crema y negro. Teléfono vertical,
+accesibilidad y escala de texto siguen siendo criterios obligatorios. Estos
+puntos son pendientes a verificar e implementar, no funcionalidades cerradas.
+Complementan las especificaciones existentes sin duplicar módulos.
+
+1. **Productos:** compactar encabezados para mostrar más productos; «Nuevo
+   producto» como acción principal y secundarias agrupadas. Buscador visible,
+   variantes junto al producto seleccionado y textos sin invadir tablas.
+2. **Venta:** catálogo a la izquierda y carrito a la derecha en computadora;
+   buscador, total y «Cobrar» siempre visibles. El carrito desplaza su lista,
+   no sus acciones. Ordenar cliente, espera, descuentos, regalo y apartado;
+   separar cancelaciones/devoluciones de las acciones normales del cobro.
+3. **Inventario:** buscador, filtros y encabezados visibles; cantidades
+   alineadas y variantes agrupadas/desplegables. Búsqueda por código y una
+   acción inequívoca para contar existencias.
+4. **Caja:** compactar tarjetas y apertura; entradas/retiros junto al historial
+   y corte separado. Conservar advertencias de sucursal, sesión correcta y
+   conteo ciego; el rediseño no altera las protecciones de caja.
+5. **Compras y proveedores:** más espacio para productos de la orden y datos
+   del proveedor ordenados. Resumen y guardar/crear visibles; formulario de
+   proveedor simplificado, con obligatorios y errores claros.
+6. **Consistencia y ergonomía:** una acción principal por tarea; guardar y
+   cancelar en posiciones consistentes; carga, deshabilitado y selección
+   explícitos. Uso fluido con teclado y separación táctil para tableta.
+7. **Cotizaciones personalizadas:** modificar precios y descuentos y escribir
+   nombre de persona no registrada. Cambios aprobados:
+   sólo en cotización, mostrando original, descuento y total sin modificar
+   catálogo. Sólo administradores pueden personalizar precios/descuentos.
+   Conservar el precio cotizado dentro de una vigencia configurable y requerir
+   autorización administrativa para excepciones. Hoy la conversión valida
+   precios vigentes: adaptar esa validación de forma explícita y auditada.
+8. **Escaneo en Venta:** un código de producto válido agrega directamente la
+   variante al carrito, sujeto a disponibilidad. Distinguir folios de tickets,
+   que deben abrir la compra y nunca convertirse en un producto.
+9. **Producto rápido:** capturar, agregar al carrito y cobrar sin darlo de alta
+   ni generar código; conservar sus datos para alta posterior. Cajera y gerente
+   autorizados a cobrarlo; nombre, cantidad y precio, costo opcional sólo para
+   gerencia. No descuenta inventario al no pertenecer aún al catálogo. Darlo de
+   alta después no modifica el historial original. Diseñar cambios/devoluciones
+   sin inventar una entrada de stock para una pieza nunca registrada.
+10. **Notas en Inicio:** escribir y consultar recordatorios rápidos, personales
+    o compartidos por sucursal como opciones. Autor y fecha visibles; únicamente
+    su autor puede editar la nota. Las personales sólo son visibles para su
+    autor, también en las consultas del servidor.
+11. **Tickets en espera:** mostrar el total de cada ticket en la selección y
+    comprobar consistencia al recuperarlo. Conservar que no reserva mercancía.
+12. **Traspasos:** añadir acceso desde Venta al flujo existente, con permisos y
+    contexto de sucursal; no modificar las reglas de envío/recepción.
+13. **Orden de compra y PDF para proveedor:** reutilizar la orden existente;
+    seleccionar productos registrados y permitir nombre opcional propio de
+    ese renglón sin cambiar el catálogo. Campos opcionales seleccionables:
+    logo, datos de tienda/proveedor, folio, fecha, sucursal de entrega, productos,
+    cantidades/unidades, costos, total, observaciones, impuestos, fecha esperada
+    y condiciones de pago. Si el proveedor tiene teléfono, ofrecer envío por
+    WhatsApp sólo a administradores, validando también en servidor. Esta decisión
+    reemplaza la restricción inicial «sólo dueño»; no se requiere un rol nuevo.
+14. **Unidades de medida:** crear y asignar pieza, par, kilo y metro, con catálogo
+    ampliable según las necesidades de la tienda. Pieza/par enteros y kilo/metro
+    con hasta tres decimales, según propuesta aprobada. No permitir
+    media bota por habilitar kilos. Mantener compatibilidad con inventario,
+    compras, ventas, etiquetas y datos heredados.
+15. **Información de WooCommerce:** preservar su información comercial y
+    usarla como referencia principal por ser la más completa cuando exista
+    correspondencia comprobada. SICAR contiene productos ausentes en Woo.
+    Resolver conflictos por campo en M9; esta prioridad no autoriza sobrescribir
+    existencias, costos, identidades ni códigos inmutables.
+16. **Reportes:** incorporar categorías/departamentos como filtros o agrupación,
+    conservando sucursal, periodo y permisos; no exponer costos/margen a roles
+    que no los pueden consultar.
+
+### Reglas confirmadas por Emmanuel — 1 de octubre de 2026
+
+Las respuestas a las seis preguntas anteriores prevalecen sobre las propuestas
+iniciales. Producto rápido no crea ni consume inventario; coste opcional
+restringido a gerencia. Cotizaciones personalizadas sólo por administradores,
+nombre libre, descuentos/precios propios y vigencia configurable; no se aprobó
+todavía un número fijo de días, por lo que no debe inventarse. Las autorizaciones
+de excepción deben conservar actor, motivo y condiciones aceptadas.
+
+Los campos del PDF de proveedor son opcionales en la presentación, no la
+integridad interna de la orden: ocultar un campo no elimina su validación ni
+permite crear impuestos o importes inexistentes. Administradores pueden enviar
+por WhatsApp; no implica envío automático ni confirmación de entrega.
+
+Notas con alcance personal o compartido por sucursal, edición por autor y
+autor/fecha visibles. Las reglas de borrado y cualquier intervención sobre notas
+ajenas deben definirse explícitamente antes de añadir dichas acciones.
+
+WooCommerce sigue siendo la referencia principal para la información comercial
+coincidente, y los reportes tendrán departamento y categoría por separado. El
+plan de conciliación de M9 debe registrar diferencias de precio y su resolución
+antes de aplicar cambios; esta aprobación no autoriza una importación inmediata
+ni sobrescribir stock o costos. Las nuevas unidades no implican conversiones
+automáticas de pares/cajas a piezas ni fracciones para ropa o calzado.
+
+Publicación acordada: implementar y verificar toda la lista antes de subirla a
+main para prueba del usuario. No publicar los bloques parciales. La aprobación
+de estas reglas no equivale a tener las funciones implementadas.
+
+Orden de ejecución: ergonomía operativa durante cada módulo, sin relegarla a
+la revisión cosmética final; funcionalidades nuevas en entregas separadas con
+reglas de negocio y pruebas. Los cambios visuales no deben modificar tickets
+ni etiquetas ya calibrados. Dólares, costo promedio ponderado y notificaciones
+con sonido mantienen sus pendientes independientes. Esta lista no implica que
+las funcionalidades estén implementadas o desplegadas en main.
+
 1. Descripción general
 
 Proyecto: Mi Tienda SM
@@ -2591,6 +2700,10 @@ Entrega visible 0.30.0 — compras, proveedores y recepción:
 - Desde el historial se preparan etiquetas por la cantidad exacta recibida.
 - El costo vigente del producto no se modifica todavía: se conserva el costo
   de compra y se espera la decisión entre promedio ponderado o último costo.
+  Este párrafo describe la entrega 0.30.0: Emmanuel confirmó después promedio
+  ponderado. La implementación local del 1 de octubre calcula contra la
+  existencia global de la variante, incluidas reservas y tránsito, al recibir;
+  conserva costos históricos y queda pendiente de despliegue. Ver la cola.
 
 Corrección visible 0.30.1 — ventanas táctiles y avisos accesibles:
 
@@ -3117,6 +3230,9 @@ Subfase financiera aprobada — recepción de dólares:
 - Esta subfase exige migración hacia delante, RLS/permisos, operación atómica de
   caja y pruebas de concurrencia. Hasta cumplirlas no se presenta como método de
   pago activo.
+- Decisión del propietario (2026-10-02): los reembolsos de cobros en dólares
+  se entregarán en pesos, usando la tasa registrada en la venta original,
+  nunca la referencia del día de la devolución.
 
 Entrega visible 0.53.0 — creación de cuentas desde Mi Vaquero:
 
@@ -3137,6 +3253,18 @@ Entrega visible 0.53.0 — creación de cuentas desde Mi Vaquero:
 - Marketing es una autorización opcional aparte. El formulario sólo se habilita
   cuando el aviso aprobado tenga versión y URL configuradas. Puntos,
   recompensas y redenciones siguen pospuestos hasta definir sus reglas.
+
+Pendiente operativo aprobado — notificaciones con sonido:
+
+- Registrar y corregir el fallo reportado en la prueba de notificaciones.
+- Incorporar sonido configurable y un botón de prueba en Ajustes que emita
+  aviso visible y audio, mostrando los bloqueos o permisos pendientes.
+- Comprobar escritorio, teléfono, iPad y PWA instalada; distinguir los avisos
+  dentro de la aplicación de los del sistema en segundo plano. El aviso visual
+  debe seguir funcionando sin sonido.
+- Se trabajará en una entrega posterior. Criterios y pruebas en
+  `docs/COLA_DE_TRABAJO.md`, sección «Pendiente operativo — notificaciones con
+  sonido»; no está implementado ni validado todavía.
 
 Entrega visible 0.52.3 — hoja de estilos legible y reglas móviles vivas:
 
@@ -3200,3 +3328,40 @@ Validación de entrega: compilación de producción y TypeScript correctos; lint
 El icono combina el emblema original de Vaquero SM con las letras «Mi Vaquero» del icono anterior, conservadas sin reinterpretarlas. Se corrige la entrega 0.55.4 que había reemplazado el nombre por VAQUERO SM. Exportaciones PNG 180/192/512 y máscara de 512 con margen adicional; referencias nuevas y caché editorial v3. Sin cambios de datos ni simulaciones nuevas.
 
 Validación 0.55.5: revisión visual del icono; compilación de producción/TypeScript, lint y seis pruebas de PWA correctos. Navegador confirma el manifiesto de Mi Vaquero y nuevo Apple Touch Icon, con contenido y sin error de interfaz. La comprobación del icono en un teléfono instalado sigue pendiente; su actualización depende del SO. Avatar S no validado sin sesión de empleado en este entorno.
+
+### Integración candidata 0.56.0 — 7 de octubre de 2026
+
+- Se preservaron los 123 archivos locales modificados/nuevos de
+  `codex/usd-costos-compras`, sin cambiar ni limpiar su carpeta original.
+- Integración de tres vías sobre main `e45ef5b`: se conservan la identidad de
+  Mi Vaquero y las preguntas de M9 al principio de Inicio, con sus botones.
+  Notas y mejoras operativas se incorporan junto a ellas.
+- QA independiente en Docker, proyecto `mi-tienda-integracion-20261007`,
+  API 56321 y PostgreSQL 56322. No se usa ni se modifica staging compartido
+  `zsezjtswqeijboezvado`, producción o WooCommerce.
+- 123 migraciones reconstruidas; 113 pruebas unitarias, 167 de integración
+  con Auth/PostgREST reales, cuatro nuevas de aceptación operativa y
+  186 recorridos de navegador aprobados. Concurrencia financiera nativa y
+  capturas React de cantidades/USD también correctas.
+- Dólares y asignación fraccionaria permanecen desactivados. Falta configurar
+  Banxico y aceptar su consulta oficial antes de activar USD. Las pruebas USD
+  usan datos sintéticos locales, no una tasa comercial real.
+- Candidata integrada para revisión; no desplegada ni fusionada a main. Antes
+  de publicar: ensayo alojado independiente, revisión del cambio financiero y
+  promoción coordinada de esquema y aplicación. El ensayo local incremental 101 → 123 también pasó: códigos, saldo,
+  movimientos y respuesta de M9 existentes quedaron intactos.
+- M9 continúa separado. Su integración posterior tiene siete archivos comunes;
+  debe combinarse con tres vías, conservando fichas web, fotos, permisos, códigos
+  heredados y datos. No sustituir su rama por esta candidata.
+
+### Publicación 0.56.0 — compatibilidad del esquema alojado
+
+- La base del principal tenía 95 migraciones, no las 101 del main local. Se ensayó
+  95 → 123 con Auth/PostgREST real y preservación de códigos, saldos y respuestas.
+- Se añade una migración nueva de compatibilidad de formato para la función
+  antigua de cambios: ejecutarla antes de `pos_quick_product` en esa base; en una
+  reconstrucción ya actualizada no hace cambios. No se reescribe SQL heredado.
+- La corrección se probó con la definición exacta alojada en una transacción
+  local que se revirtió. No modifica las reglas financieras ni datos históricos.
+- Las capturas de Playwright usan `test.info().outputPath` para funcionar en
+  Linux y Mac y separar proyectos/reintentos. USD y fracciones siguen apagados.

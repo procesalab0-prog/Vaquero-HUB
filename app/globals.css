@@ -1131,7 +1131,7 @@ code {
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-rows: 64px auto minmax(0, 1fr) auto;
+  grid-template-rows: 64px auto auto minmax(0, 1fr) auto;
   background: var(--surface);
   border-left: 1px solid var(--border);
 }
@@ -1387,6 +1387,9 @@ code {
   grid-template-columns: 36px 30px 36px;
   align-items: center;
 }
+.quantity-buttons label { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.quantity-buttons input { width: 82px; max-width: 100%; min-width: 0; text-align: center; }
+.quantity-buttons small { font-size: 0.7rem; text-align: center; }
 .quantity-buttons button {
   width: 36px;
   height: 36px;
@@ -5372,6 +5375,98 @@ a:active {
   width: 18px;
   flex: none;
 }
+.products-page .catalog-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding: 8px 0;
+  background: var(--background, var(--surface));
+}
+.catalog-secondary-actions {
+  position: relative;
+}
+.catalog-secondary-actions > summary {
+  min-height: 46px;
+  padding: 12px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 700;
+}
+.catalog-secondary-actions > summary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+.catalog-secondary-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 5;
+  width: min(290px, calc(100vw - 48px));
+  max-height: 60dvh;
+  overflow-y: auto;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px #0002;
+}
+.products-page .table-row > *,
+.products-page .table-product strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.products-page .data-table {
+  overflow-x: auto;
+}
+@media (min-width: 821px) {
+  :where(.products-page, .inventory-page, .purchases-page) {
+    padding: 18px 24px;
+  }
+  :where(.products-page, .inventory-page, .purchases-page) .section-heading {
+    margin-bottom: 14px;
+    gap: 12px;
+  }
+  .products-page .section-heading h1 {
+    font-size: 1.8em;
+  }
+  .products-page .heading-copy {
+    margin-top: 6px;
+  }
+  .products-page .table-row {
+    padding: 10px 14px;
+    gap: 12px;
+  }
+  .inventory-page .catalog-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    padding: 8px 0;
+    background: var(--surface);
+  }
+  .inventory-page .inventory-table {
+    max-height: 65dvh;
+    overflow: auto;
+  }
+  .inventory-page .inventory-table .table-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--surface);
+  }
+  .inventory-page .stock-number {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+  .open-register-card {
+    max-width: 720px;
+    margin-top: 16px;
+  }
+}
 .catalog-toolbar {
   margin: 0 0 14px;
   display: flex;
@@ -8840,3 +8935,50 @@ a:active {
     transform: translateX(-50%);
   }
 }
+.workspace-note-form { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(0, 3fr); gap: 12px; }
+.workspace-note-form label { display: grid; gap: 6px; min-width: 0; }
+.workspace-note-form :is(select, textarea) { width: 100%; min-width: 0; padding: 10px; color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; font: inherit; }
+.workspace-note-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 10px; }
+.workspace-note-actions small { margin-right: auto; }
+.workspace-note-list { display: grid; gap: 12px; margin-top: 16px; }
+.workspace-note { min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 12px; }
+.workspace-note-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.workspace-note p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 10px 0; }
+@media (max-width: 820px) { .workspace-note-form { grid-template-columns: minmax(0, 1fr); } }
+.purchase-pdf-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; }
+.purchase-pdf-options label { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.purchase-pdf-options input { flex: 0 0 auto; width: 18px; height: 18px; }
+.purchase-pdf-lines { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; }
+.purchase-pdf-lines label, .purchase-pdf-note { display: grid; gap: 6px; min-width: 0; }
+.purchase-pdf-modal :is(input:not([type="checkbox"]), textarea) { box-sizing: border-box; width: 100%; min-width: 0; padding: 10px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+.purchase-pdf-modal :is(p, span, label) { overflow-wrap: anywhere; }
+.purchase-pdf-modal textarea { min-height: 90px; resize: vertical; }
+.purchase-pdf-footer { position: sticky; bottom: -1px; flex-wrap: wrap; padding: 12px 0; background: var(--surface); }
+.inventory-product-group { min-width: 0; border-bottom: 1px solid var(--border); }
+.notification-sound-toggle { display: flex; gap: 10px; align-items: center; margin: 18px 0; }
+.notification-sound-toggle input { width: 20px; height: 20px; }
+.workspace-notification-toast { position: fixed; z-index: 20000; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); width: min(480px, calc(100vw - 24px)); box-sizing: border-box; padding: 16px 48px 16px 16px; background: var(--surface); color: var(--ink); border: 2px solid var(--accent); border-radius: 14px; box-shadow: 0 8px 30px #0003; display: grid; gap: 6px; overflow-wrap: anywhere; }
+.workspace-notification-toast button { position: absolute; right: 8px; top: 8px; width: 36px; height: 36px; display: grid; place-items: center; background: transparent; color: inherit; border: 0; }
+.workspace-notification-toast[data-kind="error"] { border-color: #a52e25; }
+.notifications-popover { max-height: 70dvh; overflow-y: auto; }
+@media (max-width: 820px) {
+  .topbar-actions .notification-trigger { display: grid; width: 40px; height: 40px; min-width: 40px; }
+  .topbar-actions { gap: 6px; }
+  .notifications-popover { right: 12px; width: min(360px, calc(100vw - 24px)); box-sizing: border-box; }
+}
+.inventory-product-group > summary { cursor: pointer; padding: 14px 16px; color: var(--ink); background: var(--surface); overflow-wrap: anywhere; }
+.inventory-product-group > summary strong { display: inline; }
+.inventory-product-group > summary small { margin-left: 8px; font-weight: 400; color: var(--muted); }
+.inventory-product-group > summary > span { display: inline-block; margin-left: 16px; font-size: .85em; color: var(--muted); }
+.inventory-product-group > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+.inventory-product-group .inventory-row > :is(span, code) { font-variant-numeric: tabular-nums; }
+@media (max-width: 820px) {
+  .inventory-product-group { border: 1px solid var(--border); border-radius: 14px; margin-bottom: 10px; }
+  .inventory-product-group > summary > span { display: block; margin: 6px 0 0 20px; }
+  .inventory-product-group .inventory-row { margin: 8px; }
+}
+.measure-unit-catalog { margin: 1rem 1.5rem; padding: 1rem; border: 1px solid var(--border, #d6cec2); border-radius: 12px; }
+.measure-unit-catalog summary { cursor: pointer; font-weight: 700; }
+.measure-unit-catalog fieldset { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; border: 0; padding: .5rem 0; }
+.measure-unit-catalog label { display: grid; gap: .35rem; flex: 1 1 180px; min-width: 0; }
+.measure-unit-catalog input, .measure-unit-catalog select { width: 100%; min-width: 0; padding: .65rem; }
