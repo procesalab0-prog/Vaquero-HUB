@@ -1,4 +1,5 @@
 import Link from "next/link";
+import styles from "./migration-questions.module.css";
 import { getWorkspaceSession } from "@/lib/auth/workspace-session";
 
 export async function MigrationQuestions() {
@@ -16,7 +17,7 @@ export async function MigrationQuestions() {
   const pending = data.summary.questions - data.summary.answered;
   return (
     <section
-      className="content-card"
+      className={`content-card ${styles.card}`}
       aria-labelledby="migration-questions-title"
     >
       <div className="card-heading">
@@ -30,21 +31,34 @@ export async function MigrationQuestions() {
               : "Gracias, esta tanda ya tiene respuesta"}
           </h2>
         </div>
-        <Link
-          href={
-            pending
-              ? "/productos/migracion-dudas"
-              : "/productos/migracion-dudas?estado=answered"
-          }
-        >
-          {pending ? "Responder preguntas" : "Ver respuestas"}
-        </Link>
       </div>
       <p>
         {pending
           ? "Son preguntas cortas por modelo, con ejemplos. Se irán descontando al responder; las demás se enviarán después."
           : "Revisaremos las aclaraciones antes de enviar otra tanda."}
       </p>
+      <div className={styles.actions}>
+        <Link
+          className="primary-button"
+          href={
+            pending
+              ? "/productos/migracion-dudas"
+              : "/productos/migracion-dudas?estado=answered"
+          }
+        >
+          {pending
+            ? "Responder preguntas ahora →"
+            : "Ver respuestas guardadas →"}
+        </Link>
+        {pending > 0 && (
+          <Link
+            className="secondary-button"
+            href="/productos/migracion-dudas?estado=answered"
+          >
+            Ver respuestas guardadas
+          </Link>
+        )}
+      </div>
       <p>
         {data.summary.answered} de {data.summary.questions} respuestas
         recibidas. Responder no cambia productos ni existencias.

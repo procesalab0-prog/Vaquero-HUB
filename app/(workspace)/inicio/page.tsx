@@ -75,6 +75,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const cashLocation = locations.find((item) => item.id === cashSession?.location_id);
 
   return <section className="module-page dashboard-page">
+    <MigrationQuestions />
     <div className="section-heading"><DashboardGreeting dateLabel={currentDateLabel()} /><Link className="primary-button" href={link("/pos")}><ShoppingCart aria-hidden="true" />Nueva venta</Link></div>
     {!configured ? <div className="notice-banner">Vista de demostración: las cifras reales aparecerán al conectar la tienda.</div> : null}
     {configured && !location ? <div className="inline-error" role="alert">Selecciona una sucursal para consultar sus datos.</div> : null}
@@ -96,7 +97,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         {inventorySummary ? <><article><span className="alert-icon error"><AlertTriangle aria-hidden="true" /></span><div><strong>Agotadas: {inventorySummary.outCount}</strong><p>Variantes sin disponibilidad en esta sucursal.</p></div></article><article><span className="alert-icon warning"><AlertTriangle aria-hidden="true" /></span><div><strong>Existencia baja: {inventorySummary.lowCount}</strong><p>Variantes con una o dos piezas disponibles.</p></div></article></> : <p className="empty-copy">Consulta Inventario para revisar las existencias de esta sucursal.</p>}
       </div></section>
     </div>
-    <MigrationQuestions />
     <section className="content-card recent-sales"><div className="card-heading"><div><p className="eyebrow">Actividad</p><h2>{canReportSales ? "Ventas recientes" : "Mis ventas recientes"}</h2></div><Link href={link("/tickets")}>Ver todos los tickets</Link></div>
       {recent.length ? <div className="compact-table"><div className="compact-row compact-header"><span>Folio</span><span>Hora</span><span>Artículos</span><span>Pago</span><span>Total</span></div>{recent.map((ticket) => <div className="compact-row" key={ticket.id}>
         <Link href={`${link("/tickets")}${location ? "&" : "?"}venta=${encodeURIComponent(ticket.id)}`}>{ticket.folio}</Link><span>{new Intl.DateTimeFormat("es-MX", { hour: "2-digit", minute: "2-digit", timeZone: "America/Mexico_City" }).format(new Date(ticket.sold_at))}</span><span>{ticket.items.reduce((sum, item) => sum + Number(item.quantity), 0)}</span><span>{ticket.status === "CANCELLED" ? "Cancelada" : ticket.payments.map((payment) => payment.method_name).join(" + ") || "—"}</span><strong>{money.format(Number(ticket.total_cents) / 100)}</strong>

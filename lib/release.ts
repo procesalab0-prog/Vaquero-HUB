@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.55.6";
-export const APP_RELEASE = "Mi Vaquero · Preguntas de migración por tandas";
+export const APP_VERSION = "0.55.7";
+export const APP_RELEASE = "Mi Vaquero · Preguntas visibles al entrar";
