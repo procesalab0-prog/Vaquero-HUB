@@ -397,25 +397,23 @@
   transform: rotate(-6deg);
 }
 
-/* Cambio de sección: ya no hay pantalla de espera. La página actual se queda
-   visible hasta que la nueva está lista y, si tarda, aparece el logo completo
-   de Vaquero SM con un destello dorado y el nombre de la sección. */
+/* Cambio de sección: si la sección nueva tarda, la pantalla completa se vuelve
+   la escena de la marca: negro, el logo completo de Vaquero SM al centro con
+   un destello dorado y el nombre de la sección a la que se va. Si llega antes
+   de 140 ms, no aparece. */
 .nav-wait {
   position: fixed;
-  z-index: 86;
-  top: calc(64px + env(safe-area-inset-top) + 14px);
-  left: 50%;
-  translate: -50% 0;
+  z-index: 95;
+  inset: 0;
   display: grid;
-  justify-items: center;
-  gap: 8px;
-  padding: 16px 26px 12px;
-  border: 1px solid rgb(155 123 87 / 45%);
-  border-radius: 18px;
+  place-items: center;
+  align-content: center;
+  gap: 26px;
+  padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
   background:
-    radial-gradient(circle at 50% 30%, rgb(91 64 33 / 40%), transparent 70%),
+    radial-gradient(circle at 50% 42%, rgb(91 64 33 / 38%), transparent 55%),
+    radial-gradient(circle at 84% 90%, rgb(155 123 87 / 16%), transparent 36%),
     #000;
-  box-shadow: var(--shadow-3);
   color: #f1ede4;
   pointer-events: none;
   opacity: 0;
@@ -434,7 +432,7 @@
 .nav-wait-logo {
   position: relative;
   display: block;
-  width: 150px;
+  width: min(340px, 64vw);
   aspect-ratio: 480 / 350;
 }
 
@@ -473,22 +471,13 @@
 }
 
 .nav-wait-label {
-  color: #d6cfbe;
+  color: var(--motion-sand);
   font-family: var(--font-plex-mono), monospace;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.24em;
+  letter-spacing: 0.34em;
   text-transform: uppercase;
   white-space: nowrap;
-}
-
-/* En teléfono y en iPad vertical aparece arriba de la barra inferior, donde
-   está el pulgar. */
-@media (max-width: 820px) {
-  .nav-wait {
-    top: auto;
-    bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 14px);
-  }
 }
 
 /* El botón tocado queda marcado al instante: el toque sí se registró. */
@@ -915,8 +904,18 @@ a[data-pending="true"] {
 
   /* El logo aparece suave y la luz dorada lo recorre una y otra vez mientras
      llega la sección. */
+  /* La escena entra suave, el logo se marca de izquierda a derecha como con
+     hierro y después la luz dorada lo recorre mientras llega la sección. */
   .nav-wait[data-state="loading"] {
-    animation: motion-wait-in 220ms var(--motion-ease-editorial) both;
+    animation: motion-fade 220ms ease-out both;
+  }
+
+  .nav-wait[data-state="loading"] .nav-wait-logo img {
+    animation: motion-reveal 600ms var(--motion-ease-editorial) both;
+  }
+
+  .nav-wait[data-state="loading"] .nav-wait-label {
+    animation: motion-soft-rise 420ms 240ms ease-out both;
   }
 
   .nav-wait[data-state="done"] {
@@ -924,7 +923,8 @@ a[data-pending="true"] {
   }
 
   .nav-wait[data-state="loading"] .nav-wait-shine i {
-    animation: motion-logo-shine 1500ms cubic-bezier(0.42, 0, 0.3, 1) infinite;
+    animation: motion-logo-shine 1500ms 450ms cubic-bezier(0.42, 0, 0.3, 1)
+      infinite;
   }
 
   /* La sección nueva aparece suave, sin desplazarse. */
@@ -934,13 +934,6 @@ a[data-pending="true"] {
 
   html[data-page-enter="b"] .workspace-main > :first-child {
     animation: motion-page-b 180ms ease-out both;
-  }
-
-  @keyframes motion-wait-in {
-    from {
-      opacity: 0;
-      transform: translateY(6px) scale(0.96);
-    }
   }
 
   @keyframes motion-logo-shine {

@@ -3424,3 +3424,12 @@ Validación 0.55.5: revisión visual del icono; compilación de producción/Type
   destello dorado que recorre su silueta y el nombre de la sección destino.
   Sustituye a las huellas de herradura de 0.61.0 por elección del dueño.
 
+### Entrega visible 0.63.0 — logo con destellos a pantalla completa
+
+- La espera al cambiar de sección cubre toda la pantalla: fondo negro con brillo
+  cálido, logo completo al centro con destello dorado y el nombre de la sección
+  destino. Mismas reglas: sólo si tarda más de 140 ms, no recibe toques, la
+  página anterior sigue montada debajo y se detiene al llegar la sección.
+- Pendiente de confirmación visual del dueño (se le envió vista previa); si no
+  la aprueba, se regresa a la tarjeta de 0.62.0.
+

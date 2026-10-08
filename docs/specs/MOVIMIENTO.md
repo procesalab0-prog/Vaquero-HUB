@@ -1,6 +1,6 @@
 # Movimiento de marca en Mi Tienda SM y Mi Vaquero
 
-Implementado en las versiones 0.58.0 a 0.62.0 a petición de Emmanuel (7 y 8 de
+Implementado en las versiones 0.58.0 a 0.63.0 a petición de Emmanuel (7 y 8 de
 octubre de 2026). Aplica las reglas de la sección «Movimiento y animación» del Plan
 Maestro y los criterios de `REDISENO_MI_TIENDA.md`.
 
@@ -162,3 +162,11 @@ fuera la espera al cambiar de sección. Sustituye a las huellas de 0.61.0:
 - Mismas reglas que antes: sólo aparece si la sección tarda más de 140 ms, la
   página actual sigue a la vista, nada gira ni se llena, y con movimiento
   reducido el logo se ve quieto. Al llegar la sección, la luz se detiene.
+
+### A pantalla completa (0.63.0)
+
+Emmanuel pidió que saliera «en toda la pantalla así de bonito». La tarjeta se
+convierte en una escena de pantalla completa: fondo negro con brillo cálido, el
+logo al centro (`min(340px, 64vw)`) y el nombre de la sección debajo. Aparece
+con un desvanecido de 220 ms, el logo se revela en 600 ms y sale con 200 ms.
+Sigue sin recibir toques y la página anterior queda montada debajo.

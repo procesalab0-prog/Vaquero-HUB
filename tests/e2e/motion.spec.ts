@@ -172,7 +172,7 @@ test.describe("respuesta al tocar", () => {
 });
 
 test.describe("cambio de sección", () => {
-  test("si la sección tarda, la página actual se queda y brilla el logo", async ({
+  test("si la sección tarda, la pantalla completa muestra el logo con destellos", async ({
     page,
   }) => {
     // Retrasa la sección nueva para ver la espera. Las precargas se cancelan:
@@ -202,7 +202,12 @@ test.describe("cambio de sección", () => {
         .locator(".nav-wait-shine i")
         .evaluate((element) => getComputedStyle(element).animationName),
     ).toBe("motion-logo-shine");
-    // Nada de «Abriendo sección»: la página anterior sigue a la vista.
+    // Cubre toda la pantalla, y nada de «Abriendo sección». La página anterior
+    // sigue montada debajo: no se pierde lo que se estaba haciendo.
+    const box = await wait.boundingBox();
+    const viewport = page.viewportSize()!;
+    expect(box?.width).toBe(viewport.width);
+    expect(box?.height).toBe(viewport.height);
     await expect(page.getByText("Abriendo sección")).toHaveCount(0);
     await expect(page.getByRole("heading", { name: /Buen día/ })).toBeVisible();
     await expect(page).toHaveURL(/\/inventario/, { timeout: 8000 });
