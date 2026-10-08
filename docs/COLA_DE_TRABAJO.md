@@ -17,6 +17,15 @@ Consulta `INTEGRACION_MEJORAS_2026_10_07.md` para evidencia y compuertas.
 Esto actualiza el pendiente histórico de Auth local; incluye ensayo incremental local 101 → 123, pero no acredita aceptación
 alojada ni habilita dólares o asignación fraccionaria.
 
+## Entrega 0.62.0 — logo con destellos al cambiar de sección
+
+Emmanuel eligió el logo completo con destellos dorados como espera al cambiar
+de sección, en lugar de las huellas. Detalle en [`specs/MOVIMIENTO.md`](specs/MOVIMIENTO.md).
+
+- [x] Tarjeta con el logo completo, destello dorado recortado a su silueta y
+      nombre de la sección destino.
+- [ ] Verla en el iPad y la computadora del mostrador con la conexión real.
+
 ## Entrega 0.61.0 — huellas de herradura al cambiar de sección
 
 Emmanuel pidió un motion graphic en lugar de una línea de progreso o algo que

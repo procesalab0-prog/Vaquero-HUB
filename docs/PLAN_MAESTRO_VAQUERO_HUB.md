@@ -3418,3 +3418,9 @@ Validación 0.55.5: revisión visual del icono; compilación de producción/Type
 - Regla operativa: las esperas de la interfaz no usan círculos girando ni
   barras que se llenan; usan un motivo de marca que indica a dónde se va.
 
+### Entrega visible 0.62.0 — logo con destellos al cambiar de sección
+
+- La espera al cambiar de sección muestra el logo completo de Vaquero SM con un
+  destello dorado que recorre su silueta y el nombre de la sección destino.
+  Sustituye a las huellas de herradura de 0.61.0 por elección del dueño.
+

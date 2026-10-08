@@ -1,6 +1,6 @@
 # Movimiento de marca en Mi Tienda SM y Mi Vaquero
 
-Implementado en las versiones 0.58.0 a 0.61.0 a petición de Emmanuel (7 y 8 de
+Implementado en las versiones 0.58.0 a 0.62.0 a petición de Emmanuel (7 y 8 de
 octubre de 2026). Aplica las reglas de la sección «Movimiento y animación» del Plan
 Maestro y los criterios de `REDISENO_MI_TIENDA.md`.
 
@@ -148,3 +148,17 @@ carga de marca seguida del cuadro de sección.
 - iPad del mostrador, vertical y horizontal: que la entrada se sienta fluida.
 - Computadora del mostrador: abrir el programa, cobrar y escanear sin esperar.
 - Mi Vaquero en un teléfono real después de una compra.
+
+## Espera al cambiar de sección: logo con destellos (0.62.0)
+
+Emmanuel vio el logo completo de Vaquero SM con destellos dorados y pidió que
+fuera la espera al cambiar de sección. Sustituye a las huellas de 0.61.0:
+
+- Una tarjeta negra con el logo completo (emblema y «VAQUERO SM») y, debajo, el
+  nombre de la sección destino. Una luz dorada recorre sólo la silueta del logo
+  cada 1.5 s; la capa de luz está recortada con la misma imagen
+  (`public/brand/logo-vaquerosm-blanco-recortado.png`, sin margen transparente),
+  así que el logo nunca se deforma.
+- Mismas reglas que antes: sólo aparece si la sección tarda más de 140 ms, la
+  página actual sigue a la vista, nada gira ni se llena, y con movimiento
+  reducido el logo se ve quieto. Al llegar la sección, la luz se detiene.

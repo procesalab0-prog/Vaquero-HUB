@@ -1,8 +1,8 @@
 import { sectionTitle } from "@/lib/section-title";
 
 // Cambio de página sin pantalla de espera: la página actual se queda visible
-// hasta que la nueva está lista, y mientras tanto unas huellas de herradura
-// caminan hacia el nombre de la sección a la que se va.
+// hasta que la nueva está lista, y mientras tanto el logo de Vaquero SM brilla
+// con un destello dorado junto al nombre de la sección a la que se va.
 
 export const NAVIGATION_START_EVENT = "mi-tienda:navigation-start:v1";
 

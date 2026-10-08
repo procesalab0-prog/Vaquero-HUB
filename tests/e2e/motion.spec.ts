@@ -172,7 +172,7 @@ test.describe("respuesta al tocar", () => {
 });
 
 test.describe("cambio de sección", () => {
-  test("si la sección tarda, la página actual se queda y caminan las huellas", async ({
+  test("si la sección tarda, la página actual se queda y brilla el logo", async ({
     page,
   }) => {
     // Retrasa la sección nueva para ver la espera. Las precargas se cancelan:
@@ -193,17 +193,15 @@ test.describe("cambio de sección", () => {
     await expect(link).toHaveAttribute("data-pending", "true");
     const wait = page.locator(".nav-wait");
     await expect(wait).toHaveAttribute("data-state", "loading");
-    // Dice a dónde se va, con huellas que caminan: no una barra que se llena.
+    // El logo con su destello dorado y el nombre de la sección destino: no una
+    // barra que se llena.
     await expect(wait).toContainText("Inventario");
-    await expect(wait.locator("path")).toHaveCount(4);
-    await expect(wait.locator("path").first()).toHaveCSS(
-      "animation-name",
-      "motion-hoof",
-    );
-    await expect(wait.locator("path").nth(1)).toHaveCSS(
-      "animation-delay",
-      "0.23s",
-    );
+    await expect(wait.locator(".nav-wait-logo img")).toBeVisible();
+    expect(
+      await wait
+        .locator(".nav-wait-shine i")
+        .evaluate((element) => getComputedStyle(element).animationName),
+    ).toBe("motion-logo-shine");
     // Nada de «Abriendo sección»: la página anterior sigue a la vista.
     await expect(page.getByText("Abriendo sección")).toHaveCount(0);
     await expect(page.getByRole("heading", { name: /Buen día/ })).toBeVisible();
@@ -217,7 +215,8 @@ test.describe("cambio de sección", () => {
       "data-navigating",
       /.+/,
     );
-    await expect(wait.locator("path").first()).toHaveCSS(
+    // Al llegar la sección, el destello se detiene: no queda nada corriendo.
+    await expect(wait.locator(".nav-wait-shine i")).toHaveCSS(
       "animation-name",
       "none",
     );

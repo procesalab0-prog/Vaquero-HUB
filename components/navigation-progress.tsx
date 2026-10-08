@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
@@ -20,7 +21,7 @@ const NAVIGATION_VISIBLE_AFTER_MS = 140;
 const NAVIGATION_DONE_MS = 260;
 
 // waiting: ya se tocó, pero todavía no vale la pena mostrar nada.
-// loading: las huellas caminan. done: la animación se despide.
+// loading: el logo brilla. done: la animación se despide.
 type State = "idle" | "waiting" | "loading" | "done";
 
 export function NavigationProgress() {
@@ -114,26 +115,19 @@ export function NavigationProgress() {
     root.dataset.pageEnter = root.dataset.pageEnter === "a" ? "b" : "a";
   }, [pathname]);
 
-  // Huellas de herradura que caminan hacia el nombre de la sección: dice
-  // «vamos para allá», no «recargando». No gira ni se llena.
+  // El logo completo de Vaquero SM con un destello dorado que recorre sólo su
+  // silueta, y el nombre de la sección a la que se va. No gira ni se llena:
+  // no se lee como «recargando».
   return (
     <>
       <div className="nav-wait" data-state={state} aria-hidden="true">
-        <svg className="nav-wait-trail" viewBox="0 0 104 30" focusable="false">
-          {HOOFPRINTS.map(([x, y, turn], index) => (
-            // La posición va en el grupo: así la animación de la pisada
-            // (su propio transform) no la mueve de lugar.
-            <g key={index} transform={`translate(${x} ${y}) rotate(${turn})`}>
-              {/* Polvo que levanta la pisada, detrás de ella. */}
-              <circle cx="-10" cy="-3" r="1.6" />
-              <circle cx="-11" cy="3" r="1.2" />
-              {/* Herradura vista desde arriba: patas rectas hacia atrás y la
-                  punta redonda hacia adelante, en dirección a la sección. */}
-              <path d="M-6 -5.5 H0 A5.5 5.5 0 0 1 0 5.5 H-6" />
-            </g>
-          ))}
-        </svg>
-        {label ? <span>{label}</span> : null}
+        <span className="nav-wait-logo">
+          <Image src={NAV_WAIT_LOGO} alt="" width={480} height={350} />
+          <span className="nav-wait-shine">
+            <i />
+          </span>
+        </span>
+        {label ? <span className="nav-wait-label">{label}</span> : null}
       </div>
       <span className="sr-only" role="status">
         {state === "loading" ? `Abriendo ${label || "la sección"}` : ""}
@@ -142,10 +136,6 @@ export function NavigationProgress() {
   );
 }
 
-// Cuatro pisadas que alternan arriba y abajo, como un caballo al paso.
-const HOOFPRINTS: Array<[number, number, number]> = [
-  [16, 19, -6],
-  [40, 11, 6],
-  [64, 19, -6],
-  [88, 11, 6],
-];
+// Recortado sin margen transparente: la máscara del destello usa la misma
+// imagen (app/motion.css), así la luz coincide con la silueta.
+const NAV_WAIT_LOGO = "/brand/logo-vaquerosm-blanco-recortado.png";
