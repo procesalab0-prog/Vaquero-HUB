@@ -17,6 +17,38 @@ Consulta `INTEGRACION_MEJORAS_2026_10_07.md` para evidencia y compuertas.
 Esto actualiza el pendiente histórico de Auth local; incluye ensayo incremental local 101 → 123, pero no acredita aceptación
 alojada ni habilita dólares o asignación fraccionaria.
 
+## Entrega 0.58.0 — movimiento de marca
+
+Solicitud de Emmanuel del 7 y 8 de octubre de 2026. Especificación completa en
+[`specs/MOVIMIENTO.md`](specs/MOVIMIENTO.md).
+
+- [x] Acceso: logo marcado como con hierro, titular por líneas, tarjeta que
+      aparece; completo una vez al día por dispositivo, corto después y nada al
+      volver por un error. Línea de progreso mientras se verifica.
+- [x] Pantalla de carga de marca en lugar del texto suelto «Cargando
+      sucursal…», al abrir el programa y al entrar. No agrega espera.
+- [x] Entrada: el panel negro se recoge hacia el riel (en teléfono, la franja
+      sube). Una vez por sesión; cualquier toque o tecla la termina.
+- [x] Inicio: saludo por línea, encabezado de marca que se traza, tarjetas que
+      aparecen sin desplazar sus accesos.
+- [x] Agregar al carrito: destello del renglón y latido de la cantidad, que se
+      reinician con cada escaneo sin encolarse.
+- [x] Venta completada: sello, anillo, palomita trazada y monto; sólo en venta
+      confirmada y sin mover «Nueva venta».
+- [x] Traspasos: recorrido Enviado → En tránsito → Recibido, con texto siempre,
+      que avanza cuando el estado cambia.
+- [x] Mi Vaquero: puntos que cuentan con estrella de espuela tras una compra
+      reciente y sello al generar el código de canje.
+- [ ] Mi Vaquero · niveles: no existen; esperan la sección 6 de preguntas del
+      cliente. No se inventa la regla para poder animarla.
+- [ ] Probar en la tienda: iPad vertical y horizontal, computadora del
+      mostrador abriendo el programa y escaneando de inmediato, y Mi Vaquero en
+      un teléfono real después de una compra.
+
+Defecto visual encontrado al revisar cuadro por cuadro y corregido: la regla
+`.login-editorial-panel span` alcanzaba también las líneas nuevas del titular y
+lo dejaba diminuto y encimado. Ahora sólo aplica al texto de apoyo.
+
 ## Cómo usar esta cola
 
 - **Una tarea a la vez**, de arriba hacia abajo, saltando lo bloqueado.

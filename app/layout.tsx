@@ -3,6 +3,7 @@ import { Archivo, Cormorant_Garamond, IBM_Plex_Mono, PT_Sans } from "next/font/g
 import "./globals.css";
 import "./workspace-brand.css";
 import "./workspace-redesign.css";
+import "./motion.css";
 
 const archivo = Archivo({
   variable: "--font-archivo",

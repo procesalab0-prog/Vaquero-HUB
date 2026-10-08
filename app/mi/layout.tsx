@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./mi.css";
+import "./mi-motion.css";
 
 export const metadata: Metadata = {
   applicationName: "Mi Vaquero",

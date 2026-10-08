@@ -1,3 +1,4 @@
+import { WorkspaceBoot } from "@/components/workspace-boot";
 import { WorkspaceShell } from "@/components/workspace-shell";
 import { Suspense } from "react";
 import { resolveActiveLocation } from "@/lib/auth/active-location";
@@ -13,7 +14,7 @@ export default async function WorkspaceLayout({
     ? await resolveActiveLocation(identity.locations)
     : null;
   return (
-    <Suspense fallback={<main aria-busy="true">Cargando sucursal…</main>}>
+    <Suspense fallback={<WorkspaceBoot />}>
       <WorkspaceShell
         key={activeLocation?.id ?? "sin-sucursal"}
         identity={identity}

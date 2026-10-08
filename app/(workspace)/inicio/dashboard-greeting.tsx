@@ -9,7 +9,11 @@ export function DashboardGreeting({ dateLabel }: { dateLabel: string }) {
   return (
     <div>
       <p className="eyebrow">{dateLabel}</p>
-      <h1>Buen día, {preferredName}</h1>
+      <h1>
+        <span className="motion-line">
+          <span>Buen día, {preferredName}</span>
+        </span>
+      </h1>
       <p className="heading-copy">Esto es lo que está pasando en {activeLocation?.name ?? "tu sucursal"}.</p>
     </div>
   );

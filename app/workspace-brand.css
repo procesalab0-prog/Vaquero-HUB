@@ -273,10 +273,15 @@ button.primary-button:hover {
 }
 
 .login-editorial-logo {
+  display: block;
   width: min(330px, 72%);
   height: auto;
-  object-fit: contain;
-  object-position: left center;
+}
+
+.login-editorial-logo img {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .login-editorial-panel > div {
@@ -302,7 +307,9 @@ button.primary-button:hover {
   letter-spacing: -0.055em;
 }
 
-.login-editorial-panel span {
+/* Sólo el texto de apoyo: las líneas del titular también son span y deben
+   conservar la tipografía editorial. */
+.login-editorial-panel > div > span {
   max-width: 440px;
   color: #c8c0b2;
   font-size: 17px;

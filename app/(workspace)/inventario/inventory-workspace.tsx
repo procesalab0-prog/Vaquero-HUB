@@ -35,6 +35,7 @@ import type {
 } from "@/lib/domain";
 import { useWorkspace } from "@/components/workspace-context";
 import { saveActiveLocationPreference } from "@/lib/location-preference";
+import { TransferProgress } from "./transfer-progress";
 
 type Location = { id: string; name: string; code: string };
 
@@ -1284,6 +1285,7 @@ export function InventoryWorkspace({
                         {transferStatus[transfer.status]}
                       </span>
                     </header>
+                    <TransferProgress transfer={transfer} />
                     <div className="inventory-document-items">
                       {transfer.items.map((item) => (
                         <span key={item.variantId}>
