@@ -3400,3 +3400,21 @@ Validación 0.55.5: revisión visual del icono; compilación de producción/Type
 - La tarjeta de socio de Mi Vaquero destella al aparecer y al voltearla para
   mostrarla en caja, sin quitar contraste al código.
 
+### Entrega visible 0.60.0 — cambio de sección sin pantalla de espera
+
+- Se retira el cuadro «Abriendo sección» que tapaba cada página al navegar. La
+  página actual se queda a la vista hasta que la nueva está lista; el botón
+  tocado se marca al instante y, sólo si la espera pasa de 140 ms, corre una
+  línea de marca arriba y el emblema del menú se ilumina.
+- Regla operativa: no crear pantallas de espera por sección. Una espera se
+  indica sin quitar de la vista lo que la persona estaba viendo.
+
+### Entrega visible 0.61.0 — huellas de herradura al cambiar de sección
+
+- La espera al cambiar de sección es ahora un motion graphic de marca: huellas
+  de herradura que caminan hacia el nombre de la sección destino, dentro de una
+  pastilla negra. Sustituye a la línea de progreso de 0.60.0, porque el dueño
+  no quiere nada que se lea como «recargando».
+- Regla operativa: las esperas de la interfaz no usan círculos girando ni
+  barras que se llenan; usan un motivo de marca que indica a dónde se va.
+

@@ -1,6 +1,6 @@
 # Movimiento de marca en Mi Tienda SM y Mi Vaquero
 
-Implementado en las versiones 0.58.0 y 0.59.0 a petición de Emmanuel (7 y 8 de
+Implementado en las versiones 0.58.0 a 0.61.0 a petición de Emmanuel (7 y 8 de
 octubre de 2026). Aplica las reglas de la sección «Movimiento y animación» del Plan
 Maestro y los criterios de `REDISENO_MI_TIENDA.md`.
 
@@ -59,6 +59,40 @@ cambia el estilo, la posición ni el tamaño de ningún botón, y nunca recibe
 toques. La campana conserva su nombre accesible «Notificaciones»; cada aviso ya
 se anuncia por voz al llegar.
 
+## Cambio de sección (0.60.0 y 0.61.0)
+
+Antes, cada cambio de página tapaba la sección con un cuadro «Abriendo sección ·
+Preparando la información de la tienda…» y un círculo girando, aunque la página
+llegara en un instante. Ahora no hay pantalla de espera por sección:
+
+- **La página actual se queda a la vista** hasta que la nueva está lista, y
+  entonces se cambia con una entrada suave de 180 ms (sólo opacidad, y sólo al
+  cambiar de sección: filtrar o cambiar de pestaña dentro de una página no
+  parpadea).
+- **El botón tocado se marca al instante** con un tono arena: el toque sí se
+  registró.
+- **Si la sección tarda más de 140 ms**, aparece una pastilla negra con
+  **huellas de herradura que caminan** hacia el nombre de la sección a la que
+  se va («Inventario»): cuatro pisadas que se marcan una tras otra, alternando
+  como un caballo al paso, cada una con un poco de polvo detrás. En
+  computadora aparece centrada sobre el contenido, debajo de la barra superior;
+  en teléfono y iPad vertical, arriba de la barra inferior, donde está el
+  pulgar. Si la página llega antes, no se ve ninguna espera.
+- Emmanuel pidió expresamente que no fuera una línea ni una barra de progreso
+  ni nada que pareciera «recargando» (0.60.0 usaba una línea; 0.61.0 la
+  sustituye). Por eso nada gira ni se llena: dice «vamos para allá».
+- Funciona igual para los enlaces y para los cambios que hace el propio
+  sistema, que avisan con `startNavigationProgress({ href })` o con un texto
+  propio (`{ label: "Cambiando de sucursal" }`, «Buscando el ticket»,
+  «Cambios y devoluciones»).
+- Para lectores de pantalla se anuncia «Abriendo Inventario».
+- Si algo sale mal y la página no cambia, la animación se retira sola a los 8 s.
+- Con movimiento reducido, la pastilla aparece quieta con las cuatro huellas.
+
+Al no haber pantalla por sección, al abrir el programa se ve una sola pantalla
+de carga (la de marca) hasta que la sección inicial está lista, en lugar de la
+carga de marca seguida del cuadro de sección.
+
 ## Lo que no se hizo y por qué
 
 - **Niveles en Mi Vaquero.** El sistema no tiene niveles: el motor de puntos,
@@ -88,6 +122,10 @@ se anuncia por voz al llegar.
   `app/layout.tsx`), `components/haptics-setting.tsx`.
 - `lib/layaway-progress.ts`, `app/(workspace)/apartados/layaway-progress.tsx`.
 - Campana: `components/workspace-shell.tsx`. Tarjeta: `app/mi/member-card.tsx`.
+- `lib/navigation-progress.ts`, `components/navigation-progress.tsx` (montado en
+  `app/(workspace)/layout.tsx`), `lib/section-title.ts` (nombre de cada sección,
+  compartido con la barra superior). Ya no existe `app/(workspace)/loading.tsx`: no
+  volver a crearlo, porque reaparecería la pantalla de espera en cada sección.
 
 ## Cómo se comprobó
 

@@ -4,6 +4,8 @@ import Image from "next/image";
 import { ProcesaLabCredit } from "@/components/procesalab-credit";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { startNavigationProgress } from "@/lib/navigation-progress";
+import { sectionTitle } from "@/lib/section-title";
 import { useEffect, useMemo, useState } from "react";
 import { APP_RELEASE, APP_VERSION } from "@/lib/release";
 import { ACCENT_EVENT, applyAccent, storedAccent } from "@/lib/accent";
@@ -79,23 +81,6 @@ const moreNavigation: Array<{ path: string; title: string; icon: WorkspaceIcon; 
   { path: "/ajustes", title: "Ajustes y apariencia", icon: Settings, tone: "sand" },
 ];
 
-function moduleTitle(pathname: string) {
-  if (pathname.startsWith("/inicio")) return "Inicio";
-  if (pathname.startsWith("/productos")) return "Productos";
-  if (pathname.startsWith("/inventario")) return "Inventario";
-  if (pathname.startsWith("/compras")) return "Compras";
-  if (pathname.startsWith("/caja")) return "Caja";
-  if (pathname.startsWith("/tickets")) return "Tickets";
-  if (pathname.startsWith("/cotizaciones")) return "Cotizaciones";
-  if (pathname.startsWith("/apartados")) return "Apartados";
-  if (pathname.startsWith("/etiquetas")) return "Etiquetas";
-  if (pathname.startsWith("/ajustes")) return "Ajustes";
-  if (pathname.startsWith("/administracion")) return "Administración";
-  if (pathname.startsWith("/clientes")) return "Clientes";
-  if (pathname.startsWith("/reportes")) return "Reportes";
-  if (pathname.startsWith("/mas")) return "Más módulos";
-  return "Punto de venta";
-}
 
 export function WorkspaceShell({
   children,
@@ -198,6 +183,7 @@ export function WorkspaceShell({
     saveActiveLocationPreference(locationId);
     const next = new URLSearchParams(window.location.search);
     next.set("ubicacion", locationId);
+    startNavigationProgress({ label: "Cambiando de sucursal" });
     router.replace(`${pathname}?${next.toString()}`);
   }
 
@@ -325,7 +311,10 @@ export function WorkspaceShell({
               aria-label="Regresar"
               onClick={() => {
                 if (window.history.length > 1) router.back();
-                else router.push(locationHref("/inicio"));
+                else {
+                  startNavigationProgress({ href: "/inicio" });
+                  router.push(locationHref("/inicio"));
+                }
               }}
             >
               <ArrowLeft aria-hidden="true" />
@@ -338,7 +327,7 @@ export function WorkspaceShell({
           >
             <Menu aria-hidden="true" />
           </Link>
-          <h1>{moduleTitle(pathname)}</h1>
+          <h1>{sectionTitle(pathname)}</h1>
           <div
             className="location-pill"
             title={`${activeLocation?.name ?? "Sin sucursal"} · ${cashLabel}`}

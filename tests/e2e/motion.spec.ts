@@ -170,3 +170,85 @@ test.describe("respuesta al tocar", () => {
     await expect(page.locator(".product-card").first()).toBeVisible();
   });
 });
+
+test.describe("cambio de sección", () => {
+  test("si la sección tarda, la página actual se queda y caminan las huellas", async ({
+    page,
+  }) => {
+    // Retrasa la sección nueva para ver la espera. Las precargas se cancelan:
+    // así el clic tiene que pedirla y esperar.
+    await page.route(/\/inventario\?.*_rsc=/, async (route) => {
+      if (route.request().headers()["next-router-prefetch"])
+        return route.abort();
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      await route.continue();
+    });
+    await page.goto("/inicio");
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".entrance-curtain")).toHaveCount(0);
+    const link = page
+      .locator(".rail-links")
+      .getByRole("link", { name: "Inventario", exact: true });
+    await link.click();
+    await expect(link).toHaveAttribute("data-pending", "true");
+    const wait = page.locator(".nav-wait");
+    await expect(wait).toHaveAttribute("data-state", "loading");
+    // Dice a dónde se va, con huellas que caminan: no una barra que se llena.
+    await expect(wait).toContainText("Inventario");
+    await expect(wait.locator("path")).toHaveCount(4);
+    await expect(wait.locator("path").first()).toHaveCSS(
+      "animation-name",
+      "motion-hoof",
+    );
+    await expect(wait.locator("path").nth(1)).toHaveCSS(
+      "animation-delay",
+      "0.23s",
+    );
+    // Nada de «Abriendo sección»: la página anterior sigue a la vista.
+    await expect(page.getByText("Abriendo sección")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: /Buen día/ })).toBeVisible();
+    await expect(page).toHaveURL(/\/inventario/, { timeout: 8000 });
+    await expect(link).not.toHaveAttribute("data-pending", "true");
+    await expect(page.locator(".nav-wait")).toHaveAttribute(
+      "data-state",
+      "idle",
+    );
+    await expect(page.locator("html")).not.toHaveAttribute(
+      "data-navigating",
+      /.+/,
+    );
+    await expect(wait.locator("path").first()).toHaveCSS(
+      "animation-name",
+      "none",
+    );
+  });
+
+  test("si la sección llega rápido, no se ve ninguna espera", async ({
+    page,
+  }) => {
+    await page.goto("/inicio");
+    await page.keyboard.press("Escape");
+    const states: string[] = [];
+    await page.exposeFunction("reportState", (value: string) =>
+      states.push(value),
+    );
+    await page.evaluate(() => {
+      const bar = document.querySelector(".nav-wait")!;
+      new MutationObserver(() =>
+        (window as unknown as { reportState(v: string): void }).reportState(
+          bar.getAttribute("data-state") ?? "",
+        ),
+      ).observe(bar, { attributes: true });
+    });
+    await page
+      .locator(".rail-links")
+      .getByRole("link", { name: "Venta", exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/pos/);
+    await expect(page.locator(".nav-wait")).toHaveAttribute(
+      "data-state",
+      "idle",
+    );
+    expect(states).toContain("waiting");
+  });
+});

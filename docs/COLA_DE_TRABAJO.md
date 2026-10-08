@@ -17,6 +17,34 @@ Consulta `INTEGRACION_MEJORAS_2026_10_07.md` para evidencia y compuertas.
 Esto actualiza el pendiente histórico de Auth local; incluye ensayo incremental local 101 → 123, pero no acredita aceptación
 alojada ni habilita dólares o asignación fraccionaria.
 
+## Entrega 0.61.0 — huellas de herradura al cambiar de sección
+
+Emmanuel pidió un motion graphic en lugar de una línea de progreso o algo que
+parezca «recargando». La espera de 0.60.0 (una línea arriba) se sustituye por
+una pastilla con huellas de herradura que caminan hacia el nombre de la
+sección destino. Detalle en [`specs/MOVIMIENTO.md`](specs/MOVIMIENTO.md).
+
+- [x] Huellas que se marcan una tras otra con polvo detrás; nada gira ni se
+      llena.
+- [x] Nombre de la sección destino, también en navegaciones por código.
+- [x] Nombres de sección en un solo lugar (`lib/section-title.ts`); de paso,
+      «Prueba de impresión» ya no aparece titulada como «Punto de venta».
+- [ ] Verla en el iPad y la computadora del mostrador con la conexión real.
+
+## Entrega 0.60.0 — cambio de sección sin pantalla de espera
+
+Solicitud de Emmanuel del 8 de octubre de 2026: que al cambiar de página no
+aparezca «Abriendo sección». Detalle en [`specs/MOVIMIENTO.md`](specs/MOVIMIENTO.md).
+
+- [x] Retirar la pantalla de espera por sección (`app/(workspace)/loading.tsx`).
+- [x] Mantener visible la página actual hasta que la nueva esté lista, con
+      entrada suave al cambiar de sección.
+- [x] Marcar al instante el botón tocado y, si la sección tarda, una línea de
+      marca arriba y el emblema del menú iluminado.
+- [x] Cubrir también los cambios de página que hace el sistema por código.
+- [ ] Probar en la tienda con la conexión real: que las secciones lentas
+      (Reportes, Inventario) se sientan atendidas y nadie toque dos veces.
+
 ## Entrega 0.59.0 — botones, campana, apartados y tarjeta de socio
 
 Segunda ronda de movimiento, elegida por Emmanuel el 8 de octubre de 2026. La

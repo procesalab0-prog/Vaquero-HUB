@@ -629,37 +629,6 @@ code {
   overscroll-behavior: none;
   -webkit-overflow-scrolling: auto;
 }
-.workspace-loading {
-  min-height: 240px;
-  padding: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  color: var(--ink-2);
-}
-.workspace-loading-mark {
-  width: 28px;
-  height: 28px;
-  border: 3px solid var(--border-strong);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: workspace-loading-spin 700ms linear infinite;
-}
-.workspace-loading div,
-.workspace-loading strong,
-.workspace-loading small {
-  display: grid;
-  gap: 3px;
-}
-.workspace-loading small {
-  color: var(--muted);
-}
-@keyframes workspace-loading-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
 .nav-rail {
   position: relative;
   z-index: 20;

@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { startNavigationProgress } from "@/lib/navigation-progress";
 import {
   Check,
   ClipboardList,
@@ -187,6 +188,7 @@ export function PurchasesWorkspace({
   function selectTab(nextTab: Tab) {
     const url = new URL(window.location.href);
     url.searchParams.set("tab", nextTab);
+    startNavigationProgress({ href: `${url.pathname}${url.search}` });
     router.push(`${url.pathname}${url.search}`);
   }
   const [notice, setNotice] = useState("");
@@ -577,8 +579,10 @@ export function PurchasesWorkspace({
                     );
                     setReceivingOrder(null);
                     setReceiveQty({});
-                    if (Object.keys(labelCounts).length)
+                    if (Object.keys(labelCounts).length) {
+                      startNavigationProgress({ href: "/etiquetas" });
                       router.push("/etiquetas?desde=recepcion");
+                    }
                   },
                 );
               }}
