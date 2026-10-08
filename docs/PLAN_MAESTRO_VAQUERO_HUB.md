@@ -3409,3 +3409,12 @@ Validación 0.55.5: revisión visual del icono; compilación de producción/Type
 - Regla operativa: no crear pantallas de espera por sección. Una espera se
   indica sin quitar de la vista lo que la persona estaba viendo.
 
+### Entrega visible 0.61.0 — huellas de herradura al cambiar de sección
+
+- La espera al cambiar de sección es ahora un motion graphic de marca: huellas
+  de herradura que caminan hacia el nombre de la sección destino, dentro de una
+  pastilla negra. Sustituye a la línea de progreso de 0.60.0, porque el dueño
+  no quiere nada que se lea como «recargando».
+- Regla operativa: las esperas de la interfaz no usan círculos girando ni
+  barras que se llenan; usan un motivo de marca que indica a dónde se va.
+

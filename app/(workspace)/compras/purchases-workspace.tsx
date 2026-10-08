@@ -188,7 +188,7 @@ export function PurchasesWorkspace({
   function selectTab(nextTab: Tab) {
     const url = new URL(window.location.href);
     url.searchParams.set("tab", nextTab);
-    startNavigationProgress();
+    startNavigationProgress({ href: `${url.pathname}${url.search}` });
     router.push(`${url.pathname}${url.search}`);
   }
   const [notice, setNotice] = useState("");
@@ -580,7 +580,7 @@ export function PurchasesWorkspace({
                     setReceivingOrder(null);
                     setReceiveQty({});
                     if (Object.keys(labelCounts).length)
-                      startNavigationProgress();
+                      startNavigationProgress({ href: "/etiquetas" });
                       router.push("/etiquetas?desde=recepcion");
                   },
                 );

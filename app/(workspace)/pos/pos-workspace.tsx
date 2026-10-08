@@ -534,7 +534,7 @@ export function PosWorkspace({
     const code = rawCode.trim().toLocaleUpperCase("es-MX");
     if (!code) return;
     if (isTicketReceiptCode(code)) {
-      startNavigationProgress();
+      startNavigationProgress({ label: "Buscando el ticket" });
       router.push(`/tickets?escanear=${encodeURIComponent(code)}`);
       return;
     }
@@ -641,7 +641,7 @@ export function PosWorkspace({
       const params = new URLSearchParams({ accion: "traspasos" });
       const locationId = activeLocation?.id ?? cashSession?.location_id;
       if (locationId) params.set("ubicacion", locationId);
-      startNavigationProgress();
+      startNavigationProgress({ href: "/inventario" });
       router.push(`/inventario?${params.toString()}`);
     } catch {
       setSaleError(
@@ -1938,7 +1938,7 @@ export function PosWorkspace({
               className="returns-shortcut"
               type="button"
               onClick={() => {
-                startNavigationProgress();
+                startNavigationProgress({ label: "Cambios y devoluciones" });
                 router.push("/tickets?accion=devolver");
               }}
             >

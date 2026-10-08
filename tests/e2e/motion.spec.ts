@@ -172,7 +172,7 @@ test.describe("respuesta al tocar", () => {
 });
 
 test.describe("cambio de sección", () => {
-  test("si la sección tarda, la página actual se queda con la línea corriendo", async ({
+  test("si la sección tarda, la página actual se queda y caminan las huellas", async ({
     page,
   }) => {
     // Retrasa la sección nueva para ver la espera. Las precargas se cancelan:
@@ -191,16 +191,17 @@ test.describe("cambio de sección", () => {
       .getByRole("link", { name: "Inventario", exact: true });
     await link.click();
     await expect(link).toHaveAttribute("data-pending", "true");
-    await expect(page.locator(".nav-progress")).toHaveAttribute(
-      "data-state",
-      "loading",
-    );
+    const wait = page.locator(".nav-wait");
+    await expect(wait).toHaveAttribute("data-state", "loading");
+    // Dice a dónde se va, con huellas que caminan: no una barra que se llena.
+    await expect(wait).toContainText("Inventario");
+    await expect(wait.locator("path")).toHaveCount(4);
     // Nada de «Abriendo sección»: la página anterior sigue a la vista.
     await expect(page.getByText("Abriendo sección")).toHaveCount(0);
     await expect(page.getByRole("heading", { name: /Buen día/ })).toBeVisible();
     await expect(page).toHaveURL(/\/inventario/, { timeout: 8000 });
     await expect(link).not.toHaveAttribute("data-pending", "true");
-    await expect(page.locator(".nav-progress")).toHaveAttribute(
+    await expect(page.locator(".nav-wait")).toHaveAttribute(
       "data-state",
       "idle",
     );
@@ -220,7 +221,7 @@ test.describe("cambio de sección", () => {
       states.push(value),
     );
     await page.evaluate(() => {
-      const bar = document.querySelector(".nav-progress")!;
+      const bar = document.querySelector(".nav-wait")!;
       new MutationObserver(() =>
         (window as unknown as { reportState(v: string): void }).reportState(
           bar.getAttribute("data-state") ?? "",
@@ -232,7 +233,7 @@ test.describe("cambio de sección", () => {
       .getByRole("link", { name: "Venta", exact: true })
       .click();
     await expect(page).toHaveURL(/\/pos/);
-    await expect(page.locator(".nav-progress")).toHaveAttribute(
+    await expect(page.locator(".nav-wait")).toHaveAttribute(
       "data-state",
       "idle",
     );

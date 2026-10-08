@@ -147,7 +147,7 @@ export function QuotesWorkspace({ locationId, locationName = "La Piedad", locati
         return;
       }
       if (result.href) {
-        startNavigationProgress();
+        startNavigationProgress({ href: result.href });
         router.push(result.href);
         return;
       }
