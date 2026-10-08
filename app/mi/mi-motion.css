@@ -41,6 +41,16 @@
   position: relative;
 }
 
+/* Tarjeta de socio: el destello vive dentro de cada cara y no la mueve. */
+.mi-member-face {
+  position: relative;
+  overflow: hidden;
+}
+
+.mi-card-shine {
+  display: none;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   /* Puntos ganados: el número cuenta hacia arriba (lo hace el componente) y
      una estrella de espuela se abre alrededor, una sola vez. */
@@ -91,6 +101,61 @@
     border: 1px solid var(--mi-sand);
     pointer-events: none;
     animation: mi-motion-ring 700ms 180ms ease-out both;
+  }
+
+  /* Destello diagonal, como luz sobre una tarjeta nueva. Sobre la cara
+     blanca del código es apenas un tono arena: las barras conservan su
+     contraste para el lector de la caja. Espera a que termine el giro. */
+  .mi-card-shine {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: linear-gradient(
+      115deg,
+      transparent 30%,
+      rgb(255 255 255 / 24%) 47%,
+      rgb(214 207 190 / 34%) 50%,
+      rgb(255 255 255 / 24%) 53%,
+      transparent 70%
+    );
+    transform: translateX(-110%);
+  }
+
+  .mi-card-shine.on-light {
+    background: linear-gradient(
+      115deg,
+      transparent 35%,
+      rgb(155 123 87 / 16%) 50%,
+      transparent 65%
+    );
+  }
+
+  .mi-card-shine-0 {
+    animation: mi-motion-shine-a 1000ms 420ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  .mi-card-shine-1 {
+    animation: mi-motion-shine-b 1000ms 420ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  @keyframes mi-motion-shine-a {
+    from {
+      transform: translateX(-110%);
+    }
+    to {
+      transform: translateX(110%);
+    }
+  }
+
+  @keyframes mi-motion-shine-b {
+    from {
+      transform: translateX(-110%);
+    }
+    to {
+      transform: translateX(110%);
+    }
   }
 
   @keyframes mi-motion-rise {

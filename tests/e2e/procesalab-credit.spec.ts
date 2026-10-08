@@ -1,4 +1,7 @@
 import { expect, test } from "@playwright/test";
+
+// La versión cambia en cada entrega; la prueba lee la vigente en lugar de
+// fijar un número que se rompe con el siguiente cambio.
 import { APP_VERSION } from "../../lib/release";
 
 test("el panel de versión muestra el crédito blanco animado", async ({

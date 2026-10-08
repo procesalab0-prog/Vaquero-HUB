@@ -3386,3 +3386,17 @@ Validación 0.55.5: revisión visual del icono; compilación de producción/Type
 - Pendiente: comprobación en la tienda con iPad, computadora del mostrador y un
   teléfono real de cliente.
 
+### Entrega visible 0.59.0 — botones que responden, campana y apartados
+
+- Todos los botones responden igual al tocarlos: una huella de luz desde el
+  punto de contacto y el «hundido» que ya existía, que ahora también se ve en
+  iPad y iPhone. La vibración corta funciona en teléfonos Android y se puede
+  apagar en Ajustes; iPad e iPhone no permiten vibrar desde el navegador.
+- La campana se mece con cada aviso, cuenta los no leídos y el aviso muestra
+  su tiempo restante. Sigue siendo un aviso dentro de la aplicación abierta,
+  no una notificación del sistema.
+- Apartados muestra la barra de lo pagado con porcentaje escrito; el llenado y
+  el sello «Liquidado» se ven al volver de un abono confirmado.
+- La tarjeta de socio de Mi Vaquero destella al aparecer y al voltearla para
+  mostrarla en caja, sin quitar contraste al código.
+

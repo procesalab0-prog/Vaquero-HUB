@@ -153,3 +153,20 @@ test.describe("punto de venta", () => {
     await expect(success).toHaveCount(0);
   });
 });
+
+test.describe("respuesta al tocar", () => {
+  test("la huella aparece donde se toca, sin recibir toques", async ({
+    page,
+  }) => {
+    await page.goto("/pos");
+    const ink = page.locator(".press-ink");
+    await expect(ink).toHaveCount(1);
+    expect(
+      await ink.evaluate((element) => getComputedStyle(element).pointerEvents),
+    ).toBe("none");
+    await page.getByRole("button", { name: "Abrir catálogo" }).click();
+    await expect(ink).toHaveAttribute("data-press", /a|b/);
+    // El botón tocado siguió funcionando.
+    await expect(page.locator(".product-card").first()).toBeVisible();
+  });
+});

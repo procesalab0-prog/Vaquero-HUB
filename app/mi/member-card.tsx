@@ -1,9 +1,24 @@
 "use client";
 
 import { Check, Maximize, RotateCw } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MemberCodes } from "./member-codes";
 import { useScanWakeLock } from "./use-scan-wake-lock";
+
+// La tarjeta destella al aparecer una vez por sesión de la app y cada vez que
+// se voltea para mostrarla en caja. En memoria: no se guarda nada en el
+// dispositivo.
+let cardShone = false;
+
+function CardShine({ pulse, reverse }: { pulse: number; reverse?: boolean }) {
+  if (!pulse) return null;
+  return (
+    <span
+      className={`mi-card-shine mi-card-shine-${pulse % 2}${reverse ? " on-light" : ""}`}
+      aria-hidden="true"
+    />
+  );
+}
 
 export function MemberCard({
   memberNumber,
@@ -17,11 +32,16 @@ export function MemberCard({
   onExpand: () => void;
 }) {
   const [flipped, setFlipped] = useState(false);
+  const [shine, setShine] = useState(() => (cardShone ? 0 : 1));
   const frontButton = useRef<HTMLButtonElement>(null);
   const backButton = useRef<HTMLButtonElement>(null);
   useScanWakeLock(flipped);
+  useEffect(() => {
+    cardShone = true;
+  }, []);
   const flip = (next: boolean) => {
     setFlipped(next);
+    setShine((count) => count + 1);
     requestAnimationFrame(() =>
       (next ? backButton : frontButton).current?.focus({ preventScroll: true }),
     );
@@ -35,6 +55,7 @@ export function MemberCard({
           inert={flipped}
           aria-hidden={flipped}
         >
+          {!flipped ? <CardShine pulse={shine} /> : null}
           <div className="mi-member-top">
             <div className="mi-member-identity">
               <span className="mi-eyebrow">SOCIO</span>
@@ -66,6 +87,7 @@ export function MemberCard({
           inert={!flipped}
           aria-hidden={!flipped}
         >
+          {flipped ? <CardShine pulse={shine} reverse /> : null}
           <span className="mi-eyebrow">TU SOCIO EN CAJA</span>
           <MemberCodes memberNumber={memberNumber} barcode barcodeOnly />
           <p className="mi-member-number">{number}</p>

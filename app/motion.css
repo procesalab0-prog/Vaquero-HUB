@@ -294,6 +294,109 @@
   }
 }
 
+/* Respuesta al tocar: una sola capa flotante que se coloca sobre el botón
+   tocado. Nunca recibe toques y no altera ningún botón. */
+.press-ink {
+  position: fixed;
+  z-index: 2147483000;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: var(--press-x, 50%) var(--press-y, 50%);
+  background: radial-gradient(
+    circle 160px at var(--press-x, 50%) var(--press-y, 50%),
+    var(--press-color, rgb(91 64 33 / 20%)),
+    transparent 72%
+  );
+}
+
+.haptics-setting-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-weight: 600;
+}
+
+.haptics-setting-control input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--accent);
+}
+
+/* Campana: el punto rojo pasa a contar los avisos sin leer. */
+.notification-trigger > .bell-count {
+  top: 2px;
+  right: 2px;
+  width: auto;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.notification-trigger svg {
+  transform-origin: 50% 3px;
+}
+
+.workspace-notification-timer {
+  display: none;
+}
+
+/* Apartados: lo pagado se ve como barra y se dice con porcentaje. */
+.layaway-progress {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 0 18px 14px;
+}
+
+.layaway-progress-track {
+  grid-column: 1 / -1;
+  position: relative;
+  display: block;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.layaway-progress-track i {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--accent);
+  transform-origin: left center;
+  transform: scaleX(var(--layaway-to));
+}
+
+.layaway-progress small {
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.layaway-paid-stamp {
+  margin: 4px 4px 0 0;
+  padding: 4px 12px;
+  border: 2px solid var(--success);
+  border-radius: 6px;
+  color: var(--success);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transform: rotate(-6deg);
+}
+
 /* Movimiento ------------------------------------------------------------ */
 
 @media (prefers-reduced-motion: no-preference) {
@@ -554,6 +657,193 @@
     path {
     stroke-dasharray: 24;
     animation: motion-draw 300ms 900ms ease-out both;
+  }
+
+  /* Campana: se mece con cada aviso, el contador salta y el aviso entra
+     desde arriba con una barra que muestra cuánto le queda en pantalla. */
+  .notification-trigger svg.bell-ring-0 {
+    animation: motion-bell-a 900ms ease-out;
+  }
+
+  .notification-trigger svg.bell-ring-1 {
+    animation: motion-bell-b 900ms ease-out;
+  }
+
+  .notification-trigger > .bell-pop-0 {
+    animation: motion-pop-a 380ms var(--motion-ease-stamp);
+  }
+
+  .notification-trigger > .bell-pop-1 {
+    animation: motion-pop-b 380ms var(--motion-ease-stamp);
+  }
+
+  .workspace-notification-toast {
+    overflow: hidden;
+    animation: motion-notice-in 280ms var(--motion-ease-editorial) both;
+  }
+
+  .workspace-notification-timer {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: var(--accent);
+    transform-origin: left center;
+    animation: motion-notice-timer var(--notice-ms, 5000ms) linear both;
+  }
+
+  .workspace-notification-toast[data-kind="error"]
+    .workspace-notification-timer {
+    background: #a52e25;
+  }
+
+  @keyframes motion-bell-a {
+    0%,
+    100% {
+      transform: rotate(0);
+    }
+    15% {
+      transform: rotate(16deg);
+    }
+    32% {
+      transform: rotate(-13deg);
+    }
+    48% {
+      transform: rotate(9deg);
+    }
+    64% {
+      transform: rotate(-5deg);
+    }
+    80% {
+      transform: rotate(2deg);
+    }
+  }
+
+  @keyframes motion-bell-b {
+    0%,
+    100% {
+      transform: rotate(0);
+    }
+    15% {
+      transform: rotate(16deg);
+    }
+    32% {
+      transform: rotate(-13deg);
+    }
+    48% {
+      transform: rotate(9deg);
+    }
+    64% {
+      transform: rotate(-5deg);
+    }
+    80% {
+      transform: rotate(2deg);
+    }
+  }
+
+  @keyframes motion-pop-a {
+    from {
+      transform: scale(0.3);
+    }
+  }
+
+  @keyframes motion-pop-b {
+    from {
+      transform: scale(0.3);
+    }
+  }
+
+  @keyframes motion-notice-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -16px);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+
+  @keyframes motion-notice-timer {
+    from {
+      transform: scaleX(1);
+    }
+    to {
+      transform: scaleX(0);
+    }
+  }
+
+  /* Apartados: mientras el abono no está a la vista, la barra espera en lo
+     que había antes; al verse, se llena hasta lo pagado y, si lo liquidó, cae
+     el sello. */
+  .layaway-progress[data-advancing="waiting"] .layaway-progress-track i {
+    transform: scaleX(var(--layaway-from));
+  }
+
+  .layaway-progress[data-advancing="running"] .layaway-progress-track i {
+    animation: motion-layaway-fill 1100ms var(--motion-ease-editorial) both;
+  }
+
+  .layaway-progress[data-advancing="waiting"] .layaway-paid-stamp {
+    opacity: 0;
+  }
+
+  .layaway-progress[data-advancing="running"] .layaway-paid-stamp {
+    animation: motion-paid-stamp 460ms 1000ms var(--motion-ease-stamp) both;
+  }
+
+  @keyframes motion-layaway-fill {
+    from {
+      transform: scaleX(var(--layaway-from));
+    }
+    to {
+      transform: scaleX(var(--layaway-to));
+    }
+  }
+
+  @keyframes motion-paid-stamp {
+    from {
+      opacity: 0;
+      transform: rotate(-6deg) scale(1.8);
+    }
+    to {
+      opacity: 1;
+      transform: rotate(-6deg) scale(1);
+    }
+  }
+
+  /* La huella aparece de golpe donde cae el dedo y se apaga en menos de
+     medio segundo, creciendo apenas desde el punto de contacto. */
+  .press-ink[data-press="a"] {
+    animation: motion-press-a 420ms ease-out;
+  }
+
+  .press-ink[data-press="b"] {
+    animation: motion-press-b 420ms ease-out;
+  }
+
+  @keyframes motion-press-a {
+    from {
+      opacity: 1;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 0;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes motion-press-b {
+    from {
+      opacity: 1;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 0;
+      transform: scale(1);
+    }
   }
 
   @keyframes motion-fade {
