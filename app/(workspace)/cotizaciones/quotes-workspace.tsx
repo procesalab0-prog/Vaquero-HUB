@@ -3,9 +3,12 @@
 import { CalendarDays, Check, Download, FileText, Plus, Search, Send, ShoppingCart, UserRound, X } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { startNavigationProgress } from "@/lib/navigation-progress";
 
 import { CustomerLookup } from "@/components/customer-lookup";
 import type { CustomerSummary } from "@/lib/customers";
+import { quoteLinePricing, type QuotePriceInput } from "@/lib/quote-pricing";
+import { measureLineCents,measureQuantityStep,parseMeasureQuantity,quantityUnit,type MeasureUnit } from "@/lib/measure-units";
 
 type QuoteActionResult = { ok: true; id?: string; folio?: string; href?: string } | { ok: false; message: string };
 
@@ -16,12 +19,15 @@ export type QuoteVariant = {
   sku: string;
   description: string;
   priceCents: number;
+  measureUnit?: MeasureUnit;
 };
 export type QuotePayload = {
   id: string;
   folio: string;
   status: "DRAFT" | "SENT" | "CONVERTED" | "EXPIRED";
   total_cents: number;
+  customer_name?: string | null;
+  discount_cents?: number;
   valid_until: string | null;
   notes: string | null;
   created_at: string;
@@ -35,14 +41,18 @@ export type QuotePayload = {
     variant_description: string;
     quantity: number;
     unit_price_cents: number;
+    original_unit_price_cents?: number;
+    discount_cents?: number;
     line_total_cents: number;
+    measureUnit?: MeasureUnit;
   }>;
 };
 
 type CreateQuoteInput = {
   locationId: string;
   customerId?: string | null;
-  items: Array<{ variant_id: string; quantity: number }>;
+  customerName?: string;
+  items: QuotePriceInput[];
   validUntil?: string | null;
   notes?: string;
 };
@@ -57,12 +67,18 @@ const statusLabels = {
   EXPIRED: "Vencida",
 } as const;
 
-export function QuotesWorkspace({ locationId, locationName = "La Piedad", locationAddress, locationPhone, variants, quotes, preview = false, status, createAction, sendAction, loadAction }: { locationId: string; locationName?: string; locationAddress?: string | null; locationPhone?: string | null; variants: QuoteVariant[]; quotes: QuotePayload[]; preview?: boolean; status?: string; createAction?: (input: CreateQuoteInput) => Promise<QuoteActionResult>; sendAction?: (quoteId: string) => Promise<QuoteActionResult>; loadAction?: (quoteId: string) => Promise<QuoteActionResult> }) {
+export function QuotesWorkspace({ locationId, locationName = "La Piedad", locationAddress, locationPhone, variants, quotes, preview = false, canPersonalize = false, status, createAction, sendAction, loadAction, validityAction }: { locationId: string; locationName?: string; locationAddress?: string | null; locationPhone?: string | null; variants: QuoteVariant[]; quotes: QuotePayload[]; preview?: boolean; canPersonalize?: boolean; status?: string; createAction?: (input: CreateQuoteInput) => Promise<QuoteActionResult>; sendAction?: (quoteId: string) => Promise<QuoteActionResult>; loadAction?: (quoteId: string) => Promise<QuoteActionResult>; validityAction?: (input: { quoteId: string; validUntil: string; reason: string }) => Promise<QuoteActionResult> }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [customer, setCustomer] = useState<CustomerSummary | null>(null);
+  const [customerName, setCustomerName] = useState("");
+  const [prices, setPrices] = useState<Record<string, string>>({});
+  const [discounts, setDiscounts] = useState<Record<string, string>>({});
+  const [exceptionQuote, setExceptionQuote] = useState<string | null>(null);
+  const [exceptionDate, setExceptionDate] = useState("");
+  const [exceptionReason, setExceptionReason] = useState("");
   const [customerOpen, setCustomerOpen] = useState(false);
   const [validUntil, setValidUntil] = useState("");
   const [notes, setNotes] = useState("");
@@ -72,19 +88,35 @@ export function QuotesWorkspace({ locationId, locationName = "La Piedad", locati
     const term = query.trim().toLocaleLowerCase("es-MX");
     return variants.filter((variant) => !term || `${variant.name} ${variant.brand} ${variant.sku} ${variant.description}`.toLocaleLowerCase("es-MX").includes(term)).slice(0, 80);
   }, [query, variants]);
-  const selected = variants.flatMap((variant) => (quantities[variant.id] > 0 ? [{ variant, quantity: quantities[variant.id] }] : []));
-  const total = selected.reduce((sum, item) => sum + item.variant.priceCents * item.quantity, 0);
+  const selected = variants.flatMap(variant=>{
+    const quantity=parseMeasureQuantity(quantities[variant.id]??'0',quantityUnit(variant),true);
+    return quantity!==null&&quantity>0 ? [{variant,quantity}]:[];
+  });
+  let pricingValid = variants.every(variant=>parseMeasureQuantity(quantities[variant.id]||'0',quantityUnit(variant),true)!==null);
+  let total = 0;
+  const pricedItems: QuotePriceInput[] = [];
+  for (const { variant, quantity } of selected) {
+    try {
+      const item = quoteLinePricing(variant.id, quantity, variant.priceCents, canPersonalize ? prices[variant.id] : "", canPersonalize ? discounts[variant.id] : "",quantityUnit(variant));
+      pricedItems.push(item);
+      total += measureLineCents(item.unit_price_cents ?? variant.priceCents,quantity,quantityUnit(variant))! - (item.discount_cents ?? 0);
+    } catch { pricingValid = false; }
+  }
+  pricingValid = pricingValid && Number.isSafeInteger(total);
 
   function resetForm() {
     setQuantities({});
     setCustomer(null);
+    setCustomerName("");
+    setPrices({});
+    setDiscounts({});
     setValidUntil("");
     setNotes("");
     setQuery("");
     setOpen(false);
   }
   function create() {
-    if (!createAction || selected.length === 0) {
+    if (!createAction || selected.length === 0 || !pricingValid || total <= 0) {
       setFeedback("Agrega al menos un artículo.");
       return;
     }
@@ -92,10 +124,8 @@ export function QuotesWorkspace({ locationId, locationName = "La Piedad", locati
       const result = await createAction({
         locationId,
         customerId: customer?.id ?? null,
-        items: selected.map(({ variant, quantity }) => ({
-          variant_id: variant.id,
-          quantity,
-        })),
+        customerName: customer ? undefined : customerName,
+        items: pricedItems,
         validUntil: validUntil || null,
         notes,
       });
@@ -117,6 +147,7 @@ export function QuotesWorkspace({ locationId, locationName = "La Piedad", locati
         return;
       }
       if (result.href) {
+        startNavigationProgress({ href: result.href });
         router.push(result.href);
         return;
       }
@@ -127,7 +158,7 @@ export function QuotesWorkspace({ locationId, locationName = "La Piedad", locati
 
   async function downloadQuotePdf(quote: QuotePayload) {
     const { createCommercialPdf, downloadCommercialPdf } = await import("@/lib/commercial-pdf");
-    const subtotalCents = quote.items.reduce((sum, item) => sum + Number(item.unit_price_cents) * Number(item.quantity), 0);
+    const subtotalCents = quote.items.reduce((sum, item) => sum + Number(item.line_total_cents)+Number(item.discount_cents??0), 0);
     const { blob, fileName } = await createCommercialPdf({
       kind: "QUOTE",
       folio: quote.folio,
@@ -135,15 +166,17 @@ export function QuotesWorkspace({ locationId, locationName = "La Piedad", locati
       locationName,
       address: locationAddress,
       phone: locationPhone,
-      customerName: quote.customer?.full_name,
+      customerName: quote.customer?.full_name ?? quote.customer_name,
       customerEmail: quote.customer?.email,
       validUntil: quote.valid_until,
       notes: quote.notes,
       lines: quote.items.map((item) => ({
-        description: `${item.product_name} - ${item.variant_description || "Unica"}`,
+        description: `${item.product_name} - ${item.variant_description || "Unica"}${item.measureUnit?` - ${item.measureUnit.name}`:''}`,
         code: item.sku,
         quantity: Number(item.quantity),
         unitPriceCents: Number(item.unit_price_cents),
+        originalUnitPriceCents: Number(item.original_unit_price_cents ?? item.unit_price_cents),
+        discountCents: Number(item.discount_cents ?? 0),
         lineTotalCents: Number(item.line_total_cents),
       })),
       subtotalCents,
@@ -207,7 +240,7 @@ export function QuotesWorkspace({ locationId, locationName = "La Piedad", locati
               </header>
               <p className="quote-customer">
                 <UserRound aria-hidden="true" />
-                {quote.customer?.full_name ?? "Público general"}
+                {quote.customer?.full_name ?? quote.customer_name ?? "Público general"}
               </p>
               <div className="quote-items">
                 {quote.items.map((item) => (
@@ -219,6 +252,7 @@ export function QuotesWorkspace({ locationId, locationName = "La Piedad", locati
                       <small>
                         {item.sku} · {item.variant_description || "Única"}
                       </small>
+                      <small>Original {money.format(Number(item.original_unit_price_cents ?? item.unit_price_cents) / 100)} · Cotizado {money.format(Number(item.unit_price_cents) / 100)} · Descuento {money.format(Number(item.discount_cents ?? 0) / 100)}</small>
                     </span>
                     <b>{money.format(Number(item.line_total_cents) / 100)}</b>
                   </span>
@@ -230,6 +264,7 @@ export function QuotesWorkspace({ locationId, locationName = "La Piedad", locati
                   {quote.valid_until ? `Válida hasta ${new Date(`${quote.valid_until}T12:00:00`).toLocaleDateString("es-MX")}` : "Sin fecha límite"}
                 </span>
                 <div>
+                  {canPersonalize && quote.status !== "CONVERTED" ? <button className="secondary-button" type="button" onClick={() => { setExceptionQuote(quote.id); setExceptionDate(quote.valid_until ?? ""); setExceptionReason(""); }}>Autorizar vigencia</button> : null}
                   <button className="secondary-button" type="button" onClick={() => void downloadQuotePdf(quote)}>
                     <Download aria-hidden="true" />
                     PDF formal
@@ -283,6 +318,7 @@ export function QuotesWorkspace({ locationId, locationName = "La Piedad", locati
                 <small>{customer ? `Socio ${customer.member_number}` : "Toca para asociar un cliente"}</small>
               </span>
             </button>
+            {!customer ? <label className="quote-search">Nombre para la cotización (sin registrar cliente)<input maxLength={160} value={customerName} onChange={event => setCustomerName(event.target.value)} /></label> : null}
             <label className="quote-search">
               <Search aria-hidden="true" />
               <span className="sr-only">Buscar productos</span>
@@ -300,22 +336,31 @@ export function QuotesWorkspace({ locationId, locationName = "La Piedad", locati
                   <b>{money.format(variant.priceCents / 100)}</b>
                   <input
                     type="number"
-                    inputMode="numeric"
+                    inputMode={quantityUnit(variant).decimal_places===3?'decimal':'numeric'}
                     min="0"
                     max="999"
-                    step="1"
+                    step={measureQuantityStep(quantityUnit(variant))}
                     aria-label={`Cantidad de ${variant.name} ${variant.description}`}
                     value={quantities[variant.id] ?? 0}
                     onChange={(event) =>
                       setQuantities((current) => ({
                         ...current,
-                        [variant.id]: Math.max(0, Math.min(999, Math.trunc(Number(event.target.value) || 0))),
+                        [variant.id]: event.target.value,
                       }))
                     }
                   />
                 </label>
               ))}
             </div>
+            {canPersonalize && selected.length ? <div className="quote-details">
+              <p>Solo cambia esta cotización. El catálogo conserva sus precios. Descuento por renglón en pesos.</p>
+              {selected.map(({ variant, quantity }) => <fieldset key={variant.id}>
+                <legend>{quantity} × {variant.name} · {variant.description}</legend>
+                <small>Original {money.format(variant.priceCents / 100)}</small>
+                <label>Precio unitario cotizado<input inputMode="decimal" placeholder={(variant.priceCents / 100).toFixed(2)} value={prices[variant.id] ?? ""} onChange={event => setPrices(current => ({ ...current, [variant.id]: event.target.value }))} /></label>
+                <label>Descuento del renglón<input inputMode="decimal" placeholder="0.00" value={discounts[variant.id] ?? ""} onChange={event => setDiscounts(current => ({ ...current, [variant.id]: event.target.value }))} /></label>
+              </fieldset>)}
+            </div> : null}
             <div className="quote-details">
               <label>
                 Vigencia opcional
@@ -327,14 +372,15 @@ export function QuotesWorkspace({ locationId, locationName = "La Piedad", locati
               </label>
             </div>
             <div className="quote-summary">
-              <span>{selected.reduce((sum, item) => sum + item.quantity, 0)} piezas</span>
+              {!pricingValid ? <p role="alert">Usa importes positivos con hasta dos decimales. El descuento no puede superar el importe del renglón.</p> : null}
+              <span>{selected.length} renglones seleccionados</span>
               <strong>Total {money.format(total / 100)}</strong>
             </div>
             <div className="modal-actions">
               <button className="secondary-button" type="button" onClick={resetForm}>
                 Cancelar
               </button>
-              <button className="primary-button" type="button" disabled={pending || selected.length === 0} onClick={create}>
+              <button className="primary-button" type="button" disabled={!createAction || pending || selected.length === 0 || !pricingValid || total <= 0} onClick={create}>
                 {pending ? "Guardando…" : "Crear cotización"}
               </button>
             </div>
@@ -342,6 +388,16 @@ export function QuotesWorkspace({ locationId, locationName = "La Piedad", locati
           {customerOpen ? <CustomerLookup selected={customer} onSelect={setCustomer} onClose={() => setCustomerOpen(false)} /> : null}
         </div>
       ) : null}
+      {exceptionQuote ? <div className="modal-backdrop"><section className="checkout-modal" role="dialog" aria-modal="true" aria-label="Autorizar vigencia">
+        <h2>Autorizar vigencia</h2><p>No modifica precios, inventario ni caja. La decisión queda auditada.</p>
+        <label>Nueva fecha<input type="date" value={exceptionDate} onChange={event => setExceptionDate(event.target.value)} /></label>
+        <label>Motivo obligatorio<textarea maxLength={300} value={exceptionReason} onChange={event => setExceptionReason(event.target.value)} /></label>
+        <div className="modal-actions"><button className="secondary-button" onClick={() => setExceptionQuote(null)} type="button">Cancelar</button><button className="primary-button" disabled={pending || !validityAction || !exceptionDate || !exceptionReason.trim()} type="button" onClick={() => startTransition(async () => {
+          const result = await validityAction!({ quoteId: exceptionQuote, validUntil: exceptionDate, reason: exceptionReason });
+          setFeedback(result.ok ? "Vigencia autorizada y registrada." : result.message);
+          if (result.ok) { setExceptionQuote(null); router.refresh(); }
+        })}>Autorizar</button></div>
+      </section></div> : null}
       {preview ? <p className="notice">Vista previa: conecta Supabase para guardar cotizaciones.</p> : null}
     </section>
   );

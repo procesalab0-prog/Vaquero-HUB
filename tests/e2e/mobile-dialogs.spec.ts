@@ -112,11 +112,14 @@ test("muestra el error de cobro por encima de la ventana en teléfono", async ({
   await page.getByRole("button", { name: "Abrir catálogo" }).click();
   await page.locator(".product-card").first().click();
   await page.locator(".mobile-cart-toggle").click();
-  await page.getByRole("button", { name: "Cobrar" }).click();
+  await page.getByRole("button", { name: "Cobrar", exact: true }).click();
   await page
     .getByRole("button", { name: "Dividir entre varios métodos" })
     .click();
-  await page.getByLabel("Efectivo").fill("1");
+  await page
+    .getByRole("dialog")
+    .getByLabel("Efectivo", { exact: true })
+    .fill("1");
   await page.getByRole("button", { name: "Confirmar pago combinado" }).click();
 
   const feedback = page.locator(".operation-feedback");

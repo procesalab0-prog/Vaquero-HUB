@@ -8,6 +8,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { productImageUrl, readCatalogCoverUrls } from "@/lib/product-images";
 import {
   addCatalogVariants,
+  listQuickSaleSnapshots,
   bulkUpdateVariantPrices,
   bulkUpdateVariantStatus,
   commitCatalogImport,
@@ -21,6 +22,11 @@ import {
   updateCatalogVariantPrice,
 } from "./actions";
 import { ProductsWorkspace } from "./products-workspace";
+import { MeasureUnitCatalog } from "@/components/measure-unit-catalog";
+import { createMeasureUnit } from "./actions";
+import { setProductUnit } from "./actions";
+import type { MeasureUnit } from "@/lib/measure-units";
+import { DEFAULT_MEASURE_UNITS } from "@/lib/measure-units";
 
 export const metadata: Metadata = { title: "Productos" };
 
@@ -54,6 +60,8 @@ type AttributeValue = {
 type ProductRow = {
   id: string;
   category_id: string;
+  department_name: string | null;
+  measure_unit_code: string;
   description: string | null;
   is_active: boolean;
   image_path: string | null;
@@ -67,12 +75,15 @@ export default async function ProductsPage({
   const params = await searchParams;
   if (!isSupabaseConfigured()) {
     return (
-      <ProductsWorkspace
-        initialVariants={mockVariants}
-        categories={[]}
-        attributeValues={[]}
-        preview
-      />
+      <>
+        <ProductsWorkspace
+          initialVariants={mockVariants}
+          categories={[]}
+          attributeValues={[]}
+          preview
+        />
+        <MeasureUnitCatalog units={DEFAULT_MEASURE_UNITS} />
+      </>
     );
   }
 
@@ -83,6 +94,7 @@ export default async function ProductsPage({
     valuesResult,
     productsResult,
     permissionsResult,
+    unitsResult,
   ] = await Promise.all([
     supabase.rpc("search_catalog", { p_query: "", p_limit: 200 }),
     supabase
@@ -96,7 +108,9 @@ export default async function ProductsPage({
       .order("display_order"),
     supabase
       .from("products")
-      .select("id, category_id, description, is_active, image_path"),
+      .select(
+        "id, category_id, department_name, measure_unit_code, description, is_active, image_path",
+      ),
     supabase
       .from("role_permissions")
       .select("permission_code")
@@ -108,6 +122,7 @@ export default async function ProductsPage({
         "reports.inventory",
         "purchases.manage",
       ]),
+    supabase.rpc("list_measure_units"),
   ]);
 
   if (
@@ -161,6 +176,8 @@ export default async function ProductsPage({
       const product = products.get(row.product_id);
       return {
         categoryId: product?.category_id,
+        departmentName: product?.department_name ?? null,
+        measureUnitCode: product?.measure_unit_code ?? "PIECE",
         description: product?.description ?? "",
         productActive: product?.is_active ?? true,
       };
@@ -200,6 +217,7 @@ export default async function ProductsPage({
         }
         createWebAction={canCreate ? createCatalogProductWithWeb : undefined}
         initialVariants={variants}
+        quickSaleListAction={canCreate ? listQuickSaleSnapshots : undefined}
         categories={(categoriesResult.data ?? []) as Category[]}
         attributeValues={(valuesResult.data ?? []) as AttributeValue[]}
         status={params.status}
@@ -208,6 +226,10 @@ export default async function ProductsPage({
         registerBarcodeAction={canUpdate ? registerVariantBarcode : undefined}
         lookupBarcodeAction={lookupCatalogBarcode}
         updateProductAction={canUpdate ? updateCatalogProduct : undefined}
+        measureUnits={(unitsResult.data ?? []) as MeasureUnit[]}
+        setProductUnitAction={
+          canUpdate && !unitsResult.error ? setProductUnit : undefined
+        }
         updateVariantAction={
           canUpdate && canSeeCost ? updateCatalogVariant : undefined
         }
@@ -225,6 +247,11 @@ export default async function ProductsPage({
         previewImportAction={canCreate ? previewCatalogImport : undefined}
         commitImportAction={canCreate ? commitCatalogImport : undefined}
         initialImportState={canCreate ? initialCatalogImportState : undefined}
+      />
+      <MeasureUnitCatalog
+        units={(unitsResult.data ?? []) as MeasureUnit[]}
+        unavailable={Boolean(unitsResult.error)}
+        createAction={canCreate ? createMeasureUnit : undefined}
       />
     </>
   );

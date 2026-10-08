@@ -1,17 +1,17 @@
 "use server";
-import { requirePermission } from "@/lib/auth/authorization";
 import { WEB_STAGING_URL } from "@/lib/web-draft";
+import { requirePermission } from "@/lib/auth/authorization";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function saveOwnerAnswer(form: FormData) {
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL === WEB_STAGING_URL)
+    redirect("https://vaquero-hub.vercel.app/productos/migracion-dudas");
   let result = "guardado";
   const question = String(form.get("question_id") ?? "");
   try {
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL !== WEB_STAGING_URL)
-      throw Error("STAGING_ONLY");
     const { supabase } = await requirePermission("products.update");
-    const { error } = await supabase.rpc("m9_save_owner_answer", {
+    const { error } = await supabase.rpc("main_m9_save_owner_answer", {
       p_cut: String(form.get("cut_sha") ?? ""),
       p_question: question,
       p_revision: Number(form.get("revision")),
@@ -22,6 +22,7 @@ export async function saveOwnerAnswer(form: FormData) {
     });
     if (error) throw Error(error.message);
     revalidatePath("/productos/migracion-dudas");
+    revalidatePath("/inicio");
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
     result = /M9_ANSWER_CHANGED|M9_QUESTION_STALE/.test(message)

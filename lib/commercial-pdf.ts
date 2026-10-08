@@ -1,321 +1,131 @@
 "use client";
 
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-
 export type CommercialPdfLine = {
   description: string;
   code: string;
   quantity: number;
   unitPriceCents: number;
+  originalUnitPriceCents?: number;
+  discountCents?: number;
   lineTotalCents: number;
 };
-
 export type CommercialPdfData = {
-  kind: "QUOTE" | "SALE";
-  folio: string;
-  date: string;
-  locationName: string;
-  address?: string | null;
-  phone?: string | null;
-  customerName?: string | null;
-  customerEmail?: string | null;
-  validUntil?: string | null;
-  notes?: string | null;
-  lines: CommercialPdfLine[];
-  subtotalCents: number;
-  discountCents: number;
-  totalCents: number;
+  usdTender?: import('@/components/thermal-receipt').UsdReceiptTender | null;
+  kind: "QUOTE" | "SALE"; folio: string; date: string; locationName: string;
+  address?: string | null; phone?: string | null; customerName?: string | null;
+  customerEmail?: string | null; validUntil?: string | null; notes?: string | null;
+  lines: CommercialPdfLine[]; subtotalCents: number; discountCents: number; totalCents: number;
 };
-
-const pesos = new Intl.NumberFormat("es-MX", {
-  style: "currency",
-  currency: "MXN",
-});
-const clean = (value: string) =>
-  value.replace(/[\u2010-\u2015]/g, "-").replace(/[^\x20-\x7E\xA0-\xFF]/g, "?");
-const money = (cents: number) => pesos.format(cents / 100);
-
-function safeName(value: string) {
-  return value.replace(/[^A-Za-z0-9_-]+/g, "-").replace(/^-|-$/g, "");
-}
-
-function wrapText(
-  value: string,
-  font: Awaited<ReturnType<PDFDocument["embedFont"]>>,
-  size: number,
-  maxWidth: number,
-) {
-  const words = clean(value).split(/\s+/).filter(Boolean);
-  const lines: string[] = [];
-  let current = "";
-  for (const word of words) {
-    const next = current ? `${current} ${word}` : word;
-    if (font.widthOfTextAtSize(next, size) <= maxWidth || !current)
-      current = next;
-    else {
-      lines.push(current);
-      current = word;
-    }
-  }
-  if (current) lines.push(current);
-  return lines;
-}
-
 export async function createCommercialPdf(data: CommercialPdfData) {
+  const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
+  const integerMoney = (value: number) => Number.isSafeInteger(value) && value >= 0;
+  if (![data.subtotalCents, data.discountCents, data.totalCents].every(integerMoney)
+      || data.totalCents !== data.subtotalCents - data.discountCents
+      || !data.lines.length
+      || data.lines.some(line => !integerMoney(line.unitPriceCents) || !integerMoney(line.lineTotalCents) || !Number.isFinite(line.quantity) || line.quantity <= 0))
+    throw new Error("INVALID_COMMERCIAL_DOCUMENT");
   const pdf = await PDFDocument.create();
-  const page = pdf.addPage([595.28, 841.89]);
-  const regular = await pdf.embedFont(StandardFonts.Helvetica);
+  const font = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const ink = rgb(0.12, 0.1, 0.09);
-  const accent = rgb(0.56, 0.16, 0.11);
-  const muted = rgb(0.38, 0.34, 0.31);
-  const left = 48;
-  const right = 547;
-  let y = 785;
-
+  const ink = rgb(0.08, 0.08, 0.08), muted = rgb(0.35, 0.35, 0.35), cream = rgb(0.94, 0.92, 0.87);
+  const title = data.kind === "QUOTE" ? "COTIZACION" : "COMPROBANTE DE VENTA";
+  const clean = (value: string) => value.replace(/\s+/g, " ").replace(/[\u2010-\u2015]/g, "-").replace(/[^\x20-\x7E\xA0-\xFF]/g, "?");
+  const money = (value: number) => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value / 100);
+  const wrap = (value: string, width: number, size: number) => {
+    const lines: string[] = [];
+    let line = "";
+    for (const word of clean(value).split(/\s+/).filter(Boolean)) {
+      if (bold.widthOfTextAtSize(line ? line + " " + word : word, size) <= width) {
+        line = line ? line + " " + word : word;
+      } else {
+        if (line) { lines.push(line); line = ""; }
+        for (const letter of word) {
+          if (line && bold.widthOfTextAtSize(line + letter, size) > width) { lines.push(line); line = ""; }
+          line += letter;
+        }
+      }
+    }
+    if (line) lines.push(line);
+    return lines;
+  };
+  let page = pdf.addPage([595.28, 841.89]), y = 790;
+  const nextPage = () => {
+    page = pdf.addPage([595.28, 841.89]); y = 790;
+    page.drawText(clean(title + " - " + data.folio + " (continuacion)"), { x: 48, y, size: 9, font: bold, color: ink });
+    y -= 28;
+  };
+  const ensure = (height: number) => { if (y - height < 65) nextPage(); };
+  const text = (value: string, strong = false) => {
+    for (const line of wrap(value, 499, 10)) {
+      ensure(16); page.drawText(line, { x: 48, y, size: 10, font: strong ? bold : font, color: ink }); y -= 15;
+    }
+  };
   try {
-    const response = await fetch("/brand/logo-vaquerosm-negro.png", {
-      cache: "force-cache",
-    });
+    const response = await fetch("/brand/logo-vaquerosm-negro.png", { cache: "force-cache" });
     if (response.ok) {
       const logo = await pdf.embedPng(await response.arrayBuffer());
-      const size = logo.scaleToFit(125, 62);
-      page.drawImage(logo, { x: left, y: y - size.height + 8, ...size });
+      const dimensions = logo.scaleToFit(145, 65);
+      page.drawImage(logo, { x: 48, y: y - dimensions.height, ...dimensions }); y -= 80;
     }
-  } catch {
-    // El título textual conserva la identidad si el recurso no está disponible.
-  }
-
-  page.drawText(data.kind === "QUOTE" ? "COTIZACION" : "COMPROBANTE DE VENTA", {
-    x: 310,
-    y,
-    size: 18,
-    font: bold,
-    color: accent,
-  });
-  y -= 25;
-  page.drawText(clean(data.folio), {
-    x: 310,
-    y,
-    size: 11,
-    font: bold,
-    color: ink,
-  });
-  y -= 17;
-  page.drawText(clean(data.date), {
-    x: 310,
-    y,
-    size: 9,
-    font: regular,
-    color: muted,
-  });
-  y -= 45;
-
-  page.drawLine({
-    start: { x: left, y },
-    end: { x: right, y },
-    thickness: 1.2,
-    color: accent,
-  });
-  y -= 24;
-  page.drawText(
-    `VAQUERO SM - SUCURSAL ${clean(data.locationName).toUpperCase()}`,
-    {
-      x: left,
-      y,
-      size: 10,
-      font: bold,
-      color: ink,
-    },
-  );
-  y -= 15;
-  if (data.address)
-    wrapText(data.address, regular, 8.5, 225)
-      .slice(0, 2)
-      .forEach((line, index) =>
-        page.drawText(line, {
-          x: left,
-          y: y - index * 12,
-          size: 8.5,
-          font: regular,
-          color: muted,
-        }),
-      );
-  const businessBottom = y - (data.address ? 26 : 0);
-  if (data.phone) {
-    page.drawText(`Tel. ${clean(data.phone)}`, {
-      x: left,
-      y: businessBottom,
-      size: 8.5,
-      font: regular,
-      color: muted,
-    });
-  }
-  wrapText(`Cliente: ${data.customerName || "Publico general"}`, bold, 9, 205)
-    .slice(0, 2)
-    .forEach((line, index) =>
-      page.drawText(line, {
-        x: 335,
-        y: y - index * 12,
-        size: 9,
-        font: bold,
-        color: ink,
-      }),
-    );
-  if (data.customerEmail)
-    page.drawText(clean(data.customerEmail), {
-      x: 335,
-      y: y - 28,
-      size: 8.5,
-      font: regular,
-      color: muted,
-    });
-  if (data.validUntil)
-    page.drawText(`Vigencia: ${clean(data.validUntil)}`, {
-      x: 335,
-      y: y - 42,
-      size: 8.5,
-      font: regular,
-      color: muted,
-    });
-  y -= 62;
-
-  page.drawRectangle({
-    x: left,
-    y: y - 5,
-    width: right - left,
-    height: 24,
-    color: accent,
-  });
-  const headers = [
-    ["Descripcion", left + 8],
-    ["Cant.", 355],
-    ["P. unitario", 410],
-    ["Importe", 490],
-  ] as const;
-  headers.forEach(([label, x]) =>
-    page.drawText(label, {
-      x,
-      y: y + 3,
-      size: 8.5,
-      font: bold,
-      color: rgb(1, 1, 1),
-    }),
-  );
-  y -= 28;
-
+  } catch { /* Textual identity remains visible if the logo is unavailable. */ }
+  text(title, true); text("Folio: " + data.folio); text("Fecha: " + data.date);
+  text("VAQUERO SM - " + data.locationName, true);
+  if (data.address) text(data.address);
+  if (data.phone) text("Tel. " + data.phone);
+  y -= 10; text("Cliente: " + (data.customerName || "Publico general"), true);
+  if (data.customerEmail) text(data.customerEmail);
+  if (data.validUntil) text("Vigencia: " + data.validUntil);
+  y -= 20;
+  const heading = () => {
+    ensure(35); page.drawRectangle({ x: 48, y: y - 6, width: 499, height: 24, color: cream });
+    for (const [label, x] of [["Producto", 55], ["Cant.", 315], ["P. unitario", 378], ["Importe MXN", 462]] as const)
+      page.drawText(label, { x, y, size: 9, font: bold, color: ink });
+    y -= 30;
+  };
+  heading();
   for (const line of data.lines) {
-    if (y < 155) break;
-    page.drawText(clean(line.description).slice(0, 52), {
-      x: left + 8,
-      y,
-      size: 8.5,
-      font: bold,
-      color: ink,
-    });
-    page.drawText(clean(line.code).slice(0, 35), {
-      x: left + 8,
-      y: y - 12,
-      size: 7.5,
-      font: regular,
-      color: muted,
-    });
-    page.drawText(String(line.quantity), {
-      x: 367,
-      y,
-      size: 8.5,
-      font: regular,
-      color: ink,
-    });
-    page.drawText(money(line.unitPriceCents), {
-      x: 410,
-      y,
-      size: 8.5,
-      font: regular,
-      color: ink,
-    });
-    page.drawText(money(line.lineTotalCents), {
-      x: 490,
-      y,
-      size: 8.5,
-      font: bold,
-      color: ink,
-    });
-    y -= 31;
-    page.drawLine({
-      start: { x: left, y: y + 11 },
-      end: { x: right, y: y + 11 },
-      thickness: 0.35,
-      color: rgb(0.82, 0.8, 0.77),
-    });
+    const descriptions = wrap(line.description, 245, 10);
+    const details = [
+      ...wrap(line.code, 245, 8),
+      ...(line.originalUnitPriceCents !== undefined ? wrap("Original: " + money(line.originalUnitPriceCents) + " | Cotizado: " + money(line.unitPriceCents), 245, 8) : []),
+      ...(line.discountCents !== undefined ? wrap("Descuento del renglon: " + money(line.discountCents), 245, 8) : []),
+    ];
+    const height = descriptions.length * 15 + details.length * 12 + 15;
+    if (y - Math.min(height, 600) < 65) { nextPage(); heading(); }
+    page.drawText(String(line.quantity), { x: 320, y, size: 9, font, color: ink });
+    for (const [value, right] of [[money(line.unitPriceCents), 439], [money(line.lineTotalCents), 547]] as const) {
+      const size = Math.min(9, 9 * 80 / font.widthOfTextAtSize(value, 9));
+      page.drawText(value, { x: right - font.widthOfTextAtSize(value, size), y, size, font, color: ink });
+    }
+    for (const description of descriptions) {
+      ensure(15); page.drawText(description, { x: 55, y, size: 10, font: bold, color: ink }); y -= 15;
+    }
+    for (const detail of details) {
+      ensure(12); page.drawText(detail, { x: 55, y, size: 8, font, color: muted }); y -= 12;
+    }
+    y -= 15;
   }
-
-  y -= 4;
-  const totalRow = (label: string, value: string, strong = false) => {
-    page.drawText(label, {
-      x: 390,
-      y,
-      size: strong ? 12 : 9,
-      font: strong ? bold : regular,
-      color: ink,
-    });
-    page.drawText(value, {
-      x: 485,
-      y,
-      size: strong ? 12 : 9,
-      font: strong ? bold : regular,
-      color: strong ? accent : ink,
-    });
-    y -= strong ? 22 : 16;
-  };
-  totalRow("Subtotal", money(data.subtotalCents));
-  totalRow("Descuento", `-${money(data.discountCents)}`);
-  totalRow("TOTAL", money(data.totalCents), true);
-  if (data.notes) {
-    y -= 8;
-    page.drawText("Observaciones", {
-      x: left,
-      y,
-      size: 9,
-      font: bold,
-      color: ink,
-    });
-    y -= 14;
-    page.drawText(clean(data.notes).slice(0, 130), {
-      x: left,
-      y,
-      size: 8.5,
-      font: regular,
-      color: muted,
-    });
+  ensure(85);
+  text("Subtotal: " + money(data.subtotalCents));
+  text("Descuento: -" + money(data.discountCents));
+  text("TOTAL: " + money(data.totalCents) + " MXN", true);
+  if (data.kind === 'SALE' && data.usdTender) {
+    const usd = data.usdTender;
+    text('Recibido USD: ' + (Number(usd.received_usd_cents)/100).toFixed(2));
+    text('Tasa MXN / USD: ' + Number(usd.rate_million)/1000000);
+    text('Equivalente MXN: ' + money(Number(usd.equivalent_mxn_cents)));
+    text('Cambio MXN: ' + money(Number(usd.change_mxn_cents)));
   }
-  page.drawText("Documento generado por Mi Tienda SM", {
-    x: left,
-    y: 48,
-    size: 8,
-    font: regular,
-    color: muted,
-  });
-  page.drawText("vaquerosm.com", {
-    x: 455,
-    y: 48,
-    size: 8,
-    font: bold,
-    color: accent,
-  });
-
-  const bytes = await pdf.save({ useObjectStreams: true });
-  return {
-    blob: new Blob([new Uint8Array(bytes)], { type: "application/pdf" }),
-    fileName: `${data.kind === "QUOTE" ? "cotizacion" : "comprobante"}-${safeName(data.folio)}.pdf`,
-  };
+  if (data.notes) { y -= 12; text("Observaciones: " + data.notes); }
+  y -= 12;
+  text(data.kind === "QUOTE" ? "Cotizacion: no reserva mercancia ni acredita un pago." : "Comprobante de venta. No es una factura fiscal.");
+  pdf.getPages().forEach((sheet, index, pages) => sheet.drawText("Vaquero SM | Pagina " + (index + 1) + " de " + pages.length, { x: 48, y: 32, size: 8, font, color: muted }));
+  const bytes = await pdf.save();
+  return { blob: new Blob([new Uint8Array(bytes)], { type: "application/pdf" }),
+    fileName: (data.kind === "QUOTE" ? "cotizacion" : "comprobante") + "-" + data.folio.replace(/[^A-Za-z0-9_-]+/g, "-").replace(/^-|-$/g, "") + ".pdf" };
 }
-
 export function downloadCommercialPdf(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = fileName;
-  anchor.click();
+  const anchor = document.createElement("a"); anchor.href = url; anchor.download = fileName; anchor.click();
   window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
 }

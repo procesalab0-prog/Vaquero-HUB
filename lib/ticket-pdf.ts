@@ -1,11 +1,13 @@
 "use client";
 
 import JsBarcode from "jsbarcode";
+import { measureLineCents } from "./measure-units";
 
 import { giftFolioFromSale } from "./ticket-folios";
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 
 export type TicketPdfLine = {
+  unitName?: string;
   name: string;
   variant: string;
   code: string;
@@ -20,6 +22,7 @@ export type TicketPdfPayment = {
 };
 
 export type TicketPdfData = {
+  usdTender?: import('@/components/thermal-receipt').UsdReceiptTender | null;
   mode: "sale" | "gift";
   folio: string;
   soldAt: string;
@@ -111,7 +114,7 @@ export async function createTicketPdf(data: TicketPdfData) {
     131 +
       logoHeightAllowanceMm +
       data.lines.length * (data.mode === "sale" ? 17 : 13) +
-      (data.payments?.length ?? 0) * 8,
+      (data.payments?.length ?? 0) * 8 + (data.mode === 'sale' && data.usdTender ? 22 : 0),
   );
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([PAGE_WIDTH, heightMm * MM]);
@@ -240,12 +243,12 @@ export async function createTicketPdf(data: TicketPdfData) {
     if (data.mode === "sale") {
       leftRight(
         `${line.quantity} x ${money(line.unitPriceCents)}  ${line.code}`,
-        money(line.quantity * line.unitPriceCents),
+        money(measureLineCents(line.unitPriceCents, line.quantity, {code:'RECEIPT',name:line.unitName ?? 'Pieza',decimal_places:3}) ?? 0),
         8,
         bold,
       );
     } else {
-      page.drawText(`${line.quantity} pza.  ${printable(line.code)}`, {
+      page.drawText(`${line.quantity} ${printable(line.unitName ?? 'pza.')}  ${printable(line.code)}`, {
         x: MARGIN,
         y,
         size: 8,
@@ -275,6 +278,12 @@ export async function createTicketPdf(data: TicketPdfData) {
           font: bodyFont,
         });
         y -= 10;
+      }
+    }
+    if (data.usdTender) {
+      const usd = data.usdTender;
+      for (const [label,value] of [ ['Recibido USD',pesos.format(Number(usd.received_usd_cents)/100)], ['Tasa MXN / USD',String(Number(usd.rate_million)/1000000)], ['Equivalente MXN',money(Number(usd.equivalent_mxn_cents))], ['Cambio MXN',money(Number(usd.change_mxn_cents))] ] as const) {
+        leftRight(label,value); y -= 12;
       }
     }
   }

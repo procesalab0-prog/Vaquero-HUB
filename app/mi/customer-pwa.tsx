@@ -39,6 +39,7 @@ import { APP_VERSION } from "@/lib/release";
 import { CampaignFilm } from "./campaign-film";
 import { MemberCard } from "./member-card";
 import { MemberCodes } from "./member-codes";
+import { PointsBalance } from "./points-balance";
 import { useScanWakeLock } from "./use-scan-wake-lock";
 
 type CardData = { memberNumber: string; fullName: string | null };
@@ -958,12 +959,10 @@ export function CustomerPwa({
                 {authenticated && loyalty?.enabled ? (
                   <section className="mi-loyalty-panel">
                     <div className="mi-loyalty-balance">
-                      <span>
-                        <small>PUNTOS DISPONIBLES</small>
-                        <strong>
-                          {loyalty.available_points.toLocaleString("es-MX")}
-                        </strong>
-                      </span>
+                      <PointsBalance
+                        availablePoints={loyalty.available_points}
+                        history={loyalty.history}
+                      />
                       <span>
                         <small>VALOR</small>
                         <b>
@@ -1014,7 +1013,11 @@ export function CustomerPwa({
                       </div>
                     </form>
                     {redemptionCode && (
-                      <div className="mi-redemption-code" role="status">
+                      <div
+                        className="mi-redemption-code"
+                        role="status"
+                        key={redemptionCode.code}
+                      >
                         <small>CÓDIGO TEMPORAL</small>
                         <strong>{redemptionCode.code}</strong>
                         <span>

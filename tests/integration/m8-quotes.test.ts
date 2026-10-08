@@ -210,4 +210,77 @@ describe.sequential("M8.2: cotizaciones", () => {
       expect.arrayContaining([expect.objectContaining({ id: state.quoteId })]),
     );
   });
+
+  it("cobra el precio personalizado aprobado sin modificar catálogo y resiste conversión concurrente", async () => {
+    const quote = await state.admin!.rpc("create_quote_v2", {
+      p_location_id: state.locationId,
+      p_items: [
+        {
+          variant_id: state.variantId,
+          quantity: 1,
+          unit_price_cents: 18000,
+          discount_cents: 1000,
+        },
+      ],
+      p_customer_name: "Empresa sin cuenta",
+    });
+    expect(quote.error).toBeNull();
+    expect(Number(quote.data.total_cents)).toBe(17000);
+    const variant = await state
+      .server!.from("variants")
+      .select("price_cents")
+      .eq("id", state.variantId)
+      .single();
+    expect(Number(variant.data!.price_cents)).toBe(25000);
+    const load = await state.admin!.rpc("load_quote_into_pos", {
+      p_quote_id: quote.data.id,
+      p_cash_session_id: state.sessionId,
+    });
+    expect(load.error).toBeNull();
+    const drafts = await state.admin!.rpc("list_my_pos_drafts", {
+      p_cash_session_id: state.sessionId,
+    });
+    expect(drafts.error).toBeNull();
+    const current = drafts.data.find(
+      (draft: { quote_id: string }) => draft.quote_id === quote.data.id,
+    );
+    expect(current.quote_pricing.total_cents).toBe(17000);
+    const changed = await state.admin!.rpc("save_pos_current_draft", {
+      p_cash_session_id: state.sessionId,
+      p_items: [
+        { variant_id: state.variantId, quantity: 2, gift_receipt: false },
+      ],
+    });
+    expect(changed.error?.message).toContain("QUOTE_DRAFT_LOCKED");
+    const args = {
+      p_quote_id: quote.data.id,
+      p_cash_session_id: state.sessionId,
+      p_payments: [
+        { method_code: "CASH", amount_cents: 17000, tendered_cents: 20000 },
+      ],
+    };
+    const results = await Promise.all(
+      [1, 2].map(() =>
+        state.admin!.rpc("convert_quote_to_sale", {
+          ...args,
+          p_idempotency_key: crypto.randomUUID(),
+        }),
+      ),
+    );
+    expect(results.map((result) => result.error)).toEqual([null, null]);
+    expect(results[0].data.id).toBe(results[1].data.id);
+    expect(Number(results[0].data.total_cents)).toBe(17000);
+    const stock = await state
+      .server!.from("inventory_by_location")
+      .select("qty")
+      .eq("variant_id", state.variantId)
+      .eq("location_id", state.locationId)
+      .single();
+    expect(Number(stock.data!.qty)).toBe(0);
+    const direct = await state
+      .server!.from("quote_items")
+      .update({ unit_price_cents: 1 })
+      .eq("quote_id", quote.data.id);
+    expect(direct.error).not.toBeNull();
+  });
 });

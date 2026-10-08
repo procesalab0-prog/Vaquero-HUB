@@ -1,7 +1,13 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import {
+  MOTION_DAY_COOKIE,
+  MOTION_DAY_COOKIE_MAX_AGE,
+  storeDay,
+} from "@/lib/entrance";
 import { createClient } from "@/lib/supabase/server";
 
 export async function login(formData: FormData) {
@@ -25,6 +31,16 @@ export async function login(formData: FormData) {
     await supabase.auth.signOut();
     redirect("/login?error=sin-acceso");
   }
+
+  // A partir de este acceso confirmado, la pantalla de acceso usa su versión
+  // corta el resto del día en este dispositivo.
+  (await cookies()).set(MOTION_DAY_COOKIE, storeDay(), {
+    httpOnly: false,
+    sameSite: "lax",
+    path: "/",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: MOTION_DAY_COOKIE_MAX_AGE,
+  });
 
   redirect("/inicio");
 }

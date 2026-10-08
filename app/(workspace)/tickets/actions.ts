@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { requirePermission } from "@/lib/auth/authorization";
 import { databaseErrorText } from "@/lib/returns";
+import {parseQuantityTransport} from '@/lib/measure-units';
 import { saleFolioFromReceiptCode } from "@/lib/ticket-folios";
 import type { TicketDeliveryEventInput } from "@/lib/ticket-delivery";
 import type {
@@ -19,6 +20,7 @@ import type { Ticket } from "./tickets-real-workspace";
 
 type CashSession = { id?: string; location_id?: string } | null;
 type ExchangeVariantRow = {
+  measureUnit?: import('@/lib/measure-units').MeasureUnit;
   variant_id: string;
   product_name: string;
   brand_name: string | null;
@@ -162,7 +164,7 @@ export async function prepareEqualExchange(
 export async function searchEqualExchangeVariants(input: {
   query: string;
   priceCents: number;
-  excludeVariantId: string;
+  excludeVariantId: string | null;
 }): Promise<ExchangeSearchResult> {
   try {
     if (!Number.isSafeInteger(input.priceCents) || input.priceCents < 0) {
@@ -170,7 +172,7 @@ export async function searchEqualExchangeVariants(input: {
     }
     const { supabase } = await requirePermission("returns.create");
     const query = input.query.trim().slice(0, 120);
-    const { data, error } = await supabase.rpc("search_exchange_variants", {
+    const { data, error } = await supabase.rpc("search_exchange_variants_v2", {
       p_exclude_variant_id: input.excludeVariantId,
       p_query: query,
       p_limit: 50,
@@ -186,6 +188,7 @@ export async function searchEqualExchangeVariants(input: {
         size: row.attributes?.TALLA ?? "Única",
         priceCents: Number(row.price_cents),
         stock: Number(row.available_qty),
+        measureUnit: row.measureUnit,
       }),
     );
     return { ok: true, variants };
@@ -238,6 +241,7 @@ export async function createReturnExchange(input: {
   quantity: number;
   condition: "RESELLABLE" | "DAMAGED";
   outputVariantId?: string | null;
+  outputQuantity?: number;
   chargePayments: Array<{
     method_code: "CASH" | "CARD" | "TRANSFER";
     amount_cents: number;
@@ -248,7 +252,7 @@ export async function createReturnExchange(input: {
   reason: string;
 }): Promise<CreateExchangeResult> {
   try {
-    if (!Number.isSafeInteger(input.quantity) || input.quantity < 1) {
+    if (parseQuantityTransport(String(input.quantity))===null || (input.outputVariantId && parseQuantityTransport(String(input.outputQuantity??1))===null)) {
       return { ok: false, message: "Selecciona una cantidad válida." };
     }
     if (input.reason.trim().length < 3 || input.reason.trim().length > 500) {
@@ -270,7 +274,7 @@ export async function createReturnExchange(input: {
         },
       ],
       p_items_out: input.outputVariantId
-        ? [{ variant_id: input.outputVariantId, quantity: 1 }]
+        ? [{ variant_id: input.outputVariantId, quantity: input.outputQuantity??1 }]
         : [],
       p_charge_payments: input.chargePayments,
       p_refund_references: input.refundReferences,

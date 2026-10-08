@@ -1,0 +1,38 @@
+# M9 y mejoras operativas: integración aislada
+
+
+## Integración aislada de M9 y principal — 2026-10-08
+
+Combinados M9 facdc38488539ad45c525d5799f56a7ed9138008 y main 9b89374d8992c299919088daf95ac51c97d3fb5c en copia independiente work/m9-integracion-principal, rama codex/m9-integracion-principal. Resueltos doce conflictos conservando ergonomía, notas, notificaciones, cotizaciones/PDF, producto rápido, unidades/USD desactivados y nueva navegación, además de fichas, fotos, importador y revisión M9. No se sustituyó ni modificó ninguna rama original. Versión candidata local 0.80.0; no publicada.
+
+Una sola bandeja de respuestas: la del programa principal. En staging Inicio ofrece botón hacia esa bandeja, y la ruta/acción de preguntas redirigen allí sin guardar aclaraciones duplicadas. Inicio conserva una sola tarjeta arriba. La advertencia de pruebas permanece junto a la navegación nueva. En Productos, Ficha web queda fuera del botón que expande variantes; se conservan los códigos literales y las unidades.
+
+Verificación local: 672 unitarias/95 archivos (incluye seis regresiones de integración), 178 Auth/PostgREST reales en base nueva, 157 migraciones reconstruidas y controles SQL nativos de concurrencia aprobados. Navegador: 262 aprobadas en primera corrida, cuatro timeouts aprobados al repetir sólo esos casos con un proceso, dos omitidas por condiciones existentes; total 266 aprobadas. Compilación, tipos y lint correctos. Avatar local 0.80.0 comprobado; vista de demostración sin datos alojados.
+
+Nuevo scripts/verify-m9-main-upgrade.mjs: ensayo incremental 133→157 en otra base local vacía, código sintético 000123, precio, UUID, fuentes, fichas/foto y 25 funciones M9 intactos; repetición cero altas/cambios y bloqueo con compuerta deshabilitada. No es una prueba con el catálogo real completo ni con el historial exacto de staging alojado. No modificar migraciones heredadas ni aplicar por mera diferencia de fechas: el historial remoto requiere conciliar nombres y SQL. Sin migración SQL nueva.
+
+Entorno QA independiente mi-tienda-m9-combined-20261007, API59321/Postgres59322; no se usó el staging compartido ni producción. Se mantienen originales locales con archivos sin commit. Ninguna escritura Woo/Supabase alojado, inventario real, merge principal, envío remoto o despliegue en este bloque. Cobertura catalogada sigue 7,709/16,224=47.516%; esta integración no importa nuevas filas. Evidencia outputs/m9-integracion-principal-2026-10-07/.
+
+Sigue: conciliar esquema alojado y ensayar actualización de Preview con esta combinación; comprobar sesión real, búsquedas/fotos y fichas antes de ampliar cargas. No llevar toda M9 a producción. Aclaraciones de dueños y fuentes renovadas siguen necesarias para los lotes pendientes. Sol suficiente para esta combinación; Astra recomendado antes de inventario, pedidos/devoluciones y auditoría final operativa.
+
+
+## 2026-10-08 — Actualización incremental del Preview, parcial y verificada
+
+Ensayo local nuevo scripts/verify-m9-hosted-upgrade.mjs: 132 entradas remotas incluyen remote_schema sin SQL local; 131 nombres de aplicación conciliados contra archivos locales y 26 pendientes. Reconstrucción por nombres (no copia exacta del esquema remoto), Auth/Storage simulados y datos sintéticos. Se inyectó la definición heredada real de búsqueda de cambios, comprobando su hash, y se ensayó compatibilidad antes de producto rápido. Resultado131→157 correcto: código000123, UUID/precio/costo nulo, fuentes/ficha/foto y25funcionesM9 conservados, repetición0altas/0cambios y compuerta deshabilitada bloquea.
+
+Aplicadas sólo en staging zsezjtswqeijboezvado once migraciones: calibración51x25, autorregistro cliente/error teléfono, notas, búsqueda exacta lector, cotizaciones personalizadas, filtros reportes, promedio ponderado, unidades base/asignación y compatibilidad de formato búsqueda de cambios. La siguiente pos_quick_product falló tres veces en el conector antes de ejecución con «Invalid or expired requestState»; historial y quick_line_id confirman ausencia. Quedan15, preparadas por orden y hash; no seguir ni desplegar0.80.0 hasta resolver el acceso del conector y completar/verificar esquema.
+
+Comparación de huellas antes/después idéntica para7709filas, códigos, fuentes, fichas y fotos;25funcionesM9 idénticas. Cerosaldos/movimientos/ventas, cero productos no PIECE y USD activo0. La huella usada en este bloque concatena m9_current_row por barcode; no comparar su valor directamente con la huella histórica calculada por otro método. Ficha real de staging recargada con sesión: descripción, cuatro fotos y variantes visibles. Preview sigue0.79.0; no hubo push ni despliegue. Principal y Woo real sin escrituras. Lectura de las tres preguntas principales: siguen sin respuesta.
+
+Vercel API403 y conector404; sesión web sí accede al proyecto. Revisión automática bloqueó revelar NEXT_PUBLIC_SUPABASE_URL por considerarla secreta; se mantuvo oculta y no se pidió ni reveló ninguna clave. No es autorización para eludir controles. Laboratorio local detenido conservando volúmenes; otros entornos no afectados. Evidencia outputs/m9-preview-integrado-2026-10-08/. Cobertura catálogo sigue7709/16224=47.516%; este bloque mejora compatibilidad, no incorpora nuevas filas. Sigue completar15migraciones y publicar sólo Preview0.80.0; después revisar lotes pendientes con decisiones reales de dueños. Sol suficiente; auditoría operativa/inventario requiere revisión adicional.
+
+
+## 2026-10-08 — Revalidación con destino recién consultado y acceso pendiente
+
+El usuario autoriza completar actualización de pruebas y continuar lotes. Nueva sesión de llamada confirma el mismo error del conector al aplicar pos_quick_product: Invalid or expired requestState. No se aplica ninguna migración adicional ni se publica Preview0.80.0; permanecen11de26 aplicadas y15pendientes del bloque anterior. Vía alternativa oficial inspeccionada en navegador: la sesión Supabase emma35015-lgtm no tiene acceso al proyecto zsezjtswqeijboezvado, redirige a organización con aviso de acceso denegado. Se solicita al usuario iniciar sesión con la cuenta correcta mediante pregunta asíncrona. No intentar credenciales ajenas ni ejecutar DDL mediante otro proyecto.
+
+Trabajo independiente completado: nueva exportación de las tres preguntas principales, cero respuestas; captura de catálogo staging por16lecturas de500filas,7709registros/1499padres. Huella de catálogo verificada antes/después idéntica d73809ea5a76fdbe40e263578c49893a con el método de concatenación por barcode. Snapshot completo semánticamente idéntico al del7deoctubre; inventario0/movimientos0. No representa una nueva exportación SICAR/Woo: siguen fuentes SICAR6 y Woo del6deoctubre.
+
+Reejecutado prepare-owner-load-review con entradas fijadas porSHA y nueva exportación principal:16224filas fuente,303preguntas/970filas revalidadas,3liberadas,0respuestas,0plantillas,0aprobaciones y0altas. Dos corridas idénticas en sus cinco archivos.34pruebas de revisión/cobertura aprobadas. No se liberan preguntas adicionales ni se interpreta silencio como aprobación. CAWRNIÑO3587 conserva reserva. Producción sólo leída para aclaraciones; cero escrituras en Woo, catálogo, existencias, ramas remotas o despliegues. Cobertura permanece47.516%.
+
+Evidencia outputs/m9-revalidacion-lotes-2026-10-08/:config,snapshot,respuestas,corridas,pruebas y manifiesto. Sigue acceso Supabase correcto, aplicar15pendientes por orden comprobado, comparar huellas y permisos, publicar exclusivamente Preview integrado y verificar sesión/fotos/fichas. La cuenta sin acceso al panel y el error del conector son bloqueos técnicos independientes de las respuestas comerciales. No pedir otra exportación al usuario hasta la renovación operativa que corresponda.

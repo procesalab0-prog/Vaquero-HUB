@@ -2,15 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "@/lib/auth/authorization";
+import { databaseErrorText } from "@/lib/returns";
 
 type ActionResult = { ok: true; data?: Record<string, unknown> } | { ok: false; message: string };
 const cents = (value: number) => Number.isFinite(value) ? Math.round(value * 100) : -1;
 
 function failure(error: unknown): ActionResult {
-  const message = error instanceof Error ? error.message : "";
+  const message = databaseErrorText(error);
   if (message.includes("ALREADY_OPEN")) return { ok: false, message: "Esa caja o ese cajero ya tiene un turno abierto." };
   if (message.includes("INSUFFICIENT_CASH")) return { ok: false, message: "El retiro supera el efectivo esperado en caja." };
   if (message.includes("DIFFERENCE_REASON_REQUIRED")) return { ok: false, message: "Explica la diferencia antes de cerrar la caja." };
+  if (message.includes("USD_COUNT_REQUIRED")) return {ok:false,message:"Cuenta también los dólares antes de cerrar esta caja."};
   return { ok: false, message: "No fue posible guardar la operación de caja." };
 }
 
@@ -47,19 +49,23 @@ export async function addCashMovement(input: { sessionId: string; type: "DEPOSIT
   } catch (error) { return failure(error); }
 }
 
-export async function previewCashClose(sessionId: string, countedAmount: number): Promise<ActionResult> {
+export async function previewCashClose(sessionId: string, countedAmount: number, countedUsd?: number): Promise<ActionResult> {
   try {
     const { supabase } = await requirePermission("cash.close");
-    const { data, error } = await supabase.rpc("preview_cash_close", { p_session_id: sessionId, p_counted_amount_cents: cents(countedAmount) });
+    const { data, error } = countedUsd === undefined
+      ? await supabase.rpc("preview_cash_close", { p_session_id: sessionId, p_counted_amount_cents: cents(countedAmount) })
+      : await supabase.rpc("preview_cash_close_with_usd", { p_session_id: sessionId, p_counted_mxn_cents: cents(countedAmount), p_counted_usd_cents: cents(countedUsd) });
     if (error) throw error;
     return { ok: true, data: data as Record<string, unknown> };
   } catch (error) { return failure(error); }
 }
 
-export async function closeCashSession(input: { sessionId: string; countedAmount: number; reason?: string }): Promise<ActionResult> {
+export async function closeCashSession(input: { sessionId: string; countedAmount: number; countedUsd?: number; reason?: string }): Promise<ActionResult> {
   try {
     const { supabase } = await requirePermission("cash.close");
-    const { data, error } = await supabase.rpc("close_cash_session", { p_session_id: input.sessionId, p_counted_amount_cents: cents(input.countedAmount), p_difference_reason: input.reason?.trim() || null });
+    const { data, error } = input.countedUsd === undefined
+      ? await supabase.rpc("close_cash_session", { p_session_id: input.sessionId, p_counted_amount_cents: cents(input.countedAmount), p_difference_reason: input.reason?.trim() || null })
+      : await supabase.rpc("close_cash_session_with_usd", { p_session_id: input.sessionId, p_counted_mxn_cents: cents(input.countedAmount), p_counted_usd_cents: cents(input.countedUsd), p_difference_reason: input.reason?.trim() || null });
     if (error) throw error;
     revalidatePath("/caja"); revalidatePath("/pos");
     return { ok: true, data: data as Record<string, unknown> };

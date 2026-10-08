@@ -1,9 +1,16 @@
+import { redirect } from "next/navigation";
+import { WEB_STAGING_URL } from "@/lib/web-draft";
 import Link from "next/link";
 import { requirePermission } from "@/lib/auth/authorization";
-import { WEB_STAGING_URL } from "@/lib/web-draft";
-import { reviewMoney } from "@/lib/m9-review";
+const reviewMoney = (cents: number | null, fallback: string) =>
+  cents === null
+    ? fallback
+    : new Intl.NumberFormat("es-MX", {
+        style: "currency",
+        currency: "MXN",
+      }).format(cents / 100);
 import { saveOwnerAnswer } from "./actions";
-import styles from "../migracion/review.module.css";
+import styles from "./review.module.css";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Preguntas de la migración" };
@@ -57,13 +64,8 @@ export default async function OwnerQuestionsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { supabase } = await requirePermission("products.read");
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL !== WEB_STAGING_URL)
-    return (
-      <section>
-        <h1>Preguntas de la migración</h1>
-        <p>Disponible en el entorno de pruebas.</p>
-      </section>
-    );
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL === WEB_STAGING_URL)
+    redirect("https://vaquero-hub.vercel.app/productos/migracion-dudas");
   const params = await searchParams;
   const value = (name: string, fallback = "") =>
     typeof params[name] === "string" ? (params[name] as string) : fallback;
@@ -86,7 +88,7 @@ export default async function OwnerQuestionsPage({
         <Link href="/productos/migracion-dudas">Volver a las preguntas</Link>
       </section>
     );
-  const { data, error } = await supabase.rpc("m9_owner_inbox", {
+  const { data, error } = await supabase.rpc("main_m9_owner_inbox", {
     p_query: q,
     p_department: department,
     p_state: state,
@@ -116,9 +118,7 @@ export default async function OwnerQuestionsPage({
   return (
     <section className={`${styles.review} ${styles.questions}`}>
       <header>
-        <Link href="/productos/migracion-pendientes">
-          ← Catálogo por revisar
-        </Link>
+        <Link href="/inicio">← Volver al Inicio</Link>
         <h1>Preguntas de la migración</h1>
         <p>Sólo tres preguntas por tanda, con ejemplos y las tallas juntas.</p>
         <p>
@@ -179,8 +179,8 @@ export default async function OwnerQuestionsPage({
       </p>
       {!inbox.rows.length && (
         <p>
-          No hay preguntas con estos filtros. Puedes ver los modelos preparados
-          o las respuestas guardadas.
+          No hay preguntas con estos filtros. Puedes ver las respuestas
+          guardadas.
         </p>
       )}
       <div className={styles.cards}>

@@ -3,18 +3,35 @@
 import { revalidatePath } from "next/cache";
 
 import { requirePermission } from "@/lib/auth/authorization";
+import { posScanError, type PosScanResult } from "@/lib/pos-scan";
+import type { ProductVariant } from "@/lib/domain";
+
+export async function resolvePosScan(input: { code: string; cashSessionId: string }): Promise<PosScanResult> {
+  try {
+    const code = typeof input.code === "string" ? input.code.trim() : "";
+    if (!code || code.length > 100) return { ok: false, message: "Revisa el código escaneado." };
+    const { supabase } = await requirePermission("pos.sell");
+    const { data, error } = await supabase.rpc("resolve_pos_scan", { p_cash_session_id: input.cashSessionId, p_code: code });
+    if (error || !data) {
+      const message = error?.message ?? "";
+      return { ok: false, message: posScanError(message) };
+    }
+    return { ok: true, variant: data as ProductVariant };
+  } catch { return { ok: false, message: "No fue posible consultar el código. Revisa tu sesión e inténtalo nuevamente." }; }
+}
 
 export type SalePaymentInput = {
-  method_code: "CASH" | "CARD" | "TRANSFER" | "CREDIT" | "LOYALTY";
+  method_code: "CASH" | "CARD" | "TRANSFER" | "CREDIT" | "LOYALTY" | "USD";
   amount_cents: number;
   tendered_cents?: number;
   reference?: string;
 };
 
 export type SaleActionInput = {
+  usd?: import("@/components/usd-checkout").UsdTenderInput;
   idempotencyKey: string;
   cashSessionId: string;
-  items: Array<{ variant_id: string; quantity: number; gift_receipt: boolean }>;
+  items: import("@/lib/quick-product").PosItemInput[];
   payments: SalePaymentInput[];
   customerId?: string | null;
   quoteId?: string | null;
@@ -56,11 +73,7 @@ export type LoyaltyRedemptionResult =
     }
   | { ok: false; code: string; message: string };
 
-export type PosDraftItemInput = {
-  variant_id: string;
-  quantity: number;
-  gift_receipt: boolean;
-};
+export type PosDraftItemInput = import("@/lib/quick-product").PosItemInput;
 
 export type PosDraftPayload = {
   id: string;
@@ -69,6 +82,7 @@ export type PosDraftPayload = {
   items: PosDraftItemInput[];
   discount_percent: number;
   quote_id?: string | null;
+  quote_pricing?: import("@/lib/quote-pos").QuotePosPricing | null;
   held_at: string | null;
   updated_at: string;
   customer: {
@@ -100,6 +114,13 @@ function databaseErrorText(error: unknown) {
 function saleError(error: unknown): SaleActionResult {
   const raw = databaseErrorText(error);
   const definitions: Array<[string, string]> = [
+    ['USD_CHECKOUT_NOT_ENABLED','El cobro en dólares todavía no está habilitado.'],
+    ['FX_QUOTE_EXPIRED','La tasa venció. Actualízala antes de cobrar.'],
+    ['FX_QUOTE_ALREADY_USED','Esta tasa ya se usó en otro ticket. Actualízala.'],
+    ['INSUFFICIENT_CASH','No hay suficientes pesos en el cajón para entregar el cambio.'],
+    ["INVALID_QUICK_ITEM", "Revisa nombre, cantidad entera y precio del producto rápido."],
+    ["QUICK_COST_FORBIDDEN", "Sólo administración o gerencia puede registrar el costo del producto rápido."],
+    ["INVALID_MEASURE_QUANTITY", "Revisa la cantidad y la unidad del producto. No se redondean cantidades de piezas."],
     [
       "INSUFFICIENT_STOCK",
       "La existencia cambió. Revisa el carrito antes de cobrar.",
@@ -398,7 +419,18 @@ export async function resumePosDraft(
     });
     if (error) throw error;
     revalidatePath("/pos");
-    return { ok: true, draft: data as PosDraftPayload };
+    const draft = data as PosDraftPayload;
+    if (draft?.id) {
+      const { data: session, error: sessionError } = await supabase.rpc("get_my_cash_session");
+      if (sessionError) throw sessionError;
+      const sessionId = (session as { id?: string } | null)?.id;
+      if (sessionId) {
+        const { data: drafts, error: draftsError } = await supabase.rpc("list_my_pos_drafts", { p_cash_session_id: sessionId });
+        if (draftsError) throw draftsError;
+        return { ok: true, draft: (drafts as PosDraftPayload[]).find(item => item.id === draft.id) ?? draft };
+      }
+    }
+    return { ok: true, draft };
   } catch (error) {
     return draftError(error);
   }
@@ -555,7 +587,12 @@ export async function createPosSale(
           "Por ahora crea la venta a crédito desde el carrito, no desde una cotización.",
       };
     }
-    const { data, error } = input.quoteId
+    if ((!input.usd && input.payments.some(p=>p.method_code==='USD')) || (input.usd && (input.quoteId || hasCredit || input.payments.some(p=>p.method_code==='LOYALTY') || !Number.isSafeInteger(input.usd.receivedUsdCents) || input.usd.receivedUsdCents<=0 || input.payments.filter(p=>p.method_code==='USD').length!==1))) {
+      return {ok:false,code:'INVALID_USD_PAYMENT',message:'Dólares no se combina por ahora con cotización, crédito o puntos. Revisa el importe recibido.'};
+    }
+    const { data, error } = input.usd
+      ? await supabase.rpc('create_usd_sale', {p_idempotency_key:input.idempotencyKey,p_cash_session_id:input.cashSessionId,p_items:input.items,p_quote_id:input.usd.quoteId,p_received_usd_cents:input.usd.receivedUsdCents,p_applied_mxn_cents:input.payments.find(p=>p.method_code==='USD')!.amount_cents,p_other_payments:input.payments.filter(p=>p.method_code!=='USD'),p_customer_id:input.customerId??null,p_discounts:discounts,p_notes:null})
+      : input.quoteId
       ? await supabase.rpc("convert_quote_to_sale", {
           p_quote_id: input.quoteId,
           p_idempotency_key: input.idempotencyKey,

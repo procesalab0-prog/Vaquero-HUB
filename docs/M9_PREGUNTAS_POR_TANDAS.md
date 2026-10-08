@@ -37,3 +37,17 @@ Evidencia reproducible en outputs/m9-preguntas-por-tandas-2026-10-07/ del worksp
 Publicación funcional final: local 51745c8; remoto 47d480d05ef4c4e681e365196d62f3ad68df453f; árbol remoto c67841478dbf8b4024da93d763d18956b0013d39. Coincide con el árbol local salvo tres cierres documentales previos no republicados (handoff, plan maestro y reporte de carga completa). Publicación por actualización no forzada sobre la cabeza remota vigente; PR 87 permanece sin fusionar. Migración remota 20261007191449.
 
 Confirmación posterior del usuario: opción múltiple donde corresponda y subida a main **al terminar esta parte**, para que los dueños lo abran en el programa principal. Se mantiene la validación en Preview y la integración aislada al cierre, sin adelantar el merge. Comprobación visual renovada el7deoctubre: tres tarjetas, opciones y campo de aclaración; cero respuestas guardadas por el agente. La continuación técnica está en [el escritor condicional preparado](M9_ESCRITOR_FOTOS_VARIANTES_PREPARADO.md).
+
+
+Continuación: [preparación de lotes desde respuestas](M9_RESPUESTAS_A_LOTES.md), con revalidación de banco y destino, plantillas pending rechazadas por el planificador y cero respuestas reales al7deoctubre.
+
+
+## 2026-10-07 · Preguntas publicadas en main (0.55.6)
+
+Autorización explícita del usuario: «ponlas en la principal». PR88 integrado en main mediante commit 8647548ea61cb434776258f0efb71c627e858e7e, partiendo del main 766c92e; no se fusionó la rama M9 completa. Sólo tarjeta adicional en Inicio, página de preguntas, acciones y almacenamiento privado independiente. Preservadas mejoras de main. CI313/run37696798083/job113050405027 correcto completo, además de 25 controles SQL revertidos en staging y guardado/contador como authenticated también revertidos.
+
+La bandeja principal es ahora la fuente de respuestas: https://vaquero-hub.vercel.app/productos/migracion-dudas. Primera tanda: CARONINE1501, CAWRRET901 y CAWRNIÑO3587, 16 códigos. Banco restante no publicado. Tablas privadas app.main_m9_review_cuts/questions/answers (nombres completos main_m9_owner_questions/main_m9_owner_answers) y RPC main_m9_owner_inbox/main_m9_save_owner_answer. Exportar desde PRODUCCIÓN sólo las aclaraciones mediante scripts/m9/export-main-owner-answers.sql del main; formato compatible con revisión offline. No duplicar respuestas en la bandeja M9 anterior de staging. Corte congelado 6194431341d80e14902bf6018c4cffedd712aea0d3af3a2cd1c9c9deec965858; cambios SICAR requieren retirar/revalidar evidencia, no aceptación automática.
+
+Excepción autorizada a la prohibición de escrituras de producción: únicamente esquema y tres preguntas de esta bandeja, y respuestas futuras que hagan los dueños. Catálogo/stock/ventas/Woo real no modificados. Baseline de producción preservado: productos5, variantes36, códigos37, balances48 y movimientos57; respuestas iniciales0. Staging conserva7709 filas migradas e inventario0. CAWRNIÑO3587 sigue retenido hasta revisión técnica, aun cuando se responda. Contestar jamás aprueba una importación ni habilita envíos Woo.
+
+Evidencia: outputs/m9-preguntas-main-2026-10-07/verificacion.json. Código aislado en work/m9-main-questions; commit local e25e684, árbol equivalente al feature remoto2fcd71b9. Documentación de operación en docs/M9_PREGUNTAS_MAIN.md de main. La publicación permite recoger decisiones; no aumenta por sí sola el porcentaje de catálogo cargado (7709/16224 =47.516%).

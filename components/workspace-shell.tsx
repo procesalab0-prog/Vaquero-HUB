@@ -1,8 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import { ProcesaLabCredit } from "@/components/procesalab-credit";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { startNavigationProgress } from "@/lib/navigation-progress";
+import { sectionTitle } from "@/lib/section-title";
 import { useEffect, useMemo, useState } from "react";
 import { APP_RELEASE, APP_VERSION } from "@/lib/release";
 import { ACCENT_EVENT, applyAccent, storedAccent } from "@/lib/accent";
@@ -11,33 +14,49 @@ import {
   ArrowLeft,
   Boxes,
   CircleDollarSign,
-  Grid2X2,
   House,
   LogOut,
   MapPin,
   Menu,
-  Package,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ChevronDown,
+  ReceiptText,
+  Users,
+  CalendarClock,
+  FileText,
+  Truck,
+  Tags,
+  ChartNoAxesCombined,
+  Settings,
   ShoppingCart,
   X,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { WesternBootIcon, WesternHatIcon, WesternBadgeIcon, type WorkspaceIcon } from "@/components/vaquero-icons";
 import type { WorkspaceIdentity } from "@/lib/auth/types";
 import { WorkspaceContext } from "@/components/workspace-context";
+import { EntranceCurtain, useEntrance } from "@/components/entrance-curtain";
+import { WorkspaceModuleMenu } from "@/components/workspace-module-menu";
 import { LA_PIEDAD_STORE } from "@/lib/business-profile";
 import { pickActiveLocation, saveActiveLocationPreference } from "@/lib/location-preference";
+import { WORKSPACE_NOTIFICATION_EVENT, type WorkspaceNotification } from "@/lib/workspace-notifications";
+
+// Cuánto se queda el aviso en pantalla. La barra del aviso muestra este mismo
+// tiempo, así que se declara una sola vez.
+const NOTICE_TOAST_MS = 5000;
 
 const navigation: Array<{
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon: WorkspaceIcon;
   secondary?: boolean;
 }> = [
   { href: "/inicio", label: "Inicio", icon: House },
   { href: "/pos", label: "Venta", icon: ShoppingCart },
-  { href: "/productos", label: "Productos", icon: Package },
+  { href: "/productos", label: "Productos", icon: WesternBootIcon },
   { href: "/inventario", label: "Inventario", icon: Boxes },
   { href: "/caja", label: "Caja", icon: CircleDollarSign },
-  { href: "/mas", label: "Más", icon: Grid2X2 },
+  { href: "/mas", label: "Más", icon: WesternHatIcon },
 ];
 
 const demoIdentity: WorkspaceIdentity = {
@@ -50,23 +69,18 @@ const demoIdentity: WorkspaceIdentity = {
   openCashSession: { locationId: LA_PIEDAD_STORE.id, registerName: "Caja 01" },
 };
 
-function moduleTitle(pathname: string) {
-  if (pathname.startsWith("/inicio")) return "Inicio";
-  if (pathname.startsWith("/productos")) return "Productos";
-  if (pathname.startsWith("/inventario")) return "Inventario";
-  if (pathname.startsWith("/compras")) return "Compras";
-  if (pathname.startsWith("/caja")) return "Caja";
-  if (pathname.startsWith("/tickets")) return "Tickets";
-  if (pathname.startsWith("/cotizaciones")) return "Cotizaciones";
-  if (pathname.startsWith("/apartados")) return "Apartados";
-  if (pathname.startsWith("/etiquetas")) return "Etiquetas";
-  if (pathname.startsWith("/ajustes")) return "Ajustes";
-  if (pathname.startsWith("/administracion")) return "Administración";
-  if (pathname.startsWith("/clientes")) return "Clientes";
-  if (pathname.startsWith("/reportes")) return "Reportes";
-  if (pathname.startsWith("/mas")) return "Más módulos";
-  return "Punto de venta";
-}
+const moreNavigation: Array<{ path: string; title: string; icon: WorkspaceIcon; tone: string }> = [
+  { path: "/tickets", title: "Tickets y devoluciones", icon: ReceiptText, tone: "sand" },
+  { path: "/clientes", title: "Clientes", icon: Users, tone: "blue" },
+  { path: "/apartados", title: "Apartados", icon: CalendarClock, tone: "gold" },
+  { path: "/cotizaciones", title: "Cotizaciones", icon: FileText, tone: "blue" },
+  { path: "/compras", title: "Compras y proveedores", icon: Truck, tone: "green" },
+  { path: "/etiquetas", title: "Etiquetas", icon: Tags, tone: "sand" },
+  { path: "/reportes", title: "Reportes", icon: ChartNoAxesCombined, tone: "green" },
+  { path: "/administracion", title: "Usuarios y permisos", icon: WesternBadgeIcon, tone: "gold" },
+  { path: "/ajustes", title: "Ajustes y apariencia", icon: Settings, tone: "sand" },
+];
+
 
 export function WorkspaceShell({
   children,
@@ -79,11 +93,19 @@ export function WorkspaceShell({
 }) {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
+  const { scene: entranceScene, finish: finishEntrance } = useEntrance();
   const searchParams = useSearchParams();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notices, setNotices] = useState<WorkspaceNotification[]>([]);
+  const [noticeToast, setNoticeToast] = useState<WorkspaceNotification | null>(null);
+  // Avisos que llegaron desde la última vez que se abrió la campana, y un
+  // contador que reinicia el balanceo con cada aviso nuevo.
+  const [unreadNotices, setUnreadNotices] = useState(0);
+  const [bellRing, setBellRing] = useState(0);
   const [profileOpen, setProfileOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(true);
+  const [navigationCompact, setNavigationCompact] = useState(false);
   const activeIdentity = identity ?? demoIdentity;
   const activeLocation = pickActiveLocation(
     activeIdentity.locations,
@@ -91,6 +113,22 @@ export function WorkspaceShell({
     initialLocationId,
   );
   const activeLocationId = activeLocation?.id ?? "";
+  const locationNotices = notices.filter((notice) => notice.locationId === activeLocationId);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const receive = (event: Event) => {
+      const notice = (event as CustomEvent<WorkspaceNotification>).detail;
+      if (!notice || notice.locationId !== activeLocationId) return;
+      setNotices((current) => [notice, ...current.filter((item) => item.id !== notice.id)].slice(0, 20));
+      setNoticeToast(notice);
+      setUnreadNotices((count) => count + 1);
+      setBellRing((count) => count + 1);
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => setNoticeToast(null), NOTICE_TOAST_MS);
+    };
+    window.addEventListener(WORKSPACE_NOTIFICATION_EVENT, receive);
+    return () => { window.removeEventListener(WORKSPACE_NOTIFICATION_EVENT, receive); if (timer) clearTimeout(timer); };
+  }, [activeLocationId]);
   useEffect(() => {
     saveActiveLocationPreference(activeLocationId);
   }, [activeLocationId]);
@@ -145,6 +183,7 @@ export function WorkspaceShell({
     saveActiveLocationPreference(locationId);
     const next = new URLSearchParams(window.location.search);
     next.set("ubicacion", locationId);
+    startNavigationProgress({ label: "Cambiando de sucursal" });
     router.replace(`${pathname}?${next.toString()}`);
   }
 
@@ -177,7 +216,8 @@ export function WorkspaceShell({
   }
 
   return (
-    <div className="workspace-shell">
+    <div className={`workspace-shell workspace-redesign${navigationCompact ? " navigation-compact" : ""}`} data-entrance={entranceScene === "full" ? "full" : undefined}>
+      {entranceScene === "full" ? <EntranceCurtain onDone={finishEntrance} /> : null}
       <aside className="nav-rail" aria-label="Navegación principal">
         <Link
           className="rail-brand"
@@ -192,7 +232,12 @@ export function WorkspaceShell({
             priority
           />
         </Link>
-        <nav className="rail-links">
+        <span className="rail-wordmark">Mi Tienda <small>VAQUERO SM · LA ESENCIA ESTÁ AQUÍ</small></span>
+        <button className="rail-collapse" type="button" aria-label={navigationCompact ? "Ampliar navegación" : "Contraer navegación"} aria-expanded={!navigationCompact} aria-controls="workspace-navigation" onClick={() => setNavigationCompact((value) => !value)}>
+          {navigationCompact ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
+          <span>Contraer menú</span>
+        </button>
+        <nav className="rail-links" id="workspace-navigation">
           {navigation.map(({ href, label, icon: Icon }) => {
             const morePath = [
               "/mas",
@@ -203,16 +248,42 @@ export function WorkspaceShell({
               "/ajustes",
               "/administracion",
               "/clientes",
+              "/compras",
+              "/reportes",
             ];
             const active =
               href === "/mas"
                 ? morePath.some((path) => pathname.startsWith(path))
                 : pathname.startsWith(href);
+            if (href === "/mas") return (
+              <details className="rail-more" key={label}>
+                <summary className={active ? "rail-link active" : "rail-link"} aria-label="Más opciones" title="Más opciones" onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  const details = event.currentTarget.closest("details");
+                  if (details) details.open = false;
+                  event.currentTarget.focus();
+                }
+              }}>
+                  <WesternHatIcon /><span>Más</span><ChevronDown className="rail-more-chevron" aria-hidden="true" />
+                </summary>
+                <div className="rail-submenu">
+                  <div className="rail-submenu-heading"><p className="rail-submenu-title">Todo en tu tienda</p><button type="button" aria-label="Cerrar más opciones" onClick={(event) => { const details = event.currentTarget.closest("details"); if (details) { details.open = false; details.querySelector("summary")?.focus(); } }}><X aria-hidden="true" /></button></div>
+                  {moreNavigation.map(({path, title, icon: Icon, tone}) => <Link key={path} href={locationHref(path)} aria-current={pathname.startsWith(path) ? "page" : undefined} onClick={(event) => {
+                    const details = event.currentTarget.closest("details");
+                    if (details) details.open = false;
+                  }}><span className={`rail-module-icon ${tone}`}><Icon aria-hidden="true" strokeWidth={1.8} /></span><span>{title}</span></Link>)}
+                  <Link className="rail-all-modules" href={locationHref("/mas")} onClick={(event) => { const details = event.currentTarget.closest("details"); if (details) details.open = false; }}>Ver todos los módulos</Link>
+                </div>
+              </details>
+            );
             return (
               <Link
                 className={active ? "rail-link active" : "rail-link"}
                 href={locationHref(href)}
                 key={label}
+                aria-label={label}
+                aria-current={active ? "page" : undefined}
+                title={label}
               >
                 <Icon aria-hidden="true" strokeWidth={1.8} />
                 <span>{label}</span>
@@ -228,6 +299,7 @@ export function WorkspaceShell({
           <LogOut aria-hidden="true" strokeWidth={1.8} />
           <span>Salir</span>
         </button>
+        <div className="rail-developer-credit"><ProcesaLabCredit dark /></div>
       </aside>
 
       <div className="workspace-content">
@@ -239,7 +311,10 @@ export function WorkspaceShell({
               aria-label="Regresar"
               onClick={() => {
                 if (window.history.length > 1) router.back();
-                else router.push(locationHref("/inicio"));
+                else {
+                  startNavigationProgress({ href: "/inicio" });
+                  router.push(locationHref("/inicio"));
+                }
               }}
             >
               <ArrowLeft aria-hidden="true" />
@@ -252,7 +327,7 @@ export function WorkspaceShell({
           >
             <Menu aria-hidden="true" />
           </Link>
-          <h1>{moduleTitle(pathname)}</h1>
+          <h1>{sectionTitle(pathname)}</h1>
           <div
             className="location-pill"
             title={`${activeLocation?.name ?? "Sin sucursal"} · ${cashLabel}`}
@@ -283,6 +358,7 @@ export function WorkspaceShell({
             En línea
           </div>
           <div className="topbar-actions">
+            <WorkspaceModuleMenu locationId={activeLocationId} />
             <button
               className="icon-button notification-trigger"
               type="button"
@@ -291,10 +367,11 @@ export function WorkspaceShell({
               onClick={() => {
                 setProfileOpen(false);
                 setNotificationsOpen((current) => !current);
+                setUnreadNotices(0);
               }}
             >
-              <Bell aria-hidden="true" strokeWidth={1.8} />
-              <span aria-hidden="true" />
+              <Bell aria-hidden="true" strokeWidth={1.8} className={bellRing ? `bell-ring-${bellRing % 2}` : undefined} />
+              {unreadNotices ? <span aria-hidden="true" className={`bell-count bell-pop-${bellRing % 2}`}>{unreadNotices > 9 ? "9+" : unreadNotices}</span> : null}
             </button>
             <button
               className="active-user"
@@ -327,22 +404,10 @@ export function WorkspaceShell({
               <X aria-hidden="true" />
             </button>
           </header>
-          <article>
-            <span className="notification-dot warning" />
-            <div>
-              <strong>Última pieza</strong>
-              <p>Bota Cuadra café, talla 26.</p>
-            </div>
-            <small>Ahora</small>
-          </article>
-          <article>
-            <span className="notification-dot" />
-            <div>
-              <strong>Caja en orden</strong>
-              <p>La sesión lleva 8 ventas registradas.</p>
-            </div>
-            <small>14:32</small>
-          </article>
+          {locationNotices.length ? locationNotices.map((notice) => <article key={notice.id}>
+            <span className="notification-dot" /><div><strong>{notice.title}</strong><p>{notice.message}</p></div>
+            <small>{new Date(notice.createdAt).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}</small>
+          </article>) : <p>No hay avisos en esta sesión para la sucursal seleccionada.</p>}
           <Link
             href={locationHref("/inventario")}
             onClick={() => setNotificationsOpen(false)}
@@ -351,6 +416,7 @@ export function WorkspaceShell({
           </Link>
         </aside>
       ) : null}
+      {noticeToast?.locationId === activeLocationId ? <aside key={noticeToast.id} className="workspace-notification-toast" data-kind={noticeToast.kind ?? "success"} role={noticeToast.kind === "error" ? "alert" : "status"} style={{ "--notice-ms": `${NOTICE_TOAST_MS}ms` } as React.CSSProperties}><strong>{noticeToast.title}</strong><span>{noticeToast.message}</span><button type="button" aria-label="Cerrar aviso" onClick={() => setNoticeToast(null)}><X aria-hidden="true" /></button><i className="workspace-notification-timer" aria-hidden="true" /></aside> : null}
       {profileOpen ? (
         <aside
           className="profile-popover"
@@ -378,7 +444,7 @@ export function WorkspaceShell({
             <small>{APP_RELEASE}</small>
             <code>Siempre al día 🤠</code>
             <div className="version-credit">
-              Creado por <strong>ProcesaLab</strong>
+              <ProcesaLabCredit dark />
             </div>
           </div>
           <p>

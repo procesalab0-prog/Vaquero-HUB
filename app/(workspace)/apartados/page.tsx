@@ -24,6 +24,8 @@ import {
   substituteLayawayItem,
 } from "./actions";
 import { PrintButton } from "./print-button";
+import { LayawayProgress } from "./layaway-progress";
+import {measureLineCents,quantityUnit,type MeasureUnit} from '@/lib/measure-units';
 
 export const metadata: Metadata = { title: "Apartados" };
 
@@ -64,6 +66,7 @@ type PaymentReceipt = {
 };
 
 type LayawayItemRow = {
+  measureUnit?: MeasureUnit;
   id: string;
   layaway_id: string;
   line_number: number;
@@ -94,7 +97,7 @@ type CatalogRow = {
   is_active: boolean;
 };
 
-type InventoryRow = { variant_id: string; available_qty: number };
+type InventoryRow = { variant_id: string; available_qty: number; measure_unit?: MeasureUnit };
 
 type DeliveryLocation = { id: string; code: string; name: string };
 
@@ -258,7 +261,7 @@ export default async function LayawaysPage({
         })
       : Promise.resolve({ data: [], error: null }),
     params.cambiar && canModify
-      ? supabase.rpc("get_inventory_snapshot", {
+      ? supabase.rpc("get_inventory_snapshot_v2", {
           p_location_id: location.id,
           p_query: replacementQuery,
           p_limit: 100,
@@ -303,16 +306,18 @@ export default async function LayawaysPage({
     .map((row): ReplacementCandidate => {
       const available = stocks.get(row.variant_id) ?? 0;
       const quantity = Number(selectedItem?.quantity ?? 0);
+      const unit=((inventoryResult.data??[]) as InventoryRow[]).find(item=>item.variant_id===row.variant_id)?.measure_unit;
+      const sameUnit=!selectedItem || quantityUnit(selectedItem).code===(unit?.code??'PIECE');
       const resultingTotal = selectedItem
         ? Number(selectedItem.total_cents) -
           Number(selectedItem.line_total_cents) +
-          quantity * Number(row.price_cents)
+          (measureLineCents(Number(row.price_cents),quantity,unit??quantityUnit({}))??0)
         : 0;
       return {
         ...row,
         available_qty: available,
         disabled_reason:
-          available < quantity
+          !sameUnit ? 'La unidad de medida es distinta' : available < quantity
             ? "Sin existencia suficiente"
             : selectedItem && resultingTotal < Number(selectedItem.paid_cents)
               ? "Requeriría devolver dinero"
@@ -612,7 +617,7 @@ function LayawayPageContent({
             <small>
               {selectedItem.variant_description || "Única"} · {selectedItem.sku}
               {" · "}
-              {Number(selectedItem.quantity)} pzas ·{" "}
+              {Number(selectedItem.quantity)} {quantityUnit(selectedItem).name} ·{" "}
               {money.format(Number(selectedItem.line_total_cents) / 100)}
             </small>
           </div>
@@ -691,7 +696,7 @@ function LayawayPageContent({
               />
             </label>
             <p>
-              Se reemplazarán las {Number(selectedItem.quantity)} piezas de esta
+              Se reemplazarán {Number(selectedItem.quantity)} {quantityUnit(selectedItem).name} de esta
               línea. El sistema liberará la anterior, reservará la nueva y
               recalculará el saldo sin modificar los abonos recibidos.
             </p>
@@ -877,7 +882,7 @@ function LayawayPageContent({
                   <span>
                     <small>Mercancía</small>
                     <strong>
-                      {Number(row.unit_count)} pzas · {Number(row.item_count)}{" "}
+                      {Number(row.item_count)}{" "}
                       variantes
                     </strong>
                   </span>
@@ -894,6 +899,23 @@ function LayawayPageContent({
                     </strong>
                   </span>
                 </div>
+                {row.status !== "CANCELLED" ? (
+                  <LayawayProgress
+                    paidCents={Number(row.paid_cents)}
+                    totalCents={Number(row.total_cents)}
+                    previousPaidCents={
+                      receipt && receipt.layaway_folio === row.folio
+                        ? Math.max(
+                            0,
+                            Number(row.paid_cents) - Number(receipt.total_cents),
+                          )
+                        : undefined
+                    }
+                    liquidated={
+                      row.status === "PAID" && Number(row.balance_cents) === 0
+                    }
+                  />
+                ) : null}
                 <div className="layaway-items">
                   {rowItems.map((item) => (
                     <div key={item.id}>
@@ -1116,7 +1138,7 @@ function LayawayPageContent({
                           {money.format(Number(row.paid_cents) / 100)}
                         </strong>{" "}
                         como penalización y se liberarán{" "}
-                        {Number(row.unit_count)} piezas. Esta operación no
+                        {Number(row.item_count)} renglones. Esta operación no
                         entrega dinero de caja.
                       </p>
                       <label>
@@ -1226,7 +1248,7 @@ function LayawayPageContent({
                         />
                         <span>
                           Confirmo la devolución, la penalización y la
-                          liberación de {Number(row.unit_count)} piezas.
+                          liberación de {Number(row.item_count)} renglones.
                         </span>
                       </label>
                       <button className="danger-button" type="submit">

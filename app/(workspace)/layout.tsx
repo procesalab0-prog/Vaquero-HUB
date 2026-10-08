@@ -1,3 +1,5 @@
+import { NavigationProgress } from "@/components/navigation-progress";
+import { WorkspaceBoot } from "@/components/workspace-boot";
 import { WorkspaceShell } from "@/components/workspace-shell";
 import { Suspense } from "react";
 import { resolveActiveLocation } from "@/lib/auth/active-location";
@@ -13,30 +15,37 @@ export default async function WorkspaceLayout({
   const activeLocation = identity
     ? await resolveActiveLocation(identity.locations)
     : null;
+  // Sin pantalla de espera por sección: al cambiar de página se queda visible
+  // la actual hasta que la nueva está lista, con la línea de NavigationProgress.
   return (
-    <Suspense fallback={<main aria-busy="true">Cargando sucursal…</main>}>
-      <WorkspaceShell
-        key={activeLocation?.id ?? "sin-sucursal"}
-        identity={identity}
-        initialLocationId={activeLocation?.id ?? ""}
-      >
-        {process.env.NEXT_PUBLIC_SUPABASE_URL === WEB_STAGING_URL && (
-          <p
-            role="status"
-            style={{
-              background: "#fff0c7",
-              color: "#493414",
-              padding: "12px 16px",
-              margin: 0,
-            }}
-          >
-            ENTORNO DE PRUEBAS · Los movimientos de este sistema no deben
-            registrarse como ventas reales. SICAR continúa siendo el sistema de
-            operación.
-          </p>
-        )}
-        {children}
-      </WorkspaceShell>
-    </Suspense>
+    <>
+      <Suspense fallback={null}>
+        <NavigationProgress />
+      </Suspense>
+      <Suspense fallback={<WorkspaceBoot />}>
+        <WorkspaceShell
+          key={activeLocation?.id ?? "sin-sucursal"}
+          identity={identity}
+          initialLocationId={activeLocation?.id ?? ""}
+        >
+          {process.env.NEXT_PUBLIC_SUPABASE_URL === WEB_STAGING_URL && (
+            <p
+              role="status"
+              style={{
+                background: "#fff0c7",
+                color: "#493414",
+                padding: "12px 16px",
+                margin: 0,
+              }}
+            >
+              ENTORNO DE PRUEBAS · Los movimientos de este sistema no deben
+              registrarse como ventas reales. SICAR continúa siendo el sistema
+              de operación.
+            </p>
+          )}
+          {children}
+        </WorkspaceShell>
+      </Suspense>
+    </>
   );
 }

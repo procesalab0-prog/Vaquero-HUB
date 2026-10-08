@@ -20,11 +20,14 @@ type Filters = {
   to: string;
   grouping: ReportGrouping;
   query: string;
+  categoryId?: string;
+  department?: string;
 };
 
 export type SalesReport = {
   scope: "SALES" | "PRODUCT_LINES";
   summary: {
+    unit_quantities?: Array<{code:string;name:string;quantity:number}>;
     sale_count: number;
     item_count: number;
     gross_cents: number;
@@ -34,24 +37,31 @@ export type SalesReport = {
     cancelled_count: number;
   };
   periods: Array<{
+    unit_quantities?: Array<{code:string;name:string;quantity:number}>;
     period_key: string;
     sale_count: number;
     item_count: number;
     net_cents: number;
   }>;
   products: Array<{
+    unit_code?: string;
     product_name: string;
     sku: string;
     variant_description: string;
+    category_name?: string | null;
+    department_name?: string | null;
     quantity: number;
     net_cents: number;
   }>;
   payments: Array<{ code: string; name: string; amount_cents: number }>;
   details: Array<{
+    measureUnit?: import('@/lib/measure-units').MeasureUnit;
     sale_id: string;
     folio: string;
     sold_at: string;
     cashier_name: string;
+    category_name?: string | null;
+    department_name?: string | null;
     product_name: string;
     sku: string;
     variant_description: string;
@@ -64,6 +74,7 @@ export type SalesReport = {
 
 export type InventoryReport = {
   summary: {
+    unit_quantities?: Array<{code:string;name:string;qty:number;available_qty:number;reserved_qty:number}>;
     variant_count: number;
     qty: number;
     reserved_qty: number;
@@ -75,12 +86,14 @@ export type InventoryReport = {
   };
   categories: Array<{
     category_name: string;
+    department_name?: string | null;
     variant_count: number;
     qty: number;
     available_qty: number;
     cost_value_cents: number;
   }>;
   items: Array<{
+    measureUnit?: import('@/lib/measure-units').MeasureUnit;
     variant_id: string;
     product_name: string;
     category_name: string;
@@ -113,9 +126,13 @@ function cents(value: number) {
   return money.format(Number(value ?? 0) / 100);
 }
 
-function tabHref(tab: "ventas" | "inventario", locationId: string) {
+function tabHref(tab: "ventas" | "inventario", locationId: string, filters: Filters) {
   const query = new URLSearchParams({ tab });
   if (locationId) query.set("ubicacion", locationId);
+  query.set("desde", filters.from); query.set("hasta", filters.to); query.set("agrupacion", filters.grouping);
+  if (filters.query) query.set("busqueda", filters.query);
+  if (filters.categoryId) query.set("categoria", filters.categoryId);
+  if (filters.department) query.set("departamento", filters.department);
   return `/reportes?${query.toString()}`;
 }
 
@@ -127,6 +144,8 @@ export function ReportsWorkspace({
   sales,
   inventory,
   status,
+  classifications = { categories: [], departments: [] },
+  preview = false,
 }: {
   tab: "ventas" | "inventario";
   locations: Location[];
@@ -135,6 +154,8 @@ export function ReportsWorkspace({
   sales?: SalesReport | null;
   inventory?: InventoryReport | null;
   status?: string;
+  classifications?: { categories: Array<{ id: string; name: string }>; departments: string[] };
+  preview?: boolean;
 }) {
   return (
     <section className="module-page reports-page">
@@ -152,19 +173,19 @@ export function ReportsWorkspace({
       <nav className="report-tabs" aria-label="Tipo de reporte">
         <Link
           className={tab === "ventas" ? "active" : ""}
-          href={tabHref("ventas", activeLocationId)}
+          href={tabHref("ventas", activeLocationId, filters)}
         >
           <BarChart3 aria-hidden="true" /> Ventas
         </Link>
         <Link
           className={tab === "inventario" ? "active" : ""}
-          href={tabHref("inventario", activeLocationId)}
+          href={tabHref("inventario", activeLocationId, filters)}
         >
           <Boxes aria-hidden="true" /> Inventario
         </Link>
       </nav>
 
-      <form className="toolbar-card report-filters" method="get">
+      <form key={`${tab}:${activeLocationId}:${JSON.stringify(filters)}`} className="toolbar-card report-filters" method="get">
         <input type="hidden" name="tab" value={tab} />
         <div className="toolbar-select">
           <span>Sucursal</span>
@@ -194,6 +215,12 @@ export function ReportsWorkspace({
             </label>
           </>
         ) : null}
+        <label className="toolbar-select"><span>Categoría</span><select aria-label="Categoría" name="categoria" defaultValue={filters.categoryId ?? ""}>
+          <option value="">Todas las categorías</option>{classifications.categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}
+        </select></label>
+        <label className="toolbar-select"><span>Departamento</span><select aria-label="Departamento" name="departamento" defaultValue={filters.department ?? ""}>
+          <option value="">Todos los departamentos</option>{classifications.departments.map(department => <option key={department} value={department}>{department}</option>)}
+        </select></label>
         <label className="module-search report-search">
           <Search aria-hidden="true" />
           <input
@@ -208,6 +235,8 @@ export function ReportsWorkspace({
           Consultar
         </button>
       </form>
+      <p className="notice">Categoría y departamento son la clasificación actual del catálogo. El departamento se asigna en Productos; no se deduce de la categoría ni del código.</p>
+      {preview ? <p className="notice">Datos de demostración. Los filtros no ejecutan consultas reales sin conexión a Supabase.</p> : null}
 
       {status ? (
         <div className="status-banner error">
@@ -239,11 +268,11 @@ function SalesResults({
   const paymentMatches = summary.payment_total_cents === summary.net_cents;
   return (
     <>
-      {query ? (
+      {report.scope === "PRODUCT_LINES" ? (
         <div className="status-banner">
           <PackageSearch aria-hidden="true" />
           <div>
-            <strong>Resultado sólo para “{query}”</strong>
+            <strong>{query ? `Resultado sólo para “${query}”` : "Resultado de la clasificación seleccionada"}</strong>
             <p>
               Los importes corresponden a los renglones coincidentes, aunque el
               ticket tenga otros productos.
@@ -256,7 +285,7 @@ function SalesResults({
           <ShoppingBag aria-hidden="true" />
           <span>Ventas</span>
           <strong>{quantity.format(summary.sale_count)}</strong>
-          <small>{quantity.format(summary.item_count)} piezas</small>
+          <small>{summary.unit_quantities?.map(unit=>`${quantity.format(unit.quantity)} ${unit.name}`).join(' · ')??`${quantity.format(summary.item_count)} piezas`}</small>
         </article>
         <article>
           <CircleDollarSign aria-hidden="true" />
@@ -299,7 +328,7 @@ function SalesResults({
                   <strong>{period.period_key}</strong>
                   <small>
                     {period.sale_count} ventas ·{" "}
-                    {quantity.format(period.item_count)} piezas
+                    {period.unit_quantities?.map(unit=>`${quantity.format(unit.quantity)} ${unit.name}`).join(' · ')??`${quantity.format(period.item_count)} piezas`}
                   </small>
                 </span>
                 <b>{cents(period.net_cents)}</b>
@@ -324,7 +353,7 @@ function SalesResults({
                   <strong>{product.product_name}</strong>
                   <small>
                     {product.variant_description} · {product.sku} ·{" "}
-                    {quantity.format(product.quantity)} pzas.
+                    {quantity.format(product.quantity)} {product.unit_code??'pzas.'}
                   </small>
                 </span>
                 <b>{cents(product.net_cents)}</b>
@@ -387,10 +416,11 @@ function SalesResults({
                   <td>
                     <strong>{line.product_name}</strong>
                     <small>{line.sku}</small>
+                    <small>{line.category_name ?? "Sin categoría"} · {line.department_name ?? "Sin departamento"}</small>
                   </td>
                   <td>{line.variant_description || "Única"}</td>
                   <td>{line.cashier_name}</td>
-                  <td>{quantity.format(line.quantity)}</td>
+                  <td>{quantity.format(line.quantity)} {line.measureUnit?.name}</td>
                   <td>{cents(line.net_cents)}</td>
                 </tr>
               ))}
@@ -416,14 +446,14 @@ function InventoryResults({ report }: { report: InventoryReport }) {
         <article>
           <Boxes aria-hidden="true" />
           <span>Existencia</span>
-          <strong>{quantity.format(summary.qty)}</strong>
+          <strong>{summary.unit_quantities?.map(unit=>`${quantity.format(unit.qty)} ${unit.name}`).join(' · ')??quantity.format(summary.qty)}</strong>
           <small>{summary.variant_count} variantes</small>
         </article>
         <article>
           <ShoppingBag aria-hidden="true" />
           <span>Disponible</span>
-          <strong>{quantity.format(summary.available_qty)}</strong>
-          <small>{quantity.format(summary.reserved_qty)} reservadas</small>
+          <strong>{summary.unit_quantities?.map(unit=>`${quantity.format(unit.available_qty)} ${unit.name}`).join(' · ')??quantity.format(summary.available_qty)}</strong>
+          <small>{summary.unit_quantities?.map(unit=>`${quantity.format(unit.reserved_qty)} ${unit.name}`).join(' · ')??quantity.format(summary.reserved_qty)} reservadas</small>
         </article>
         <article>
           <AlertTriangle aria-hidden="true" />
@@ -481,8 +511,8 @@ function InventoryResults({ report }: { report: InventoryReport }) {
                   </td>
                   <td>{item.category_name}</td>
                   <td>{item.variant_description}</td>
-                  <td>{quantity.format(item.qty)}</td>
-                  <td>{quantity.format(item.available_qty)}</td>
+                  <td>{quantity.format(item.qty)} {item.measureUnit?.name}</td>
+                  <td>{quantity.format(item.available_qty)} {item.measureUnit?.name}</td>
                   <td>{cents(item.cost_cents)}</td>
                   <td>{cents(item.price_cents)}</td>
                 </tr>

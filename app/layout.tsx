@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Archivo, Cormorant_Garamond, IBM_Plex_Mono, PT_Sans } from "next/font/google";
 import "./globals.css";
 import "./workspace-brand.css";
+import "./workspace-redesign.css";
+import "./motion.css";
+import { PressFeedback } from "@/components/press-feedback";
 
 const archivo = Archivo({
   variable: "--font-archivo",
@@ -99,6 +102,7 @@ export default function RootLayout({
         className={`${archivo.variable} ${plexMono.variable} ${cormorant.variable} ${ptSans.variable}`}
       >
         {children}
+        <PressFeedback />
       </body>
     </html>
   );

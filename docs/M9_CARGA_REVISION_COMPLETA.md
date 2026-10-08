@@ -16,16 +16,18 @@ La huella completa de catálogo antes/después permanece d3fe299f72f3b8ab6d9f869
 
 Nueva ruta `/productos/migracion-pendientes`, enlazada desde `/productos/migracion`: búsqueda por texto y código literal/lector,20registros por página y426páginas. Cada registro indica pendiente/nohabilitado para venta. No ofrece acción de importar, publicar ni enlazar. No aparece en caja. Muestra la diferencia entre candidatos y vínculos aprobados. Página y lector SQL exigen products.read y staging; respuestas siempre PENDING_MANUAL_REVIEW/import_allowed=false/send_allowed=false. No se entrega el paquete completo al navegador.
 
-Preparada versión0.77.0; confirmar el cierre de publicación antes de afirmar que está visible en Preview. No sustituye el Woo de pruebas ni completa aún asignación de fotos por talla, pedidos o sincronización de inventario.
+Versión0.77.0 publicada y comprobada en Preview. Avatar, conteos16,224/7,709/8,515 y búsquedas exactas4485y000007779 verificados en navegador. Se corrigió el reinicio de controles al limpiar filtros y se volvió a publicar. No sustituye el Woo de pruebas ni completa aún asignación de fotos por talla, pedidos o sincronización de inventario.
 
 ## Verificación
 
 19controles SQL en transacción revertida antes de aplicar: carga, repetición, rechazo de inventario/costos/aprobación/duplicados/edición/importe inválido/ID nulo/código ya gestionado/corte cerrado, anonimato, lectura autorizada, código literal yNULL, texto, paginación, filtros y privilegios; catálogo conservado.503unitarias/68archivos,lintdirigido,tipos ybuild aprobados. Reader real comprobado para4485, primera y última página. Advisor: dos tablas nuevas conRLSsinpolíticas, intencionalmente cerradas; el lector SECURITY DEFINER comprueba empleado/permiso/staging y wrapper invoker. No se conceden permisos directos ni se usa metadata de usuario para autorizar.
 
-Migración local creada por CLI20261007181344_m9_pending_catalog_review.sql, aplicada sólo zsezjtswqeijboezvado. La prueba inicial refería public.profiles inexistente; se corrigió el actor de ensayo para usar un updated_by existente. El intento fallido revirtió toda su transacción. No se afirma que las503unitarias sean pruebas de la nuevaSQL: ésta tiene los19controles remotos independientes.
+Migración local creada por CLI20261007181344_m9_pending_catalog_review.sql, aplicada sólo zsezjtswqeijboezvado con registro remoto20261007182126. La prueba inicial refería public.profiles inexistente; se corrigió el actor de ensayo para usar un updated_by existente. El intento fallido revirtió toda su transacción. No se afirma que las503unitarias sean pruebas de la nuevaSQL: ésta tiene los19controles remotos independientes.
 
 Evidencia reproducible en workspace principal outputs/m9-carga-revision-completa-2026-10-07/:corrida-1/2,aplicacion.json,repeticion.json,antes.json,despues.json,consulta.json,preparar.mjs y manifiestos. Credenciales fuera de reportes/código/navegador.
 
 ## Para cerrar antes del12
 
 El corte completo queda disponible para buscar y revisar. Para aumentar productos aprobados siguen faltando decisiones de familias SICAR_ONLY y conflictos Woo; la carga de evidencia no sustituye sus respuestas. Reutilizar la consulta consolidada de68propuestas/405filas y los expedientes completos; no repetir preguntas resueltas. Renovar SICAR/Woo antes del ensayo final. Inventario,pedidos/devoluciones y auditoría operativa requieren Astra. No garantizar producción antes del12sin esos controles.
+
+Publicación funcional final: local1e7b5ff246f7251a91c5da2838ad47248d0e81af,remotof777c160796e25e409d126b804b00cea3ed8ff91,árbolidénticof777a0d6a0a99cfda7620f897e3e3b59f977cdc1. Actualización de rama no forzada; no se sustituyeron historiales ni se fusionó PR87. CI 309/run 37668636253 completado con éxito: formato, lint, tipos, base de datos, unitarias, integración, build y E2E. Búsqueda exacta, ceros iniciales y limpieza de filtros verificados en la página publicada.

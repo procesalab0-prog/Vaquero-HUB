@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Image from "next/image";
+import { ProcesaLabCredit } from "@/components/procesalab-credit";
 
+import { MOTION_DAY_COOKIE, loginScene, storeDay } from "@/lib/entrance";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { login } from "./actions";
 import { LoginButton } from "./login-button";
@@ -20,21 +23,34 @@ export default async function LoginPage({
 }) {
   const { error } = await searchParams;
   const configured = isSupabaseConfigured();
+  const scene = loginScene({
+    hasError: Boolean(error),
+    lastFullDay: (await cookies()).get(MOTION_DAY_COOKIE)?.value,
+    today: storeDay(),
+  });
 
   return (
-    <main className="login-screen">
+    <main className="login-screen" data-motion={scene}>
       <aside className="login-editorial-panel" aria-hidden="true">
-        <Image
-          className="login-editorial-logo"
-          src="/brand/logo-vaquerosm-blanco.png"
-          alt=""
-          width={520}
-          height={226}
-          priority
-        />
+        <span className="login-editorial-logo brand-mark">
+          <Image
+            src="/brand/logo-vaquerosm-blanco.png"
+            alt=""
+            width={520}
+            height={226}
+            priority
+          />
+        </span>
         <div>
           <p>OPERACIÓN · PUNTO DE VENTA</p>
-          <strong>La tienda completa,<br />en un solo lugar.</strong>
+          <strong>
+            <span className="motion-line">
+              <span>La tienda completa,</span>
+            </span>
+            <span className="motion-line">
+              <span>en un solo lugar.</span>
+            </span>
+          </strong>
           <span>Diseñado alrededor de la operación real de Vaqueros SM.</span>
         </div>
       </aside>
@@ -72,7 +88,8 @@ export default async function LoginPage({
             <a className="primary-button" href="/inicio">Continuar a la demostración</a>
           </div>
         )}
-        <small className="login-security">Acceso protegido por rol y sucursal · Creado por ProcesaLab</small>
+        <small className="login-security">Acceso protegido por rol y sucursal</small>
+        <footer className="login-developer-credit"><ProcesaLabCredit /></footer>
       </section>
     </main>
   );

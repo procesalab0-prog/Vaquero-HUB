@@ -17,6 +17,123 @@ import type { ProductVariant } from "@/lib/domain";
 import type { BatchActionResult } from "@/lib/domain";
 import { uploadProductImage } from "@/lib/product-images";
 import { WEB_STAGING_URL, webContentFromForm } from "@/lib/web-draft";
+import type { CreateMeasureUnitResult } from "@/components/measure-unit-catalog";
+import type { MeasureUnit } from "@/lib/measure-units";
+import type { SetProductUnitResult } from "@/components/product-unit-editor";
+import type { QuickSaleListResult } from "@/components/quick-sale-catalog";
+
+export async function listQuickSaleSnapshots(
+  locationId: string,
+): Promise<QuickSaleListResult> {
+  try {
+    const { supabase } = await requirePermission("products.create");
+    const { data, error } = await supabase.rpc("list_quick_sale_items", {
+      p_location_id: locationId,
+      p_limit: 100,
+    });
+    if (error)
+      return {
+        ok: false,
+        message:
+          "No fue posible consultar los productos rápidos. Revisa tu sucursal y tus permisos.",
+      };
+    return { ok: true, items: data ?? [] };
+  } catch {
+    return {
+      ok: false,
+      message: "No tienes acceso al alta de productos o tu sesión venció.",
+    };
+  }
+}
+
+export async function setProductUnit(input: {
+  productId: string;
+  code: string;
+  expectedCode: string;
+}): Promise<SetProductUnitResult> {
+  try {
+    const { supabase } = await requirePermission("products.update");
+    const { data, error } = await supabase.rpc("set_product_measure_unit", {
+      p_product_id: input.productId,
+      p_unit_code: input.code,
+      p_expected_code: input.expectedCode,
+    });
+    if (error) {
+      if (error.message.includes("PRODUCT_UNIT_HAS_HISTORY"))
+        return {
+          ok: false,
+          message:
+            "Este producto ya tiene existencias, movimientos o documentos. Su unidad no puede cambiarse sin reinterpretar el historial.",
+        };
+      if (error.message.includes("STALE_PRODUCT_UNIT"))
+        return {
+          ok: false,
+          message:
+            "Otra persona cambió la unidad. Recarga y revisa antes de guardar.",
+        };
+      if (error.message.includes("UNIT_FRACTIONAL_FLOW_PENDING"))
+        return {
+          ok: false,
+          message:
+            "Las unidades fraccionarias todavía no están habilitadas para operar.",
+        };
+      throw error;
+    }
+    revalidatePath("/productos");
+    return { ok: true, code: String(data.code) };
+  } catch {
+    return {
+      ok: false,
+      message: "No fue posible guardar la unidad. Revisa producto y permisos.",
+    };
+  }
+}
+
+export async function createMeasureUnit(input: {
+  code: string;
+  name: string;
+  decimalPlaces: 0 | 3;
+}): Promise<CreateMeasureUnitResult> {
+  try {
+    const { supabase } = await requirePermission("products.create");
+    const code = String(input.code ?? "")
+      .trim()
+      .toUpperCase();
+    const name = String(input.name ?? "").trim();
+    if (
+      !/^[A-Z][A-Z0-9_]{0,11}$/.test(code) ||
+      !name ||
+      name.length > 60 ||
+      ![0, 3].includes(input.decimalPlaces)
+    )
+      return {
+        ok: false,
+        message: "Revisa clave, nombre y precisión de la unidad.",
+      };
+    const { data, error } = await supabase.rpc("create_measure_unit", {
+      p_code: code,
+      p_name: name,
+      p_decimal_places: input.decimalPlaces,
+    });
+    if (error) {
+      if (error.message.includes("MEASURE_UNIT_CODE_TAKEN"))
+        return {
+          ok: false,
+          message:
+            "Esa clave ya existe. Elige otra o utiliza la unidad registrada.",
+        };
+      throw error;
+    }
+    revalidatePath("/productos");
+    return { ok: true, unit: data as MeasureUnit };
+  } catch {
+    return {
+      ok: false,
+      message:
+        "No fue posible guardar la unidad. Se requiere permiso de alta de productos.",
+    };
+  }
+}
 
 const productsPath = "/productos";
 
@@ -293,10 +410,11 @@ export async function updateCatalogProduct(formData: FormData) {
     if (!productId || !name || !categoryId) {
       status = "producto-datos-invalidos";
     } else {
-      const { error } = await supabase.rpc("update_catalog_product", {
+      const { error } = await supabase.rpc("update_catalog_product_v2", {
         p_product_id: productId,
         p_name: name,
         p_category_id: categoryId,
+        p_department_name: textField(formData, "department_name") || null,
         p_brand_name: textField(formData, "brand_name") || null,
         p_description: textField(formData, "description") || null,
         p_is_active: formData.get("is_active") === "on",

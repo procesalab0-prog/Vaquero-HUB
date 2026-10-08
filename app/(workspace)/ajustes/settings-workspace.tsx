@@ -1,6 +1,8 @@
 "use client";
+import { ProcesaLabCredit } from "@/components/procesalab-credit";
 
 import { useState } from "react";
+import { NotificationSettings } from "@/components/notification-settings";
 import Link from "next/link";
 import {
   Barcode,
@@ -13,16 +15,18 @@ import {
   UserCog,
 } from "lucide-react";
 import { useWorkspace } from "@/components/workspace-context";
+import { HapticsSetting } from "@/components/haptics-setting";
 import { BUSINESS_PROFILE, LA_PIEDAD_STORE } from "@/lib/business-profile";
 import {
   ACCENT_EVENT,
+  ACCENT_COLORS,
   ACCENT_STORAGE_KEY,
   applyAccent,
   storedAccent,
 } from "@/lib/accent";
 
 type Section =
-  "business" | "stores" | "pos" | "tickets" | "labels" | "appearance";
+  "business" | "stores" | "pos" | "tickets" | "labels" | "appearance" | "notifications";
 type Branch = {
   id: number | string;
   name: string;
@@ -36,6 +40,7 @@ const tabs: Array<{
   description: string;
   icon: typeof Store;
 }> = [
+  { id: "notifications", label: "Notificaciones", description: "Avisos y prueba de sonido", icon: MonitorCog },
   {
     id: "business",
     label: "Negocio",
@@ -238,6 +243,7 @@ export function SettingsWorkspace({
           ))}
         </nav>
         <div className="settings-panel" onChange={capturePreference}>
+          <div hidden={section !== "notifications"}><NotificationSettings /></div>
           <div hidden={section !== "business"}>
             <BusinessSettings
               phone={currentLocation.phone ?? ""}
@@ -321,6 +327,7 @@ export function SettingsWorkspace({
           </div>
         </div>
       </div>
+      <footer className="settings-developer-credit"><ProcesaLabCredit /></footer>
       {saved ? (
         <div className="pos-toast" role="status">
           <span>
@@ -631,6 +638,7 @@ function AppearanceSettings({
         <button
           className={accent === "" ? "selected identidad" : "identidad"}
           type="button"
+          aria-pressed={accent === ""}
           onClick={() => setAccent("")}
         >
           <span />
@@ -640,6 +648,7 @@ function AppearanceSettings({
         <button
           className={accent === "vino" ? "selected vino" : "vino"}
           type="button"
+          aria-pressed={accent === "vino"}
           onClick={() => setAccent("vino")}
         >
           <span />
@@ -649,6 +658,7 @@ function AppearanceSettings({
         <button
           className={accent === "cuero" ? "selected cuero" : "cuero"}
           type="button"
+          aria-pressed={accent === "cuero"}
           onClick={() => setAccent("cuero")}
         >
           <span />
@@ -658,13 +668,25 @@ function AppearanceSettings({
         <button
           className={accent === "noche" ? "selected noche" : "noche"}
           type="button"
+          aria-pressed={accent === "noche"}
           onClick={() => setAccent("noche")}
         >
           <span />
           <strong>Noche</strong>
           <small>Alto contraste</small>
         </button>
+        {[
+          ["mezclilla", "Mezclilla", "Azul profundo"],
+          ["bosque", "Bosque", "Verde de campo"],
+          ["cobre", "Cobre", "Tierra y tradición"],
+        ].map(([value, label, description]) => (
+          <button key={value} className={accent === value ? "selected" : ""} type="button" aria-pressed={accent === value} onClick={() => setAccent(value)}>
+            <span style={{ background: ACCENT_COLORS[value] }} />
+            <strong>{label}</strong><small>{description}</small>
+          </button>
+        ))}
       </div>
+      <p className="appearance-hint">Tu paleta cambia la navegación, los botones y los detalles de la tienda. Se guarda en este dispositivo; no cambia los impresos.</p>
       <div className="settings-form">
         <label>
           <span>Tamaño del texto del programa</span>
@@ -682,6 +704,7 @@ function AppearanceSettings({
             etiquetas.
           </small>
         </label>
+        <HapticsSetting />
         <label>
           <span>Mi PIN de supervisor</span>
           <input

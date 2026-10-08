@@ -51,6 +51,25 @@ describe("unitExchangeValue", () => {
 });
 
 describe("selectedReturnValue", () => {
+  it("matches SQL fractional allocations with the final cent residue", () => {
+    const base = item({
+      quantity: 1.25,
+      remaining_quantity: 1.25,
+      paid_line_cents: 15431,
+      measureUnit: { code: "KILO", name: "Kilo", decimal_places: 3 },
+    });
+    expect(selectedReturnValue(base, 0.333)).toBe(4110);
+    expect(
+      selectedReturnValue(
+        { ...base, remaining_quantity: 0.584, already_returned_cents: 8220 },
+        0.584,
+      ),
+    ).toBe(7211);
+    expect(selectedReturnValue(base, 0.3331)).toBe(0);
+    expect(
+      selectedReturnValue({ ...base, measureUnit: undefined }, 0.333),
+    ).toBe(0);
+  });
   it("conserva todos los centavos al devolver el último remanente", () => {
     const item = {
       quantity: 3,

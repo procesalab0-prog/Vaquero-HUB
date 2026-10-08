@@ -1,5 +1,114 @@
 MI TIENDA SM — CONTEXTO MAESTRO DEL PROYECTO
 
+## Pendientes de Mi Tienda SM — 1 de octubre de 2026
+
+Solicitud consolidada de Emmanuel. Diseño orientado primero a computadora y
+después a tableta, conservando la identidad crema y negro. Teléfono vertical,
+accesibilidad y escala de texto siguen siendo criterios obligatorios. Estos
+puntos son pendientes a verificar e implementar, no funcionalidades cerradas.
+Complementan las especificaciones existentes sin duplicar módulos.
+
+1. **Productos:** compactar encabezados para mostrar más productos; «Nuevo
+   producto» como acción principal y secundarias agrupadas. Buscador visible,
+   variantes junto al producto seleccionado y textos sin invadir tablas.
+2. **Venta:** catálogo a la izquierda y carrito a la derecha en computadora;
+   buscador, total y «Cobrar» siempre visibles. El carrito desplaza su lista,
+   no sus acciones. Ordenar cliente, espera, descuentos, regalo y apartado;
+   separar cancelaciones/devoluciones de las acciones normales del cobro.
+3. **Inventario:** buscador, filtros y encabezados visibles; cantidades
+   alineadas y variantes agrupadas/desplegables. Búsqueda por código y una
+   acción inequívoca para contar existencias.
+4. **Caja:** compactar tarjetas y apertura; entradas/retiros junto al historial
+   y corte separado. Conservar advertencias de sucursal, sesión correcta y
+   conteo ciego; el rediseño no altera las protecciones de caja.
+5. **Compras y proveedores:** más espacio para productos de la orden y datos
+   del proveedor ordenados. Resumen y guardar/crear visibles; formulario de
+   proveedor simplificado, con obligatorios y errores claros.
+6. **Consistencia y ergonomía:** una acción principal por tarea; guardar y
+   cancelar en posiciones consistentes; carga, deshabilitado y selección
+   explícitos. Uso fluido con teclado y separación táctil para tableta.
+7. **Cotizaciones personalizadas:** modificar precios y descuentos y escribir
+   nombre de persona no registrada. Cambios aprobados:
+   sólo en cotización, mostrando original, descuento y total sin modificar
+   catálogo. Sólo administradores pueden personalizar precios/descuentos.
+   Conservar el precio cotizado dentro de una vigencia configurable y requerir
+   autorización administrativa para excepciones. Hoy la conversión valida
+   precios vigentes: adaptar esa validación de forma explícita y auditada.
+8. **Escaneo en Venta:** un código de producto válido agrega directamente la
+   variante al carrito, sujeto a disponibilidad. Distinguir folios de tickets,
+   que deben abrir la compra y nunca convertirse en un producto.
+9. **Producto rápido:** capturar, agregar al carrito y cobrar sin darlo de alta
+   ni generar código; conservar sus datos para alta posterior. Cajera y gerente
+   autorizados a cobrarlo; nombre, cantidad y precio, costo opcional sólo para
+   gerencia. No descuenta inventario al no pertenecer aún al catálogo. Darlo de
+   alta después no modifica el historial original. Diseñar cambios/devoluciones
+   sin inventar una entrada de stock para una pieza nunca registrada.
+10. **Notas en Inicio:** escribir y consultar recordatorios rápidos, personales
+    o compartidos por sucursal como opciones. Autor y fecha visibles; únicamente
+    su autor puede editar la nota. Las personales sólo son visibles para su
+    autor, también en las consultas del servidor.
+11. **Tickets en espera:** mostrar el total de cada ticket en la selección y
+    comprobar consistencia al recuperarlo. Conservar que no reserva mercancía.
+12. **Traspasos:** añadir acceso desde Venta al flujo existente, con permisos y
+    contexto de sucursal; no modificar las reglas de envío/recepción.
+13. **Orden de compra y PDF para proveedor:** reutilizar la orden existente;
+    seleccionar productos registrados y permitir nombre opcional propio de
+    ese renglón sin cambiar el catálogo. Campos opcionales seleccionables:
+    logo, datos de tienda/proveedor, folio, fecha, sucursal de entrega, productos,
+    cantidades/unidades, costos, total, observaciones, impuestos, fecha esperada
+    y condiciones de pago. Si el proveedor tiene teléfono, ofrecer envío por
+    WhatsApp sólo a administradores, validando también en servidor. Esta decisión
+    reemplaza la restricción inicial «sólo dueño»; no se requiere un rol nuevo.
+14. **Unidades de medida:** crear y asignar pieza, par, kilo y metro, con catálogo
+    ampliable según las necesidades de la tienda. Pieza/par enteros y kilo/metro
+    con hasta tres decimales, según propuesta aprobada. No permitir
+    media bota por habilitar kilos. Mantener compatibilidad con inventario,
+    compras, ventas, etiquetas y datos heredados.
+15. **Información de WooCommerce:** preservar su información comercial y
+    usarla como referencia principal por ser la más completa cuando exista
+    correspondencia comprobada. SICAR contiene productos ausentes en Woo.
+    Resolver conflictos por campo en M9; esta prioridad no autoriza sobrescribir
+    existencias, costos, identidades ni códigos inmutables.
+16. **Reportes:** incorporar categorías/departamentos como filtros o agrupación,
+    conservando sucursal, periodo y permisos; no exponer costos/margen a roles
+    que no los pueden consultar.
+
+### Reglas confirmadas por Emmanuel — 1 de octubre de 2026
+
+Las respuestas a las seis preguntas anteriores prevalecen sobre las propuestas
+iniciales. Producto rápido no crea ni consume inventario; coste opcional
+restringido a gerencia. Cotizaciones personalizadas sólo por administradores,
+nombre libre, descuentos/precios propios y vigencia configurable; no se aprobó
+todavía un número fijo de días, por lo que no debe inventarse. Las autorizaciones
+de excepción deben conservar actor, motivo y condiciones aceptadas.
+
+Los campos del PDF de proveedor son opcionales en la presentación, no la
+integridad interna de la orden: ocultar un campo no elimina su validación ni
+permite crear impuestos o importes inexistentes. Administradores pueden enviar
+por WhatsApp; no implica envío automático ni confirmación de entrega.
+
+Notas con alcance personal o compartido por sucursal, edición por autor y
+autor/fecha visibles. Las reglas de borrado y cualquier intervención sobre notas
+ajenas deben definirse explícitamente antes de añadir dichas acciones.
+
+WooCommerce sigue siendo la referencia principal para la información comercial
+coincidente, y los reportes tendrán departamento y categoría por separado. El
+plan de conciliación de M9 debe registrar diferencias de precio y su resolución
+antes de aplicar cambios; esta aprobación no autoriza una importación inmediata
+ni sobrescribir stock o costos. Las nuevas unidades no implican conversiones
+automáticas de pares/cajas a piezas ni fracciones para ropa o calzado.
+
+Publicación acordada: implementar y verificar toda la lista antes de subirla a
+main para prueba del usuario. No publicar los bloques parciales. La aprobación
+de estas reglas no equivale a tener las funciones implementadas.
+
+Orden de ejecución: ergonomía operativa durante cada módulo, sin relegarla a
+la revisión cosmética final; funcionalidades nuevas en entregas separadas con
+reglas de negocio y pruebas. Los cambios visuales no deben modificar tickets
+ni etiquetas ya calibrados. Dólares, costo promedio ponderado y notificaciones
+con sonido mantienen sus pendientes independientes. Esta lista no implica que
+las funcionalidades estén implementadas o desplegadas en main.
+
 1. Descripción general
 
 Proyecto: Mi Tienda SM
@@ -2591,6 +2700,10 @@ Entrega visible 0.30.0 — compras, proveedores y recepción:
 - Desde el historial se preparan etiquetas por la cantidad exacta recibida.
 - El costo vigente del producto no se modifica todavía: se conserva el costo
   de compra y se espera la decisión entre promedio ponderado o último costo.
+  Este párrafo describe la entrega 0.30.0: Emmanuel confirmó después promedio
+  ponderado. La implementación local del 1 de octubre calcula contra la
+  existencia global de la variante, incluidas reservas y tránsito, al recibir;
+  conserva costos históricos y queda pendiente de despliegue. Ver la cola.
 
 Corrección visible 0.30.1 — ventanas táctiles y avisos accesibles:
 
@@ -3117,6 +3230,9 @@ Subfase financiera aprobada — recepción de dólares:
 - Esta subfase exige migración hacia delante, RLS/permisos, operación atómica de
   caja y pruebas de concurrencia. Hasta cumplirlas no se presenta como método de
   pago activo.
+- Decisión del propietario (2026-10-02): los reembolsos de cobros en dólares
+  se entregarán en pesos, usando la tasa registrada en la venta original,
+  nunca la referencia del día de la devolución.
 
 Entrega visible 0.53.0 — creación de cuentas desde Mi Vaquero:
 
@@ -3137,6 +3253,18 @@ Entrega visible 0.53.0 — creación de cuentas desde Mi Vaquero:
 - Marketing es una autorización opcional aparte. El formulario sólo se habilita
   cuando el aviso aprobado tenga versión y URL configuradas. Puntos,
   recompensas y redenciones siguen pospuestos hasta definir sus reglas.
+
+Pendiente operativo aprobado — notificaciones con sonido:
+
+- Registrar y corregir el fallo reportado en la prueba de notificaciones.
+- Incorporar sonido configurable y un botón de prueba en Ajustes que emita
+  aviso visible y audio, mostrando los bloqueos o permisos pendientes.
+- Comprobar escritorio, teléfono, iPad y PWA instalada; distinguir los avisos
+  dentro de la aplicación de los del sistema en segundo plano. El aviso visual
+  debe seguir funcionando sin sonido.
+- Se trabajará en una entrega posterior. Criterios y pruebas en
+  `docs/COLA_DE_TRABAJO.md`, sección «Pendiente operativo — notificaciones con
+  sonido»; no está implementado ni validado todavía.
 
 Entrega visible 0.52.3 — hoja de estilos legible y reglas móviles vivas:
 
@@ -4082,4 +4210,166 @@ Instalación y lectura cerradas, NO asignación remota ni conexión por talla pu
 
 8,515registros de evidencia cargados en35lotes; repetición0nuevos/8,515sin cambios. Incluye5,937SICAR_ONLY. Con7,709conciliados cubre16,224filas para consulta, NO16,224productos aprobados: cobertura de catálogo sigue47.516%. Sin aprobar familias, inferir tallas, crear variantes ni inventario. CAWRNIÑO3587 sigue pendiente. Catálogo/UUIDs/fuentes/borradores conservados por huella; ceroWoo/producción/saldos/movimientos.
 
-Nueva consulta autenticada products.read en/productos/migracion-pendientes,20porpágina,426páginas,búsqueda literal/lector; sólo corte completo y guardasSTAGING. Tablas privadasRLSsinpermisosdirectos; payloadrechazaexistencias/costos/aprobaciones.19controlesSQLrollback,503unitarias/68archivos,lint/tipos/buildaprobados. Preparada0.77.0; publicación/verificaciónPreviewporconfirmar. Detalle [M9_CARGA_REVISION_COMPLETA.md](M9_CARGA_REVISION_COMPLETA.md);outputs/m9-carga-revision-completa-2026-10-07/. Siguevalidaragrupaciones/conflictosycargarsóloaprobados; conectar fotosportalla. Solsuficiente;Astrasecciónoperativa.
+Nueva consulta autenticada products.read en/productos/migracion-pendientes,20porpágina,426páginas,búsqueda literal/lector; sólo corte completo y guardasSTAGING. Tablas privadasRLSsinpermisosdirectos; payloadrechazaexistencias/costos/aprobaciones.19controlesSQLrollback,503unitarias/68archivos,lint/tipos/buildaprobados. Versión 0.77.0 publicada y verificada en Preview. Detalle [M9_CARGA_REVISION_COMPLETA.md](M9_CARGA_REVISION_COMPLETA.md);outputs/m9-carga-revision-completa-2026-10-07/. Siguevalidaragrupaciones/conflictosycargarsóloaprobados; conectar fotosportalla. Solsuficiente;Astrasecciónoperativa.
+
+Cierre de publicación:0.77.0 visible en Preview,conteos/búsqueda literal/ceros iniciales comprobados. Local1e7b5ff/remotof777c160796e25e409d126b804b00cea3ed8ff91/árbolf777a0d6a0a99cfda7620f897e3e3b59f977cdc1. Migración remota20261007182126. Corte completo sólo para revisión, catálogo aprobado47.516%sin aumento. No force-push/reset/merge. CI 309/run 37668636253 completado con éxito: formato, lint, tipos, base de datos, unitarias, integración, build y E2E.
+
+
+### 2026-10-07 — Preguntas de migración en tandas pequeñas
+
+Inicio de Preview 0.78.0 muestra sólo 3 preguntas / 16 registros, con ejemplos, opciones simples y contador. Banco privado de 303 propuestas / 970 registros; 300 preguntas permanecen ocultas. Tandas de máximo 3, liberación explícita del operador y sin abrir otra mientras haya pendientes. Respuesta con historial, revisión concurrente y repetición segura; «No lo sé todavía» sigue pendiente. Ninguna respuesta aprueba importaciones. Recogida y revisión técnica reproducibles preparadas; exportación real 0 respuestas.
+
+516 unitarias / 69 archivos, 25 controles SQL revertidos y CI 311 completo aprobados. Catálogo y huella conservados: 7,709 / 16,224 = 47.516%; cero saldos/movimientos, Woo o producción. Sólo staging; main no actualizado, integración de preguntas separada para conservar mejoras de otros chats. Detalle [M9_PREGUNTAS_POR_TANDAS.md](M9_PREGUNTAS_POR_TANDAS.md); outputs/m9-preguntas-por-tandas-2026-10-07/. Sigue conectar fotos por talla y convertir aclaraciones verificadas en planes de carga, sin saltar guardas. Sol suficiente.
+
+
+### 2026-10-07 — Escritor condicional de fotos preparado y verificado en aislamiento
+
+Implementados paquete estricto y escritor PHP para las dos familias remotas autorizadas: nueve asignaciones candidatas y ausencia10324conservada. Recibo persistente, transacción InnoDB, comprobación bajo bloqueos, rollback y recuperación de COMMIT incierto sin reenviar fotos. 42controles PHP aislados y541unitarias/70archivos aprobados; lint/formato dirigidos. Dos preparaciones reales de sólo lectura contra Woo de pruebas: tresJSONidénticos, identidades/bytes conservados. NO instalado ni activado, sin asignaciones ni sincronización publicada por talla. Siguen cola persistente, acción de ficha e instalación/ensayo del escritor; no ampliar piloto.
+
+Preguntas de opción múltiple verificadas de nuevo en Preview0.78.0, tres tarjetas, sin responder por los dueños. Usuario confirma integración a main al terminar esta parte, preservando mejoras de otros chats. Cero escrituras Woo/Supabase/producción/inventario, sin despliegue/merge. Catálogo7,709/16,224=47.516%,8,515pendientes y huella d3fe299f72f3b8ab6d9f869ee9ddf4bf conservados. Detalle [M9_ESCRITOR_FOTOS_VARIANTES_PREPARADO.md](M9_ESCRITOR_FOTOS_VARIANTES_PREPARADO.md); outputs/m9-escritor-fotos-variantes-2026-10-07/. Sol suficiente.
+
+
+### 2026-10-07 — Fotos propias por talla conectadas a Preview y verificadas
+
+Cola persistente instalada sólo en staging (migración remota20261007204631), función de ficha con permisos de empleado y conector vigente actualizado1.3.3→1.3.4 en Woo independiente. Preview0.79.0: dos envíos reales y dos repeticiones exitosas; nueve fotos asignadas a diez variantes,10324/2XL mantiene ausencia. Dos solicitudes SUCCEEDED, recuperación por mismo recibo sin redispatch. Dos lecturas completas idénticas; códigos/UUIDs/precios/atributos/galerías y recibos de alta conservados. Cinco controles de permisos401/200/401/403/403, ocho protecciones remotasOK.
+
+554unitarias/71archivos,32controlesSQLrevertidos,42PHPescritoraislados y16plugincompleto,lint/tipos/build aprobados. Árbol funcional remoto bd8a10943ee57b5a30fc52d8ea9379d5be69cf31 idéntico al esperado; commita12b3843a899071bf0774a0d6adeeac346a2f885. Catálogo7,709/16,224=47.516%,8,515pendientes y huella d3fe299f72f3b8ab6d9f869ee9ddf4bf intactos. Cero producción, saldos, movimientos, pedidos o pagos; main sin cambios. Cierra el ensayo por talla de las dos familias, NO toda la migración ni autorización para ampliar piloto. Sigue revisión retenida/planes de carga y ampliación controlada de fotos; preguntas a main separadas preservando mejoras ajenas. Sol suficiente; Astra para inventario/pedidos/devoluciones y auditoría final. Detalle[M9_COLA_FOTOS_VARIANTES.md](M9_COLA_FOTOS_VARIANTES.md);outputs/m9-cola-fotos-variantes-2026-10-07/.
+
+Cierre CI312/run37685708426/job113012849182 aprobado completo, incluida reconstrucción de base, integración y E2E.
+
+
+### 2026-10-07 — Respuestas conectadas a preparación de lotes
+
+Nuevo preparador de sólo lectura reutiliza reviewOwnerAnswers/coverageReview/auditStagedCatalog y planSicarOnly. Revalida banco303preguntas/970filas contra captura nueva7,709filas/1,499padres, fuentes y retenciones. Tres preguntas liberadas, cero respuestas reales; cero decisiones/cargas. CAWRNIÑO3587 sigue retenida. Una confirmación futura sólo puede generar plantilla pending con revisión técnica vacía; el planificador existente debe rechazarla. No produce SQL ni payload importable; no libera nuevas tandas.
+
+Dos corridas idénticas/cincoarchivos. 22pruebas nuevas,576unitarias/72archivos y lint/formato aprobados. Catálogo/huella d3fe299f72f3b8ab6d9f869ee9ddf4bf conservados,47.516%,cero saldos/movimientos. Sin DDL, escrituras de base/Woo/producción, frontend o merge. Main766c92e538ddc12099879aa24f485fb85950a251 inspeccionado por lectura: versión0.55.5 y mejoras conservadas; copiar la tarjeta guardada para staging no habilita preguntas en producción. Sigue integración aislada de revisión, respuesta primera tanda y plan/ensayo de cargas verificadas. Detalle[M9_RESPUESTAS_A_LOTES.md](M9_RESPUESTAS_A_LOTES.md);outputs/m9-respuestas-a-lotes-2026-10-07/. Sol suficiente; Astra para permisos entre entornos y fase operativa.
+### Integración candidata 0.56.0 — 7 de octubre de 2026
+
+- Se preservaron los 123 archivos locales modificados/nuevos de
+  `codex/usd-costos-compras`, sin cambiar ni limpiar su carpeta original.
+- Integración de tres vías sobre main `e45ef5b`: se conservan la identidad de
+  Mi Vaquero y las preguntas de M9 al principio de Inicio, con sus botones.
+  Notas y mejoras operativas se incorporan junto a ellas.
+- QA independiente en Docker, proyecto `mi-tienda-integracion-20261007`,
+  API 56321 y PostgreSQL 56322. No se usa ni se modifica staging compartido
+  `zsezjtswqeijboezvado`, producción o WooCommerce.
+- 123 migraciones reconstruidas; 113 pruebas unitarias, 167 de integración
+  con Auth/PostgREST reales, cuatro nuevas de aceptación operativa y
+  186 recorridos de navegador aprobados. Concurrencia financiera nativa y
+  capturas React de cantidades/USD también correctas.
+- Dólares y asignación fraccionaria permanecen desactivados. Falta configurar
+  Banxico y aceptar su consulta oficial antes de activar USD. Las pruebas USD
+  usan datos sintéticos locales, no una tasa comercial real.
+- Candidata integrada para revisión; no desplegada ni fusionada a main. Antes
+  de publicar: ensayo alojado independiente, revisión del cambio financiero y
+  promoción coordinada de esquema y aplicación. El ensayo local incremental 101 → 123 también pasó: códigos, saldo,
+  movimientos y respuesta de M9 existentes quedaron intactos.
+- M9 continúa separado. Su integración posterior tiene siete archivos comunes;
+  debe combinarse con tres vías, conservando fichas web, fotos, permisos, códigos
+  heredados y datos. No sustituir su rama por esta candidata.
+
+### Publicación 0.56.0 — compatibilidad del esquema alojado
+
+- La base del principal tenía 95 migraciones, no las 101 del main local. Se ensayó
+  95 → 123 con Auth/PostgREST real y preservación de códigos, saldos y respuestas.
+- Se añade una migración nueva de compatibilidad de formato para la función
+  antigua de cambios: ejecutarla antes de `pos_quick_product` en esa base; en una
+  reconstrucción ya actualizada no hace cambios. No se reescribe SQL heredado.
+- La corrección se probó con la definición exacta alojada en una transacción
+  local que se revirtió. No modifica las reglas financieras ni datos históricos.
+- Las capturas de Playwright usan `test.info().outputPath` para funcionar en
+  Linux y Mac y separar proyectos/reintentos. USD y fracciones siguen apagados.
+
+### Entrega visible 0.58.0 — movimiento de marca
+
+- Se implementa la mejora programada de «Movimiento y animación» en los momentos
+  que pidió el dueño: acceso, pantalla de carga y entrada, Inicio, agregar al
+  carrito, venta completada, traspasos y Mi Vaquero (puntos y canje). Detalle,
+  tiempos y reglas en `docs/specs/MOVIMIENTO.md`.
+- Regla operativa: lo que se mueve no recibe toques y lo que recibe toques no se
+  desplaza; ninguna animación agrega espera ni se celebra antes de que el
+  servidor confirme; todo se apaga con movimiento reducido.
+- La pantalla de carga sustituye al texto suelto que aparecía al abrir el
+  programa y después de entrar. Repite la composición del acceso para que el
+  telón de entrada arranque desde ella sin que se note el relevo.
+- Traspasos muestra su avance con tres momentos y texto siempre visible; el
+  dibujo nunca es la única señal del estado.
+- Mi Vaquero celebra puntos ganados con lo que llega del servidor, sin guardar
+  nada en el dispositivo, para cumplir la promesa de conservar sólo el número de
+  socio. Los niveles no existen y no se inventan.
+- Pendiente: comprobación en la tienda con iPad, computadora del mostrador y un
+  teléfono real de cliente.
+
+### Entrega visible 0.59.0 — botones que responden, campana y apartados
+
+- Todos los botones responden igual al tocarlos: una huella de luz desde el
+  punto de contacto y el «hundido» que ya existía, que ahora también se ve en
+  iPad y iPhone. La vibración corta funciona en teléfonos Android y se puede
+  apagar en Ajustes; iPad e iPhone no permiten vibrar desde el navegador.
+- La campana se mece con cada aviso, cuenta los no leídos y el aviso muestra
+  su tiempo restante. Sigue siendo un aviso dentro de la aplicación abierta,
+  no una notificación del sistema.
+- Apartados muestra la barra de lo pagado con porcentaje escrito; el llenado y
+  el sello «Liquidado» se ven al volver de un abono confirmado.
+- La tarjeta de socio de Mi Vaquero destella al aparecer y al voltearla para
+  mostrarla en caja, sin quitar contraste al código.
+
+### Entrega visible 0.60.0 — cambio de sección sin pantalla de espera
+
+- Se retira el cuadro «Abriendo sección» que tapaba cada página al navegar. La
+  página actual se queda a la vista hasta que la nueva está lista; el botón
+  tocado se marca al instante y, sólo si la espera pasa de 140 ms, corre una
+  línea de marca arriba y el emblema del menú se ilumina.
+- Regla operativa: no crear pantallas de espera por sección. Una espera se
+  indica sin quitar de la vista lo que la persona estaba viendo.
+
+### Entrega visible 0.61.0 — huellas de herradura al cambiar de sección
+
+- La espera al cambiar de sección es ahora un motion graphic de marca: huellas
+  de herradura que caminan hacia el nombre de la sección destino, dentro de una
+  pastilla negra. Sustituye a la línea de progreso de 0.60.0, porque el dueño
+  no quiere nada que se lea como «recargando».
+- Regla operativa: las esperas de la interfaz no usan círculos girando ni
+  barras que se llenan; usan un motivo de marca que indica a dónde se va.
+
+### Entrega visible 0.62.0 — logo con destellos al cambiar de sección
+
+- La espera al cambiar de sección muestra el logo completo de Vaquero SM con un
+  destello dorado que recorre su silueta y el nombre de la sección destino.
+  Sustituye a las huellas de herradura de 0.61.0 por elección del dueño.
+
+## Integración aislada de M9 y principal — 2026-10-08
+
+Combinados M9 facdc38488539ad45c525d5799f56a7ed9138008 y main 9b89374d8992c299919088daf95ac51c97d3fb5c en copia independiente work/m9-integracion-principal, rama codex/m9-integracion-principal. Resueltos doce conflictos conservando ergonomía, notas, notificaciones, cotizaciones/PDF, producto rápido, unidades/USD desactivados y nueva navegación, además de fichas, fotos, importador y revisión M9. No se sustituyó ni modificó ninguna rama original. Versión candidata local 0.80.0; no publicada.
+
+Una sola bandeja de respuestas: la del programa principal. En staging Inicio ofrece botón hacia esa bandeja, y la ruta/acción de preguntas redirigen allí sin guardar aclaraciones duplicadas. Inicio conserva una sola tarjeta arriba. La advertencia de pruebas permanece junto a la navegación nueva. En Productos, Ficha web queda fuera del botón que expande variantes; se conservan los códigos literales y las unidades.
+
+Verificación local: 672 unitarias/95 archivos (incluye seis regresiones de integración), 178 Auth/PostgREST reales en base nueva, 157 migraciones reconstruidas y controles SQL nativos de concurrencia aprobados. Navegador: 262 aprobadas en primera corrida, cuatro timeouts aprobados al repetir sólo esos casos con un proceso, dos omitidas por condiciones existentes; total 266 aprobadas. Compilación, tipos y lint correctos. Avatar local 0.80.0 comprobado; vista de demostración sin datos alojados.
+
+Nuevo scripts/verify-m9-main-upgrade.mjs: ensayo incremental 133→157 en otra base local vacía, código sintético 000123, precio, UUID, fuentes, fichas/foto y 25 funciones M9 intactos; repetición cero altas/cambios y bloqueo con compuerta deshabilitada. No es una prueba con el catálogo real completo ni con el historial exacto de staging alojado. No modificar migraciones heredadas ni aplicar por mera diferencia de fechas: el historial remoto requiere conciliar nombres y SQL. Sin migración SQL nueva.
+
+Entorno QA independiente mi-tienda-m9-combined-20261007, API59321/Postgres59322; no se usó el staging compartido ni producción. Se mantienen originales locales con archivos sin commit. Ninguna escritura Woo/Supabase alojado, inventario real, merge principal, envío remoto o despliegue en este bloque. Cobertura catalogada sigue 7,709/16,224=47.516%; esta integración no importa nuevas filas. Evidencia outputs/m9-integracion-principal-2026-10-07/.
+
+Sigue: conciliar esquema alojado y ensayar actualización de Preview con esta combinación; comprobar sesión real, búsquedas/fotos y fichas antes de ampliar cargas. No llevar toda M9 a producción. Aclaraciones de dueños y fuentes renovadas siguen necesarias para los lotes pendientes. Sol suficiente para esta combinación; Astra recomendado antes de inventario, pedidos/devoluciones y auditoría final operativa.
+
+
+## 2026-10-08 — Actualización incremental del Preview, parcial y verificada
+
+Ensayo local nuevo scripts/verify-m9-hosted-upgrade.mjs: 132 entradas remotas incluyen remote_schema sin SQL local; 131 nombres de aplicación conciliados contra archivos locales y 26 pendientes. Reconstrucción por nombres (no copia exacta del esquema remoto), Auth/Storage simulados y datos sintéticos. Se inyectó la definición heredada real de búsqueda de cambios, comprobando su hash, y se ensayó compatibilidad antes de producto rápido. Resultado131→157 correcto: código000123, UUID/precio/costo nulo, fuentes/ficha/foto y25funcionesM9 conservados, repetición0altas/0cambios y compuerta deshabilitada bloquea.
+
+Aplicadas sólo en staging zsezjtswqeijboezvado once migraciones: calibración51x25, autorregistro cliente/error teléfono, notas, búsqueda exacta lector, cotizaciones personalizadas, filtros reportes, promedio ponderado, unidades base/asignación y compatibilidad de formato búsqueda de cambios. La siguiente pos_quick_product falló tres veces en el conector antes de ejecución con «Invalid or expired requestState»; historial y quick_line_id confirman ausencia. Quedan15, preparadas por orden y hash; no seguir ni desplegar0.80.0 hasta resolver el acceso del conector y completar/verificar esquema.
+
+Comparación de huellas antes/después idéntica para7709filas, códigos, fuentes, fichas y fotos;25funcionesM9 idénticas. Cerosaldos/movimientos/ventas, cero productos no PIECE y USD activo0. La huella usada en este bloque concatena m9_current_row por barcode; no comparar su valor directamente con la huella histórica calculada por otro método. Ficha real de staging recargada con sesión: descripción, cuatro fotos y variantes visibles. Preview sigue0.79.0; no hubo push ni despliegue. Principal y Woo real sin escrituras. Lectura de las tres preguntas principales: siguen sin respuesta.
+
+Vercel API403 y conector404; sesión web sí accede al proyecto. Revisión automática bloqueó revelar NEXT_PUBLIC_SUPABASE_URL por considerarla secreta; se mantuvo oculta y no se pidió ni reveló ninguna clave. No es autorización para eludir controles. Laboratorio local detenido conservando volúmenes; otros entornos no afectados. Evidencia outputs/m9-preview-integrado-2026-10-08/. Cobertura catálogo sigue7709/16224=47.516%; este bloque mejora compatibilidad, no incorpora nuevas filas. Sigue completar15migraciones y publicar sólo Preview0.80.0; después revisar lotes pendientes con decisiones reales de dueños. Sol suficiente; auditoría operativa/inventario requiere revisión adicional.
+
+
+## 2026-10-08 — Revalidación con destino recién consultado y acceso pendiente
+
+El usuario autoriza completar actualización de pruebas y continuar lotes. Nueva sesión de llamada confirma el mismo error del conector al aplicar pos_quick_product: Invalid or expired requestState. No se aplica ninguna migración adicional ni se publica Preview0.80.0; permanecen11de26 aplicadas y15pendientes del bloque anterior. Vía alternativa oficial inspeccionada en navegador: la sesión Supabase emma35015-lgtm no tiene acceso al proyecto zsezjtswqeijboezvado, redirige a organización con aviso de acceso denegado. Se solicita al usuario iniciar sesión con la cuenta correcta mediante pregunta asíncrona. No intentar credenciales ajenas ni ejecutar DDL mediante otro proyecto.
+
+Trabajo independiente completado: nueva exportación de las tres preguntas principales, cero respuestas; captura de catálogo staging por16lecturas de500filas,7709registros/1499padres. Huella de catálogo verificada antes/después idéntica d73809ea5a76fdbe40e263578c49893a con el método de concatenación por barcode. Snapshot completo semánticamente idéntico al del7deoctubre; inventario0/movimientos0. No representa una nueva exportación SICAR/Woo: siguen fuentes SICAR6 y Woo del6deoctubre.
+
+Reejecutado prepare-owner-load-review con entradas fijadas porSHA y nueva exportación principal:16224filas fuente,303preguntas/970filas revalidadas,3liberadas,0respuestas,0plantillas,0aprobaciones y0altas. Dos corridas idénticas en sus cinco archivos.34pruebas de revisión/cobertura aprobadas. No se liberan preguntas adicionales ni se interpreta silencio como aprobación. CAWRNIÑO3587 conserva reserva. Producción sólo leída para aclaraciones; cero escrituras en Woo, catálogo, existencias, ramas remotas o despliegues. Cobertura permanece47.516%.
+
+Evidencia outputs/m9-revalidacion-lotes-2026-10-08/:config,snapshot,respuestas,corridas,pruebas y manifiesto. Sigue acceso Supabase correcto, aplicar15pendientes por orden comprobado, comparar huellas y permisos, publicar exclusivamente Preview integrado y verificar sesión/fotos/fichas. La cuenta sin acceso al panel y el error del conector son bloqueos técnicos independientes de las respuestas comerciales. No pedir otra exportación al usuario hasta la renovación operativa que corresponda.

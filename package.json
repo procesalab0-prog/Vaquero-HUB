@@ -1,6 +1,6 @@
 {
   "name": "vaquero-hub",
-  "version": "0.79.0",
+  "version": "0.80.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -14,6 +14,9 @@
     "test": "pnpm test:unit && pnpm test:integration && pnpm test:e2e",
     "test:unit": "vitest run tests/unit",
     "test:integration": "node scripts/test-integration.mjs",
+    "test:sql:native": "node scripts/verify-operational-native.mjs",
+    "test:measure-input": "node scripts/verify-measure-input.mjs",
+    "test:usd-input": "node scripts/verify-usd-input.mjs",
     "test:e2e": "playwright test",
     "bootstrap:admin": "node scripts/bootstrap-admin.mjs",
     "sicar:analyze": "node scripts/analyze-sicar.mjs",
@@ -53,6 +56,7 @@
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-hooks": "7.1.1",
     "globals": "16.4.0",
+    "pg": "8.23.1",
     "prettier": "3.9.6",
     "supabase": "2.116.0",
     "tailwindcss": "4.2.1",

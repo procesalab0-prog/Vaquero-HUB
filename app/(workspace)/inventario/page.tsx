@@ -10,6 +10,7 @@ import type {
 } from "@/lib/domain";
 import { mockVariants } from "@/lib/mock-data";
 import { INVENTORY_SNAPSHOT_LIMIT } from "@/lib/inventory-summary";
+import type { MeasureUnit } from "@/lib/measure-units";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   applyInventoryAdjustment,
@@ -29,6 +30,7 @@ import { InventoryWorkspace } from "./inventory-workspace";
 export const metadata: Metadata = { title: "Inventario" };
 
 type InventoryRow = {
+  measure_unit: MeasureUnit;
   variant_id: string;
   product_id: string;
   product_name: string;
@@ -75,6 +77,7 @@ type CountRow = {
 };
 
 type TransferRow = {
+  measure_unit: MeasureUnit;
   transfer_id: string;
   folio: number;
   from_location_id: string;
@@ -124,7 +127,7 @@ function previewItems(): InventoryItem[] {
 export default async function InventoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; ubicacion?: string }>;
+  searchParams: Promise<{ status?: string; ubicacion?: string; accion?: string }>;
 }) {
   const params = await searchParams;
   if (!isSupabaseConfigured()) {
@@ -152,6 +155,7 @@ export default async function InventoryPage({
         activeLocationId="preview"
         canCount
         canCreateTransfer
+        initialShowTransfers={params.accion === "traspasos"}
         status={params.status}
         preview
       />
@@ -220,7 +224,7 @@ export default async function InventoryPage({
     transferActorsData,
     destinations,
   ] = await Promise.all([
-    supabase.rpc("get_inventory_snapshot", {
+    supabase.rpc("get_inventory_snapshot_v2", {
       p_location_id: activeLocation.id,
       p_query: "",
       p_limit: INVENTORY_SNAPSHOT_LIMIT,
@@ -237,7 +241,7 @@ export default async function InventoryPage({
       .eq("location_id", activeLocation.id)
       .order("created_at", { ascending: false })
       .limit(20),
-    supabase.rpc("list_inventory_transfers", {
+    supabase.rpc("list_inventory_transfers_v2", {
       p_location_id: activeLocation.id,
       p_limit: 30,
     }),
@@ -288,6 +292,7 @@ export default async function InventoryPage({
     (row) => ({
       variantId: row.variant_id,
       productId: row.product_id,
+      measureUnit: row.measure_unit,
       productName: row.product_name,
       brand: row.brand_name,
       sku: row.sku,
@@ -360,6 +365,7 @@ export default async function InventoryPage({
     };
     transfer.items.push({
       variantId: row.variant_id,
+      measureUnit: row.measure_unit,
       productName: row.product_name,
       sku: row.sku,
       requestedQuantity: Number(row.qty_requested),
@@ -396,6 +402,7 @@ export default async function InventoryPage({
       dispatchTransferAction={dispatchInventoryTransfer}
       receiveTransferAction={receiveInventoryTransfer}
       cancelTransferAction={cancelInventoryTransfer}
+      initialShowTransfers={params.accion === "traspasos"}
       status={params.status}
     />
   );
