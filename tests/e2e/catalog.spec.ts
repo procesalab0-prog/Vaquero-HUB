@@ -12,6 +12,9 @@ test("el lector con Enter y el botón buscan códigos sin cambiar sus ceros", as
   await expect(
     page.getByText("Bota Cuadra piel de venado · Café · talla 25"),
   ).toBeVisible();
+  await expect(
+    page.locator(".data-table > .table-row:not(.table-header)"),
+  ).toHaveCount(1);
   await search.fill("000007779");
   await page
     .getByRole("button", { name: "Buscar código", exact: true })

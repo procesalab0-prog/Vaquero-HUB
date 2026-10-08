@@ -236,6 +236,7 @@ export function ProductsWorkspace({
     message: string;
   } | null>(null);
   const scanRequestId = useRef(0);
+  const [exactMatchId, setExactMatchId] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedVariantIds, setSelectedVariantIds] = useState<string[]>([]);
@@ -331,6 +332,8 @@ export function ProductsWorkspace({
   );
   const filteredVariants = useMemo(() => {
     const term = deferredQuery.trim().toLocaleLowerCase("es-MX");
+    if (exactMatchId)
+      return variants.filter((item) => item.id === exactMatchId);
     return variants.filter(
       (item) =>
         !term ||
@@ -339,7 +342,7 @@ export function ProductsWorkspace({
           .toLocaleLowerCase("es-MX")
           .includes(term),
     );
-  }, [deferredQuery, variants]);
+  }, [deferredQuery, exactMatchId, variants]);
   const selectedVariants = variants.filter((variant) =>
     selectedVariantIds.includes(variant.id),
   );
@@ -618,9 +621,11 @@ export function ProductsWorkspace({
     }
 
     const requestId = ++scanRequestId.current;
+    setExactMatchId(null);
     setQuery(code);
     const localMatch = variants.find((item) => item.legacyCode === code);
     if (localMatch) {
+      setExactMatchId(localMatch.id);
       setScanFeedback({
         kind: "found",
         message: `${localMatch.productName} · ${localMatch.color} · talla ${localMatch.size}`,
@@ -663,6 +668,7 @@ export function ProductsWorkspace({
         ? current
         : [match, ...current],
     );
+    setExactMatchId(match.id);
     setQuery(match.legacyCode);
     setScanFeedback({
       kind: "found",
@@ -782,6 +788,7 @@ export function ProductsWorkspace({
             value={query}
             onChange={(event) => {
               scanRequestId.current += 1;
+              setExactMatchId(null);
               setQuery(event.target.value);
               setScanFeedback(null);
             }}
