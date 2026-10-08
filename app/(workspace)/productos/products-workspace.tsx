@@ -772,8 +772,22 @@ export function ProductsWorkspace({
             }}
             placeholder="Buscar producto, marca o código"
             aria-label="Buscar productos"
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && query.trim()) {
+                event.preventDefault();
+                void handleScannedCode(query.trim(), "search");
+              }
+            }}
           />
         </label>
+        <button
+          className="secondary-button"
+          type="button"
+          disabled={!query.trim() || scanFeedback?.kind === "working"}
+          onClick={() => void handleScannedCode(query.trim(), "search")}
+        >
+          Buscar código
+        </button>
         <button
           className="secondary-button scan-camera-button"
           type="button"

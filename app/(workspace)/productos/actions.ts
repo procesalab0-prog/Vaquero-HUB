@@ -655,7 +655,7 @@ export async function lookupCatalogBarcode(
   const { supabase } = await requirePermission("products.read");
   const { data, error } = await supabase.rpc("search_catalog", {
     p_query: code,
-    p_limit: 5,
+    p_limit: 200,
   });
   if (error) {
     console.error("[productos/lookupCatalogBarcode] failed", {
@@ -676,7 +676,10 @@ export async function lookupCatalogBarcode(
       price_cents: number;
       attributes: Record<string, string> | null;
     }> | null
-  )?.[0];
+  )?.find(
+    (candidate) =>
+      candidate.primary_barcode === code || candidate.legacy_sicar_code === code,
+  );
   if (!row) return null;
 
   return {

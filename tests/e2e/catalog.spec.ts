@@ -2,6 +2,27 @@ import { expect, test } from "@playwright/test";
 
 test.use({ viewport: { width: 390, height: 844 } });
 
+test("el lector con Enter y el botón buscan códigos sin cambiar sus ceros", async ({
+  page,
+}) => {
+  await page.goto("/productos");
+  const search = page.getByLabel("Buscar productos");
+  await search.fill("750104020251");
+  await search.press("Enter");
+  await expect(
+    page.getByText("Bota Cuadra piel de venado · Café · talla 25"),
+  ).toBeVisible();
+  await search.fill("000007779");
+  await page
+    .getByRole("button", { name: "Buscar código", exact: true })
+    .click();
+  await expect(
+    page.getByText("No encontramos el código 000007779 en el catálogo."),
+  ).toBeVisible();
+  await expect(search).toHaveValue("000007779");
+  await expect(page.locator("html")).toHaveJSProperty("scrollWidth", 390);
+});
+
 for (const viewport of [
   { width: 390, height: 844 },
   { width: 768, height: 1024 },
