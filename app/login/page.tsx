@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Image from "next/image";
+import { ProcesaLabCredit } from "@/components/procesalab-credit";
 
 import { MOTION_DAY_COOKIE, loginScene, storeDay } from "@/lib/entrance";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -87,7 +88,8 @@ export default async function LoginPage({
             <a className="primary-button" href="/inicio">Continuar a la demostración</a>
           </div>
         )}
-        <small className="login-security">Acceso protegido por rol y sucursal · Creado por ProcesaLab</small>
+        <small className="login-security">Acceso protegido por rol y sucursal</small>
+        <footer className="login-developer-credit"><ProcesaLabCredit /></footer>
       </section>
     </main>
   );

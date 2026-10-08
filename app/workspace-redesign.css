@@ -1,5 +1,12 @@
 /* Workspace only. Printing and the customer PWA retain their calibrated styles. */
 @media screen {
+  .rail-developer-credit { padding: 0 12px; border-top: 1px solid #ffffff20; }
+  .settings-developer-credit { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .login-developer-credit { margin-top: 14px; text-align: center; }
+  .workspace-redesign.navigation-compact .rail-developer-credit { display: none; }
+}
+@media screen and (max-width: 1100px) { .rail-developer-credit { display: none; } }
+@media screen {
   .workspace-redesign .pos-product-family { min-width: 0; align-self: start; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
   .workspace-redesign .pos-product-family .product-card { width: 100%; border: 0; border-radius: 0; box-shadow: none; }
   .workspace-redesign .pos-variant-picker { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px; border-top: 1px solid var(--border); max-height: 220px; overflow-y: auto; }
