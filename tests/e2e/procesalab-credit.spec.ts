@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { APP_VERSION } from "../../lib/release";
 
 test("el panel de versión muestra el crédito blanco animado", async ({
   page,
@@ -11,7 +12,7 @@ test("el panel de versión muestra el crédito blanco animado", async ({
     name: "Información de usuario y versión",
   });
   await expect(
-    panel.getByText("Versión 0.57.1", { exact: true }),
+    panel.getByText(`Versión ${APP_VERSION}`, { exact: true }),
   ).toBeVisible();
   await expect(panel.locator('img[src*="engrane-blanco"]')).toBeVisible();
   await expect(panel.locator('img[src*="engrane-blanco"]')).toHaveCSS(

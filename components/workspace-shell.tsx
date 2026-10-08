@@ -33,6 +33,7 @@ import {
 import { WesternBootIcon, WesternHatIcon, WesternBadgeIcon, type WorkspaceIcon } from "@/components/vaquero-icons";
 import type { WorkspaceIdentity } from "@/lib/auth/types";
 import { WorkspaceContext } from "@/components/workspace-context";
+import { EntranceCurtain, useEntrance } from "@/components/entrance-curtain";
 import { WorkspaceModuleMenu } from "@/components/workspace-module-menu";
 import { LA_PIEDAD_STORE } from "@/lib/business-profile";
 import { pickActiveLocation, saveActiveLocationPreference } from "@/lib/location-preference";
@@ -103,6 +104,7 @@ export function WorkspaceShell({
 }) {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
+  const { scene: entranceScene, finish: finishEntrance } = useEntrance();
   const searchParams = useSearchParams();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notices, setNotices] = useState<WorkspaceNotification[]>([]);
@@ -218,7 +220,8 @@ export function WorkspaceShell({
   }
 
   return (
-    <div className={`workspace-shell workspace-redesign${navigationCompact ? " navigation-compact" : ""}`}>
+    <div className={`workspace-shell workspace-redesign${navigationCompact ? " navigation-compact" : ""}`} data-entrance={entranceScene === "full" ? "full" : undefined}>
+      {entranceScene === "full" ? <EntranceCurtain onDone={finishEntrance} /> : null}
       <aside className="nav-rail" aria-label="Navegación principal">
         <Link
           className="rail-brand"

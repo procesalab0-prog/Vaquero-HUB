@@ -3365,3 +3365,24 @@ Validación 0.55.5: revisión visual del icono; compilación de producción/Type
   local que se revirtió. No modifica las reglas financieras ni datos históricos.
 - Las capturas de Playwright usan `test.info().outputPath` para funcionar en
   Linux y Mac y separar proyectos/reintentos. USD y fracciones siguen apagados.
+
+### Entrega visible 0.58.0 — movimiento de marca
+
+- Se implementa la mejora programada de «Movimiento y animación» en los momentos
+  que pidió el dueño: acceso, pantalla de carga y entrada, Inicio, agregar al
+  carrito, venta completada, traspasos y Mi Vaquero (puntos y canje). Detalle,
+  tiempos y reglas en `docs/specs/MOVIMIENTO.md`.
+- Regla operativa: lo que se mueve no recibe toques y lo que recibe toques no se
+  desplaza; ninguna animación agrega espera ni se celebra antes de que el
+  servidor confirme; todo se apaga con movimiento reducido.
+- La pantalla de carga sustituye al texto suelto que aparecía al abrir el
+  programa y después de entrar. Repite la composición del acceso para que el
+  telón de entrada arranque desde ella sin que se note el relevo.
+- Traspasos muestra su avance con tres momentos y texto siempre visible; el
+  dibujo nunca es la única señal del estado.
+- Mi Vaquero celebra puntos ganados con lo que llega del servidor, sin guardar
+  nada en el dispositivo, para cumplir la promesa de conservar sólo el número de
+  socio. Los niveles no existen y no se inventan.
+- Pendiente: comprobación en la tienda con iPad, computadora del mostrador y un
+  teléfono real de cliente.
+

@@ -385,6 +385,9 @@ export function PosWorkspace({
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [toast, setToast] = useState("");
+  // Cada alta reinicia el destello del renglón. El contador alterna entre dos
+  // animaciones idénticas: así una ráfaga del lector no se encola ni se pierde.
+  const [lastAdded, setLastAdded] = useState<{ id: string; pulse: number } | null>(null);
   const [discountPercent, setDiscountPercent] = useState(
     Number(currentDraft?.discount_percent ?? 0),
   );
@@ -904,6 +907,7 @@ export function PosWorkspace({
       );
     });
     notify(`Artículo agregado · ${variant.productName} ${variant.size}`);
+    setLastAdded((current) => ({ id: variant.id, pulse: (current?.pulse ?? 0) + 1 }));
     if ("vibrate" in navigator) navigator.vibrate(12);
   }
 
@@ -1331,6 +1335,7 @@ export function PosWorkspace({
   function newSale() {
     setActiveQuote(null);
     setCart([]);
+    setLastAdded(null);
     setInvalidQuantities({});
     setCompleted(false);
     setQuery("");
@@ -1529,7 +1534,10 @@ export function PosWorkspace({
       : activeLocation;
     return (
       <>
-        <section className="sale-success">
+        <section
+          className="sale-success"
+          data-state={cancelled ? "cancelled" : "completed"}
+        >
           <span className="success-seal">
             <Check aria-hidden="true" strokeWidth={2.5} />
           </span>
@@ -1995,7 +2003,10 @@ export function PosWorkspace({
             </div>
           ) : (
             cart.map((line) => (
-              <article className="sale-line" key={line.variant.id}>
+              <article
+                className={`sale-line${lastAdded?.id === line.variant.id ? ` just-added-${lastAdded.pulse % 2}` : ""}`}
+                key={line.variant.id}
+              >
                 <div className="sale-line-top">
                   <span className="sale-thumb">
                     <ShoppingCart aria-hidden="true" strokeWidth={1.6} />
@@ -2166,7 +2177,7 @@ export function PosWorkspace({
       </aside>
 
       <button
-        className="mobile-cart-toggle"
+        className={`mobile-cart-toggle${lastAdded ? ` cart-bump-${lastAdded.pulse % 2}` : ""}`}
         type="button"
         onClick={() => setCartDrawerOpen(true)}
       >

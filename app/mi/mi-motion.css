@@ -1,0 +1,136 @@
+/*
+ * Movimiento de Mi Vaquero. Aquí la marca puede ser más expresiva que en
+ * Mi Tienda: es la app del cliente y sus momentos son celebraciones, no
+ * operación. Aun así sólo se celebra lo que el servidor ya confirmó, y todo
+ * respeta prefers-reduced-motion. Ver docs/specs/MOVIMIENTO.md.
+ */
+
+.mi-points {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.mi-points strong {
+  position: relative;
+  font-variant-numeric: tabular-nums;
+}
+
+.mi-points-earned {
+  align-self: flex-start;
+  padding: 4px 10px;
+  border: 1px solid var(--mi-sand);
+  border-radius: 999px;
+  color: var(--mi-bone);
+  font-size: 12px;
+  font-style: normal;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.mi-spur-burst {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.mi-redemption-code {
+  position: relative;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Puntos ganados: el número cuenta hacia arriba (lo hace el componente) y
+     una estrella de espuela se abre alrededor, una sola vez. */
+  .mi-points.celebrating .mi-points-earned {
+    animation: mi-motion-rise 420ms 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .mi-spur-burst i {
+    position: absolute;
+    left: -9px;
+    top: -9px;
+    width: 18px;
+    height: 18px;
+    background: var(--mi-bone);
+    clip-path: polygon(
+      50% 0,
+      62% 38%,
+      100% 50%,
+      62% 62%,
+      50% 100%,
+      38% 62%,
+      0 50%,
+      38% 38%
+    );
+    opacity: 0;
+    animation: mi-motion-spur 900ms 120ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .mi-spur-burst i:nth-child(even) {
+    width: 11px;
+    height: 11px;
+    left: -5.5px;
+    top: -5.5px;
+    background: var(--mi-sand);
+    animation-delay: 200ms;
+  }
+
+  /* Canje: el código cae como un sello sobre papel. Se lee de inmediato; el
+     sello dura menos de medio segundo. */
+  .mi-redemption-code {
+    animation: mi-motion-stamp 360ms cubic-bezier(0.3, 1.4, 0.5, 1) both;
+  }
+
+  .mi-redemption-code::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border: 1px solid var(--mi-sand);
+    pointer-events: none;
+    animation: mi-motion-ring 700ms 180ms ease-out both;
+  }
+
+  @keyframes mi-motion-rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+
+  @keyframes mi-motion-spur {
+    0% {
+      opacity: 0;
+      transform: rotate(var(--spur-angle)) translateY(-18px) scale(0.3)
+        rotate(0deg);
+    }
+    25% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: rotate(var(--spur-angle)) translateY(-96px) scale(1)
+        rotate(90deg);
+    }
+  }
+
+  @keyframes mi-motion-stamp {
+    from {
+      opacity: 0;
+      transform: scale(1.14) rotate(-3deg);
+    }
+  }
+
+  @keyframes mi-motion-ring {
+    from {
+      opacity: 0.8;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(1.08, 1.25);
+    }
+  }
+}
