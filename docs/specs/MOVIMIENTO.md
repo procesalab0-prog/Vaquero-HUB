@@ -1,7 +1,7 @@
 # Movimiento de marca en Mi Tienda SM y Mi Vaquero
 
-Implementado en la versión 0.58.0 a petición de Emmanuel (7 y 8 de octubre de
-2026). Aplica las reglas de la sección «Movimiento y animación» del Plan
+Implementado en las versiones 0.58.0 y 0.59.0 a petición de Emmanuel (7 y 8 de
+octubre de 2026). Aplica las reglas de la sección «Movimiento y animación» del Plan
 Maestro y los criterios de `REDISENO_MI_TIENDA.md`.
 
 ## Reglas que no se negocian
@@ -41,6 +41,24 @@ Maestro y los criterios de `REDISENO_MI_TIENDA.md`.
 | **Mi Vaquero · puntos** | El saldo cuenta hacia arriba desde el anterior, una estrella de espuela se abre alrededor y aparece «+N puntos de tu compra». | Si el movimiento más reciente es una compra de las últimas 48 horas; una vez por sesión de la app. |
 | **Mi Vaquero · canje** | El código temporal cae como sello sobre papel, con un anillo arena. Se lee de inmediato. | Cada código generado. |
 
+## Segunda ronda (0.59.0)
+
+| Momento | Qué se ve | Cuándo |
+| --- | --- | --- |
+| **Todos los botones** | Una huella de luz nace donde cae el dedo y se apaga en menos de medio segundo; en botones oscuros es clara, en claros es café. Se conserva el «hundido» que ya tenían y ahora también se ve en iPad y iPhone. Vibración de 8 ms en teléfonos Android, con interruptor en Ajustes › Apariencia. | Cualquier botón, enlace o pestaña, en Mi Tienda y Mi Vaquero. Si el toque se vuelve desplazamiento, la huella desaparece y no vibra. |
+| **Campana** | Se mece con cada aviso nuevo; el punto rojo se vuelve un contador de avisos sin leer que salta al llegar otro; el aviso entra desde arriba con una barra que muestra los 5 segundos que le quedan. | Al llegar avisos de Venta, Compras, Caja, Devoluciones o la prueba de Ajustes. El contador se limpia al abrir la campana. |
+| **Apartados** | Cada apartado muestra una barra de lo pagado con su porcentaje escrito. Al registrar un abono, la barra de ese apartado se llena desde lo que había antes, cuando queda a la vista; si el abono lo liquidó, cae el sello «Liquidado». | La barra siempre; el llenado y el sello sólo al volver de registrar un abono confirmado. |
+| **Tarjeta de socio** | Un destello diagonal cruza la tarjeta, como luz sobre una tarjeta nueva. Sobre la cara blanca del código es apenas un tono arena, para no quitar contraste a las barras. | Al aparecer, una vez por sesión de la app, y cada vez que se voltea para mostrarla en caja. |
+
+Sobre la vibración: **iPad y iPhone no permiten vibrar desde una página web**
+(Safari no implementa esa función). Ahí la respuesta es la huella de luz y el
+«hundido». Ajustes lo dice en el propio interruptor.
+
+La huella es una sola capa flotante que se coloca sobre el botón tocado: no
+cambia el estilo, la posición ni el tamaño de ningún botón, y nunca recibe
+toques. La campana conserva su nombre accesible «Notificaciones»; cada aviso ya
+se anuncia por voz al llegar.
+
 ## Lo que no se hizo y por qué
 
 - **Niveles en Mi Vaquero.** El sistema no tiene niveles: el motor de puntos,
@@ -66,6 +84,10 @@ Maestro y los criterios de `REDISENO_MI_TIENDA.md`.
   telón. Comparten medidas: si cambia una, cambia la otra.
 - `lib/transfer-progress.ts`, `app/(workspace)/inventario/transfer-progress.tsx`.
 - `lib/loyalty-motion.ts`, `app/mi/points-balance.tsx`.
+- `lib/press-feedback.ts`, `components/press-feedback.tsx` (montado en
+  `app/layout.tsx`), `components/haptics-setting.tsx`.
+- `lib/layaway-progress.ts`, `app/(workspace)/apartados/layaway-progress.tsx`.
+- Campana: `components/workspace-shell.tsx`. Tarjeta: `app/mi/member-card.tsx`.
 
 ## Cómo se comprobó
 
@@ -80,6 +102,10 @@ Maestro y los criterios de `REDISENO_MI_TIENDA.md`.
   cuadro del telón es idéntico a la pantalla de carga, así el relevo no se nota.
 
 ## Pendiente de comprobar en la tienda
+
+- iPad: que el «hundido» de los botones ya se vea al tocar.
+- Teléfono Android: que la vibración se sienta corta y se pueda apagar.
+- Un abono real en Apartados que liquide un apartado.
 
 - iPad del mostrador, vertical y horizontal: que la entrada se sienta fluida.
 - Computadora del mostrador: abrir el programa, cobrar y escanear sin esperar.

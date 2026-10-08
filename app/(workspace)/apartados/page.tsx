@@ -24,6 +24,7 @@ import {
   substituteLayawayItem,
 } from "./actions";
 import { PrintButton } from "./print-button";
+import { LayawayProgress } from "./layaway-progress";
 import {measureLineCents,quantityUnit,type MeasureUnit} from '@/lib/measure-units';
 
 export const metadata: Metadata = { title: "Apartados" };
@@ -898,6 +899,23 @@ function LayawayPageContent({
                     </strong>
                   </span>
                 </div>
+                {row.status !== "CANCELLED" ? (
+                  <LayawayProgress
+                    paidCents={Number(row.paid_cents)}
+                    totalCents={Number(row.total_cents)}
+                    previousPaidCents={
+                      receipt && receipt.layaway_folio === row.folio
+                        ? Math.max(
+                            0,
+                            Number(row.paid_cents) - Number(receipt.total_cents),
+                          )
+                        : undefined
+                    }
+                    liquidated={
+                      row.status === "PAID" && Number(row.balance_cents) === 0
+                    }
+                  />
+                ) : null}
                 <div className="layaway-items">
                   {rowItems.map((item) => (
                     <div key={item.id}>

@@ -166,3 +166,28 @@ test("el rechazo queda encima del modal y no mezcla avisos de otra sucursal", as
     page.getByRole("dialog", { name: "Producto rápido", exact: true }),
   ).toBeVisible();
 });
+
+test("la campana se mece, cuenta los avisos sin leer y los limpia al abrirla", async ({
+  page,
+}) => {
+  await page.goto("/ajustes");
+  await page.getByRole("button", { name: /Notificaciones Avisos/ }).click();
+  const bell = page.locator(".notification-trigger");
+  await expect(bell.locator(".bell-count")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Probar notificación" }).click();
+  await expect(bell.locator(".bell-count")).toHaveText("1");
+  await expect(bell.locator("svg")).toHaveClass(/bell-ring-1/);
+  await page.getByRole("button", { name: "Probar notificación" }).click();
+  await expect(bell.locator(".bell-count")).toHaveText("2");
+  // Cada aviso reinicia el balanceo con la otra animación idéntica.
+  await expect(bell.locator("svg")).toHaveClass(/bell-ring-0/);
+
+  const toast = page.locator(".workspace-notification-toast");
+  await expect(toast.locator(".workspace-notification-timer")).toHaveCount(1);
+
+  await page
+    .getByRole("button", { name: "Notificaciones", exact: true })
+    .click();
+  await expect(bell.locator(".bell-count")).toHaveCount(0);
+});

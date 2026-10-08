@@ -39,6 +39,10 @@ import { LA_PIEDAD_STORE } from "@/lib/business-profile";
 import { pickActiveLocation, saveActiveLocationPreference } from "@/lib/location-preference";
 import { WORKSPACE_NOTIFICATION_EVENT, type WorkspaceNotification } from "@/lib/workspace-notifications";
 
+// Cuánto se queda el aviso en pantalla. La barra del aviso muestra este mismo
+// tiempo, así que se declara una sola vez.
+const NOTICE_TOAST_MS = 5000;
+
 const navigation: Array<{
   href: string;
   label: string;
@@ -109,6 +113,10 @@ export function WorkspaceShell({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notices, setNotices] = useState<WorkspaceNotification[]>([]);
   const [noticeToast, setNoticeToast] = useState<WorkspaceNotification | null>(null);
+  // Avisos que llegaron desde la última vez que se abrió la campana, y un
+  // contador que reinicia el balanceo con cada aviso nuevo.
+  const [unreadNotices, setUnreadNotices] = useState(0);
+  const [bellRing, setBellRing] = useState(0);
   const [profileOpen, setProfileOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(true);
@@ -128,8 +136,10 @@ export function WorkspaceShell({
       if (!notice || notice.locationId !== activeLocationId) return;
       setNotices((current) => [notice, ...current.filter((item) => item.id !== notice.id)].slice(0, 20));
       setNoticeToast(notice);
+      setUnreadNotices((count) => count + 1);
+      setBellRing((count) => count + 1);
       if (timer) clearTimeout(timer);
-      timer = setTimeout(() => setNoticeToast(null), 5000);
+      timer = setTimeout(() => setNoticeToast(null), NOTICE_TOAST_MS);
     };
     window.addEventListener(WORKSPACE_NOTIFICATION_EVENT, receive);
     return () => { window.removeEventListener(WORKSPACE_NOTIFICATION_EVENT, receive); if (timer) clearTimeout(timer); };
@@ -368,10 +378,11 @@ export function WorkspaceShell({
               onClick={() => {
                 setProfileOpen(false);
                 setNotificationsOpen((current) => !current);
+                setUnreadNotices(0);
               }}
             >
-              <Bell aria-hidden="true" strokeWidth={1.8} />
-              {locationNotices.length ? <span aria-hidden="true" /> : null}
+              <Bell aria-hidden="true" strokeWidth={1.8} className={bellRing ? `bell-ring-${bellRing % 2}` : undefined} />
+              {unreadNotices ? <span aria-hidden="true" className={`bell-count bell-pop-${bellRing % 2}`}>{unreadNotices > 9 ? "9+" : unreadNotices}</span> : null}
             </button>
             <button
               className="active-user"
@@ -416,7 +427,7 @@ export function WorkspaceShell({
           </Link>
         </aside>
       ) : null}
-      {noticeToast?.locationId === activeLocationId ? <aside className="workspace-notification-toast" data-kind={noticeToast.kind ?? "success"} role={noticeToast.kind === "error" ? "alert" : "status"}><strong>{noticeToast.title}</strong><span>{noticeToast.message}</span><button type="button" aria-label="Cerrar aviso" onClick={() => setNoticeToast(null)}><X aria-hidden="true" /></button></aside> : null}
+      {noticeToast?.locationId === activeLocationId ? <aside key={noticeToast.id} className="workspace-notification-toast" data-kind={noticeToast.kind ?? "success"} role={noticeToast.kind === "error" ? "alert" : "status"} style={{ "--notice-ms": `${NOTICE_TOAST_MS}ms` } as React.CSSProperties}><strong>{noticeToast.title}</strong><span>{noticeToast.message}</span><button type="button" aria-label="Cerrar aviso" onClick={() => setNoticeToast(null)}><X aria-hidden="true" /></button><i className="workspace-notification-timer" aria-hidden="true" /></aside> : null}
       {profileOpen ? (
         <aside
           className="profile-popover"

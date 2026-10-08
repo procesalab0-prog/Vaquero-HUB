@@ -15,6 +15,7 @@ import {
   UserCog,
 } from "lucide-react";
 import { useWorkspace } from "@/components/workspace-context";
+import { HapticsSetting } from "@/components/haptics-setting";
 import { BUSINESS_PROFILE, LA_PIEDAD_STORE } from "@/lib/business-profile";
 import {
   ACCENT_EVENT,
@@ -703,6 +704,7 @@ function AppearanceSettings({
             etiquetas.
           </small>
         </label>
+        <HapticsSetting />
         <label>
           <span>Mi PIN de supervisor</span>
           <input

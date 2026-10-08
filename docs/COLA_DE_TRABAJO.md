@@ -17,6 +17,27 @@ Consulta `INTEGRACION_MEJORAS_2026_10_07.md` para evidencia y compuertas.
 Esto actualiza el pendiente histórico de Auth local; incluye ensayo incremental local 101 → 123, pero no acredita aceptación
 alojada ni habilita dólares o asignación fraccionaria.
 
+## Entrega 0.59.0 — botones, campana, apartados y tarjeta de socio
+
+Segunda ronda de movimiento, elegida por Emmanuel el 8 de octubre de 2026. La
+campana la marcó como importante. Detalle en
+[`specs/MOVIMIENTO.md`](specs/MOVIMIENTO.md).
+
+- [x] Todos los botones: huella de luz desde el punto de toque, «hundido»
+      visible también en iPad/iPhone y vibración corta en Android con
+      interruptor en Ajustes.
+- [x] Campana: se mece con cada aviso, cuenta los no leídos, se limpia al
+      abrirla, y el aviso muestra su tiempo restante. La prueba de Ajustes
+      funciona y quedó cubierta por una prueba de navegador.
+- [x] Apartados: barra de lo pagado con porcentaje; al registrar un abono se
+      llena desde el saldo anterior y, si lo liquida, cae el sello.
+- [x] Mi Vaquero: destello de la tarjeta de socio al aparecer y al voltearla
+      para mostrarla en caja.
+- [ ] iPad y iPhone no permiten vibrar desde el navegador; ahí la respuesta es
+      sólo visual. Confirmar en el iPad del mostrador que el «hundido» se ve.
+- [ ] Probar un abono real que liquide un apartado y un teléfono Android con
+      vibración.
+
 ## Entrega 0.58.0 — movimiento de marca
 
 Solicitud de Emmanuel del 7 y 8 de octubre de 2026. Especificación completa en
