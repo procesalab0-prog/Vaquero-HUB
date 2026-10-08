@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ProcesaLabCredit } from "@/components/procesalab-credit";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { startNavigationProgress } from "@/lib/navigation-progress";
 import { useEffect, useMemo, useState } from "react";
 import { APP_RELEASE, APP_VERSION } from "@/lib/release";
 import { ACCENT_EVENT, applyAccent, storedAccent } from "@/lib/accent";
@@ -198,6 +199,7 @@ export function WorkspaceShell({
     saveActiveLocationPreference(locationId);
     const next = new URLSearchParams(window.location.search);
     next.set("ubicacion", locationId);
+    startNavigationProgress();
     router.replace(`${pathname}?${next.toString()}`);
   }
 
@@ -325,7 +327,10 @@ export function WorkspaceShell({
               aria-label="Regresar"
               onClick={() => {
                 if (window.history.length > 1) router.back();
-                else router.push(locationHref("/inicio"));
+                else {
+                  startNavigationProgress();
+                  router.push(locationHref("/inicio"));
+                }
               }}
             >
               <ArrowLeft aria-hidden="true" />

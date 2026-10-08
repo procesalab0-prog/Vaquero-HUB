@@ -7,6 +7,7 @@ import { publishWorkspaceNotification } from "@/lib/workspace-notifications";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { startNavigationProgress } from "@/lib/navigation-progress";
 import {
   Banknote,
   ArrowRightLeft,
@@ -533,6 +534,7 @@ export function PosWorkspace({
     const code = rawCode.trim().toLocaleUpperCase("es-MX");
     if (!code) return;
     if (isTicketReceiptCode(code)) {
+      startNavigationProgress();
       router.push(`/tickets?escanear=${encodeURIComponent(code)}`);
       return;
     }
@@ -639,6 +641,7 @@ export function PosWorkspace({
       const params = new URLSearchParams({ accion: "traspasos" });
       const locationId = activeLocation?.id ?? cashSession?.location_id;
       if (locationId) params.set("ubicacion", locationId);
+      startNavigationProgress();
       router.push(`/inventario?${params.toString()}`);
     } catch {
       setSaleError(
@@ -1934,7 +1937,10 @@ export function PosWorkspace({
             <button
               className="returns-shortcut"
               type="button"
-              onClick={() => router.push("/tickets?accion=devolver")}
+              onClick={() => {
+                startNavigationProgress();
+                router.push("/tickets?accion=devolver");
+              }}
             >
               <ArrowRightLeft aria-hidden="true" />
               Cambios / devoluciones

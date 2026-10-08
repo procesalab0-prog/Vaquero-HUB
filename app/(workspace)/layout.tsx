@@ -1,3 +1,4 @@
+import { NavigationProgress } from "@/components/navigation-progress";
 import { WorkspaceBoot } from "@/components/workspace-boot";
 import { WorkspaceShell } from "@/components/workspace-shell";
 import { Suspense } from "react";
@@ -13,15 +14,22 @@ export default async function WorkspaceLayout({
   const activeLocation = identity
     ? await resolveActiveLocation(identity.locations)
     : null;
+  // Sin pantalla de espera por sección: al cambiar de página se queda visible
+  // la actual hasta que la nueva está lista, con la línea de NavigationProgress.
   return (
-    <Suspense fallback={<WorkspaceBoot />}>
-      <WorkspaceShell
-        key={activeLocation?.id ?? "sin-sucursal"}
-        identity={identity}
-        initialLocationId={activeLocation?.id ?? ""}
-      >
-        {children}
-      </WorkspaceShell>
-    </Suspense>
+    <>
+      <Suspense fallback={null}>
+        <NavigationProgress />
+      </Suspense>
+      <Suspense fallback={<WorkspaceBoot />}>
+        <WorkspaceShell
+          key={activeLocation?.id ?? "sin-sucursal"}
+          identity={identity}
+          initialLocationId={activeLocation?.id ?? ""}
+        >
+          {children}
+        </WorkspaceShell>
+      </Suspense>
+    </>
   );
 }

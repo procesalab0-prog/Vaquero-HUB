@@ -3,6 +3,7 @@
 import { CalendarDays, Check, Download, FileText, Plus, Search, Send, ShoppingCart, UserRound, X } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { startNavigationProgress } from "@/lib/navigation-progress";
 
 import { CustomerLookup } from "@/components/customer-lookup";
 import type { CustomerSummary } from "@/lib/customers";
@@ -146,6 +147,7 @@ export function QuotesWorkspace({ locationId, locationName = "La Piedad", locati
         return;
       }
       if (result.href) {
+        startNavigationProgress();
         router.push(result.href);
         return;
       }

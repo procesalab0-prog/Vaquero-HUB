@@ -1,7 +1,7 @@
 # Movimiento de marca en Mi Tienda SM y Mi Vaquero
 
-Implementado en las versiones 0.58.0 y 0.59.0 a petición de Emmanuel (7 y 8 de
-octubre de 2026). Aplica las reglas de la sección «Movimiento y animación» del Plan
+Implementado en las versiones 0.58.0, 0.59.0 y 0.60.0 a petición de Emmanuel
+(7 y 8 de octubre de 2026). Aplica las reglas de la sección «Movimiento y animación» del Plan
 Maestro y los criterios de `REDISENO_MI_TIENDA.md`.
 
 ## Reglas que no se negocian
@@ -59,6 +59,34 @@ cambia el estilo, la posición ni el tamaño de ningún botón, y nunca recibe
 toques. La campana conserva su nombre accesible «Notificaciones»; cada aviso ya
 se anuncia por voz al llegar.
 
+## Cambio de sección (0.60.0)
+
+Antes, cada cambio de página tapaba la sección con un cuadro «Abriendo sección ·
+Preparando la información de la tienda…» y un círculo girando, aunque la página
+llegara en un instante. Ahora no hay pantalla de espera por sección:
+
+- **La página actual se queda a la vista** hasta que la nueva está lista, y
+  entonces se cambia con una entrada suave de 180 ms (sólo opacidad, y sólo al
+  cambiar de sección: filtrar o cambiar de pestaña dentro de una página no
+  parpadea).
+- **El botón tocado se marca al instante** con una línea arena que late: el
+  toque sí se registró.
+- **Si la sección tarda más de 140 ms**, una línea de marca corre por la parte
+  superior y el emblema del menú lateral se ilumina: un destello arena recorre
+  sólo la silueta del logo, recortado con su propia imagen, sin deformarlo.
+  Si llega antes, no se ve ninguna espera.
+- Funciona igual para los enlaces y para los cambios que hace el propio
+  sistema (escanear un ticket desde Venta, abrir Traspasos, cambiar de
+  sucursal, guardar una cotización), que avisan con `startNavigationProgress()`.
+- Si algo sale mal y la página no cambia, la línea se retira sola a los 8 s.
+
+Al no haber pantalla por sección, al abrir el programa se ve una sola pantalla
+de carga (la de marca) hasta que la sección inicial está lista, en lugar de la
+carga de marca seguida del cuadro de sección.
+
+Excepciones pequeñas a la regla de animar sólo opacidad y transformación: el
+latido del botón tocado usa `box-shadow` sobre ese único enlace.
+
 ## Lo que no se hizo y por qué
 
 - **Niveles en Mi Vaquero.** El sistema no tiene niveles: el motor de puntos,
@@ -88,6 +116,9 @@ se anuncia por voz al llegar.
   `app/layout.tsx`), `components/haptics-setting.tsx`.
 - `lib/layaway-progress.ts`, `app/(workspace)/apartados/layaway-progress.tsx`.
 - Campana: `components/workspace-shell.tsx`. Tarjeta: `app/mi/member-card.tsx`.
+- `lib/navigation-progress.ts`, `components/navigation-progress.tsx` (montado en
+  `app/(workspace)/layout.tsx`). Ya no existe `app/(workspace)/loading.tsx`: no
+  volver a crearlo, porque reaparecería la pantalla de espera en cada sección.
 
 ## Cómo se comprobó
 

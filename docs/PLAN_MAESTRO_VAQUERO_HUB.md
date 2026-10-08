@@ -3400,3 +3400,12 @@ Validación 0.55.5: revisión visual del icono; compilación de producción/Type
 - La tarjeta de socio de Mi Vaquero destella al aparecer y al voltearla para
   mostrarla en caja, sin quitar contraste al código.
 
+### Entrega visible 0.60.0 — cambio de sección sin pantalla de espera
+
+- Se retira el cuadro «Abriendo sección» que tapaba cada página al navegar. La
+  página actual se queda a la vista hasta que la nueva está lista; el botón
+  tocado se marca al instante y, sólo si la espera pasa de 140 ms, corre una
+  línea de marca arriba y el emblema del menú se ilumina.
+- Regla operativa: no crear pantallas de espera por sección. Una espera se
+  indica sin quitar de la vista lo que la persona estaba viendo.
+

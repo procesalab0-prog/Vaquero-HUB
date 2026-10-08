@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.59.0";
-export const APP_RELEASE = "Botones que responden, campana viva y apartados con avance";
+export const APP_VERSION = "0.60.0";
+export const APP_RELEASE = "Cambio de sección sin pantalla de espera";
