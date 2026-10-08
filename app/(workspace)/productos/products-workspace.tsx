@@ -232,9 +232,10 @@ export function ProductsWorkspace({
     null,
   );
   const [scanFeedback, setScanFeedback] = useState<{
-    kind: "working" | "found" | "missing";
+    kind: "working" | "found" | "missing" | "error";
     message: string;
   } | null>(null);
+  const scanRequestId = useRef(0);
   const [saved, setSaved] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedVariantIds, setSelectedVariantIds] = useState<string[]>([]);
@@ -616,6 +617,7 @@ export function ProductsWorkspace({
       return;
     }
 
+    const requestId = ++scanRequestId.current;
     setQuery(code);
     const localMatch = variants.find((item) => item.legacyCode === code);
     if (localMatch) {
@@ -635,7 +637,19 @@ export function ProductsWorkspace({
     }
 
     setScanFeedback({ kind: "working", message: "Buscando en el catálogo…" });
-    const match = await lookupBarcodeAction(code);
+    let match: ProductVariant | null;
+    try {
+      match = await lookupBarcodeAction(code);
+    } catch {
+      if (requestId !== scanRequestId.current) return;
+      setScanFeedback({
+        kind: "error",
+        message:
+          "No pudimos consultar el catálogo. Intenta otra vez antes de dar de alta un producto.",
+      });
+      return;
+    }
+    if (requestId !== scanRequestId.current) return;
     if (!match) {
       setScanFeedback({
         kind: "missing",
@@ -767,6 +781,7 @@ export function ProductsWorkspace({
           <input
             value={query}
             onChange={(event) => {
+              scanRequestId.current += 1;
               setQuery(event.target.value);
               setScanFeedback(null);
             }}
@@ -801,7 +816,11 @@ export function ProductsWorkspace({
       {scanFeedback ? (
         <div
           className={`scan-feedback ${scanFeedback.kind}`}
-          role={scanFeedback.kind === "missing" ? "alert" : "status"}
+          role={
+            scanFeedback.kind === "missing" || scanFeedback.kind === "error"
+              ? "alert"
+              : "status"
+          }
         >
           <span>{scanFeedback.message}</span>
           {scanFeedback.kind === "missing" ? (

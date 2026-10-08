@@ -26,7 +26,7 @@ const remoteNames = new Set(
 assert.equal(inventory.filter((m) => m.name === "remote_schema").length, 1);
 const migrationName = (n) => n.replace(/^\d+_/, "").replace(/\.sql$/, "");
 assert.equal(inventory.length, 132);
-assert.equal(names.length, 157);
+assert.equal(names.length, 158);
 for (const n of remoteNames)
   assert.ok(
     names.some((f) => migrationName(f) === n),
@@ -187,7 +187,7 @@ try {
     0,
     compatibility,
   );
-  assert.equal(pending.length, 26);
+  assert.equal(pending.length, 27);
   for (const name of pending)
     await db.query(
       await readFile(

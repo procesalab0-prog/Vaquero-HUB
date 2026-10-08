@@ -221,6 +221,35 @@ describe.sequential("M2: catálogo, variantes, códigos y RLS", () => {
     expect(data[0].primary_barcode).toBe(code);
   });
 
+  it("consulta el código exacto con Auth real y oculta el costo al cajero", async () => {
+    const code = state.primaryBarcodes[0];
+    const cashier = await state.cashier!.client.rpc("lookup_catalog_barcode", {
+      p_code: code,
+    });
+    expect(cashier.error).toBeNull();
+    expect(cashier.data).toMatchObject({
+      variant_id: state.variantIds[0],
+      matched_barcode: code,
+      primary_barcode: code,
+      price_cents: 219900,
+      cost_cents: null,
+    });
+    const admin = await state.admin!.client.rpc("lookup_catalog_barcode", {
+      p_code: code,
+    });
+    expect(admin.error).toBeNull();
+    expect(admin.data.cost_cents).toBe(120000);
+    const missing = await state.cashier!.client.rpc("lookup_catalog_barcode", {
+      p_code: "000000000000000000000",
+    });
+    expect(missing.error).toBeNull();
+    expect(missing.data).toBeNull();
+    const anonymous = await publicClient().rpc("lookup_catalog_barcode", {
+      p_code: code,
+    });
+    expect(anonymous.error).not.toBeNull();
+  });
+
   it("adopta un código de proveedor y conserva el generado para escaneo", async () => {
     const supplierCode = ean13(`75${runCode.padStart(10, "0")}`);
     const originalCode = state.primaryBarcodes[0];

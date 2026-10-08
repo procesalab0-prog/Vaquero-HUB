@@ -15,7 +15,12 @@ import {
 } from "@/lib/catalog-import-shared";
 import type { ProductVariant } from "@/lib/domain";
 import type { BatchActionResult } from "@/lib/domain";
-import { uploadProductImage } from "@/lib/product-images";
+import {
+  uploadProductImage,
+  productImageUrl,
+  readCatalogCoverUrls,
+} from "@/lib/product-images";
+import { readVariantPhotos } from "@/lib/variant-photos";
 import { WEB_STAGING_URL, webContentFromForm } from "@/lib/web-draft";
 import type { CreateMeasureUnitResult } from "@/components/measure-unit-catalog";
 import type { MeasureUnit } from "@/lib/measure-units";
@@ -650,47 +655,64 @@ export async function lookupCatalogBarcode(
   rawCode: string,
 ): Promise<ProductVariant | null> {
   const code = rawCode.trim();
-  if (!code || code.length > 80) return null;
-
+  if (!code || code.length > 100) return null;
   const { supabase } = await requirePermission("products.read");
-  const { data, error } = await supabase.rpc("search_catalog", {
-    p_query: code,
-    p_limit: 200,
+  const { data, error } = await supabase.rpc("lookup_catalog_barcode", {
+    p_code: code,
   });
   if (error) {
     console.error("[productos/lookupCatalogBarcode] failed", {
-      message: error.message,
+      code: error.code,
     });
-    return null;
+    throw new Error("CATALOG_LOOKUP_UNAVAILABLE");
   }
-
-  const row = (
-    data as Array<{
-      variant_id: string;
-      product_id: string;
-      product_name: string;
-      category_name: string;
-      brand_name: string;
-      legacy_sicar_code: string | null;
-      primary_barcode: string | null;
-      price_cents: number;
-      attributes: Record<string, string> | null;
-    }> | null
-  )?.find(
-    (candidate) =>
-      candidate.primary_barcode === code || candidate.legacy_sicar_code === code,
-  );
+  const row = data as {
+    variant_id: string;
+    product_id: string;
+    product_name: string;
+    category_id: string;
+    department_name: string | null;
+    measure_unit_code: string;
+    description: string;
+    product_active: boolean;
+    is_active: boolean;
+    image_path: string | null;
+    sku: string;
+    brand_name: string;
+    primary_barcode: string;
+    matched_barcode: string;
+    price_cents: number;
+    cost_cents: number | null;
+    attributes: Record<string, string>;
+  } | null;
   if (!row) return null;
-
+  if (row.matched_barcode !== code)
+    throw new Error("CATALOG_LOOKUP_IDENTITY_CHANGED");
+  const [photos, covers] = await Promise.all([
+    readVariantPhotos(supabase, [row.variant_id]),
+    readCatalogCoverUrls(supabase, [row.product_id]),
+  ]);
   return {
     id: row.variant_id,
     productId: row.product_id,
+    categoryId: row.category_id,
+    departmentName: row.department_name,
+    measureUnitCode: row.measure_unit_code,
+    description: row.description,
+    productActive: row.product_active,
+    isActive: row.is_active,
     productName: row.product_name,
     brand: row.brand_name,
-    legacyCode: row.primary_barcode ?? row.legacy_sicar_code ?? code,
-    color: row.attributes?.COLOR ?? "Sin color",
-    size: row.attributes?.TALLA ?? "Única",
+    sku: row.sku,
+    legacyCode: row.primary_barcode,
+    color: row.attributes.COLOR ?? "Sin color",
+    size: row.attributes.TALLA ?? "Única",
     price: row.price_cents / 100,
+    cost: row.cost_cents === null ? undefined : row.cost_cents / 100,
+    image:
+      productImageUrl(supabase, row.image_path) ??
+      photos.get(row.variant_id)?.[0]?.url ??
+      covers.get(row.product_id),
     stock: 0,
   };
 }
