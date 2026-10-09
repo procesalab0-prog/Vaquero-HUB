@@ -115,5 +115,6 @@ test("menú accesible en teléfono con texto grande y movimiento reducido", asyn
     .fill("inexistente");
   await expect(dialog.getByRole("status")).toContainText("No hay módulos");
   await page.keyboard.press("Escape");
-  await expect(page.locator(".mobile-cart-toggle")).toBeInViewport();
+  await expect(page.locator(".sale-panel")).toBeInViewport();
+  await expect(page.locator(".pay-button")).toBeInViewport();
 });

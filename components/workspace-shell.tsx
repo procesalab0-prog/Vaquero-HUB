@@ -169,7 +169,8 @@ export function WorkspaceShell({
     if(!rail)return;
     const containWheel=(event:WheelEvent)=>{
       const target=event.target instanceof Element?event.target:null;
-      const area=target?.closest<HTMLElement>('.rail-submenu,.rail-links')??rail;
+      const area=target?.closest<HTMLElement>('.rail-submenu,.rail-links');
+      if(!area){event.preventDefault();return;}
       const max=area.scrollHeight-area.clientHeight;
       if(max<=0 || (event.deltaY<0 && area.scrollTop<=0) || (event.deltaY>0 && area.scrollTop>=max-1))event.preventDefault();
     };

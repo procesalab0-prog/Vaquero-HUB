@@ -161,15 +161,15 @@ test("ticket de regalo disponible después de una venta no marcada", async ({
   );
 });
 test("rueda sobre el menú no desplaza Productos", async ({ page }) => {
-  await page.goto("/productos");
   await page.setViewportSize({ width: 1440, height: 800 });
+  await page.goto("/productos");
   const positions = () =>
     page.evaluate(() => [
       document.scrollingElement?.scrollTop ?? 0,
       document.querySelector(".workspace-main")?.scrollTop ?? 0,
     ]);
-  const before = await positions();
   await page.locator(".rail-wordmark").hover();
+  const before = await positions();
   await page.mouse.wheel(0, 1000);
   await page.waitForTimeout(200);
   expect(await positions()).toEqual(before);
