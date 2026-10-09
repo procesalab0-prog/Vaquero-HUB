@@ -2,7 +2,7 @@
 
 Entrega 0.55.6, 7 de octubre de 2026. Autorizada por el usuario: «ponlas en la principal».
 
-Inicio incluye una tarjeta con pendientes y acceso a `/productos/migracion-dudas`. Sólo se libera una tanda explícita de hasta tres preguntas. Cada tarjeta reúne las tallas, ejemplos y precio público; los códigos se despliegan opcionalmente. SAME_MODEL y CORRECTION reducen pendientes; UNSURE permanece pendiente. Las respuestas requieren sesión activa y permisos products.read/products.update. El historial conserva actor, revisión, solicitud y fecha, con protección ante reintentos y respuestas concurrentes.
+Inicio incluye una tarjeta con pendientes y acceso a `/productos/migracion-dudas`. Sólo se libera una tanda explícita de hasta diez preguntas. Cada tarjeta reúne las tallas, ejemplos y precio público; los códigos se despliegan opcionalmente. SAME_MODEL y CORRECTION reducen pendientes; UNSURE permanece pendiente. Las respuestas requieren sesión activa y permisos products.read/products.update. El historial conserva actor, revisión, solicitud y fecha, con protección ante reintentos y respuestas concurrentes.
 
 ## Separación de datos
 
@@ -19,3 +19,7 @@ La bandeja principal es la fuente de respuestas de los dueños desde esta entreg
 ## Validación
 
 48 pruebas unitarias existentes y 25 controles SQL en staging, dentro de transacción revertida: anonimato, permisos directos, visibilidad de liberadas/reservadas, contador, UNSURE, reintentos, revisiones, validación de correcciones, rechazo de aprobación, historial, límite de tanda, filtros y evidencia modificada. No se registran respuestas ficticias permanentes.
+
+## Ampliación del 9 de octubre
+
+El usuario solicitó más de tres preguntas por tanda. El límite ahora es diez; la tanda 3 reúne diez modelos y 80 códigos. Se conserva el historial completo, la protección de evidencia, los permisos y el cierre obligatorio de la tanda anterior. La página conserva seis tarjetas por página. Responder no aprueba importaciones.

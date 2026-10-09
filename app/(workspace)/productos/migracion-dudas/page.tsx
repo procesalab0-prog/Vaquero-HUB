@@ -116,7 +116,7 @@ export default async function OwnerQuestionsPage({
       <header>
         <Link href="/inicio">← Volver al Inicio</Link>
         <h1>Preguntas de la migración</h1>
-        <p>Sólo tres preguntas por tanda, con ejemplos y las tallas juntas.</p>
+        <p>Preguntas por tandas, con ejemplos y las tallas juntas.</p>
         <p>
           Tanda {inbox.summary.batch} ·{" "}
           {inbox.summary.questions - inbox.summary.answered} preguntas por
