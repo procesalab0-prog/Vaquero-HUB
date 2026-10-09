@@ -32,14 +32,26 @@ import {
   ShoppingCart,
   X,
 } from "lucide-react";
-import { WesternBootIcon, WesternHatIcon, WesternBadgeIcon, type WorkspaceIcon } from "@/components/vaquero-icons";
+import {
+  WesternBootIcon,
+  WesternHatIcon,
+  WesternBadgeIcon,
+  type WorkspaceIcon,
+} from "@/components/vaquero-icons";
 import type { WorkspaceIdentity } from "@/lib/auth/types";
 import { WorkspaceContext } from "@/components/workspace-context";
 import { EntranceCurtain, useEntrance } from "@/components/entrance-curtain";
 import { WorkspaceModuleMenu } from "@/components/workspace-module-menu";
 import { LA_PIEDAD_STORE } from "@/lib/business-profile";
-import { pickActiveLocation, saveActiveLocationPreference } from "@/lib/location-preference";
-import { WORKSPACE_NOTIFICATION_EVENT, type WorkspaceNotification } from "@/lib/workspace-notifications";
+import {
+  pickActiveLocation,
+  saveActiveLocationPreference,
+} from "@/lib/location-preference";
+import {
+  WORKSPACE_NOTIFICATION_EVENT,
+  publishWorkspaceNotification,
+  type WorkspaceNotification,
+} from "@/lib/workspace-notifications";
 
 // Cuánto se queda el aviso en pantalla. La barra del aviso muestra este mismo
 // tiempo, así que se declara una sola vez.
@@ -69,18 +81,52 @@ const demoIdentity: WorkspaceIdentity = {
   openCashSession: { locationId: LA_PIEDAD_STORE.id, registerName: "Caja 01" },
 };
 
-const moreNavigation: Array<{ path: string; title: string; icon: WorkspaceIcon; tone: string }> = [
-  { path: "/tickets", title: "Tickets y devoluciones", icon: ReceiptText, tone: "sand" },
+const moreNavigation: Array<{
+  path: string;
+  title: string;
+  icon: WorkspaceIcon;
+  tone: string;
+}> = [
+  {
+    path: "/tickets",
+    title: "Tickets y devoluciones",
+    icon: ReceiptText,
+    tone: "sand",
+  },
   { path: "/clientes", title: "Clientes", icon: Users, tone: "blue" },
   { path: "/apartados", title: "Apartados", icon: CalendarClock, tone: "gold" },
-  { path: "/cotizaciones", title: "Cotizaciones", icon: FileText, tone: "blue" },
-  { path: "/compras", title: "Compras y proveedores", icon: Truck, tone: "green" },
+  {
+    path: "/cotizaciones",
+    title: "Cotizaciones",
+    icon: FileText,
+    tone: "blue",
+  },
+  {
+    path: "/compras",
+    title: "Compras y proveedores",
+    icon: Truck,
+    tone: "green",
+  },
   { path: "/etiquetas", title: "Etiquetas", icon: Tags, tone: "sand" },
-  { path: "/reportes", title: "Reportes", icon: ChartNoAxesCombined, tone: "green" },
-  { path: "/administracion", title: "Usuarios y permisos", icon: WesternBadgeIcon, tone: "gold" },
-  { path: "/ajustes", title: "Ajustes y apariencia", icon: Settings, tone: "sand" },
+  {
+    path: "/reportes",
+    title: "Reportes",
+    icon: ChartNoAxesCombined,
+    tone: "green",
+  },
+  {
+    path: "/administracion",
+    title: "Usuarios y permisos",
+    icon: WesternBadgeIcon,
+    tone: "gold",
+  },
+  {
+    path: "/ajustes",
+    title: "Ajustes y apariencia",
+    icon: Settings,
+    tone: "sand",
+  },
 ];
-
 
 export function WorkspaceShell({
   children,
@@ -97,7 +143,9 @@ export function WorkspaceShell({
   const searchParams = useSearchParams();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notices, setNotices] = useState<WorkspaceNotification[]>([]);
-  const [noticeToast, setNoticeToast] = useState<WorkspaceNotification | null>(null);
+  const [noticeToast, setNoticeToast] = useState<WorkspaceNotification | null>(
+    null,
+  );
   // Avisos que llegaron desde la última vez que se abrió la campana, y un
   // contador que reinicia el balanceo con cada aviso nuevo.
   const [unreadNotices, setUnreadNotices] = useState(0);
@@ -113,13 +161,107 @@ export function WorkspaceShell({
     initialLocationId,
   );
   const activeLocationId = activeLocation?.id ?? "";
-  const locationNotices = notices.filter((notice) => notice.locationId === activeLocationId);
+  const locationNotices = notices.filter(
+    (notice) => notice.locationId === activeLocationId,
+  );
+  useEffect(() => {
+    const rail=document.querySelector<HTMLElement>('.nav-rail');
+    if(!rail)return;
+    const containWheel=(event:WheelEvent)=>{
+      const target=event.target instanceof Element?event.target:null;
+      const area=target?.closest<HTMLElement>('.rail-submenu,.rail-links');
+      if(!area){event.preventDefault();return;}
+      const max=area.scrollHeight-area.clientHeight;
+      if(max<=0 || (event.deltaY<0 && area.scrollTop<=0) || (event.deltaY>0 && area.scrollTop>=max-1))event.preventDefault();
+    };
+    rail.addEventListener('wheel',containWheel,{passive:false});
+    return()=>rail.removeEventListener('wheel',containWheel);
+  },[]);
+  useEffect(() => {
+    if (!identity || !activeLocationId) return;
+    let disposed = false;
+    let initial = true;
+    let timer: ReturnType<typeof setTimeout>;
+    const startedAt = Date.now();
+    const controller = new AbortController();
+    async function poll() {
+      try {
+        if (document.visibilityState !== "visible") return;
+        const response = await fetch(
+          `/api/notificaciones?${new URLSearchParams({ ubicacion: activeLocationId })}`,
+          { signal: controller.signal, cache: "no-store" },
+        );
+        if (!response.ok || disposed) return;
+        const payload = (await response.json()) as {
+          notifications: Array<{
+            id: number;
+            title: string;
+            message: string;
+            created_at: string;
+            href?: string;
+          }>;
+        };
+        if (disposed) return;
+        for (const item of payload.notifications ?? []) {
+          if (initial || new Date(item.created_at).getTime() < startedAt)
+            setNotices((current) =>
+              [
+                {
+                  id: `server:${item.id}`,
+                  title: item.title,
+                  message: item.message,
+                  locationId: activeLocationId,
+                  createdAt: item.created_at,
+                  href: item.href,
+                },
+                ...current.filter((n) => n.id !== `server:${item.id}`),
+              ].slice(0, 50),
+            );
+          else
+            void publishWorkspaceNotification({
+              id: `server:${item.id}`,
+              title: item.title,
+              message: item.message,
+              locationId: activeLocationId,
+              href: item.href,
+            });
+        }
+        initial = false;
+        if (payload.notifications?.length)
+          await fetch("/api/notificaciones", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              locationId: activeLocationId,
+              ids: payload.notifications.map((item) => item.id),
+            }),
+            signal: controller.signal,
+            cache: "no-store",
+          });
+      } catch {
+        /* A failed poll never erases notices or retries a write. */
+      } finally {
+        if (!disposed) timer = setTimeout(poll, 20000);
+      }
+    }
+    void poll();
+    return () => {
+      disposed = true;
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [identity, activeLocationId]);
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const receive = (event: Event) => {
       const notice = (event as CustomEvent<WorkspaceNotification>).detail;
       if (!notice || notice.locationId !== activeLocationId) return;
-      setNotices((current) => [notice, ...current.filter((item) => item.id !== notice.id)].slice(0, 20));
+      setNotices((current) =>
+        [notice, ...current.filter((item) => item.id !== notice.id)].slice(
+          0,
+          20,
+        ),
+      );
       setNoticeToast(notice);
       setUnreadNotices((count) => count + 1);
       setBellRing((count) => count + 1);
@@ -127,7 +269,10 @@ export function WorkspaceShell({
       timer = setTimeout(() => setNoticeToast(null), NOTICE_TOAST_MS);
     };
     window.addEventListener(WORKSPACE_NOTIFICATION_EVENT, receive);
-    return () => { window.removeEventListener(WORKSPACE_NOTIFICATION_EVENT, receive); if (timer) clearTimeout(timer); };
+    return () => {
+      window.removeEventListener(WORKSPACE_NOTIFICATION_EVENT, receive);
+      if (timer) clearTimeout(timer);
+    };
   }, [activeLocationId]);
   useEffect(() => {
     saveActiveLocationPreference(activeLocationId);
@@ -216,8 +361,13 @@ export function WorkspaceShell({
   }
 
   return (
-    <div className={`workspace-shell workspace-redesign${navigationCompact ? " navigation-compact" : ""}`} data-entrance={entranceScene === "full" ? "full" : undefined}>
-      {entranceScene === "full" ? <EntranceCurtain onDone={finishEntrance} /> : null}
+    <div
+      className={`workspace-shell workspace-redesign${navigationCompact ? " navigation-compact" : ""}`}
+      data-entrance={entranceScene === "full" ? "full" : undefined}
+    >
+      {entranceScene === "full" ? (
+        <EntranceCurtain onDone={finishEntrance} />
+      ) : null}
       <aside className="nav-rail" aria-label="Navegación principal">
         <Link
           className="rail-brand"
@@ -232,9 +382,24 @@ export function WorkspaceShell({
             priority
           />
         </Link>
-        <span className="rail-wordmark">Mi Tienda <small>VAQUERO SM · LA ESENCIA ESTÁ AQUÍ</small></span>
-        <button className="rail-collapse" type="button" aria-label={navigationCompact ? "Ampliar navegación" : "Contraer navegación"} aria-expanded={!navigationCompact} aria-controls="workspace-navigation" onClick={() => setNavigationCompact((value) => !value)}>
-          {navigationCompact ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
+        <span className="rail-wordmark">
+          Mi Tienda <small>VAQUERO SM · LA ESENCIA ESTÁ AQUÍ</small>
+        </span>
+        <button
+          className="rail-collapse"
+          type="button"
+          aria-label={
+            navigationCompact ? "Ampliar navegación" : "Contraer navegación"
+          }
+          aria-expanded={!navigationCompact}
+          aria-controls="workspace-navigation"
+          onClick={() => setNavigationCompact((value) => !value)}
+        >
+          {navigationCompact ? (
+            <PanelLeftOpen aria-hidden="true" />
+          ) : (
+            <PanelLeftClose aria-hidden="true" />
+          )}
           <span>Contraer menú</span>
         </button>
         <nav className="rail-links" id="workspace-navigation">
@@ -255,27 +420,78 @@ export function WorkspaceShell({
               href === "/mas"
                 ? morePath.some((path) => pathname.startsWith(path))
                 : pathname.startsWith(href);
-            if (href === "/mas") return (
-              <details className="rail-more" key={label}>
-                <summary className={active ? "rail-link active" : "rail-link"} aria-label="Más opciones" title="Más opciones" onKeyDown={(event) => {
-                if (event.key === "Escape") {
-                  const details = event.currentTarget.closest("details");
-                  if (details) details.open = false;
-                  event.currentTarget.focus();
-                }
-              }}>
-                  <WesternHatIcon /><span>Más</span><ChevronDown className="rail-more-chevron" aria-hidden="true" />
-                </summary>
-                <div className="rail-submenu">
-                  <div className="rail-submenu-heading"><p className="rail-submenu-title">Todo en tu tienda</p><button type="button" aria-label="Cerrar más opciones" onClick={(event) => { const details = event.currentTarget.closest("details"); if (details) { details.open = false; details.querySelector("summary")?.focus(); } }}><X aria-hidden="true" /></button></div>
-                  {moreNavigation.map(({path, title, icon: Icon, tone}) => <Link key={path} href={locationHref(path)} aria-current={pathname.startsWith(path) ? "page" : undefined} onClick={(event) => {
-                    const details = event.currentTarget.closest("details");
-                    if (details) details.open = false;
-                  }}><span className={`rail-module-icon ${tone}`}><Icon aria-hidden="true" strokeWidth={1.8} /></span><span>{title}</span></Link>)}
-                  <Link className="rail-all-modules" href={locationHref("/mas")} onClick={(event) => { const details = event.currentTarget.closest("details"); if (details) details.open = false; }}>Ver todos los módulos</Link>
-                </div>
-              </details>
-            );
+            if (href === "/mas")
+              return (
+                <details className="rail-more" key={label}>
+                  <summary
+                    className={active ? "rail-link active" : "rail-link"}
+                    aria-label="Más opciones"
+                    title="Más opciones"
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") {
+                        const details = event.currentTarget.closest("details");
+                        if (details) details.open = false;
+                        event.currentTarget.focus();
+                      }
+                    }}
+                  >
+                    <WesternHatIcon />
+                    <span>Más</span>
+                    <ChevronDown
+                      className="rail-more-chevron"
+                      aria-hidden="true"
+                    />
+                  </summary>
+                  <div className="rail-submenu">
+                    <div className="rail-submenu-heading">
+                      <p className="rail-submenu-title">Todo en tu tienda</p>
+                      <button
+                        type="button"
+                        aria-label="Cerrar más opciones"
+                        onClick={(event) => {
+                          const details =
+                            event.currentTarget.closest("details");
+                          if (details) {
+                            details.open = false;
+                            details.querySelector("summary")?.focus();
+                          }
+                        }}
+                      >
+                        <X aria-hidden="true" />
+                      </button>
+                    </div>
+                    {moreNavigation.map(({ path, title, icon: Icon, tone }) => (
+                      <Link
+                        key={path}
+                        href={locationHref(path)}
+                        aria-current={
+                          pathname.startsWith(path) ? "page" : undefined
+                        }
+                        onClick={(event) => {
+                          const details =
+                            event.currentTarget.closest("details");
+                          if (details) details.open = false;
+                        }}
+                      >
+                        <span className={`rail-module-icon ${tone}`}>
+                          <Icon aria-hidden="true" strokeWidth={1.8} />
+                        </span>
+                        <span>{title}</span>
+                      </Link>
+                    ))}
+                    <Link
+                      className="rail-all-modules"
+                      href={locationHref("/mas")}
+                      onClick={(event) => {
+                        const details = event.currentTarget.closest("details");
+                        if (details) details.open = false;
+                      }}
+                    >
+                      Ver todos los módulos
+                    </Link>
+                  </div>
+                </details>
+              );
             return (
               <Link
                 className={active ? "rail-link active" : "rail-link"}
@@ -299,7 +515,9 @@ export function WorkspaceShell({
           <LogOut aria-hidden="true" strokeWidth={1.8} />
           <span>Salir</span>
         </button>
-        <div className="rail-developer-credit"><ProcesaLabCredit dark /></div>
+        <div className="rail-developer-credit">
+          <ProcesaLabCredit dark />
+        </div>
       </aside>
 
       <div className="workspace-content">
@@ -370,8 +588,19 @@ export function WorkspaceShell({
                 setUnreadNotices(0);
               }}
             >
-              <Bell aria-hidden="true" strokeWidth={1.8} className={bellRing ? `bell-ring-${bellRing % 2}` : undefined} />
-              {unreadNotices ? <span aria-hidden="true" className={`bell-count bell-pop-${bellRing % 2}`}>{unreadNotices > 9 ? "9+" : unreadNotices}</span> : null}
+              <Bell
+                aria-hidden="true"
+                strokeWidth={1.8}
+                className={bellRing ? `bell-ring-${bellRing % 2}` : undefined}
+              />
+              {unreadNotices ? (
+                <span
+                  aria-hidden="true"
+                  className={`bell-count bell-pop-${bellRing % 2}`}
+                >
+                  {unreadNotices > 9 ? "9+" : unreadNotices}
+                </span>
+              ) : null}
             </button>
             <button
               className="active-user"
@@ -404,10 +633,28 @@ export function WorkspaceShell({
               <X aria-hidden="true" />
             </button>
           </header>
-          {locationNotices.length ? locationNotices.map((notice) => <article key={notice.id}>
-            <span className="notification-dot" /><div><strong>{notice.title}</strong><p>{notice.message}</p></div>
-            <small>{new Date(notice.createdAt).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}</small>
-          </article>) : <p>No hay avisos en esta sesión para la sucursal seleccionada.</p>}
+          {locationNotices.length ? (
+            locationNotices.map((notice) => (
+              <article key={notice.id}>
+                <span className="notification-dot" />
+                <div>
+                  <strong>{notice.title}</strong>
+                  <p>{notice.message}</p>
+                  {notice.href && /^\/(?:inventario|caja)(?:\?|$)/.test(notice.href) ? (
+                    <Link href={locationHref(notice.href)} onClick={() => setNotificationsOpen(false)}>Ver movimiento</Link>
+                  ) : null}
+                </div>
+                <small>
+                  {new Date(notice.createdAt).toLocaleTimeString("es-MX", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </small>
+              </article>
+            ))
+          ) : (
+            <p>No hay avisos en esta sesión para la sucursal seleccionada.</p>
+          )}
           <Link
             href={locationHref("/inventario")}
             onClick={() => setNotificationsOpen(false)}
@@ -416,7 +663,28 @@ export function WorkspaceShell({
           </Link>
         </aside>
       ) : null}
-      {noticeToast?.locationId === activeLocationId ? <aside key={noticeToast.id} className="workspace-notification-toast" data-kind={noticeToast.kind ?? "success"} role={noticeToast.kind === "error" ? "alert" : "status"} style={{ "--notice-ms": `${NOTICE_TOAST_MS}ms` } as React.CSSProperties}><strong>{noticeToast.title}</strong><span>{noticeToast.message}</span><button type="button" aria-label="Cerrar aviso" onClick={() => setNoticeToast(null)}><X aria-hidden="true" /></button><i className="workspace-notification-timer" aria-hidden="true" /></aside> : null}
+      {noticeToast?.locationId === activeLocationId ? (
+        <aside
+          key={noticeToast.id}
+          className="workspace-notification-toast"
+          data-kind={noticeToast.kind ?? "success"}
+          role={noticeToast.kind === "error" ? "alert" : "status"}
+          style={
+            { "--notice-ms": `${NOTICE_TOAST_MS}ms` } as React.CSSProperties
+          }
+        >
+          <strong>{noticeToast.title}</strong>
+          <span>{noticeToast.message}</span>
+          <button
+            type="button"
+            aria-label="Cerrar aviso"
+            onClick={() => setNoticeToast(null)}
+          >
+            <X aria-hidden="true" />
+          </button>
+          <i className="workspace-notification-timer" aria-hidden="true" />
+        </aside>
+      ) : null}
       {profileOpen ? (
         <aside
           className="profile-popover"

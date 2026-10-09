@@ -25,6 +25,7 @@ export type SalePaymentInput = {
   amount_cents: number;
   tendered_cents?: number;
   reference?: string;
+  card_kind?: "CREDIT" | "DEBIT";
 };
 
 export type SaleActionInput = {

@@ -1,9 +1,17 @@
 "use client";
 import { useSearchParams } from "next/navigation";
 
-import { INVENTORY_SNAPSHOT_LIMIT, summarizeInventory } from "@/lib/inventory-summary";
+import {
+  INVENTORY_SNAPSHOT_LIMIT,
+  summarizeInventory,
+} from "@/lib/inventory-summary";
 import { groupInventory } from "@/lib/inventory-groups";
-import { measureQuantityStep, parseMeasureQuantity, quantityUnit, summarizeMeasureQuantities } from "@/lib/measure-units";
+import {
+  measureQuantityStep,
+  parseMeasureQuantity,
+  quantityUnit,
+  summarizeMeasureQuantities,
+} from "@/lib/measure-units";
 
 import {
   ArrowDownLeft,
@@ -36,6 +44,9 @@ import type {
 import { useWorkspace } from "@/components/workspace-context";
 import { saveActiveLocationPreference } from "@/lib/location-preference";
 import { TransferProgress } from "./transfer-progress";
+import { InlineInventoryQuantity } from "@/components/inline-inventory-quantity";
+import { browserOperation } from "@/lib/browser-operations";
+import { useRouter } from "next/navigation";
 
 type Location = { id: string; name: string; code: string };
 
@@ -238,7 +249,9 @@ function ContinuousCountCapture({
     items[0];
   const [variantId, setVariantId] = useState(firstPending?.variantId ?? "");
   const [quantity, setQuantity] = useState("");
-  const selectedUnit = quantityUnit(items.find(item => item.variantId === variantId) ?? {});
+  const selectedUnit = quantityUnit(
+    items.find((item) => item.variantId === variantId) ?? {},
+  );
   const [query, setQuery] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -287,7 +300,11 @@ function ContinuousCountCapture({
       countedQuantity === null ||
       countedQuantity < 0
     ) {
-      setFeedback(selectedUnit.decimal_places === 0 ? "Escribe una cantidad entera mayor o igual a cero." : "Escribe una cantidad mayor o igual a cero con hasta tres decimales.");
+      setFeedback(
+        selectedUnit.decimal_places === 0
+          ? "Escribe una cantidad entera mayor o igual a cero."
+          : "Escribe una cantidad mayor o igual a cero con hasta tres decimales.",
+      );
       return;
     }
     const formData = new FormData();
@@ -385,7 +402,9 @@ function ContinuousCountCapture({
             type="number"
             min="0"
             step={measureQuantityStep(selectedUnit)}
-            inputMode={selectedUnit.decimal_places === 3 ? "decimal" : "numeric"}
+            inputMode={
+              selectedUnit.decimal_places === 3 ? "decimal" : "numeric"
+            }
             value={quantity}
             onChange={(event) => setQuantity(event.target.value)}
             required
@@ -419,6 +438,33 @@ function ContinuousCountCapture({
         </div>
       ) : null}
       <div className="inventory-document-actions">
+        <button
+          type="button"
+          className="secondary-button"
+          disabled={!capturedCount || isPending}
+          onClick={() => {
+            try {
+              const quantities = Object.fromEntries(
+                Object.entries(captured)
+                  .filter(([, qty]) => qty > 0)
+                  .map(([id]) => [id, 1]),
+              );
+              window.sessionStorage.setItem(
+                "mi-tienda-label-selection",
+                JSON.stringify(quantities),
+              );
+              window.location.assign(
+                `/etiquetas?${new URLSearchParams({ desde: "conteo", ubicacion: locationId })}`,
+              );
+            } catch {
+              setFeedback(
+                "No fue posible preparar las etiquetas; revisa el almacenamiento del navegador.",
+              );
+            }
+          }}
+        >
+          Preparar etiquetas (cantidad editable)
+        </button>
         <form action={cancelAction}>
           <input type="hidden" name="count_id" value={count.id} />
           <input type="hidden" name="location_id" value={locationId} />
@@ -478,18 +524,24 @@ function TransferItemForm({
           <label key={item.variantId}>
             <span>
               {item.productName}
-              <small>{item.sku} · {quantityUnit(item).name}</small>
+              <small>
+                {item.sku} · {quantityUnit(item).name}
+              </small>
             </span>
             <input
               type="number"
-              min={mode === "prepare" ? measureQuantityStep(quantityUnit(item)) : 0}
+              min={
+                mode === "prepare" ? measureQuantityStep(quantityUnit(item)) : 0
+              }
               max={
                 mode === "prepare"
                   ? item.requestedQuantity
                   : (item.sentQuantity ?? item.requestedQuantity)
               }
               step={measureQuantityStep(quantityUnit(item))}
-              inputMode={quantityUnit(item).decimal_places === 3 ? "decimal" : "numeric"}
+              inputMode={
+                quantityUnit(item).decimal_places === 3 ? "decimal" : "numeric"
+              }
               value={quantities[item.variantId] ?? 0}
               onChange={(event) =>
                 setQuantities((current) => ({
@@ -583,7 +635,8 @@ function NewTransferForm({
               {item.productName}
               <small>
                 {variantDescription(item)} ·{" "}
-                {formatQuantity(item.availableQuantity)} {quantityUnit(item).name} disponibles
+                {formatQuantity(item.availableQuantity)}{" "}
+                {quantityUnit(item).name} disponibles
               </small>
             </span>
             <input
@@ -591,7 +644,9 @@ function NewTransferForm({
               min="0"
               max={item.availableQuantity}
               step={measureQuantityStep(quantityUnit(item))}
-              inputMode={quantityUnit(item).decimal_places === 3 ? "decimal" : "numeric"}
+              inputMode={
+                quantityUnit(item).decimal_places === 3 ? "decimal" : "numeric"
+              }
               value={quantities[item.variantId] ?? 0}
               onChange={(event) =>
                 setQuantities((current) => ({
@@ -684,16 +739,34 @@ export function InventoryWorkspace({
   preview?: boolean;
 }) {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const [brandFilter, setBrandFilter] = useState("");
+  const [selectedStock, setSelectedStock] = useState<string[]>([]);
+  const [stockAmount, setStockAmount] = useState("1");
+  const [stockNote, setStockNote] = useState("");
+  const [stockBusy, setStockBusy] = useState(false);
+  const [stockFeedback, setStockFeedback] = useState("");
+  const stockRequest = useRef<{ signature: string; id: string } | null>(null);
   const requestedCode = searchParams.get("codigo") ?? "";
   const inventorySummary = summarizeInventory(items);
   const { identity } = useWorkspace();
   const [showMovements, setShowMovements] = useState(false);
-  const [showCounts, setShowCounts] = useState(false);
-  const [showTransfers, setShowTransfers] = useState(initialShowTransfers && (canCreateTransfer || canApproveTransfer || canReceiveTransfer));
+  const [showCounts, setShowCounts] = useState(
+    searchParams.get("accion") === "conteos",
+  );
+  const [showTransfers, setShowTransfers] = useState(
+    initialShowTransfers &&
+      (canCreateTransfer || canApproveTransfer || canReceiveTransfer),
+  );
   const [adjusting, setAdjusting] = useState<InventoryItem | null>(null);
-  const [searchDraft, setSearchDraft] = useState({ source: requestedCode, value: requestedCode });
-  const query = searchDraft.source === requestedCode ? searchDraft.value : requestedCode;
-  const setQuery = (value: string) => setSearchDraft({ source: requestedCode, value });
+  const [searchDraft, setSearchDraft] = useState({
+    source: requestedCode,
+    value: requestedCode,
+  });
+  const query =
+    searchDraft.source === requestedCode ? searchDraft.value : requestedCode;
+  const setQuery = (value: string) =>
+    setSearchDraft({ source: requestedCode, value });
   const [filter, setFilter] = useState("all");
   const [expandAll, setExpandAll] = useState(false);
   const deferredQuery = useDeferredValue(query);
@@ -701,8 +774,20 @@ export function InventoryWorkspace({
     (location) => location.id === activeLocationId,
   );
   const unitTotals = summarizeMeasureQuantities(items);
-  const availableUnits = unitTotals.map(group => `${formatQuantity(group.availableQuantity)} ${group.unit.name}`).join(" · ") || "0";
-  const reservedUnits = unitTotals.map(group => `${formatQuantity(group.reservedQuantity)} ${group.unit.name}`).join(" · ") || "0";
+  const availableUnits =
+    unitTotals
+      .map(
+        (group) =>
+          `${formatQuantity(group.availableQuantity)} ${group.unit.name}`,
+      )
+      .join(" · ") || "0";
+  const reservedUnits =
+    unitTotals
+      .map(
+        (group) =>
+          `${formatQuantity(group.reservedQuantity)} ${group.unit.name}`,
+      )
+      .join(" · ") || "0";
   const filteredItems = useMemo(() => {
     const term = deferredQuery.trim().toLocaleLowerCase("es-MX");
     return items.filter((item) => {
@@ -721,12 +806,21 @@ export function InventoryWorkspace({
       const matchesStatus =
         filter === "all" ||
         (filter === "available" && item.availableQuantity > 1) ||
-        (filter === "last" && item.availableQuantity > 0 && item.availableQuantity <= 1) ||
+        (filter === "last" &&
+          item.availableQuantity > 0 &&
+          item.availableQuantity <= 1) ||
         (filter === "out" && item.availableQuantity <= 0);
-      return matchesText && matchesStatus;
+      return (
+        matchesText &&
+        matchesStatus &&
+        (!brandFilter || item.brand === brandFilter)
+      );
     });
-  }, [deferredQuery, filter, items]);
-  const productGroups = useMemo(() => groupInventory(filteredItems), [filteredItems]);
+  }, [deferredQuery, filter, items, brandFilter]);
+  const productGroups = useMemo(
+    () => groupInventory(filteredItems),
+    [filteredItems],
+  );
   const message = status ? statusMessages[status] : undefined;
 
   return (
@@ -813,9 +907,7 @@ export function InventoryWorkspace({
         </article>
         <article>
           <span>Variantes agotadas</span>
-          <strong>
-            {inventorySummary.outCount}
-          </strong>
+          <strong>{inventorySummary.outCount}</strong>
         </article>
       </div>
 
@@ -823,7 +915,12 @@ export function InventoryWorkspace({
         <ShieldCheck aria-hidden="true" />
         <div>
           <strong>Inventario auditable</strong>
-          {items.length === INVENTORY_SNAPSHOT_LIMIT ? <span>Resumen de las primeras {INVENTORY_SNAPSHOT_LIMIT} variantes del catálogo, igual que Inicio.</span> : null}
+          {items.length === INVENTORY_SNAPSHOT_LIMIT ? (
+            <span>
+              Resumen de las primeras {INVENTORY_SNAPSHOT_LIMIT} variantes del
+              catálogo, igual que Inicio.
+            </span>
+          ) : null}
           <span>
             Cada corrección conserva la cantidad anterior, la nueva, el motivo y
             la persona que la realizó.
@@ -859,7 +956,11 @@ export function InventoryWorkspace({
             </button>
           ))}
         </div>
-        <button type="button" className="secondary-button" onClick={() => setExpandAll((value) => !value)}>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => setExpandAll((value) => !value)}
+        >
           {expandAll ? "Contraer variantes" : "Desplegar variantes"}
         </button>
       </div>
@@ -873,61 +974,258 @@ export function InventoryWorkspace({
           <span>Físico</span>
           <span>Acción</span>
         </div>
+        {canAdjust ? (
+          <div className="stock-entry-toolbar">
+            <label>
+              Marca
+              <select
+                value={brandFilter}
+                onChange={(e) => setBrandFilter(e.target.value)}
+              >
+                <option value="">Todas</option>
+                {Array.from(new Set(items.map((item) => item.brand)))
+                  .sort()
+                  .map((brand) => (
+                    <option key={brand}>{brand}</option>
+                  ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              disabled={stockBusy}
+              onClick={() =>
+                setSelectedStock(
+                  filteredItems
+                    .filter((item) => item.isActive)
+                    .map((item) => item.variantId),
+                )
+              }
+            >
+              Seleccionar visibles (
+              {filteredItems.filter((item) => item.isActive).length})
+            </button>
+            <button
+              type="button"
+              disabled={stockBusy}
+              onClick={() => setSelectedStock([])}
+            >
+              Limpiar selección
+            </button>
+            <small>
+              Selecciona variantes de la lista cargada. Una entrada suma
+              existencias, no sustituye un conteo.
+            </small>
+            {selectedStock.length ? (
+              <>
+                <label>
+                  Cantidad a agregar a cada variante
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0.001"
+                    step="0.001"
+                    value={stockAmount}
+                    disabled={stockBusy}
+                    onChange={(e) => setStockAmount(e.target.value)}
+                  />
+                </label>
+                <label>
+                  Motivo
+                  <input
+                    value={stockNote}
+                    maxLength={500}
+                    disabled={stockBusy}
+                    onChange={(e) => setStockNote(e.target.value)}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="primary-button"
+                  disabled={stockBusy || stockNote.trim().length < 3}
+                  onClick={async () => {
+                    const selected = items.filter((item) =>
+                      selectedStock.includes(item.variantId),
+                    );
+                    const entries = selected.map((item) => ({
+                      variant_id: item.variantId,
+                      expected_qty: item.quantity,
+                      qty: parseMeasureQuantity(
+                        stockAmount,
+                        quantityUnit(item),
+                      ),
+                    }));
+                    if (
+                      !entries.length ||
+                      entries.some((item) => item.qty === null || item.qty <= 0)
+                    ) {
+                      setStockFeedback(
+                        "Revisa la cantidad y las unidades de cada variante seleccionada.",
+                      );
+                      return;
+                    }
+                    const signature = JSON.stringify([
+                      activeLocationId,
+                      entries,
+                      stockNote.trim(),
+                    ]);
+                    if (stockRequest.current?.signature !== signature)
+                      stockRequest.current = {
+                        signature,
+                        id: crypto.randomUUID(),
+                      };
+                    setStockBusy(true);
+                    setStockFeedback("");
+                    try {
+                      const result = preview
+                        ? {
+                            ok: true,
+                            message: "Demostración: no se modificó inventario.",
+                          }
+                        : await browserOperation<{
+                            ok: boolean;
+                            message: string;
+                          }>("/api/operaciones", {
+                            operation: "inventory.add",
+                            input: {
+                              id: stockRequest.current.id,
+                              locationId: activeLocationId,
+                              items: entries,
+                              note: stockNote.trim(),
+                            },
+                          });
+                      setStockFeedback(result.message);
+                      if (result.ok) {
+                        setSelectedStock([]);
+                        stockRequest.current = null;
+                        if (!preview) router.refresh();
+                      }
+                    } catch {
+                      setStockFeedback(
+                        "No se pudo confirmar. Reintenta sin modificar los datos para evitar duplicados.",
+                      );
+                    } finally {
+                      setStockBusy(false);
+                    }
+                  }}
+                >
+                  {stockBusy
+                    ? "Guardando…"
+                    : `Agregar a ${selectedStock.length} variantes`}
+                </button>
+              </>
+            ) : null}
+            {stockFeedback ? <p role="status">{stockFeedback}</p> : null}
+          </div>
+        ) : null}
         {productGroups.map((group) => (
-          <details className="inventory-product-group" key={`${activeLocationId}:${group.productId}:${deferredQuery}:${filter}:${expandAll}`}
-            open={expandAll || Boolean(deferredQuery.trim()) || filter !== "all"}>
+          <details
+            className="inventory-product-group"
+            key={`${activeLocationId}:${group.productId}:${deferredQuery}:${filter}:${expandAll}`}
+            open={
+              expandAll || Boolean(deferredQuery.trim()) || filter !== "all"
+            }
+          >
             <summary>
-              <strong>{group.name}<small>{group.brand}</small></strong>
-              <span>{group.items.length} variantes{deferredQuery.trim() || filter !== "all" ? " coincidentes" : ""}<small className="inventory-group-health">{group.items.filter(item => item.availableQuantity <= 0).length} agotadas · {group.items.filter(item => item.reservedQuantity > 0).length} con reserva</small></span>
+              <strong>
+                {group.name}
+                <small>{group.brand}</small>
+              </strong>
+              <span>
+                {group.items.length} variantes
+                {deferredQuery.trim() || filter !== "all"
+                  ? " coincidentes"
+                  : ""}
+                <small className="inventory-group-health">
+                  {
+                    group.items.filter((item) => item.availableQuantity <= 0)
+                      .length
+                  }{" "}
+                  agotadas ·{" "}
+                  {
+                    group.items.filter((item) => item.reservedQuantity > 0)
+                      .length
+                  }{" "}
+                  con reserva
+                </small>
+              </span>
             </summary>
-        {group.items.map((item) => {
-          const tone =
-            item.availableQuantity <= 0
-              ? "out"
-              : item.availableQuantity <= 1
-                ? "low"
-                : "good";
-          return (
-            <div className="table-row inventory-row" key={item.variantId}>
-              <div className="table-product" data-label="Producto">
-                <span className="table-product-image">
-                  <PackageOpen aria-hidden="true" />
-                </span>
-                <strong>
-                  {item.productName}
-                  <small>{item.brand}</small>
-                </strong>
-              </div>
-              <code data-label="Código">{item.code}</code>
-              <span data-label="Variante">{variantDescription(item)} · {quantityUnit(item).name}</span>
-              <span data-label="Disponible" className={`stock-number ${tone}`}>
-                {formatQuantity(item.availableQuantity)}
-              </span>
-              <span data-label="Físico">
-                {formatQuantity(item.quantity)}
-                {item.reservedQuantity > 0 ? (
-                  <small className="inventory-reserved">
-                    {formatQuantity(item.reservedQuantity)} reservadas
-                  </small>
-                ) : null}
-              </span>
-              <span data-label="Acción">
-                {canAdjust ? (
-                  <button
-                    className="table-edit-button inventory-adjust-button"
-                    type="button"
-                    onClick={() => setAdjusting(item)}
+            {group.items.map((item) => {
+              const tone =
+                item.availableQuantity <= 0
+                  ? "out"
+                  : item.availableQuantity <= 1
+                    ? "low"
+                    : "good";
+              return (
+                <div className="table-row inventory-row" key={item.variantId}>
+                  <div className="table-product" data-label="Producto">
+                    {canAdjust ? (
+                      <input
+                        type="checkbox"
+                        aria-label={`Seleccionar ${item.productName}, ${item.code}`}
+                        checked={selectedStock.includes(item.variantId)}
+                        disabled={stockBusy || !item.isActive}
+                        onChange={(e) =>
+                          setSelectedStock((current) =>
+                            e.target.checked
+                              ? [...current, item.variantId]
+                              : current.filter((id) => id !== item.variantId),
+                          )
+                        }
+                      />
+                    ) : null}
+                    <span className="table-product-image">
+                      <PackageOpen aria-hidden="true" />
+                    </span>
+                    <strong>
+                      {item.productName}
+                      <small>{item.brand}</small>
+                    </strong>
+                  </div>
+                  <code data-label="Código">{item.code}</code>
+                  <span data-label="Variante">
+                    {variantDescription(item)} · {quantityUnit(item).name}
+                  </span>
+                  <span
+                    data-label="Disponible"
+                    className={`stock-number ${tone}`}
                   >
-                    <ClipboardCheck aria-hidden="true" />
-                    Contar
-                  </button>
-                ) : (
-                  <span className="inventory-read-only">Sólo consulta</span>
-                )}
-              </span>
-            </div>
-          );
-        })}
+                    {formatQuantity(item.availableQuantity)}
+                  </span>
+                  <span data-label="Físico">
+                    {canAdjust ? (
+                      <InlineInventoryQuantity
+                        key={`${activeLocationId}:${item.variantId}:${item.updatedAt}:${item.quantity}`}
+                        item={item}
+                        locationId={activeLocationId}
+                        preview={preview}
+                      />
+                    ) : (
+                      formatQuantity(item.quantity)
+                    )}
+                    {item.reservedQuantity > 0 ? (
+                      <small className="inventory-reserved">
+                        {formatQuantity(item.reservedQuantity)} reservadas
+                      </small>
+                    ) : null}
+                  </span>
+                  <span data-label="Acción">
+                    {canAdjust ? (
+                      <button
+                        className="table-edit-button inventory-adjust-button"
+                        type="button"
+                        onClick={() => setAdjusting(item)}
+                      >
+                        <ClipboardCheck aria-hidden="true" />
+                        Contar
+                      </button>
+                    ) : (
+                      <span className="inventory-read-only">Sólo consulta</span>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
           </details>
         ))}
         {filteredItems.length === 0 ? (
@@ -1005,7 +1303,11 @@ export function InventoryWorkspace({
                   min="0"
                   max="999999999.999"
                   step={measureQuantityStep(quantityUnit(adjusting))}
-                  inputMode={quantityUnit(adjusting).decimal_places === 3 ? "decimal" : "numeric"}
+                  inputMode={
+                    quantityUnit(adjusting).decimal_places === 3
+                      ? "decimal"
+                      : "numeric"
+                  }
                   defaultValue={adjusting.quantity}
                   required
                 />

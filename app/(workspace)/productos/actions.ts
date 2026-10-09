@@ -18,13 +18,66 @@ import type { MeasureUnit } from "@/lib/measure-units";
 import type { SetProductUnitResult } from "@/components/product-unit-editor";
 import type { QuickSaleListResult } from "@/components/quick-sale-catalog";
 
-export async function listQuickSaleSnapshots(locationId: string): Promise<QuickSaleListResult> {
+export async function createCatalogCategory(
+  name: string,
+  scale: string | null,
+): Promise<
+  | {
+      ok: true;
+      category: {
+        id: string;
+        name: string;
+        default_size_scale_code: string | null;
+      };
+    }
+  | { ok: false; message: string }
+> {
   try {
     const { supabase } = await requirePermission("products.create");
-    const { data, error } = await supabase.rpc("list_quick_sale_items", { p_location_id: locationId, p_limit: 100 });
-    if (error) return { ok: false, message: "No fue posible consultar los productos rápidos. Revisa tu sucursal y tus permisos." };
+    const { data, error } = await supabase.rpc("create_catalog_category", {
+      p_name: name,
+      p_size_scale_code: scale,
+    });
+    if (error)
+      return {
+        ok: false,
+        message:
+          error.code === "23505"
+            ? "Esa categoría ya existe; selecciónala en la lista."
+            : "No fue posible crear la categoría. Revisa nombre, escala y permisos.",
+      };
+    revalidatePath("/productos");
+    return { ok: true, category: data };
+  } catch {
+    return {
+      ok: false,
+      message: "Tu sesión venció o no puedes crear categorías.",
+    };
+  }
+}
+
+export async function listQuickSaleSnapshots(
+  locationId: string,
+): Promise<QuickSaleListResult> {
+  try {
+    const { supabase } = await requirePermission("products.create");
+    const { data, error } = await supabase.rpc("list_quick_sale_items", {
+      p_location_id: locationId,
+      p_limit: 100,
+    });
+    if (error)
+      return {
+        ok: false,
+        message:
+          "No fue posible consultar los productos rápidos. Revisa tu sucursal y tus permisos.",
+      };
     return { ok: true, items: data ?? [] };
-  } catch { return { ok: false, message: "No tienes acceso al alta de productos o tu sesión venció." }; }
+  } catch {
+    return {
+      ok: false,
+      message: "No tienes acceso al alta de productos o tu sesión venció.",
+    };
+  }
 }
 
 export async function setProductUnit(input: {

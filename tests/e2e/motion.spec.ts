@@ -137,7 +137,7 @@ test.describe("punto de venta", () => {
     const mobileCart = page.locator(".mobile-cart-toggle");
     if (await mobileCart.isVisible()) await mobileCart.click();
     await page.getByRole("button", { name: "Cobrar", exact: true }).click();
-    await page.getByRole("button", { name: /^Tarjeta/ }).click();
+    await page.getByRole("button", { name: /^Tarjeta de débito/ }).click();
     await page.getByLabel("Referencia de terminal").fill("1234");
     await page.getByRole("button", { name: "Confirmar cobro" }).click();
 

@@ -74,7 +74,7 @@ export default async function LabelsPage({
         templates={[previewTemplate]}
         preview
         fromProducts={
-          params.desde === "productos" || params.desde === "recepcion"
+          params.desde === "productos" || params.desde === "recepcion" || params.desde === "conteo"
         }
       />
     );
@@ -168,7 +168,7 @@ export default async function LabelsPage({
       saveTemplateAction={saveLabelTemplate}
       status={params.status}
       fromProducts={
-        params.desde === "productos" || params.desde === "recepcion"
+        params.desde === "productos" || params.desde === "recepcion" || params.desde === "conteo"
       }
     />
   );

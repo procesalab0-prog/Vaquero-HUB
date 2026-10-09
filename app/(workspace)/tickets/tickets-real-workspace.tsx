@@ -238,11 +238,7 @@ export function TicketsRealWorkspace({
   async function downloadPdf() {
     if (!selected) return;
     const giftItems = selected.items.filter((item) => item.gift_receipt);
-    if (receiptMode === "gift" && giftItems.length === 0) {
-      setError("Este ticket no tiene artículos marcados para regalo.");
-      return;
-    }
-    const receiptItems = receiptMode === "gift" ? giftItems : selected.items;
+    const receiptItems = receiptMode === "gift" && giftItems.length ? giftItems : selected.items;
     setPdfBusy(true);
     setError("");
     setNotice("");
@@ -569,7 +565,7 @@ export function TicketsRealWorkspace({
                   folio={selected.folio}
                   date={formatReceiptDate(new Date(selected.sold_at))}
                   items={
-                    receiptMode === "gift"
+                    receiptMode === "gift" && selected.items.some(item=>item.gift_receipt)
                       ? lines.filter(
                           (_, index) => selected.items[index]?.gift_receipt,
                         )

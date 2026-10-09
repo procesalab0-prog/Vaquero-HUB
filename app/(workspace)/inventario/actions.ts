@@ -53,9 +53,80 @@ function errorStatus(error: unknown) {
   return "inventario-error";
 }
 
-function redirectToInventory(status: string, locationId = ""): never {
+export async function saveInlineInventoryQuantity(input: {
+  locationId: string;
+  variantId: string;
+  expected: number;
+  counted: number;
+  note: string;
+}) {
+  try {
+    const { supabase } = await requirePermission("inventory.adjust");
+    if(typeof input.note!=="string" || input.note.trim().length<3 || input.note.length>500 || !Number.isFinite(input.counted) || !Number.isFinite(input.expected))return {ok:false,message:"Revisa cantidad y motivo del ajuste (mínimo tres caracteres)."};
+    const { error } = await supabase.rpc("apply_inventory_adjustment", {
+      p_variant_id: input.variantId,
+      p_location_id: input.locationId,
+      p_expected_qty: input.expected,
+      p_counted_qty: input.counted,
+      p_reason: "ERROR_CAPTURA",
+      p_note: input.note,
+    });
+    if (error)
+      return {
+        ok: false,
+        message: error.message.includes("STALE")
+          ? "Las existencias cambiaron. Recarga antes de ajustar."
+          : "No fue posible guardar. Revisa cantidad, reserva y permisos.",
+      };
+    revalidatePath(inventoryPath);
+    return { ok: true, message: "Cantidad guardada con movimiento auditado." };
+  } catch {
+    return {
+      ok: false,
+      message: "Sesión vencida o sin permiso para ajustar inventario.",
+    };
+  }
+}
+
+export async function addManualStock(input: {
+  id: string;
+  locationId: string;
+  items: Array<{ variant_id: string; expected_qty: number; qty: number }>;
+  note: string;
+}) {
+  try {
+    const { supabase } = await requirePermission("inventory.adjust");
+    const { error } = await supabase.rpc("add_manual_stock", {
+      p_id: input.id,
+      p_location_id: input.locationId,
+      p_items: input.items,
+      p_note: input.note,
+    });
+    if (error)
+      return {
+        ok: false,
+        message: error.message.includes("STALE")
+          ? "Las existencias cambiaron; no se aplicó ninguna entrada. Recarga y revisa."
+          : "No fue posible guardar la entrada. Revisa cantidades, unidad y permisos.",
+      };
+    revalidatePath(inventoryPath);
+    return {
+      ok: true,
+      message: "Entrada registrada para todas las variantes seleccionadas.",
+    };
+  } catch {
+    return {
+      ok: false,
+      message:
+        "No se pudo confirmar la entrada. Reintenta sin cambiar los datos para evitar duplicarla.",
+    };
+  }
+}
+
+function redirectToInventory(status: string, locationId = "", panel = ""): never {
   revalidatePath(inventoryPath);
   const params = new URLSearchParams({ status });
+  if (panel || status.startsWith("conteo-")) params.set("accion", panel || "conteos");
   if (locationId) params.set("ubicacion", locationId);
   redirect(`${inventoryPath}?${params.toString()}`);
 }
@@ -77,10 +148,7 @@ function jsonItems(formData: FormData, field = "items") {
       };
     });
     return items.every(
-      (item) =>
-        item.variant_id &&
-        item.qty >= 0 &&
-        item.qty <= 999999999.999,
+      (item) => item.variant_id && item.qty >= 0 && item.qty <= 999999999.999,
     )
       ? items
       : null;
@@ -154,7 +222,7 @@ export async function createInventoryCount(formData: FormData) {
       message: error instanceof Error ? error.message : "UNKNOWN_ERROR",
     });
   }
-  redirectToInventory(status, locationId);
+  redirectToInventory(status, locationId, "conteos");
 }
 
 export async function recordInventoryCountItem(formData: FormData) {
@@ -185,7 +253,7 @@ export async function recordInventoryCountItem(formData: FormData) {
       message: error instanceof Error ? error.message : "UNKNOWN_ERROR",
     });
   }
-  redirectToInventory(status, locationId);
+  redirectToInventory(status, locationId, "conteos");
 }
 
 export async function recordInventoryCountItemInline(formData: FormData) {
@@ -234,7 +302,7 @@ export async function closeInventoryCount(formData: FormData) {
   } catch (error) {
     status = errorStatus(error);
   }
-  redirectToInventory(status, locationId);
+  redirectToInventory(status, locationId, "conteos");
 }
 
 export async function cancelInventoryCount(formData: FormData) {
@@ -249,7 +317,7 @@ export async function cancelInventoryCount(formData: FormData) {
   } catch (error) {
     status = errorStatus(error);
   }
-  redirectToInventory(status, locationId);
+  redirectToInventory(status, locationId, "conteos");
 }
 
 export async function createInventoryTransfer(formData: FormData) {

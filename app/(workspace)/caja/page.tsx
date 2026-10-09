@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CashRegister } from "./cash-register";
+import { LocationCashCut } from "@/components/location-cash-cut";
 import { resolveActiveLocation } from "@/lib/auth/active-location";
 import { requirePermission } from "@/lib/auth/authorization";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -18,7 +19,7 @@ export default async function CashPage({
 }: {
   searchParams: Promise<{ ubicacion?: string }>;
 }) {
-  if (!isSupabaseConfigured()) return <CashRegister preview />;
+  if (!isSupabaseConfigured()) return <><CashRegister preview /><LocationCashCut locationId="preview" name="La Piedad" preview /></>;
   const { supabase, roleId, profile } = await requirePermission("cash.open");
   const params = await searchParams;
   const locations = (profile?.user_locations ?? []).flatMap((entry) =>
@@ -48,20 +49,44 @@ export default async function CashPage({
       .maybeSingle(),
   ]);
   return (
-    <CashRegister
-      key={(sessionResult.data as { id?: string } | null)?.id ?? `sin-caja-${location.id}`}
-      locationId={location.id}
-      selectedLocationName={location.name}
-      sessionLocationName={locations.find((item) => item.id === (sessionResult.data as { location_id?: string } | null)?.location_id)?.name}
-      canManageRegisters={Boolean(managePermission.data)}
-      registers={(registersResult.data ?? []) as never[]}
-      session={(sessionResult.data as never) ?? null}
-      status={registersResult.error?.message || sessionResult.error?.message}
-      openAction={openCashSession}
-      createRegisterAction={createCashRegister}
-      movementAction={addCashMovement}
-      previewCloseAction={previewCashClose}
-      closeAction={closeCashSession}
-    />
+    <>
+      <CashRegister
+        key={
+          (sessionResult.data as { id?: string } | null)?.id ??
+          `sin-caja-${location.id}`
+        }
+        locationId={location.id}
+        selectedLocationName={location.name}
+        sessionLocationName={
+          locations.find(
+            (item) =>
+              item.id ===
+              (sessionResult.data as { location_id?: string } | null)
+                ?.location_id,
+          )?.name
+        }
+        canManageRegisters={Boolean(managePermission.data)}
+        registers={(registersResult.data ?? []) as never[]}
+        session={(sessionResult.data as never) ?? null}
+        status={registersResult.error?.message || sessionResult.error?.message}
+        openAction={openCashSession}
+        createRegisterAction={createCashRegister}
+        movementAction={addCashMovement}
+        previewCloseAction={previewCashClose}
+        closeAction={closeCashSession}
+      />
+      {profile &&
+      ["ADMIN", "MANAGER"].includes(
+        (Array.isArray(profile.roles)
+          ? profile.roles[0]?.code
+          : profile.roles?.code) ?? "",
+      ) ? (
+        <LocationCashCut
+          key={location.id}
+          locationId={location.id}
+          name={location.name}
+        />
+      ) : null}
+    </>
   );
 }

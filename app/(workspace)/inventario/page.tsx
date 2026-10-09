@@ -153,6 +153,7 @@ export default async function InventoryPage({
           { id: "preview-centro", name: "Centro", code: "CTR" },
         ]}
         activeLocationId="preview"
+        canAdjust
         canCount
         canCreateTransfer
         initialShowTransfers={params.accion === "traspasos"}
