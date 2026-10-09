@@ -32,6 +32,7 @@
  .workspace-redesign .pos-live-layout .sale-panel { position:static; pointer-events:auto; transform:none; z-index:auto; min-height:0; max-height:100%; height:100%; border:1px solid var(--border); border-radius:14px; box-shadow:none; overflow:hidden; grid-template-rows:40px auto auto minmax(0,1fr) auto; }
  .workspace-redesign .pos-live-layout :is(.mobile-cart-toggle,.mobile-cart-close,.mobile-cart-backdrop) { display:none; }
  .workspace-redesign .pos-live-layout .sale-panel-header { padding:8px 12px; }
+ .workspace-redesign .pos-live-layout .sale-tools { overflow-y:auto; overscroll-behavior:contain; }
  .workspace-redesign .pos-live-layout .sale-summary { padding:8px 12px; gap:6px; }
  .workspace-redesign .pos-live-layout .sale-extras { display:flex; flex-wrap:wrap; gap:4px; }
  .workspace-redesign .pos-live-layout .sale-extras button { padding:5px 8px; min-height:34px; }
