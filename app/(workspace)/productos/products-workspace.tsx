@@ -1,10 +1,25 @@
 "use client";
-import { QuickSaleCatalog, type QuickSaleListResult, type QuickSaleSnapshot } from "@/components/quick-sale-catalog";
+import {
+  QuickSaleCatalog,
+  type QuickSaleListResult,
+  type QuickSaleSnapshot,
+} from "@/components/quick-sale-catalog";
 
+import {
+  orderVariantFamilies,
+  sortVariantsBySize,
+} from "@/lib/variant-display-order";
 import Image from "next/image";
 import Link from "next/link";
 import { useWorkspace } from "@/components/workspace-context";
-import { Fragment, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useFormStatus } from "react-dom";
 import {
   Barcode,
@@ -29,6 +44,7 @@ import type { CatalogImportState } from "@/lib/catalog-import-shared";
 import type { BatchActionResult, ProductVariant } from "@/lib/domain";
 import { CatalogBatchActions } from "./catalog-batch-actions";
 import { CatalogImportDialog } from "./catalog-import-dialog";
+import { WebFields } from "./ficha-web/fields";
 
 type Category = {
   id: string;
@@ -48,6 +64,10 @@ type Props = {
   quickSaleListAction?: (locationId: string) => Promise<QuickSaleListResult>;
   categories: Category[];
   attributeValues: AttributeValue[];
+  webDraftsEnabled?: boolean;
+  createWebAction?: (
+    formData: FormData,
+  ) => Promise<{ productId?: string; error?: string; photoPending?: boolean }>;
   preview?: boolean;
   status?: string;
   createAction?: (formData: FormData) => Promise<void>;
@@ -181,18 +201,25 @@ export function ProductsWorkspace({
   previewImportAction,
   commitImportAction,
   initialImportState,
+  webDraftsEnabled = false,
+  createWebAction,
   measureUnits = [],
   setProductUnitAction,
   quickSaleListAction,
 }: Props) {
   const { activeLocation } = useWorkspace();
-  const inventoryHref = (code: string) => `/inventario?${new URLSearchParams({ codigo: code, ...(activeLocation ? { ubicacion: activeLocation.id } : {}) })}`;
+  const inventoryHref = (code: string) =>
+    `/inventario?${new URLSearchParams({ codigo: code, ...(activeLocation ? { ubicacion: activeLocation.id } : {}) })}`;
   const availableCategories = categories.length
     ? categories
     : previewCategories;
   const availableValues = attributeValues.length
     ? attributeValues
     : previewValues;
+  const [prepareWeb, setPrepareWeb] = useState(false);
+  const [webRequest, setWebRequest] = useState("");
+  const [webError, setWebError] = useState("");
+  const [webBusy, setWebBusy] = useState(false);
   const [variants, setVariants] = useState(initialVariants);
   const [expandedVariantIds, setExpandedVariantIds] = useState<string[]>([]);
   const [modalMode, setModalMode] = useState<ModalMode | null>(null);
@@ -209,15 +236,18 @@ export function ProductsWorkspace({
     null,
   );
   const [scanFeedback, setScanFeedback] = useState<{
-    kind: "working" | "found" | "missing";
+    kind: "working" | "found" | "missing" | "error";
     message: string;
   } | null>(null);
+  const scanRequestId = useRef(0);
+  const [exactMatchId, setExactMatchId] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedVariantIds, setSelectedVariantIds] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [simpleProduct, setSimpleProduct] = useState(false);
   const [rangeStart, setRangeStart] = useState("");
   const [rangeEnd, setRangeEnd] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
@@ -276,9 +306,12 @@ export function ProductsWorkspace({
     () => availableValues.filter((item) => item.type_code === "COLOR"),
     [availableValues],
   );
-  const combinations = selectedColors.flatMap((colorId) =>
-    selectedSizes.map((sizeId) => `${colorId}:${sizeId}`),
-  );
+  const isSimple = modalMode === "create" && simpleProduct;
+  const combinations = isSimple
+    ? ["simple"]
+    : selectedColors.flatMap((colorId) =>
+        selectedSizes.map((sizeId) => `${colorId}:${sizeId}`),
+      );
   const existingCombinations = useMemo(() => {
     if (modalMode !== "add") return new Set<string>();
     return new Set(
@@ -303,15 +336,21 @@ export function ProductsWorkspace({
   );
   const filteredVariants = useMemo(() => {
     const term = deferredQuery.trim().toLocaleLowerCase("es-MX");
-    return variants.filter(
-      (item) =>
-        !term ||
-        [item.productName, item.brand, item.legacyCode, item.color, item.size]
-          .join(" ")
-          .toLocaleLowerCase("es-MX")
-          .includes(term),
+    if (exactMatchId)
+      return variants.filter((item) => item.id === exactMatchId);
+    return orderVariantFamilies(
+      variants.filter(
+        (item) =>
+          !term ||
+          [item.productName, item.brand, item.legacyCode, item.color, item.size]
+            .join(" ")
+            .toLocaleLowerCase("es-MX")
+            .includes(term),
+      ),
+      (item) => item.productId ?? `${item.brand}:${item.productName}`,
+      (item) => item.size,
     );
-  }, [deferredQuery, variants]);
+  }, [deferredQuery, exactMatchId, variants]);
   const selectedVariants = variants.filter((variant) =>
     selectedVariantIds.includes(variant.id),
   );
@@ -323,6 +362,11 @@ export function ProductsWorkspace({
       family.push(item);
       families.set(key, family);
     }
+    for (const [key, members] of families)
+      families.set(
+        key,
+        sortVariantsBySize(members, (item) => item.size),
+      );
     return families;
   }, [variants]);
   const allVisibleSelected =
@@ -418,6 +462,7 @@ export function ProductsWorkspace({
   }
 
   function resetVariantSelection() {
+    setSimpleProduct(false);
     setSelectedSizes([]);
     setSelectedColors([]);
     setExcludedCombinations([]);
@@ -426,6 +471,9 @@ export function ProductsWorkspace({
   }
 
   function openCreateModal() {
+    setWebRequest(crypto.randomUUID());
+    setWebError("");
+    setPrepareWeb(false);
     setQuickSeed(null);
     resetVariantSelection();
     setSelectedCategory("");
@@ -585,9 +633,12 @@ export function ProductsWorkspace({
       return;
     }
 
+    const requestId = ++scanRequestId.current;
+    setExactMatchId(null);
     setQuery(code);
     const localMatch = variants.find((item) => item.legacyCode === code);
     if (localMatch) {
+      setExactMatchId(localMatch.id);
       setScanFeedback({
         kind: "found",
         message: `${localMatch.productName} · ${localMatch.color} · talla ${localMatch.size}`,
@@ -604,7 +655,19 @@ export function ProductsWorkspace({
     }
 
     setScanFeedback({ kind: "working", message: "Buscando en el catálogo…" });
-    const match = await lookupBarcodeAction(code);
+    let match: ProductVariant | null;
+    try {
+      match = await lookupBarcodeAction(code);
+    } catch {
+      if (requestId !== scanRequestId.current) return;
+      setScanFeedback({
+        kind: "error",
+        message:
+          "No pudimos consultar el catálogo. Intenta otra vez antes de dar de alta un producto.",
+      });
+      return;
+    }
+    if (requestId !== scanRequestId.current) return;
     if (!match) {
       setScanFeedback({
         kind: "missing",
@@ -618,6 +681,7 @@ export function ProductsWorkspace({
         ? current
         : [match, ...current],
     );
+    setExactMatchId(match.id);
     setQuery(match.legacyCode);
     setScanFeedback({
       kind: "found",
@@ -712,7 +776,15 @@ export function ProductsWorkspace({
           {statusMessages[status]}
         </div>
       ) : null}
-      {quickSaleListAction ? <QuickSaleCatalog loadAction={quickSaleListAction} onChoose={item => { openCreateModal(); setQuickSeed(item); }} /> : null}
+      {quickSaleListAction ? (
+        <QuickSaleCatalog
+          loadAction={quickSaleListAction}
+          onChoose={(item) => {
+            openCreateModal();
+            setQuickSeed(item);
+          }}
+        />
+      ) : null}
       <div className="notice">
         <strong>Códigos protegidos</strong>
         <span>
@@ -728,13 +800,29 @@ export function ProductsWorkspace({
           <input
             value={query}
             onChange={(event) => {
+              scanRequestId.current += 1;
+              setExactMatchId(null);
               setQuery(event.target.value);
               setScanFeedback(null);
             }}
             placeholder="Buscar producto, marca o código"
             aria-label="Buscar productos"
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && query.trim()) {
+                event.preventDefault();
+                void handleScannedCode(query.trim(), "search");
+              }
+            }}
           />
         </label>
+        <button
+          className="secondary-button"
+          type="button"
+          disabled={!query.trim() || scanFeedback?.kind === "working"}
+          onClick={() => void handleScannedCode(query.trim(), "search")}
+        >
+          Buscar código
+        </button>
         <button
           className="secondary-button scan-camera-button"
           type="button"
@@ -748,7 +836,11 @@ export function ProductsWorkspace({
       {scanFeedback ? (
         <div
           className={`scan-feedback ${scanFeedback.kind}`}
-          role={scanFeedback.kind === "missing" ? "alert" : "status"}
+          role={
+            scanFeedback.kind === "missing" || scanFeedback.kind === "error"
+              ? "alert"
+              : "status"
+          }
         >
           <span>{scanFeedback.message}</span>
           {scanFeedback.kind === "missing" ? (
@@ -805,72 +897,115 @@ export function ProductsWorkspace({
         </div>
         {filteredVariants.map((item) => (
           <Fragment key={item.id}>
-          <div
-            className={`table-row selectable${canEdit ? " editable" : ""}`}
-            key={item.id}
-          >
-            <label className="table-checkbox">
-              <span className="sr-only">
-                Seleccionar {item.productName}, {item.color}, talla {item.size}
-              </span>
-              <input
-                type="checkbox"
-                checked={selectedVariantIds.includes(item.id)}
-                onChange={() => toggleVariantSelection(item.id)}
-              />
-            </label>
-            <div className="table-product">
-              <span className="table-product-image">
-                {item.image ? (
-                  <Image src={item.image} alt="" fill sizes="44px" />
-                ) : (
-                  <PackageOpen aria-hidden="true" />
-                )}
-              </span>
-              <button type="button" className="catalog-inline-detail" aria-expanded={expandedVariantIds.includes(item.id)} aria-controls={`family-${item.id}`} onClick={() => {
-                setExpandedVariantIds(current => current.includes(item.id) ? current.filter(id => id !== item.id) : [...current, item.id]);
-              }}>
-              <strong>
-                {item.productName}
-                {item.isActive === false ? (
-                  <em className="variant-inactive">Dada de baja</em>
-                ) : null}
-                <small>{item.brand}</small>
-              </strong><span>{expandedVariantIds.includes(item.id) ? "▾ Ocultar variantes" : "▸ Ver variantes"}</span>
-              </button>
-            </div>
-            <code>{item.legacyCode}</code>
-            <span>
-              {item.color} · {item.size}
-            </span>
-            <span>{money.format(item.price)}</span>
-            <Link
-              className="text-button"
-              href={inventoryHref(item.legacyCode)}
-              aria-label={`Consultar inventario de ${item.productName}, ${item.color}, talla ${item.size}`}
+            <div
+              className={`table-row selectable${canEdit ? " editable" : ""}`}
+              key={item.id}
             >
-              Consultar
-            </Link>
-            {canEdit ? (
-              <button
-                className="table-edit-button"
-                type="button"
-                onClick={() => setEditingVariantId(item.id)}
-                aria-label={`Editar ${item.productName}, ${item.color}, talla ${item.size}`}
+              <label className="table-checkbox">
+                <span className="sr-only">
+                  Seleccionar {item.productName}, {item.color}, talla{" "}
+                  {item.size}
+                </span>
+                <input
+                  type="checkbox"
+                  checked={selectedVariantIds.includes(item.id)}
+                  onChange={() => toggleVariantSelection(item.id)}
+                />
+              </label>
+              <div className="table-product">
+                <span className="table-product-image">
+                  {item.image ? (
+                    <Image src={item.image} alt="" fill sizes="44px" />
+                  ) : (
+                    <PackageOpen aria-hidden="true" />
+                  )}
+                </span>
+                <button
+                  type="button"
+                  className="catalog-inline-detail"
+                  aria-expanded={expandedVariantIds.includes(item.id)}
+                  aria-controls={`family-${item.id}`}
+                  onClick={() => {
+                    setExpandedVariantIds((current) =>
+                      current.includes(item.id)
+                        ? current.filter((id) => id !== item.id)
+                        : [...current, item.id],
+                    );
+                  }}
+                >
+                  <strong>
+                    {item.productName}
+                    {item.isActive === false ? (
+                      <em className="variant-inactive">Dada de baja</em>
+                    ) : null}
+                    <small>{item.brand}</small>
+                  </strong>
+                  <span>
+                    {expandedVariantIds.includes(item.id)
+                      ? "▾ Ocultar variantes"
+                      : "▸ Ver variantes"}
+                  </span>
+                </button>
+                {webDraftsEnabled && item.productId && (
+                  <Link
+                    href={`/productos/ficha-web?producto=${item.productId}`}
+                  >
+                    Ficha web
+                  </Link>
+                )}
+              </div>
+              <code>{item.legacyCode}</code>
+              <span>
+                {item.color} · {item.size}
+              </span>
+              <span>{money.format(item.price)}</span>
+              <Link
+                className="text-button"
+                href={inventoryHref(item.legacyCode)}
+                aria-label={`Consultar inventario de ${item.productName}, ${item.color}, talla ${item.size}`}
               >
-                <Pencil aria-hidden="true" />
-                Editar
-              </button>
+                Consultar
+              </Link>
+              {canEdit ? (
+                <button
+                  className="table-edit-button"
+                  type="button"
+                  onClick={() => setEditingVariantId(item.id)}
+                  aria-label={`Editar ${item.productName}, ${item.color}, talla ${item.size}`}
+                >
+                  <Pencil aria-hidden="true" />
+                  Editar
+                </button>
+              ) : null}
+            </div>
+            {expandedVariantIds.includes(item.id) ? (
+              <div
+                id={`family-${item.id}`}
+                className="catalog-variant-list"
+                role="region"
+                aria-label={`Variantes de ${item.productName}`}
+              >
+                {(
+                  variantFamilies.get(
+                    item.productId ?? `${item.brand}:${item.productName}`,
+                  ) ?? []
+                ).map((option) => (
+                  <div key={option.id}>
+                    <strong>
+                      {option.color} · {option.size}
+                    </strong>
+                    <code>{option.legacyCode}</code>
+                    <span>
+                      {money.format(option.price)}
+                      {option.isActive === false ? " · Baja" : ""}
+                    </span>
+                    <Link href={inventoryHref(option.legacyCode)}>
+                      Ver existencias
+                    </Link>
+                  </div>
+                ))}
+              </div>
             ) : null}
-          </div>
-          {expandedVariantIds.includes(item.id) ? <div id={`family-${item.id}`} className="catalog-variant-list" role="region" aria-label={`Variantes de ${item.productName}`}>
-            {(variantFamilies.get(item.productId ?? `${item.brand}:${item.productName}`) ?? []).map(option => <div key={option.id}>
-              <strong>{option.color} · {option.size}</strong>
-              <code>{option.legacyCode}</code>
-              <span>{money.format(option.price)}{option.isActive === false ? " · Baja" : ""}</span>
-              <Link href={inventoryHref(option.legacyCode)}>Ver existencias</Link>
-            </div>)}
-          </div> : null}
           </Fragment>
         ))}
         {filteredVariants.length === 0 ? (
@@ -918,6 +1053,42 @@ export function ProductsWorkspace({
               </button>
             </header>
             <form
+              onChange={() => {
+                if (modalMode === "create") {
+                  setWebRequest(crypto.randomUUID());
+                  setWebError("");
+                }
+              }}
+              onSubmit={async (event) => {
+                if (
+                  preview ||
+                  modalMode !== "create" ||
+                  !prepareWeb ||
+                  !createWebAction
+                )
+                  return;
+                event.preventDefault();
+                if (webBusy) return;
+                const form = new FormData(event.currentTarget);
+                setWebBusy(true);
+                try {
+                  const result = await createWebAction(form);
+                  if (result.productId)
+                    window.location.assign(
+                      `/productos/ficha-web?producto=${result.productId}${result.photoPending ? "&foto=pendiente" : ""}`,
+                    );
+                  else
+                    setWebError(
+                      result.error ?? "No se confirmó el guardado. Reintenta.",
+                    );
+                } catch {
+                  setWebError(
+                    "No se confirmó el guardado. Conservamos la captura; reintenta.",
+                  );
+                } finally {
+                  setWebBusy(false);
+                }
+              }}
               action={
                 preview
                   ? modalMode === "create"
@@ -933,7 +1104,11 @@ export function ProductsWorkspace({
                   <>
                     <label className="wide-field">
                       <span>Nombre del producto</span>
-                      <input name="product_name" defaultValue={quickSeed?.product_name ?? ''} required />
+                      <input
+                        name="product_name"
+                        defaultValue={quickSeed?.product_name ?? ""}
+                        required
+                      />
                     </label>
                     <label>
                       <span>Marca</span>
@@ -1001,7 +1176,11 @@ export function ProductsWorkspace({
                   <span>Precio</span>
                   <input
                     name="price"
-                    defaultValue={quickSeed ? (Number(quickSeed.unit_price_cents) / 100).toFixed(2) : undefined}
+                    defaultValue={
+                      quickSeed
+                        ? (Number(quickSeed.unit_price_cents) / 100).toFixed(2)
+                        : undefined
+                    }
                     inputMode="decimal"
                     min="0"
                     step="0.01"
@@ -1009,158 +1188,222 @@ export function ProductsWorkspace({
                   />
                 </label>
               </div>
-              <div className="size-picker color-picker">
-                <span>1. Selecciona uno o varios colores</span>
-                <div className="picker-quick-actions">
-                  <button type="button" onClick={selectAllColors}>
-                    Marcar todos
-                  </button>
-                  <button type="button" onClick={clearColors}>
-                    Limpiar
-                  </button>
-                </div>
-                <div>
-                  {colors.map((color) => (
-                    <label
-                      className={
-                        selectedColors.includes(color.id)
-                          ? "size-option selected"
-                          : "size-option"
-                      }
-                      key={color.id}
-                    >
+              {modalMode === "create" && webDraftsEnabled && (
+                <section className="wide-field">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={prepareWeb}
+                      onChange={(e) => setPrepareWeb(e.target.checked)}
+                    />{" "}
+                    Preparar también ficha para tienda en línea
+                  </label>
+                  {prepareWeb && (
+                    <>
+                      <p>
+                        Se guarda junto al producto en pruebas. Los productos
+                        elegibles se envían como borrador al Woo de pruebas;
+                        consulta el resultado en su ficha.
+                      </p>
                       <input
-                        type="checkbox"
-                        checked={selectedColors.includes(color.id)}
-                        onChange={() => toggleColor(color.id)}
-                        aria-label={`Color ${color.value}`}
+                        type="hidden"
+                        name="web_request_id"
+                        value={webRequest}
                       />
-                      <span>{color.value}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div className="size-picker">
-                <span>2. Selecciona una o varias tallas</span>
-                <small>{category?.name ?? "Tallas"}</small>
-                {sizes.length ? (
-                  <div className="picker-quick-actions size-range-picker">
-                    <button type="button" onClick={selectAllSizes}>
-                      Marcar todas
-                    </button>
-                    <button type="button" onClick={clearSizes}>
-                      Limpiar
-                    </button>
-                    <label>
-                      <span>Desde</span>
-                      <select
-                        aria-label="Talla inicial"
-                        value={rangeStart}
-                        onChange={(event) => setRangeStart(event.target.value)}
-                      >
-                        <option value="">—</option>
-                        {sizes.map((size) => (
-                          <option key={size.id} value={size.id}>
-                            {size.value}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      <span>Hasta</span>
-                      <select
-                        aria-label="Talla final"
-                        value={rangeEnd}
-                        onChange={(event) => setRangeEnd(event.target.value)}
-                      >
-                        <option value="">—</option>
-                        {sizes.map((size) => (
-                          <option key={size.id} value={size.id}>
-                            {size.value}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={selectSizeRange}
-                      disabled={!rangeStart || !rangeEnd}
-                    >
-                      Marcar rango
-                    </button>
+                      <WebFields nameOptional />
+                      {webError && <p role="alert">{webError}</p>}
+                    </>
+                  )}
+                </section>
+              )}
+              {modalMode === "create" && (
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={simpleProduct}
+                    onChange={(e) => {
+                      setSimpleProduct(e.target.checked);
+                      setExcludedCombinations([]);
+                    }}
+                  />{" "}
+                  Producto sin talla ni color
+                </label>
+              )}
+              {isSimple ? (
+                <>
+                  <input type="hidden" name="simple_product" value="true" />
+                  <p>
+                    Se creará un solo código, sin atributos de talla ni color.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="size-picker color-picker">
+                    <span>1. Selecciona uno o varios colores</span>
+                    <div className="picker-quick-actions">
+                      <button type="button" onClick={selectAllColors}>
+                        Marcar todos
+                      </button>
+                      <button type="button" onClick={clearColors}>
+                        Limpiar
+                      </button>
+                    </div>
+                    <div>
+                      {colors.map((color) => (
+                        <label
+                          className={
+                            selectedColors.includes(color.id)
+                              ? "size-option selected"
+                              : "size-option"
+                          }
+                          key={color.id}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedColors.includes(color.id)}
+                            onChange={() => toggleColor(color.id)}
+                            aria-label={`Color ${color.value}`}
+                          />
+                          <span>{color.value}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
-                ) : null}
-                <div>
-                  {sizes.map((size) => (
-                    <label
-                      className={
-                        selectedSizes.includes(size.id)
-                          ? "size-option selected"
-                          : "size-option"
-                      }
-                      key={size.id}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedSizes.includes(size.id)}
-                        onChange={() => toggleSize(size.id)}
-                        aria-label={`Talla ${size.value}`}
-                      />
-                      <span>{size.value}</span>
-                    </label>
-                  ))}
-                </div>
-                {!selectedCategory ? (
-                  <p>
-                    Elige primero la categoría para mostrar las tallas que le
-                    corresponden.
-                  </p>
-                ) : sizes.length === 0 ? (
-                  <p>
-                    La escala de esta categoría está pendiente de confirmar con
-                    la tienda.
-                  </p>
-                ) : null}
-              </div>
-              {combinations.length ? (
-                <div className="variant-matrix">
-                  <span>3. Revisa la matriz antes de guardar</span>
-                  <small>Desmarca las combinaciones que no llegaron.</small>
-                  <div className="variant-matrix-grid">
-                    {selectedColors.map((colorId) => {
-                      const color = colors.find((item) => item.id === colorId);
-                      return selectedSizes.map((sizeId) => {
-                        const size = sizes.find((item) => item.id === sizeId);
-                        const combination = `${colorId}:${sizeId}`;
-                        const alreadyExists =
-                          existingCombinations.has(combination);
-                        const enabled =
-                          !alreadyExists &&
-                          !excludedCombinations.includes(combination);
-                        return (
-                          <label
-                            className={enabled ? "selected" : ""}
-                            key={combination}
+                  <div className="size-picker">
+                    <span>2. Selecciona una o varias tallas</span>
+                    <small>{category?.name ?? "Tallas"}</small>
+                    {sizes.length ? (
+                      <div className="picker-quick-actions size-range-picker">
+                        <button type="button" onClick={selectAllSizes}>
+                          Marcar todas
+                        </button>
+                        <button type="button" onClick={clearSizes}>
+                          Limpiar
+                        </button>
+                        <label>
+                          <span>Desde</span>
+                          <select
+                            aria-label="Talla inicial"
+                            value={rangeStart}
+                            onChange={(event) =>
+                              setRangeStart(event.target.value)
+                            }
                           >
-                            <input
-                              type="checkbox"
-                              name="variant_combo"
-                              value={combination}
-                              checked={enabled}
-                              disabled={alreadyExists}
-                              onChange={() => toggleCombination(combination)}
-                              aria-label={`${color?.value ?? "Color"}, talla ${size?.value ?? "única"}`}
-                            />
-                            <strong>{color?.value}</strong>
-                            <span>{size?.value}</span>
-                            {alreadyExists ? <small>Ya existe</small> : null}
-                          </label>
-                        );
-                      });
-                    })}
+                            <option value="">—</option>
+                            {sizes.map((size) => (
+                              <option key={size.id} value={size.id}>
+                                {size.value}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label>
+                          <span>Hasta</span>
+                          <select
+                            aria-label="Talla final"
+                            value={rangeEnd}
+                            onChange={(event) =>
+                              setRangeEnd(event.target.value)
+                            }
+                          >
+                            <option value="">—</option>
+                            {sizes.map((size) => (
+                              <option key={size.id} value={size.id}>
+                                {size.value}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={selectSizeRange}
+                          disabled={!rangeStart || !rangeEnd}
+                        >
+                          Marcar rango
+                        </button>
+                      </div>
+                    ) : null}
+                    <div>
+                      {sizes.map((size) => (
+                        <label
+                          className={
+                            selectedSizes.includes(size.id)
+                              ? "size-option selected"
+                              : "size-option"
+                          }
+                          key={size.id}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedSizes.includes(size.id)}
+                            onChange={() => toggleSize(size.id)}
+                            aria-label={`Talla ${size.value}`}
+                          />
+                          <span>{size.value}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {!selectedCategory ? (
+                      <p>
+                        Elige primero la categoría para mostrar las tallas que
+                        le corresponden.
+                      </p>
+                    ) : sizes.length === 0 ? (
+                      <p>
+                        La escala de esta categoría está pendiente de confirmar
+                        con la tienda.
+                      </p>
+                    ) : null}
                   </div>
-                </div>
-              ) : null}
+                  {combinations.length ? (
+                    <div className="variant-matrix">
+                      <span>3. Revisa la matriz antes de guardar</span>
+                      <small>Desmarca las combinaciones que no llegaron.</small>
+                      <div className="variant-matrix-grid">
+                        {selectedColors.map((colorId) => {
+                          const color = colors.find(
+                            (item) => item.id === colorId,
+                          );
+                          return selectedSizes.map((sizeId) => {
+                            const size = sizes.find(
+                              (item) => item.id === sizeId,
+                            );
+                            const combination = `${colorId}:${sizeId}`;
+                            const alreadyExists =
+                              existingCombinations.has(combination);
+                            const enabled =
+                              !alreadyExists &&
+                              !excludedCombinations.includes(combination);
+                            return (
+                              <label
+                                className={enabled ? "selected" : ""}
+                                key={combination}
+                              >
+                                <input
+                                  type="checkbox"
+                                  name="variant_combo"
+                                  value={combination}
+                                  checked={enabled}
+                                  disabled={alreadyExists}
+                                  onChange={() =>
+                                    toggleCombination(combination)
+                                  }
+                                  aria-label={`${color?.value ?? "Color"}, talla ${size?.value ?? "única"}`}
+                                />
+                                <strong>{color?.value}</strong>
+                                <span>{size?.value}</span>
+                                {alreadyExists ? (
+                                  <small>Ya existe</small>
+                                ) : null}
+                              </label>
+                            );
+                          });
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+                </>
+              )}
               <div className="variant-summary">
                 <strong>
                   {activeCombinations.length}{" "}
@@ -1181,6 +1424,7 @@ export function ProductsWorkspace({
                 </button>
                 <SubmitButton
                   count={activeCombinations.length}
+                  busy={webBusy}
                   mode={modalMode}
                 />
               </div>
@@ -1476,7 +1720,8 @@ export function ProductsWorkspace({
                         inputMode="decimal"
                         min="0"
                         step="0.01"
-                        defaultValue={editingVariant.cost ?? 0}
+                        defaultValue={editingVariant.cost ?? ""}
+                        placeholder="Sin capturar"
                         required
                       />
                     </label>
@@ -1575,15 +1820,23 @@ function EditSubmitButton({ label }: { label: string }) {
   );
 }
 
-function SubmitButton({ count, mode }: { count: number; mode: ModalMode }) {
+function SubmitButton({
+  count,
+  mode,
+  busy = false,
+}: {
+  count: number;
+  mode: ModalMode;
+  busy?: boolean;
+}) {
   const { pending } = useFormStatus();
   return (
     <button
       className="primary-button"
       type="submit"
-      disabled={pending || count === 0}
+      disabled={pending || busy || count === 0}
     >
-      {pending
+      {pending || busy
         ? "Guardando…"
         : `${mode === "create" ? "Crear" : "Agregar"} ${count || ""} ${count === 1 ? "variante" : "variantes"}`}
     </button>

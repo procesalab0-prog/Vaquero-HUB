@@ -5,7 +5,7 @@ import { mockVariants } from "@/lib/mock-data";
 import { resolveActiveLocation } from "@/lib/auth/active-location";
 import { requirePermission } from "@/lib/auth/authorization";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { productImageUrl } from "@/lib/product-images";
+import { productImageUrl, readCatalogCoverUrls } from "@/lib/product-images";
 import type { ProductVariant } from "@/lib/domain";
 import {
   authorizeOverdueCredit,
@@ -156,6 +156,11 @@ export default async function PosPage({
       productImageUrl(supabase, product.image_path),
     ]),
   );
+  const covers = await readCatalogCoverUrls(
+    supabase,
+    ((catalogResult.data ?? []) as CatalogRow[]).map((row) => row.product_id),
+  );
+  for (const [id, url] of covers) if (!images.get(id)) images.set(id, url);
   const initialVariants = ((catalogResult.data ?? []) as CatalogRow[])
     .filter((row) => row.is_active)
     .map((row) => ({
@@ -171,13 +176,37 @@ export default async function PosPage({
       stock: stocks.get(row.variant_id) ?? 0,
       image: images.get(row.product_id),
     }));
-  const requestedIds = [...new Set([
-    ...initialVariants.map((variant) => variant.id),
-    ...((draftsResult.data ?? []) as PosDraftPayload[]).flatMap((draft) => draft.items.filter(item => !item.quick).map((item) => item.variant_id)),
-  ])];
-  const expanded = await supabase.rpc("get_pos_variants", { p_cash_session_id: cashSession.id, p_variant_ids: requestedIds });
-  if (expanded.error) return <PosWorkspace variants={[]} cashSession={cashSession as { id: string; location_id: string; register_name: string }} status="No fue posible recuperar el catálogo y tus tickets en espera. Recarga antes de vender." />;
-  const variants = ((expanded.data ?? []) as Array<ProductVariant & { productId: string }>).map((variant) => ({ ...variant, image: images.get(variant.productId) }));
+  const requestedIds = [
+    ...new Set([
+      ...initialVariants.map((variant) => variant.id),
+      ...((draftsResult.data ?? []) as PosDraftPayload[]).flatMap((draft) =>
+        draft.items
+          .filter((item) => !item.quick)
+          .map((item) => item.variant_id),
+      ),
+    ]),
+  ];
+  const expanded = await supabase.rpc("get_pos_variants", {
+    p_cash_session_id: cashSession.id,
+    p_variant_ids: requestedIds,
+  });
+  if (expanded.error)
+    return (
+      <PosWorkspace
+        variants={[]}
+        cashSession={
+          cashSession as {
+            id: string;
+            location_id: string;
+            register_name: string;
+          }
+        }
+        status="No fue posible recuperar el catálogo y tus tickets en espera. Recarga antes de vender."
+      />
+    );
+  const variants = (
+    (expanded.data ?? []) as Array<ProductVariant & { productId: string }>
+  ).map((variant) => ({ ...variant, image: images.get(variant.productId) }));
   return (
     <PosWorkspace
       variants={variants}
@@ -185,7 +214,10 @@ export default async function PosPage({
       prepareUsdAction={prepareUsdExchange}
       canAccessTransfers={canAccessTransfers}
       initialDrafts={(draftsResult.data ?? []) as PosDraftPayload[]}
-      canCaptureQuickCost={['ADMIN','MANAGER'].includes((Array.isArray(profile?.roles) ? profile.roles[0] : profile?.roles)?.code ?? '')}
+      canCaptureQuickCost={["ADMIN", "MANAGER"].includes(
+        (Array.isArray(profile?.roles) ? profile.roles[0] : profile?.roles)
+          ?.code ?? "",
+      )}
       cashSession={
         cashSession as {
           id: string;

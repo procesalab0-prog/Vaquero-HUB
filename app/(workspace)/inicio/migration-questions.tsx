@@ -1,10 +1,30 @@
 import Link from "next/link";
+import { WEB_STAGING_URL } from "@/lib/web-draft";
 import styles from "./migration-questions.module.css";
 import { getWorkspaceSession } from "@/lib/auth/workspace-session";
 
 export async function MigrationQuestions() {
   const session = await getWorkspaceSession();
   if (!session?.profile?.is_active) return null;
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL === WEB_STAGING_URL)
+    return (
+      <section
+        className={`content-card ${styles.card}`}
+        aria-labelledby="migration-questions-title"
+      >
+        <h2 id="migration-questions-title">Preguntas para los dueños</h2>
+        <p>
+          Las respuestas se guardan en el programa principal para reunirlas en
+          un solo lugar.
+        </p>
+        <Link
+          className="primary-button"
+          href="https://vaquero-hub.vercel.app/productos/migracion-dudas"
+        >
+          Responder en el programa principal →
+        </Link>
+      </section>
+    );
   const { data, error } = await session.supabase.rpc("main_m9_owner_inbox", {
     p_query: "",
     p_department: "",

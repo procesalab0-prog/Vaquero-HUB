@@ -1,9 +1,12 @@
 "use server";
+import { WEB_STAGING_URL } from "@/lib/web-draft";
 import { requirePermission } from "@/lib/auth/authorization";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function saveOwnerAnswer(form: FormData) {
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL === WEB_STAGING_URL)
+    redirect("https://vaquero-hub.vercel.app/productos/migracion-dudas");
   let result = "guardado";
   const question = String(form.get("question_id") ?? "");
   try {

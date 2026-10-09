@@ -1,4 +1,7 @@
 "use server";
+import { queueEligibleRemoteWeb } from "@/lib/remote-web-server";
+
+import { parseCatalogCents as cents } from "@/lib/catalog-money";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -12,19 +15,40 @@ import {
 } from "@/lib/catalog-import-shared";
 import type { ProductVariant } from "@/lib/domain";
 import type { BatchActionResult } from "@/lib/domain";
-import { uploadProductImage } from "@/lib/product-images";
+import {
+  uploadProductImage,
+  productImageUrl,
+  readCatalogCoverUrls,
+} from "@/lib/product-images";
+import { readVariantPhotos } from "@/lib/variant-photos";
+import { WEB_STAGING_URL, webContentFromForm } from "@/lib/web-draft";
 import type { CreateMeasureUnitResult } from "@/components/measure-unit-catalog";
 import type { MeasureUnit } from "@/lib/measure-units";
 import type { SetProductUnitResult } from "@/components/product-unit-editor";
 import type { QuickSaleListResult } from "@/components/quick-sale-catalog";
 
-export async function listQuickSaleSnapshots(locationId: string): Promise<QuickSaleListResult> {
+export async function listQuickSaleSnapshots(
+  locationId: string,
+): Promise<QuickSaleListResult> {
   try {
     const { supabase } = await requirePermission("products.create");
-    const { data, error } = await supabase.rpc("list_quick_sale_items", { p_location_id: locationId, p_limit: 100 });
-    if (error) return { ok: false, message: "No fue posible consultar los productos rápidos. Revisa tu sucursal y tus permisos." };
+    const { data, error } = await supabase.rpc("list_quick_sale_items", {
+      p_location_id: locationId,
+      p_limit: 100,
+    });
+    if (error)
+      return {
+        ok: false,
+        message:
+          "No fue posible consultar los productos rápidos. Revisa tu sucursal y tus permisos.",
+      };
     return { ok: true, items: data ?? [] };
-  } catch { return { ok: false, message: "No tienes acceso al alta de productos o tu sesión venció." }; }
+  } catch {
+    return {
+      ok: false,
+      message: "No tienes acceso al alta de productos o tu sesión venció.",
+    };
+  }
 }
 
 export async function setProductUnit(input: {
@@ -233,13 +257,6 @@ export async function bulkUpdateVariantPrices(
 
 function textField(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
-}
-
-function cents(value: string) {
-  const amount = Number(value);
-  return Number.isFinite(amount) && amount >= 0
-    ? Math.round(amount * 100)
-    : null;
 }
 
 function catalogErrorStatus(error: unknown) {
@@ -476,13 +493,23 @@ export async function updateCatalogVariantPrice(formData: FormData) {
   redirect(`${productsPath}?status=${status}`);
 }
 
-function variantsFromForm(formData: FormData) {
+function variantsFromForm(formData: FormData, allowSimple = false) {
   const priceCents = cents(textField(formData, "price"));
   const costCents = cents(textField(formData, "cost"));
   const combinations = Array.from(
     new Set(formData.getAll("variant_combo").map(String).filter(Boolean)),
   );
 
+  if (formData.get("simple_product") === "true") {
+    if (
+      !allowSimple ||
+      combinations.length ||
+      priceCents === null ||
+      costCents === null
+    )
+      throw new Error("INVALID_SIMPLE_PRODUCT");
+    return [{ cost_cents: costCents, price_cents: priceCents, attributes: {} }];
+  }
   if (
     priceCents === null ||
     costCents === null ||
@@ -513,7 +540,7 @@ export async function createCatalogProduct(formData: FormData) {
     const productName = textField(formData, "product_name");
     const categoryId = textField(formData, "category_id");
     const brandName = textField(formData, "brand_name");
-    const variants = variantsFromForm(formData);
+    const variants = variantsFromForm(formData, true);
 
     if (!productName || !categoryId) {
       status = "producto-datos-invalidos";
@@ -628,44 +655,134 @@ export async function lookupCatalogBarcode(
   rawCode: string,
 ): Promise<ProductVariant | null> {
   const code = rawCode.trim();
-  if (!code || code.length > 80) return null;
-
+  if (!code || code.length > 100) return null;
   const { supabase } = await requirePermission("products.read");
-  const { data, error } = await supabase.rpc("search_catalog", {
-    p_query: code,
-    p_limit: 5,
+  const { data, error } = await supabase.rpc("lookup_catalog_barcode", {
+    p_code: code,
   });
   if (error) {
     console.error("[productos/lookupCatalogBarcode] failed", {
-      message: error.message,
+      code: error.code,
     });
-    return null;
+    throw new Error("CATALOG_LOOKUP_UNAVAILABLE");
   }
-
-  const row = (
-    data as Array<{
-      variant_id: string;
-      product_id: string;
-      product_name: string;
-      category_name: string;
-      brand_name: string;
-      legacy_sicar_code: string | null;
-      primary_barcode: string | null;
-      price_cents: number;
-      attributes: Record<string, string> | null;
-    }> | null
-  )?.[0];
+  const row = data as {
+    variant_id: string;
+    product_id: string;
+    product_name: string;
+    category_id: string;
+    department_name: string | null;
+    measure_unit_code: string;
+    description: string;
+    product_active: boolean;
+    is_active: boolean;
+    image_path: string | null;
+    sku: string;
+    brand_name: string;
+    primary_barcode: string;
+    matched_barcode: string;
+    price_cents: number;
+    cost_cents: number | null;
+    attributes: Record<string, string>;
+  } | null;
   if (!row) return null;
-
+  if (row.matched_barcode !== code)
+    throw new Error("CATALOG_LOOKUP_IDENTITY_CHANGED");
+  const [photos, covers] = await Promise.all([
+    readVariantPhotos(supabase, [row.variant_id]),
+    readCatalogCoverUrls(supabase, [row.product_id]),
+  ]);
   return {
     id: row.variant_id,
     productId: row.product_id,
+    categoryId: row.category_id,
+    departmentName: row.department_name,
+    measureUnitCode: row.measure_unit_code,
+    description: row.description,
+    productActive: row.product_active,
+    isActive: row.is_active,
     productName: row.product_name,
     brand: row.brand_name,
-    legacyCode: row.primary_barcode ?? row.legacy_sicar_code ?? code,
-    color: row.attributes?.COLOR ?? "Sin color",
-    size: row.attributes?.TALLA ?? "Única",
+    sku: row.sku,
+    legacyCode: row.primary_barcode,
+    color: row.attributes.COLOR ?? "Sin color",
+    size: row.attributes.TALLA ?? "Única",
     price: row.price_cents / 100,
+    cost: row.cost_cents === null ? undefined : row.cost_cents / 100,
+    image:
+      productImageUrl(supabase, row.image_path) ??
+      photos.get(row.variant_id)?.[0]?.url ??
+      covers.get(row.product_id),
     stock: 0,
   };
+}
+
+export async function createCatalogProductWithWeb(
+  formData: FormData,
+): Promise<{ productId?: string; error?: string; photoPending?: boolean }> {
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL !== WEB_STAGING_URL)
+      throw new Error("STAGING_ONLY");
+    const { supabase } = await requirePermission("products.create");
+    const name = textField(formData, "product_name");
+    const { data, error } = await supabase.rpc(
+      "create_product_with_web_draft",
+      {
+        p_name: name,
+        p_category_id: textField(formData, "category_id"),
+        p_variants: variantsFromForm(formData, true),
+        p_brand_name: textField(formData, "brand_name") || null,
+        p_content: webContentFromForm(formData, name),
+        p_request_id: textField(formData, "web_request_id"),
+      },
+    );
+    if (error) throw new Error(error.message);
+    let photoPending = false;
+    // Photo upload is independent: a failure must not undo or duplicate the saved product.
+    try {
+      const uploadedPath = await uploadProductImage({
+        supabase,
+        productId: data.product_id,
+        image: formData.get("product_image"),
+      });
+      if (uploadedPath) {
+        const current = await supabase.rpc("read_web_draft", {
+          p_product_id: data.product_id,
+        });
+        if (current.error) throw new Error("PHOTO_DRAFT_READ_FAILED");
+        if (current.data.content.images.length === 0) {
+          const linked = await supabase.rpc("save_web_draft", {
+            p_product_id: data.product_id,
+            p_content: {
+              ...current.data.content,
+              images: [
+                {
+                  url: supabase.storage
+                    .from("product-images")
+                    .getPublicUrl(uploadedPath).data.publicUrl,
+                  alt: "",
+                },
+              ],
+            },
+            p_revision: current.data.revision,
+            p_fingerprint: current.data.fingerprint,
+            p_request_id: crypto.randomUUID(),
+          });
+          if (linked.error) throw new Error("PHOTO_DRAFT_LINK_FAILED");
+        }
+      }
+    } catch {
+      photoPending = true;
+    }
+    revalidatePath(productsPath);
+    await queueEligibleRemoteWeb(data.product_id);
+    return { productId: data.product_id, photoPending };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    return {
+      error: /INVALID|DUPLICATE|CATALOG|WEB_REQUEST/.test(message)
+        ? "Revisa nombre, categoría, variantes y fotos. No se creó otro producto; corrige la captura y vuelve a intentar."
+        : "No se confirmó el guardado. La captura sigue aquí; puedes reintentar sin duplicar el producto.",
+    };
+  }
 }

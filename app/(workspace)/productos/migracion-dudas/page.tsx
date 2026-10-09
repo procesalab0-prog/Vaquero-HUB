@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { WEB_STAGING_URL } from "@/lib/web-draft";
 import Link from "next/link";
 import { requirePermission } from "@/lib/auth/authorization";
 const reviewMoney = (cents: number | null, fallback: string) =>
@@ -62,6 +64,8 @@ export default async function OwnerQuestionsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { supabase } = await requirePermission("products.read");
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL === WEB_STAGING_URL)
+    redirect("https://vaquero-hub.vercel.app/productos/migracion-dudas");
   const params = await searchParams;
   const value = (name: string, fallback = "") =>
     typeof params[name] === "string" ? (params[name] as string) : fallback;

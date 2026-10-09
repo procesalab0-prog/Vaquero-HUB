@@ -1,0 +1,18 @@
+export type RemoteWebState = {
+  enabled: boolean;
+  eligible: boolean;
+  variant_photos_enabled?: boolean;
+  reason?: string | null;
+  job: null | {
+    id: string;
+    state: string;
+    revision: number;
+    remote_product_id: number | null;
+  };
+};
+export type RemoteWebResult = {
+  remote?: RemoteWebState;
+  message?: string;
+  refresh?: boolean;
+  error?: string;
+};

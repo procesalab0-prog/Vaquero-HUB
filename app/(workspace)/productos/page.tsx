@@ -1,9 +1,11 @@
+import { readVariantPhotos } from "@/lib/variant-photos";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { mockVariants } from "@/lib/mock-data";
 import { requirePermission } from "@/lib/auth/authorization";
 import { initialCatalogImportState } from "@/lib/catalog-import-shared";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { productImageUrl } from "@/lib/product-images";
+import { productImageUrl, readCatalogCoverUrls } from "@/lib/product-images";
 import {
   addCatalogVariants,
   listQuickSaleSnapshots,
@@ -11,6 +13,7 @@ import {
   bulkUpdateVariantStatus,
   commitCatalogImport,
   createCatalogProduct,
+  createCatalogProductWithWeb,
   lookupCatalogBarcode,
   previewCatalogImport,
   registerVariantBarcode,
@@ -156,6 +159,14 @@ export default async function ProductsPage({
       String(permission.permission_code),
     ),
   );
+  const covers = await readCatalogCoverUrls(
+    supabase,
+    ((catalogResult.data ?? []) as CatalogRow[]).map((row) => row.product_id),
+  );
+  const variantPhotos = await readVariantPhotos(
+    supabase,
+    ((catalogResult.data ?? []) as CatalogRow[]).map((row) => row.variant_id),
+  );
   const canUpdate = permissions.has("products.update");
   const canCreate = permissions.has("products.create");
   const canSeeCost =
@@ -183,12 +194,28 @@ export default async function ProductsPage({
     cost: row.cost_cents === null ? undefined : row.cost_cents / 100,
     isActive: row.is_active,
     stock: 0,
-    image: productImageUrl(supabase, products.get(row.product_id)?.image_path),
+    image:
+      productImageUrl(supabase, products.get(row.product_id)?.image_path) ??
+      variantPhotos.get(row.variant_id)?.[0]?.url ??
+      covers.get(row.product_id),
   }));
 
   return (
     <>
+      {process.env.NEXT_PUBLIC_SUPABASE_URL ===
+        "https://zsezjtswqeijboezvado.supabase.co" && (
+        <p>
+          <Link href="/productos/migracion">
+            Revisar piloto SICAR · solo consulta
+          </Link>
+        </p>
+      )}
       <ProductsWorkspace
+        webDraftsEnabled={
+          process.env.NEXT_PUBLIC_SUPABASE_URL ===
+          "https://zsezjtswqeijboezvado.supabase.co"
+        }
+        createWebAction={canCreate ? createCatalogProductWithWeb : undefined}
         initialVariants={variants}
         quickSaleListAction={canCreate ? listQuickSaleSnapshots : undefined}
         categories={(categoriesResult.data ?? []) as Category[]}

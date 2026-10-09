@@ -1,0 +1,9 @@
+{
+  "name": "m9-isolated-woocommerce-laboratory",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@wp-playground/cli": "3.1.56"
+  }
+}

@@ -1,11 +1,11 @@
 {
   "name": "vaquero-hub",
-  "version": "0.62.0",
+  "version": "0.80.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "dev:local": "node scripts/dev-local.mjs",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",

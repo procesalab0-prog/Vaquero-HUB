@@ -1,0 +1,641 @@
+{
+  "schema_version": 1,
+  "rule_id": "SICAR_DEPARTMENT_BY_VARIANT_SIZE",
+  "date": "2026-09-24",
+  "status": "confirmed_by_user",
+  "confirmation": "si así es",
+  "meaning": "Un mismo modelo puede pertenecer a DAMA o JUVENIL en tallas pequeñas y CABALLERO en tallas grandes. Conservar departamento y sección por Clave 1; no separar modelo únicamente por departamento.",
+  "limits": [
+    "No inferir departamento por rangos universales de talla.",
+    "No corregir departamentos originales ni secciones distintas.",
+    "No resolver duplicados de identidad con esta regla.",
+    "No autorizar importación, existencias ni escrituras WooCommerce."
+  ],
+  "observed_case_reviews": [
+    {
+      "case_id": "taxonomy:f6125ea5110063f61514a1c6",
+      "evidence_sha256": "409c8e3c2b4266c10a36af41d7853de8768b1290bffc2de2dad89f1f7dcc8dec",
+      "product_id": 7997,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:d3fade0dcfd6af6099376bd3",
+      "evidence_sha256": "262615797d6ddc9d5b9bf386c51ff11e1b82d2556fb605572cc00b1ae51431f2",
+      "product_id": 7995,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:a4ada0d2636c5315fda632de",
+      "evidence_sha256": "7f94b9a97d85f94dad0b940e7a1678d33bb3e68605fb33ed63dc82d0c8389516",
+      "product_id": 7996,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:6114201908d43f98dd9422a7",
+      "evidence_sha256": "b952a04ec860373b60b01f60f42dc279d32af7a482c87c243c803dd5c3985a0e",
+      "product_id": 5539,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:63be82c0718cfdd5937f87a6",
+      "evidence_sha256": "d47fa56b00d9ae3af730cbefaadf5c3d90217c35e4be55e5de692cbb26cf2f4e",
+      "product_id": 7986,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:e036b0f93491c219c739d547",
+      "evidence_sha256": "c951f92fcc32e45eabb011eaac7a92e5a4a54524d74e3366e2e275897440669c",
+      "product_id": 7987,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:3d3a72eb647883ffd6222655",
+      "evidence_sha256": "74ee5599cb3e0a9c0b62ab363f0adb7b164356e42b9077e6f55d93efb6267a16",
+      "product_id": 7988,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:a494a81493b5ee370f0da858",
+      "evidence_sha256": "fe974fbaa4d989effd8f0cd80e34d79ac7af9b75dafc684fd8fa20cb27d66767",
+      "product_id": 7989,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:386bd23aed67d14b1e8490f2",
+      "evidence_sha256": "d10464f70fbbba627c9c4fb681e29f19e233dc6a2dfe9318097a965ffb0788b0",
+      "product_id": 7990,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:fbfb6260fb3bf54085819f37",
+      "evidence_sha256": "2a8db589b02b36c4c01837f71f78a6803f1829e64f9c266f4467e703d2ed9d34",
+      "product_id": 7991,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:e41a86f25f26a6b93b3f0746",
+      "evidence_sha256": "5ad17e8a018f8b1173fcf729dca724260836bc5ecc6c8310fd0876652fcc177e",
+      "product_id": 7993,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:0b78846b1d1a56b522eb70cf",
+      "evidence_sha256": "2518f668c7d76fc22fae35c35232e9127de491c26ab185f162d61a0561c17ecc",
+      "product_id": 7994,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:f9bde60da6cce2480be68aad",
+      "evidence_sha256": "e5a8cc9dea75d5c40331a9c9851eb7c97babf43fae66797d101f87189adb608f",
+      "product_id": 7782,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:2b4c2cb97cdac1fa1c81cfea",
+      "evidence_sha256": "11be2762d002692da6e07c32128ec14b05003eeaff50cf9035ab621b9caedd13",
+      "product_id": 7998,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:656a9435cae630427644c67c",
+      "evidence_sha256": "bf87c85970dfca2998927be3e48945299ea115fc790dd4d48abe3d84272e0eea",
+      "product_id": 13452,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:8ba043418c2f53e83a3f762c",
+      "evidence_sha256": "b51c54f87aa05530afae7538b51fd9f84c4ecddaabad1672e63c9e071b4eb628",
+      "product_id": 13460,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:64ffa7316974bf56544aaec9",
+      "evidence_sha256": "65c398b7adad03e76f8fb676d1a2c6a36131767d8ea08d4ad79198788c9a2c73",
+      "product_id": 13488,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:c7c6b48ffe3e09e1cdd60c2a",
+      "evidence_sha256": "cb41aca140a361ea5e94ab234f9fb7a85107d66499cfa87ee498ab46025b9e5c",
+      "product_id": 13557,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:0b4483cfeb65b717fa9d114a",
+      "evidence_sha256": "3db03086a00c3a2e3c8f2d42f115e2b2766433cde407f21e33871b7693d16af3",
+      "product_id": 7999,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:87d616f5a0f0d0b4678e3a2d",
+      "evidence_sha256": "9d01064ebc944eff64137f4bc8c472a97e53b0e486af9b9f1a6efcd2d74c9a3a",
+      "product_id": 8000,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:4b37074db854c67fd5a61e85",
+      "evidence_sha256": "9e1393368107de7ec69745c435b58b4a1a77343e4f4eebc062a73d020d686718",
+      "product_id": 8001,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:943751299c1f33a0c8b0c2f8",
+      "evidence_sha256": "883b35ddd4356822b9c3102f1eb553cef53c5818175df4b2eaa4569b420d1da6",
+      "product_id": 13469,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:2a60a5f92ecde319ece733a6",
+      "evidence_sha256": "e04b3fa54aca7c9366fb1ece509047536b463a5f0df774dec788ff57207c5914",
+      "product_id": 19747,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:04060e9aa9a31879da6bdd58",
+      "evidence_sha256": "56d3a674a69224c17b4e389b088ecb9d09f4ed0f57fb0bd033f89198d9352b5d",
+      "product_id": 22237,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:c14431ff2ce36322297a6f57",
+      "evidence_sha256": "730e3e3b1b589774e3d7568ff76301eae38d0e56c39ec7810852ec9f7d21f65f",
+      "product_id": 33000,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:c6e2eb79ebb7ae8bf5c3173a",
+      "evidence_sha256": "d26a1b3893eff62bd4fb059d1cd1ea49b68f35a4fb6f42a988b63fe4a1256498",
+      "product_id": 34602,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:e5de5f752d8d21ed47f699b8",
+      "evidence_sha256": "48b5d576d4189f8a5b80c3200eb601b5539afdabd6c06014a5c1b3f1d93d0067",
+      "product_id": 13439,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:c6a61decc718683cca488e97",
+      "evidence_sha256": "da82e114e6c51c39162c66947b03853bdb6214cf8584f070330044a3682df116",
+      "product_id": 13516,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:539e0883e16f71aa7ae3adc4",
+      "evidence_sha256": "f6535fef4b937a8be192bfb3c8f19c1bd6011410f5e28c03fcd4377dee5ab284",
+      "product_id": 13525,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:72041c7c928e1146ef2acb86",
+      "evidence_sha256": "c129d168fd1aea81b56d79c902ca992d150b68603cf47c12685adb059c449e6b",
+      "product_id": 13568,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:240de05759700b41a77c2d44",
+      "evidence_sha256": "6ddd356e88ae1a4d8973a61b5889644bce4a1c886c27388de54fcefe8dcf8226",
+      "product_id": 19743,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:283a757d93397f01d251a9f8",
+      "evidence_sha256": "16a98773cf577c8cff22fb49440ed79738cab870cb02ee4ec7df5c073c375d60",
+      "product_id": 20416,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:935e7ede6f639fc11800c900",
+      "evidence_sha256": "f7d78c243b737337de16002e398ca7b5fafd10bbeea4969854954b5e94429125",
+      "product_id": 21770,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:bc94b44e9a528eec2d0fe88d",
+      "evidence_sha256": "4678971f9c25900dd7e47f8d8e0123e2c10b0f55d8d8a9b5e913e8d0210fe4c7",
+      "product_id": 13471,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:99af1843612283fdca2b2135",
+      "evidence_sha256": "a368c245fc746a8132cd0b40fd059cfcbbee1442b3955dab392a9cc8512b453a",
+      "product_id": 13503,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:fdef7722b3ccc997bd4eb115",
+      "evidence_sha256": "0f49ed2c24b103eac8c660be0d5917a5cd3339fbb4e740f622365528e82c3302",
+      "product_id": 23446,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:0b2389410dc0929a13deb7ec",
+      "evidence_sha256": "8250d5351f53c6084d1cac2f073204e03d04a9be2e3f722e323e5bb46c8303c2",
+      "product_id": 24939,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:1c47d562d94e854cf02dedb7",
+      "evidence_sha256": "0b28ae47d01022ec677fce2b2f0682c699dcc473c90b740de4126b4adb73d72f",
+      "product_id": 32634,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:0c27ad4bf812d86792ed93e4",
+      "evidence_sha256": "3940a45c7aaad25bce8c2a7392cc11fe7e58f8959d16b6083811a2e7aff6cfa3",
+      "product_id": 37107,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:4827786a07b2457b1b08adf1",
+      "evidence_sha256": "8ec6197af7e581c1567ffb99776e6a59d56890fd60942fcb99fa26c29b0ad824",
+      "product_id": 37111,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:9e3d63f67433dbb6b56e5855",
+      "evidence_sha256": "deb04567be9ca06a4540025f59a65ec5c81da09c46d9ad1368220d3644d0dd34",
+      "product_id": 13468,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:95aee131dd677e7cc79cb3a2",
+      "evidence_sha256": "5c9d4a3a996bb9a2d90681ec7b79eba4f162639bf1f9c33cd49fa93471d1169a",
+      "product_id": 13501,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:4f62903621055916c1c129ba",
+      "evidence_sha256": "5843a7c9700a728f4c1ad86a33af39d0d6bdc7e46a4545992dcb8149ea1f4a00",
+      "product_id": 24433,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:2b663be970d2c24ee4349efd",
+      "evidence_sha256": "9f6c2d83a5a79b51877c826a2ba88d1f975bda7f8fb7437a01ac6481f0c66b4b",
+      "product_id": 33500,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    },
+    {
+      "case_id": "taxonomy:8ac38518aab72dacca02430f",
+      "evidence_sha256": "9caea7f2f774fb491e87741064c51642d67876a3351883e3edf100829514bda6",
+      "product_id": 23453,
+      "status": "taxonomy_pattern_confirmed",
+      "automatic_import_allowed": false
+    }
+  ],
+  "tentative_cases": [
+    {
+      "product_id": 13563,
+      "base": "TEXWP8XJMNE",
+      "status": "tentative_not_confirmed",
+      "user_statement": "creo que si son intencionales",
+      "action": "Conservar ambas secciones originales; no fusionar ni generalizar a otros casos.",
+      "automatic_import_allowed": false
+    }
+  ],
+  "barcode_requirement": {
+    "status": "confirmed_by_user",
+    "source": "SICAR Clave 1",
+    "preserve_exact_value": true,
+    "preserve_leading_zeros": true,
+    "must_resolve_existing_labels_in_new_system": true,
+    "internal_sku_must_not_replace_legacy_barcode": true,
+    "ambiguous_shared_code": "Conservar código original y resolver relación manualmente; no inventar separación ni cambiar etiquetas automáticamente.",
+    "acceptance": "En staging, demostrar lectura/búsqueda exacta de cada Clave 1 migrada hacia su variante aprobada, sin pérdida de códigos; no importar existencias."
+  },
+  "owner_answers_2026_09_29": {
+    "authority": "Respuestas de los dueños transmitidas por el usuario el 2026-09-29",
+    "shared_design_codes": {
+      "current": "Existen diseños/productos distintos bajo un código SICAR, incluyendo fundas de teléfono.",
+      "target": "Separar cada producto/diseño comercial y variante aplicable con código propio, sin repetir.",
+      "existing_unique_codes": "Conservar exactamente, incluidos ceros iniciales.",
+      "shared_legacy_codes": "Conservar evidencia y búsqueda; no asignar automáticamente el mismo código a varias variantes ni seleccionar una arbitrariamente.",
+      "legacy_scan_proposal": "APROBADO por usuario: código antiguo compartido abre grupo y exige elegir diseño; cada diseño tendrá código único. Sólo para relaciones confirmadas manualmente. No implementado ni validado en staging.",
+      "stock_distribution": "Desconocida por diseño; no repartir existencias ni inventar cantidades.",
+      "confirmation": "si hay que trabajarlo así"
+    },
+    "woo_separate_lines": {
+      "meaning": "Publicaciones aparentemente repetidas pueden ser líneas niño/juvenil/adulto con tallas y códigos distintos.",
+      "action": "Comparar base y todos los atributos; no fusionar por nombre ni asumir que toda repetición corresponde a la misma línea.",
+      "specific_cases": "El dueño ofrece resolver casos concretos pendientes."
+    },
+    "taxonomy_and_search": {
+      "search": "Que una descripción mencione hebilla puede hacer aparecer bolsas o zapatos en una búsqueda; no prueba pertenencia a la sección Hebillas.",
+      "action": "Distinguir búsqueda textual de filtro por departamento/categoria. Preservar taxonomía de campos explícitos.",
+      "fourteen_section_cases": "Aún sin decisión por caso; explicación de búsqueda no aprueba cambios de sección."
+    },
+    "placeholder_taxonomy": {
+      "D1_C1": "Probablemente departamento 1/categoria 1 por captura incompleta; requiere asignación humana.",
+      "status": "Destino pendiente; no crear categoría final automáticamente.",
+      "other_markers": "Punto y SIN DEFINIR continúan en revisión; no se proporcionó destino."
+    },
+    "pricing": {
+      "normal_channel_rule": "Precio normal en línea igual a menudeo/público general de tienda.",
+      "promotions": "Promociones por fechas o canal pueden diferir; no son automáticamente errores de catálogo.",
+      "levels": [
+        "costo",
+        "mayoreo",
+        "medio_mayoreo",
+        "menudeo_publico_general"
+      ],
+      "source_column_mapping": "Confirmado por usuario: precio1 es lo que cobran al público. precio2/3/4 sin asignación comercial.",
+      "formulas": "El negocio definirá después incrementos/márgenes; no inventar fórmulas.",
+      "missing_cost": "Se mantiene costo cero como no capturado; no valorizar ni calcular margen.",
+      "wholesale_policy": "Por instrucción del usuario, dejar mayoreo y medio mayoreo sin definir (null), sin fórmulas ni precios cero inferidos."
+    },
+    "samples_and_search": {
+      "samples": "Sólo exhibición; no tratarlas como variantes normales vendibles automáticamente.",
+      "base_search": "BESTA512S debe permitir consultar variantes por base; BESTA512S27 corresponde al código con talla 27.",
+      "search_vs_barcode": "No confundir descripción/código base con Clave 1; escaneo exacto y búsqueda por familia son operaciones distintas.",
+      "stock": "La futura consulta de existencias no autoriza importarlas en esta fase.",
+      "historical_status": "No se explicó aún cómo marcar artículos descontinuados."
+    },
+    "size_notation": {
+      "clothing": "Confirmadas indicaciones preguntadas: T.M/T.S/T.XL y 30X32 como talla/cintura por largo.",
+      "trailing_digits": "Normalmente son talla, no regla universal de cortar todos los dígitos. Mantener ambiguos los límites modelo/talla sin evidencia.",
+      "BCAR55012": "No se confirmó específicamente la base BCAR550; continúa propuesta."
+    },
+    "scope": {
+      "production_writes": false,
+      "woo_writes": false,
+      "stock_import": false,
+      "staging_import_approved": false,
+      "answers_are_not_all_row_approvals": true
+    }
+  },
+  "owner_answers_2026_10_01": {
+    "date": "2026-10-01",
+    "source": "Respuestas de dueños transmitidas por usuario",
+    "historical_capture": "2026-09-23",
+    "current_check": "GET público dirigido; no captura completa ni autenticada actual",
+    "production_writes": 0,
+    "woo_writes": 0,
+    "stock_import": 0,
+    "responses": [
+      {
+        "question": 1,
+        "answer_verbatim": "Es un solo producto, pueden ser diferentes variaciones de colores, pero como cuestan lo mismo estan dados de alta en un mismo codigo",
+        "interpretation_and_limits": "Confirmado: producto con variantes de color bajo código compartido. No crear productos independientes sólo por color o precio. Falta correspondencia exacta de colores/publicaciones por grupo; conservar flujo aprobado de selección y códigos únicos por variante.",
+        "woo_ids": [],
+        "automatic_import_allowed": false
+      },
+      {
+        "question": 2,
+        "answer_verbatim": "No seas mentiroso no esta",
+        "interpretation_and_limits": "Objeción registrada. Consulta pública actual devuelve ambos IDs 23955 y 29646, con mismo nombre y base; aportar enlaces e imágenes. Esto no determina si representan el mismo producto físico.",
+        "woo_ids": [
+          23955,
+          29646
+        ],
+        "automatic_import_allowed": false
+      },
+      {
+        "question": 3,
+        "answer_verbatim": "Solo es un producto, el otro ya se privo, en sicar si sale uno solo pero en la web 2 con el mismo codigo",
+        "interpretation_and_limits": "Un solo producto confirmado por dueño. ID 22175 no disponible por API pública; 23039 disponible. Privado según dueño; 404 público no prueba por sí solo estado privado ni eliminación.",
+        "woo_ids": [
+          22175,
+          23039
+        ],
+        "automatic_import_allowed": false
+      },
+      {
+        "question": 4,
+        "answer_verbatim": "Mandame evidencia para revisarla",
+        "interpretation_and_limits": "Hebilla 22759 era privada y sin imágenes en captura del 23/09; hoy no disponible por API pública. 22760 disponible. Identidad pendiente; presentar evidencia histórica separada de actual.",
+        "woo_ids": [
+          22759,
+          22760
+        ],
+        "automatic_import_allowed": false
+      },
+      {
+        "question": 5,
+        "answer_verbatim": "Checa bien y mandamelo cual es la que tienes dadas de alta como forrada niño",
+        "interpretation_and_limits": "Texanas 35037 café y 35038 negra disponibles hoy con nombre forrada niño. Registros 33013 y 33012 eran borradores; hoy no disponibles públicamente. No se dieron de alta productos durante esta tarea.",
+        "woo_ids": [
+          35037,
+          35038,
+          33013,
+          33012
+        ],
+        "automatic_import_allowed": false
+      },
+      {
+        "question": 6,
+        "answer_verbatim": "Hay un error, se tiene que corregir esos 2 modelos",
+        "interpretation_and_limits": "Error confirmado por dueño; ambas descripciones cortas públicas aún CARO23135. Falta código correcto por modelo. Preparar corrección, sin editar Woo ni inventar códigos.",
+        "woo_ids": [
+          38060,
+          38083
+        ],
+        "automatic_import_allowed": false
+      },
+      {
+        "question": 7,
+        "answer_verbatim": "No esta en la web, checalo y me lo mandas",
+        "interpretation_and_limits": "Corrección de comunicación: los dos registros 7922/7923 eran borradores, sin imágenes; no publicaciones visibles. Hoy API pública devuelve 404. No afirmar que fueron eliminados.",
+        "woo_ids": [
+          7922,
+          7923
+        ],
+        "automatic_import_allowed": false
+      },
+      {
+        "question": 8,
+        "answer_verbatim": "2 productos tienen el mismo nombre pero si cambia el codigo de cada uno",
+        "interpretation_and_limits": "Dueño confirma productos distintos con códigos diferentes. Captura antigua no refleja distinción; ID 23033 no consultable públicamente, 23035 mantiene BOLCINCUAGDECAF. Falta evidencia autenticada/archivo SICAR vigente de ambos códigos, sin fusionar.",
+        "woo_ids": [
+          23033,
+          23035
+        ],
+        "automatic_import_allowed": false
+      },
+      {
+        "question": 9,
+        "answer_verbatim": "Deben ser 2 productos diferentes pero checalos y mandamelos",
+        "interpretation_and_limits": "Dueño indica productos distintos. Cuero 8014 disponible, hilo 8016 era borrador sin imagen y hoy no disponible públicamente. Falta correspondencia SICAR por producto.",
+        "woo_ids": [
+          8014,
+          8016
+        ],
+        "automatic_import_allowed": false
+      },
+      {
+        "question": 10,
+        "answer_verbatim": "Ya se arreglo, ya son 2 codigos diferentes para 2 productos",
+        "interpretation_and_limits": "Verificado cambio de bases Woo: dorado CINVINPIELCHAPHERRDORNEG; plata CINVINPIELCHAPHERRPLTNEG. Son códigos base de descripción corta, no prueba de nuevas Clave 1. Reconciliar con nueva exportación SICAR antes de cerrar vínculo.",
+        "woo_ids": [
+          23957,
+          23958
+        ],
+        "automatic_import_allowed": false
+      }
+    ]
+  },
+  "followup_answers_2026_10_01": {
+    "question_2": {
+      "date": "2026-10-01",
+      "question": 2,
+      "answer_verbatim": "Son diferentes",
+      "woo_product_ids": [
+        23955,
+        29646
+      ],
+      "decision": "DISTINCT_PRODUCTS_CONFIRMED_BY_USER",
+      "action": "Mantener ambas gorras Cuadra separadas; no fusionar por nombre o código base coincidente.",
+      "limits": [
+        "No se confirmó el código de barras SICAR de cada gorra.",
+        "No asignar Clave 1 11756 automáticamente a una de ellas ni duplicarla.",
+        "No se autorizan escrituras en WooCommerce, producción ni existencias."
+      ],
+      "barcode_mapping_status": "pending_manual_review",
+      "automatic_import_allowed": false
+    },
+    "question_4": {
+      "date": "2026-10-01",
+      "question": 4,
+      "answer_verbatim": "mientras no aparezca dejalo como producto diferente",
+      "woo_product_ids": [
+        22759,
+        22760
+      ],
+      "decision": "KEEP_SEPARATE_PROVISIONALLY_BY_USER",
+      "action": "Conservar HEBILLA DE SUERTE CHARRA CALA (22759) separada de HEBILLA DE ACERO INOXIDABLE PLATA CALA (22760) mientras no pueda verificarse la primera.",
+      "identity_status": "provisional_not_verified",
+      "barcode_mapping_status": "pending_manual_review",
+      "limits": [
+        "No fusionar los registros.",
+        "No asignar ni duplicar automáticamente Clave 1 12868 entre ambos.",
+        "No publicar el producto privado ni crear productos en Woo o producción.",
+        "Reabrir revisión al disponer de evidencia o exportación actualizada."
+      ],
+      "automatic_import_allowed": false
+    },
+    "shirts_new_export": {
+      "date": "2026-10-01",
+      "answer_verbatim": "lo van a cambiar entonces hay que seguir con la exportacion",
+      "woo_product_ids": [
+        38060,
+        38083
+      ],
+      "status": "CORRECTION_PLANNED_AWAITING_NEW_EXPORT",
+      "source_barcodes": [
+        "17645",
+        "17646",
+        "17647",
+        "17648",
+        "17650",
+        "17651",
+        "17652"
+      ],
+      "action": "Comparar nueva exportación SICAR con captura anterior; preservar cada Clave 1, verificar descripción/modelo y talla corregidos antes de vincular con Woo. Obtener captura Woo contemporánea cuando estén listas las correcciones.",
+      "limits": [
+        "No inferir color por orden de filas o secuencia de códigos.",
+        "No tratar corrección anunciada como corrección verificada.",
+        "Mantener ambiguos en revisión manual.",
+        "Sin escrituras en producción, WooCommerce ni importación de existencias."
+      ],
+      "automatic_import_allowed": false
+    }
+  },
+  "verification_new_exports_2026_10_01": {
+    "date": "2026-10-01",
+    "sicar_sha256": "e1fcdebf02c1797c46c43be4795b476039a9d262924cc22f1590e24439c6aa7e",
+    "woo_sha256": "c3a97eeab10eecd0c99323a5a44e2d315bcd732a265ae0fdf56a18c2b2ed8ed8",
+    "shirts": {
+      "status": "NOT_CORRECTED_IN_RECEIVED_SOURCES",
+      "woo_ids": [
+        38060,
+        38083
+      ],
+      "base": "CARO23135",
+      "sicar_barcodes": [
+        "17645",
+        "17646",
+        "17647",
+        "17648",
+        "17650",
+        "17651",
+        "17652"
+      ]
+    },
+    "belts": {
+      "silver": {
+        "barcode": "5731",
+        "description": "CINVINPIELCHAPHERRPLTNEG",
+        "woo_id": 23958
+      },
+      "gold": {
+        "barcode": "18055",
+        "description": "CINVINPIELCHAPHERRDORNEG",
+        "woo_id": 23957
+      },
+      "note": "Bases distintas verificadas; no aprobar importación. Dorado tiene existencia no válida para analizador; plata sin existencia Woo disponible."
+    },
+    "caps": {
+      "brown": {
+        "barcode": "11756",
+        "base": "GORRCUAMETCOCOCAF",
+        "woo_id": 23955
+      },
+      "other": {
+        "barcode": "13254",
+        "base": "GORRCUAMETCOC",
+        "woo_id": 29646
+      },
+      "note": "Bases distintas verificadas; 11756 bloqueado por prefijos superpuestos, no usar preferencia por prefijo más largo."
+    },
+    "missing_old_barcodes": [
+      "12206",
+      "7039",
+      "7043"
+    ],
+    "automatic_import_allowed": false
+  }
+}

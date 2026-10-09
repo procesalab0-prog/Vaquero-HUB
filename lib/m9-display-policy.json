@@ -1,0 +1,12 @@
+{
+  "version": "m9-display-only-1",
+  "approved_on": "2026-10-05",
+  "products": [
+    {
+      "product_id": "200ca5b2-7e5f-44ee-9428-2bceebe282dc",
+      "woo_source_id": 37102,
+      "barcodes": ["10105"],
+      "message": "Producto sólo de exhibición, sin compra en línea. Los colores pueden variar según disponibilidad; para un color específico, contacta a la tienda."
+    }
+  ]
+}
