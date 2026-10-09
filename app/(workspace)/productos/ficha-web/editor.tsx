@@ -1,4 +1,5 @@
 "use client";
+import { sortVariantsBySize } from "@/lib/variant-display-order";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -409,7 +410,10 @@ export function WebDraftEditor({
           consultan aquí; guardar textos no los cambia.
         </p>
         <div className={styles.variants}>
-          {draft.catalog.variants.map((v) => (
+          {sortVariantsBySize(
+            draft.catalog.variants,
+            (v) => v.attributes.TALLA ?? "",
+          ).map((v) => (
             <article key={v.id}>
               <strong>Código {v.barcode}</strong>
               {variantPhotos[v.id]?.length > 0 && (

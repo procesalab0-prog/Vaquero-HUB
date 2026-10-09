@@ -5,6 +5,10 @@ import {
   type QuickSaleSnapshot,
 } from "@/components/quick-sale-catalog";
 
+import {
+  orderVariantFamilies,
+  sortVariantsBySize,
+} from "@/lib/variant-display-order";
 import Image from "next/image";
 import Link from "next/link";
 import { useWorkspace } from "@/components/workspace-context";
@@ -334,13 +338,17 @@ export function ProductsWorkspace({
     const term = deferredQuery.trim().toLocaleLowerCase("es-MX");
     if (exactMatchId)
       return variants.filter((item) => item.id === exactMatchId);
-    return variants.filter(
-      (item) =>
-        !term ||
-        [item.productName, item.brand, item.legacyCode, item.color, item.size]
-          .join(" ")
-          .toLocaleLowerCase("es-MX")
-          .includes(term),
+    return orderVariantFamilies(
+      variants.filter(
+        (item) =>
+          !term ||
+          [item.productName, item.brand, item.legacyCode, item.color, item.size]
+            .join(" ")
+            .toLocaleLowerCase("es-MX")
+            .includes(term),
+      ),
+      (item) => item.productId ?? `${item.brand}:${item.productName}`,
+      (item) => item.size,
     );
   }, [deferredQuery, exactMatchId, variants]);
   const selectedVariants = variants.filter((variant) =>
@@ -354,6 +362,11 @@ export function ProductsWorkspace({
       family.push(item);
       families.set(key, family);
     }
+    for (const [key, members] of families)
+      families.set(
+        key,
+        sortVariantsBySize(members, (item) => item.size),
+      );
     return families;
   }, [variants]);
   const allVisibleSelected =

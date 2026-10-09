@@ -1,4 +1,5 @@
 "use client";
+import { sortVariantsBySize } from "@/lib/variant-display-order";
 
 import type { QuotePosPricing } from "@/lib/quote-pos";
 import { UsdCheckout, type UsdTenderInput } from "@/components/usd-checkout";
@@ -809,7 +810,9 @@ export function PosWorkspace({
       family.push(variant);
       families.set(key, family);
     }
-    return [...families.entries()];
+    return [...families.entries()].map(([key, members]) =>
+      [key, sortVariantsBySize(members, item => item.size)] as const,
+    );
   }, [results]);
   const cartQuantities = useMemo(() => new Map(cart.map((line) => [line.variant.id, line.quantity])), [cart]);
 
