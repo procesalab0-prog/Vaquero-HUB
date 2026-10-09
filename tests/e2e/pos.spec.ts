@@ -7,7 +7,7 @@ for (const width of [390, 768, 1440]) {
     { name: "transferencia", control: "Referencia de transferencia" },
     { name: "dividido", control: "Efectivo" },
   ]) {
-    test(`acceso rápido ${method.name} visible y sin cobro automático ${width}`, async ({
+    test(`método ${method.name} sólo al cobrar y sin cobro automático ${width}`, async ({
       page,
     }) => {
       await page.setViewportSize({ width, height: width === 390 ? 844 : 1024 });
@@ -19,13 +19,25 @@ for (const width of [390, 768, 1440]) {
       await search.press("Enter");
       const toggle = page.locator(".mobile-cart-toggle");
       if (await toggle.isVisible()) await toggle.click();
-      const quick = page.getByRole("button", {
-        name: `Cobrar con ${method.name}`,
-        exact: true,
-      });
-      await expect(quick).toBeInViewport();
       await expect(page.locator(".pay-button")).toBeInViewport();
-      await quick.click();
+      await expect(page.locator(".payment-options")).toHaveCount(0);
+      await page.locator(".pay-button").click();
+      if (method.name === "dividido")
+        await page
+          .getByRole("button", { name: "Dividir entre varios métodos" })
+          .click();
+      else
+        await page
+          .getByRole("dialog")
+          .getByRole("button", {
+            name:
+              method.name === "tarjeta"
+                ? /Tarjeta de débito/
+                : method.name === "efectivo"
+                  ? /^Efectivo/
+                  : /^Transferencia/,
+          })
+          .click();
       await expect(
         page.getByRole("dialog").getByLabel(method.control, { exact: true }),
       ).toBeVisible();
@@ -175,7 +187,7 @@ test("completa un pago combinado con efectivo y tarjeta", async ({ page }) => {
 
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Efectivo").fill("1000");
-  await dialog.getByLabel("Tarjeta").fill("3890");
+  await dialog.getByLabel("Tarjeta de crédito", { exact: true }).fill("3890");
   await dialog.getByLabel("Referencia de terminal").fill("1234");
   await dialog
     .getByRole("button", { name: "Confirmar pago combinado" })
@@ -185,7 +197,7 @@ test("completa un pago combinado con efectivo y tarjeta", async ({ page }) => {
 });
 
 for (const method of [
-  { name: "Tarjeta", reference: "Referencia de terminal" },
+  { name: "Tarjeta de débito", reference: "Referencia de terminal" },
   { name: "Transferencia", reference: "Referencia de transferencia" },
 ]) {
   test(`completa un pago con ${method.name.toLocaleLowerCase("es-MX")}`, async ({

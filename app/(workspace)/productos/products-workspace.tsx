@@ -1,10 +1,21 @@
 "use client";
-import { QuickSaleCatalog, type QuickSaleListResult, type QuickSaleSnapshot } from "@/components/quick-sale-catalog";
+import {
+  QuickSaleCatalog,
+  type QuickSaleListResult,
+  type QuickSaleSnapshot,
+} from "@/components/quick-sale-catalog";
 
 import Image from "next/image";
 import Link from "next/link";
 import { useWorkspace } from "@/components/workspace-context";
-import { Fragment, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useFormStatus } from "react-dom";
 import {
   Barcode,
@@ -29,6 +40,7 @@ import type { CatalogImportState } from "@/lib/catalog-import-shared";
 import type { BatchActionResult, ProductVariant } from "@/lib/domain";
 import { CatalogBatchActions } from "./catalog-batch-actions";
 import { CatalogImportDialog } from "./catalog-import-dialog";
+import { browserOperation } from "@/lib/browser-operations";
 
 type Category = {
   id: string;
@@ -186,10 +198,16 @@ export function ProductsWorkspace({
   quickSaleListAction,
 }: Props) {
   const { activeLocation } = useWorkspace();
-  const inventoryHref = (code: string) => `/inventario?${new URLSearchParams({ codigo: code, ...(activeLocation ? { ubicacion: activeLocation.id } : {}) })}`;
-  const availableCategories = categories.length
-    ? categories
-    : previewCategories;
+  const inventoryHref = (code: string) =>
+    `/inventario?${new URLSearchParams({ codigo: code, ...(activeLocation ? { ubicacion: activeLocation.id } : {}) })}`;
+  const [addedCategories, setAddedCategories] = useState<Category[]>([]);
+  const availableCategories = useMemo(() => Array.from(new Map([
+    ...(categories.length ? categories : preview ? previewCategories : []), ...addedCategories,
+  ].map(category => [category.id,category])).values()), [categories,preview,addedCategories]);
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [categoryName, setCategoryName] = useState("");
+  const [categoryBusy, setCategoryBusy] = useState(false);
+  const [categoryError, setCategoryError] = useState("");
   const availableValues = attributeValues.length
     ? attributeValues
     : previewValues;
@@ -712,7 +730,15 @@ export function ProductsWorkspace({
           {statusMessages[status]}
         </div>
       ) : null}
-      {quickSaleListAction ? <QuickSaleCatalog loadAction={quickSaleListAction} onChoose={item => { openCreateModal(); setQuickSeed(item); }} /> : null}
+      {quickSaleListAction ? (
+        <QuickSaleCatalog
+          loadAction={quickSaleListAction}
+          onChoose={(item) => {
+            openCreateModal();
+            setQuickSeed(item);
+          }}
+        />
+      ) : null}
       <div className="notice">
         <strong>Códigos protegidos</strong>
         <span>
@@ -805,72 +831,108 @@ export function ProductsWorkspace({
         </div>
         {filteredVariants.map((item) => (
           <Fragment key={item.id}>
-          <div
-            className={`table-row selectable${canEdit ? " editable" : ""}`}
-            key={item.id}
-          >
-            <label className="table-checkbox">
-              <span className="sr-only">
-                Seleccionar {item.productName}, {item.color}, talla {item.size}
-              </span>
-              <input
-                type="checkbox"
-                checked={selectedVariantIds.includes(item.id)}
-                onChange={() => toggleVariantSelection(item.id)}
-              />
-            </label>
-            <div className="table-product">
-              <span className="table-product-image">
-                {item.image ? (
-                  <Image src={item.image} alt="" fill sizes="44px" />
-                ) : (
-                  <PackageOpen aria-hidden="true" />
-                )}
-              </span>
-              <button type="button" className="catalog-inline-detail" aria-expanded={expandedVariantIds.includes(item.id)} aria-controls={`family-${item.id}`} onClick={() => {
-                setExpandedVariantIds(current => current.includes(item.id) ? current.filter(id => id !== item.id) : [...current, item.id]);
-              }}>
-              <strong>
-                {item.productName}
-                {item.isActive === false ? (
-                  <em className="variant-inactive">Dada de baja</em>
-                ) : null}
-                <small>{item.brand}</small>
-              </strong><span>{expandedVariantIds.includes(item.id) ? "▾ Ocultar variantes" : "▸ Ver variantes"}</span>
-              </button>
-            </div>
-            <code>{item.legacyCode}</code>
-            <span>
-              {item.color} · {item.size}
-            </span>
-            <span>{money.format(item.price)}</span>
-            <Link
-              className="text-button"
-              href={inventoryHref(item.legacyCode)}
-              aria-label={`Consultar inventario de ${item.productName}, ${item.color}, talla ${item.size}`}
+            <div
+              className={`table-row selectable${canEdit ? " editable" : ""}`}
+              key={item.id}
             >
-              Consultar
-            </Link>
-            {canEdit ? (
-              <button
-                className="table-edit-button"
-                type="button"
-                onClick={() => setEditingVariantId(item.id)}
-                aria-label={`Editar ${item.productName}, ${item.color}, talla ${item.size}`}
+              <label className="table-checkbox">
+                <span className="sr-only">
+                  Seleccionar {item.productName}, {item.color}, talla{" "}
+                  {item.size}
+                </span>
+                <input
+                  type="checkbox"
+                  checked={selectedVariantIds.includes(item.id)}
+                  onChange={() => toggleVariantSelection(item.id)}
+                />
+              </label>
+              <div className="table-product">
+                <span className="table-product-image">
+                  {item.image ? (
+                    <Image src={item.image} alt="" fill sizes="44px" />
+                  ) : (
+                    <PackageOpen aria-hidden="true" />
+                  )}
+                </span>
+                <button
+                  type="button"
+                  className="catalog-inline-detail"
+                  aria-expanded={expandedVariantIds.includes(item.id)}
+                  aria-controls={`family-${item.id}`}
+                  onClick={() => {
+                    setExpandedVariantIds((current) =>
+                      current.includes(item.id)
+                        ? current.filter((id) => id !== item.id)
+                        : [...current, item.id],
+                    );
+                  }}
+                >
+                  <strong>
+                    {item.productName}
+                    {item.isActive === false ? (
+                      <em className="variant-inactive">Dada de baja</em>
+                    ) : null}
+                    <small>{item.brand}</small>
+                  </strong>
+                  <span>
+                    {expandedVariantIds.includes(item.id)
+                      ? "▾ Ocultar variantes"
+                      : "▸ Ver variantes"}
+                  </span>
+                </button>
+              </div>
+              <code>{item.legacyCode}</code>
+              <span>
+                {item.color} · {item.size}
+              </span>
+              <span>{money.format(item.price)}</span>
+              <Link
+                className="text-button"
+                href={inventoryHref(item.legacyCode)}
+                aria-label={`Consultar inventario de ${item.productName}, ${item.color}, talla ${item.size}`}
               >
-                <Pencil aria-hidden="true" />
-                Editar
-              </button>
+                Consultar
+              </Link>
+              {canEdit ? (
+                <button
+                  className="table-edit-button"
+                  type="button"
+                  onClick={() => setEditingVariantId(item.id)}
+                  aria-label={`Editar ${item.productName}, ${item.color}, talla ${item.size}`}
+                >
+                  <Pencil aria-hidden="true" />
+                  Editar
+                </button>
+              ) : null}
+            </div>
+            {expandedVariantIds.includes(item.id) ? (
+              <div
+                id={`family-${item.id}`}
+                className="catalog-variant-list"
+                role="region"
+                aria-label={`Variantes de ${item.productName}`}
+              >
+                {(
+                  variantFamilies.get(
+                    item.productId ?? `${item.brand}:${item.productName}`,
+                  ) ?? []
+                ).map((option) => (
+                  <div key={option.id}>
+                    <strong>
+                      {option.color} · {option.size}
+                    </strong>
+                    <code>{option.legacyCode}</code>
+                    <span>
+                      {money.format(option.price)}
+                      {option.isActive === false ? " · Baja" : ""}
+                    </span>
+                    <Link href={inventoryHref(option.legacyCode)}>
+                      Ver existencias
+                    </Link>
+                  </div>
+                ))}
+              </div>
             ) : null}
-          </div>
-          {expandedVariantIds.includes(item.id) ? <div id={`family-${item.id}`} className="catalog-variant-list" role="region" aria-label={`Variantes de ${item.productName}`}>
-            {(variantFamilies.get(item.productId ?? `${item.brand}:${item.productName}`) ?? []).map(option => <div key={option.id}>
-              <strong>{option.color} · {option.size}</strong>
-              <code>{option.legacyCode}</code>
-              <span>{money.format(option.price)}{option.isActive === false ? " · Baja" : ""}</span>
-              <Link href={inventoryHref(option.legacyCode)}>Ver existencias</Link>
-            </div>)}
-          </div> : null}
           </Fragment>
         ))}
         {filteredVariants.length === 0 ? (
@@ -933,7 +995,11 @@ export function ProductsWorkspace({
                   <>
                     <label className="wide-field">
                       <span>Nombre del producto</span>
-                      <input name="product_name" defaultValue={quickSeed?.product_name ?? ''} required />
+                      <input
+                        name="product_name"
+                        defaultValue={quickSeed?.product_name ?? ""}
+                        required
+                      />
                     </label>
                     <label>
                       <span>Marca</span>
@@ -957,6 +1023,86 @@ export function ProductsWorkspace({
                         ))}
                       </select>
                     </label>
+                    <div className="wide-field inline-category-create">
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        disabled={categoryBusy}
+                        onClick={() => setCategoryOpen(!categoryOpen)}
+                      >
+                        Nueva categoría
+                      </button>
+                      {categoryOpen ? (
+                        <div>
+                          <label>
+                            Nombre de la nueva categoría
+                            <input
+                              value={categoryName}
+                              maxLength={80}
+                              onChange={(event) =>
+                                setCategoryName(event.target.value)
+                              }
+                            />
+                          </label>
+                          <p>
+                            Usará selección libre de tallas. Puedes configurar
+                            su escala posteriormente.
+                          </p>
+                          <button
+                            type="button"
+                            className="primary-button"
+                            disabled={categoryBusy || !categoryName.trim()}
+                            onClick={async () => {
+                              setCategoryBusy(true);
+                              setCategoryError("");
+                              try {
+                                const result = preview
+                                  ? {
+                                      ok: true as const,
+                                      category: {
+                                        id: crypto.randomUUID(),
+                                        name: categoryName.trim(),
+                                        default_size_scale_code: null,
+                                      },
+                                    }
+                                  : await browserOperation<
+                                      | { ok: true; category: Category }
+                                      | { ok: false; message: string }
+                                    >("/api/operaciones", {
+                                      operation: "category.create",
+                                      input: {
+                                        name: categoryName,
+                                        scale: null,
+                                      },
+                                    });
+                                if (result.ok) {
+                                  setAddedCategories((current) => [
+                                    ...current,
+                                    result.category,
+                                  ]);
+                                  changeCategory(result.category.id);
+                                  setCategoryOpen(false);
+                                  setCategoryName("");
+                                } else setCategoryError(result.message);
+                              } catch {
+                                setCategoryError(
+                                  "No se pudo conectar. Comprueba si se creó antes de repetir.",
+                                );
+                              } finally {
+                                setCategoryBusy(false);
+                              }
+                            }}
+                          >
+                            {categoryBusy
+                              ? "Guardando…"
+                              : "Crear y seleccionar"}
+                          </button>
+                          {categoryError ? (
+                            <p role="alert">{categoryError}</p>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
                     <label className="wide-field product-image-field">
                       <span>Foto del producto</span>
                       <input
@@ -1001,7 +1147,11 @@ export function ProductsWorkspace({
                   <span>Precio</span>
                   <input
                     name="price"
-                    defaultValue={quickSeed ? (Number(quickSeed.unit_price_cents) / 100).toFixed(2) : undefined}
+                    defaultValue={
+                      quickSeed
+                        ? (Number(quickSeed.unit_price_cents) / 100).toFixed(2)
+                        : undefined
+                    }
                     inputMode="decimal"
                     min="0"
                     step="0.01"

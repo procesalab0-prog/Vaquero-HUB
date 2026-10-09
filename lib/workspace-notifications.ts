@@ -4,6 +4,7 @@ export const NOTIFICATION_SOUND_EVENT = "mi-tienda:notification-sound-change:v1"
 export type WorkspaceNotification = {
   id: string; title: string; message: string; locationId: string; createdAt: string;
   kind?: "success" | "error";
+  href?: string;
 };
 let audioContext: AudioContext | null = null;
 const publishedIds = new Set<string>();
@@ -24,7 +25,7 @@ export async function enableNotificationSound(enabled: boolean) {
   if (audioContext.state !== "running") throw new Error("El navegador bloqueó el audio. Pulsa Probar notificación para intentarlo de nuevo.");
 }
 
-export async function publishWorkspaceNotification(input: { id?: string; title: string; message: string; locationId: string; kind?: "success" | "error" }, test = false) {
+export async function publishWorkspaceNotification(input: { id?: string; title: string; message: string; locationId: string; kind?: "success" | "error"; href?: string }, test = false) {
   const id = input.id ?? crypto.randomUUID();
   if (publishedIds.has(id)) return { played: false, reason: "Aviso ya mostrado en esta sesión." };
   publishedIds.add(id);

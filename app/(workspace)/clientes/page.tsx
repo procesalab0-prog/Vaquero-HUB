@@ -312,6 +312,7 @@ export default async function CustomersPage({
       </div>
 
       <div className="customers-toolbar">
+        <Link className="secondary-button" href="/clientes/cuentas">Crédito y apartados · Saldos</Link>
         <form className="customer-search" action="/clientes">
           <Search aria-hidden="true" />
           <input

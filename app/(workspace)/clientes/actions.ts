@@ -5,6 +5,64 @@ import { redirect } from "next/navigation";
 
 import { requirePermission } from "@/lib/auth/authorization";
 import { normalizeMexicanPhone } from "@/lib/customers";
+import type { CustomerSummary } from "@/lib/customers";
+
+export async function createCustomerInline(
+  formData: FormData,
+): Promise<
+  { ok: true; customer: CustomerSummary } | { ok: false; message: string }
+> {
+  try {
+    const { supabase } = await requirePermission("customers.manage");
+    const name = textField(formData, "full_name");
+    const phone = textField(formData, "phone");
+    const location = textField(formData, "location_id");
+    const version =
+      process.env.CUSTOMER_PRIVACY_NOTICE_VERSION?.trim() ||
+      textField(formData, "privacy_notice_version");
+    if (
+      !name ||
+      !normalizeMexicanPhone(phone) ||
+      !location ||
+      !version ||
+      formData.get("privacy_consent") !== "on"
+    )
+      return {
+        ok: false,
+        message:
+          "Revisa nombre, teléfono, sucursal y aceptación del aviso de privacidad entregado.",
+      };
+    const { data, error } = await supabase.rpc("create_customer", {
+      p_full_name: name,
+      p_phone: phone,
+      p_email: textField(formData, "email").toLowerCase() || null,
+      p_birthdate: textField(formData, "birthdate") || null,
+      p_location_id: location,
+      p_privacy_notice_version: version,
+      p_marketing_consent: formData.get("marketing_consent") === "on",
+    });
+    if (error) throw error;
+    revalidatePath(customersPath);
+    const customer = data as CustomerSummary;
+    return {
+      ok: true,
+      customer: {
+        id: customer.id,
+        member_number: customer.member_number,
+        full_name: customer.full_name,
+        phone_e164: customer.phone_e164,
+        email: customer.email,
+      },
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: databaseErrorText(error).includes("CUSTOMER_ALREADY_EXISTS")
+        ? "Ese teléfono o correo ya pertenece a un cliente. Búscalo para asociarlo."
+        : "No fue posible registrar el cliente. Revisa tus permisos y los datos.",
+    };
+  }
+}
 
 const customersPath = "/clientes";
 
