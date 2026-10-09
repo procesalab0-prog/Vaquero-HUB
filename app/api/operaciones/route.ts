@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isSameOriginRequest } from "@/lib/request-origin";
 import { createCustomerInline } from "@/app/(workspace)/clientes/actions";
 import { createCatalogCategory } from "@/app/(workspace)/productos/actions";
 import {
@@ -10,7 +11,7 @@ import {
   confirmLocationCut,
 } from "@/app/(workspace)/caja/location-cut-actions";
 export async function POST(request: NextRequest) {
-  if (request.headers.get("origin") !== request.nextUrl.origin)
+  if (!isSameOriginRequest(request))
     return NextResponse.json({ error: "Origen no permitido" }, { status: 403 });
   if (Number(request.headers.get("content-length") ?? 0) > 100000)
     return NextResponse.json(

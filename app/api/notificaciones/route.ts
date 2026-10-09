@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isSameOriginRequest } from "@/lib/request-origin";
 import { getWorkspaceSession } from "@/lib/auth/workspace-session";
 async function notificationSession() {
   const session = await getWorkspaceSession();
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
   }
 }
 export async function POST(request: NextRequest) {
-  if (request.headers.get("origin") !== request.nextUrl.origin)
+  if (!isSameOriginRequest(request))
     return NextResponse.json({ error: "Origen no permitido" }, { status: 403 });
   try {
     const { supabase } = await notificationSession();
