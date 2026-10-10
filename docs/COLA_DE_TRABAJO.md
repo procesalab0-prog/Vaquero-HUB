@@ -8,6 +8,10 @@
 >
 > Última actualización: 2026-10-02, avance local de cantidades comerciales y aceptación operativa.
 
+## Entrega autorizada 0.64.0 — Venta e Inicio, 10 de octubre
+
+Cambios solicitados por Emmanuel preparados y verificados localmente. Catálogo/carrito en teléfono con scroll independiente, menús flotantes, tarjetas con foto en carrito amplio, cliente y herramientas juntos, campos de producto rápido visibles, logo mayor y acciones de descuento/regalo/apartado al cobrar. Inicio adapta accesos a permisos; sonido habilitado se reactiva con gesto después de recargar. Detalle y límites de aceptación en [`ERGONOMIA_VENTA_INICIO_2026_10_10.md`](ERGONOMIA_VENTA_INICIO_2026_10_10.md). Emmanuel autorizó publicar en main el 10 de octubre, con botones de cerrar en Más y cobro y colores distintos para Descuento, Regalo y Apartar. Staging M9 y sus datos permanecen intactos.
+
 ## Integración candidata del 7 de octubre de 2026
 
 Las mejoras locales completas están preservadas en una rama de integración

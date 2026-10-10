@@ -6,7 +6,10 @@ for (const width of [390, 768, 1024, 1440]) {
   }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/inicio?ubicacion=demo-la-piedad");
-    const summary = page.locator(".rail-more summary");
+    const summary = page.getByRole("button", {
+      name: "Más opciones",
+      exact: true,
+    });
     await summary.click();
     await expect(page).toHaveURL(/\/inicio\?/);
     const submenu = page.locator(".rail-submenu");
@@ -115,6 +118,7 @@ test("menú accesible en teléfono con texto grande y movimiento reducido", asyn
     .fill("inexistente");
   await expect(dialog.getByRole("status")).toContainText("No hay módulos");
   await page.keyboard.press("Escape");
+  await page.locator(".mobile-cart-toggle").click();
   await expect(page.locator(".sale-panel")).toBeInViewport();
   await expect(page.locator(".pay-button")).toBeInViewport();
 });

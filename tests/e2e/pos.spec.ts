@@ -103,7 +103,9 @@ test("el acceso desde Venta abre Traspasos directamente en Inventario", async ({
   await page.goto("/pos");
   const mobileCart = page.locator(".mobile-cart-toggle");
   if (await mobileCart.isVisible()) await mobileCart.click();
-  await page.locator(".sale-tools summary").click();
+  await page
+    .getByRole("button", { name: "Herramientas de venta", exact: true })
+    .click();
   await page.getByRole("button", { name: "Traspasos", exact: true }).click();
   await expect(page).toHaveURL(/\/inventario\?.*accion=traspasos/);
   await expect(
@@ -122,7 +124,9 @@ test("en demostración no se abandona un carrito sin guardar al abrir Traspasos"
   await search.press("Enter");
   const mobileCart = page.locator(".mobile-cart-toggle");
   if (await mobileCart.isVisible()) await mobileCart.click();
-  await page.locator(".sale-tools summary").click();
+  await page
+    .getByRole("button", { name: "Herramientas de venta", exact: true })
+    .click();
   await page.getByRole("button", { name: "Traspasos", exact: true }).click();
   await expect(
     page.getByText(
@@ -138,7 +142,8 @@ test("el carrito desplaza productos sin ocultar el cobro en escritorio", async (
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/pos");
-  await page.getByRole("button", { name: "Abrir catálogo" }).click();
+  if (await page.getByRole("button", { name: "Abrir catálogo" }).isVisible())
+    await page.getByRole("button", { name: "Abrir catálogo" }).click();
   const cards = page.locator(".product-card");
   for (let index = 0; index < (await cards.count()); index++) {
     if (await cards.nth(index).isEnabled()) await cards.nth(index).click();
@@ -158,7 +163,7 @@ test("el carrito desplaza productos sin ocultar el cobro en escritorio", async (
       panelBottom: panel.getBoundingClientRect().bottom,
     };
   });
-  expect(layout.tracks).toBe(5);
+  expect(layout.tracks).toBe(4);
   expect(layout.scroll).toBe("auto");
   expect(layout.linesBottom).toBeLessThanOrEqual(layout.footerTop + 1);
   expect(layout.footerBottom).toBeLessThanOrEqual(layout.panelBottom + 1);
@@ -168,7 +173,8 @@ async function addProductAndOpenCheckout(
   page: import("@playwright/test").Page,
 ) {
   await page.goto("/pos");
-  await page.getByRole("button", { name: "Abrir catálogo" }).click();
+  if (await page.getByRole("button", { name: "Abrir catálogo" }).isVisible())
+    await page.getByRole("button", { name: "Abrir catálogo" }).click();
   await page
     .locator(".product-card")
     .filter({ hasText: "750104020251" })

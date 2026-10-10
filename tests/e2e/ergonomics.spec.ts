@@ -6,7 +6,8 @@ for (const width of [390, 768, 1440]) {
   }) => {
     await page.setViewportSize({ width, height: 1024 });
     await page.goto("/pos");
-    await page.getByRole("button", { name: "Abrir catálogo" }).click();
+    if (await page.getByRole("button", { name: "Abrir catálogo" }).isVisible())
+      await page.getByRole("button", { name: "Abrir catálogo" }).click();
     const family = page
       .locator(".pos-product-family")
       .filter({ hasText: "Bota Cuadra piel de venado" });

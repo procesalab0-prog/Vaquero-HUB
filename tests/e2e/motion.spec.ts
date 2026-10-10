@@ -129,7 +129,8 @@ test.describe("punto de venta", () => {
     page,
   }) => {
     await page.goto("/pos");
-    await page.getByRole("button", { name: "Abrir catálogo" }).click();
+    if (await page.getByRole("button", { name: "Abrir catálogo" }).isVisible())
+      await page.getByRole("button", { name: "Abrir catálogo" }).click();
     await page
       .locator(".product-card")
       .filter({ hasText: "750104020251" })
@@ -164,7 +165,12 @@ test.describe("respuesta al tocar", () => {
     expect(
       await ink.evaluate((element) => getComputedStyle(element).pointerEvents),
     ).toBe("none");
-    await page.getByRole("button", { name: "Abrir catálogo" }).click();
+    if (await page.getByRole("button", { name: "Abrir catálogo" }).isVisible())
+      await page.getByRole("button", { name: "Abrir catálogo" }).click();
+    if (
+      (await page.getByRole("button", { name: "Abrir catálogo" }).count()) === 0
+    )
+      await page.getByRole("button", { name: "Catálogo", exact: true }).click();
     await expect(ink).toHaveAttribute("data-press", /a|b/);
     // El botón tocado siguió funcionando.
     await expect(page.locator(".product-card").first()).toBeVisible();
