@@ -14,11 +14,12 @@ for (const width of [390, 768, 1440]) {
     await expect(
       page.getByRole("button", { name: "Tarjeta de débito" }),
     ).toHaveCount(0);
-    await page.getByRole("slider", { name: "Espacio del catálogo" }).fill("45");
-    await expect(page.locator(".pos-layout-control output")).toHaveText(
-      "45% / 55%",
+    await page.getByRole("separator").press("Home");
+    await expect(page.getByRole("separator")).toHaveAttribute(
+      "aria-valuenow",
+      "35",
     );
-    await page.getByRole("slider", { name: "Espacio del catálogo" }).fill("65");
+    await page.getByRole("separator").press("End");
     await expect(page.locator(".sale-line").first()).toBeInViewport();
     await expect(page.locator(".pay-button")).toBeInViewport();
     const overflow = await page.evaluate(
@@ -191,5 +192,43 @@ test("corte de sucursal y versión de esta entrega visibles", async ({
   await page
     .getByRole("button", { name: /Abrir información de .* y versión/ })
     .click();
-  await expect(page.getByText("Versión 0.63.0", { exact: true })).toBeVisible();
+  await expect(page.getByText("Versión 0.63.1", { exact: true })).toBeVisible();
 });
+
+for (const width of [390, 768, 1440]) {
+  test(`división se arrastra y conserva venta ${width}`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1024 });
+    await page.goto("/pos");
+    const divider = page.getByRole("separator");
+    await expect(divider).toHaveAttribute(
+      "aria-orientation",
+      width <= 820 ? "horizontal" : "vertical",
+    );
+    const box = await divider.boundingBox();
+    if (!box) throw Error("Missing divider");
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(
+      box.x + box.width / 2 + (width > 820 ? 100 : 0),
+      box.y + box.height / 2 + (width <= 820 ? 70 : 0),
+      { steps: 8 },
+    );
+    await page.mouse.up();
+    expect(Number(await divider.getAttribute("aria-valuenow"))).toBeGreaterThan(
+      50,
+    );
+    await expect(page.locator(".pay-button")).toBeInViewport();
+    await expect(
+      page.getByRole("slider", { name: "Espacio del catálogo" }),
+    ).toHaveCount(0);
+    await divider.press("Home");
+    await expect(divider).toHaveAttribute("aria-valuenow", "35");
+    await divider.press("End");
+    await expect(divider).toHaveAttribute("aria-valuenow", "65");
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth + 1,
+      ),
+    ).toBe(false);
+  });
+}
