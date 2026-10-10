@@ -8,6 +8,10 @@
 >
 > Última actualización: 2026-10-02, avance local de cantidades comerciales y aceptación operativa.
 
+## Corrección 0.64.1 — scroll móvil sin superposición
+
+Solicitud de Emmanuel del 10 de octubre: el menú inferior no debe tapar contenido durante el scroll. El área desplazable ahora termina antes de la navegación y, en Venta, antes del botón del carrito. Conserva ventanas, carrito y escritorio; respeta área segura y altura dinámica del navegador. Verificación en Inicio, Productos, Inventario, Caja, Compras, Clientes, Tickets, Reportes, Ajustes, Más y Venta, pantallas cortas y texto grande. Sin SQL ni cambios a datos M9/Woo.
+
 ## Entrega autorizada 0.64.0 — Venta e Inicio, 10 de octubre
 
 Cambios solicitados por Emmanuel preparados y verificados localmente. Catálogo/carrito en teléfono con scroll independiente, menús flotantes, tarjetas con foto en carrito amplio, cliente y herramientas juntos, campos de producto rápido visibles, logo mayor y acciones de descuento/regalo/apartado al cobrar. Inicio adapta accesos a permisos; sonido habilitado se reactiva con gesto después de recargar. Detalle y límites de aceptación en [`ERGONOMIA_VENTA_INICIO_2026_10_10.md`](ERGONOMIA_VENTA_INICIO_2026_10_10.md). Emmanuel autorizó publicar en main el 10 de octubre, con botones de cerrar en Más y cobro y colores distintos para Descuento, Regalo y Apartar. Staging M9 y sus datos permanecen intactos.

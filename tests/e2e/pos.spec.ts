@@ -142,6 +142,10 @@ test("el carrito desplaza productos sin ocultar el cobro en escritorio", async (
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/pos");
+  // Wait for the POS to render before deciding whether its catalogue is open.
+  await expect(
+    page.getByRole("textbox", { name: "Buscar o escanear producto" }),
+  ).toBeVisible();
   if (await page.getByRole("button", { name: "Abrir catálogo" }).isVisible())
     await page.getByRole("button", { name: "Abrir catálogo" }).click();
   const cards = page.locator(".product-card");
@@ -173,6 +177,10 @@ async function addProductAndOpenCheckout(
   page: import("@playwright/test").Page,
 ) {
   await page.goto("/pos");
+  // Wait for the POS to render before deciding whether its catalogue is open.
+  await expect(
+    page.getByRole("textbox", { name: "Buscar o escanear producto" }),
+  ).toBeVisible();
   if (await page.getByRole("button", { name: "Abrir catálogo" }).isVisible())
     await page.getByRole("button", { name: "Abrir catálogo" }).click();
   await page
