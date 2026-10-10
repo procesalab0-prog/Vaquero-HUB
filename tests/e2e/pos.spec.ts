@@ -101,8 +101,14 @@ test("el acceso desde Venta abre Traspasos directamente en Inventario", async ({
   page,
 }) => {
   await page.goto("/pos");
+  await expect(
+    page.getByRole("textbox", { name: "Buscar o escanear producto" }),
+  ).toBeVisible();
   const mobileCart = page.locator(".mobile-cart-toggle");
-  if (await mobileCart.isVisible()) await mobileCart.click();
+  if (page.viewportSize()!.width <= 820) {
+    await expect(mobileCart).toBeVisible();
+    await mobileCart.click();
+  }
   await page
     .getByRole("button", { name: "Herramientas de venta", exact: true })
     .click();
@@ -122,8 +128,14 @@ test("en demostración no se abandona un carrito sin guardar al abrir Traspasos"
   });
   await search.fill("750104020251");
   await search.press("Enter");
+  await expect(
+    page.getByRole("textbox", { name: "Buscar o escanear producto" }),
+  ).toBeVisible();
   const mobileCart = page.locator(".mobile-cart-toggle");
-  if (await mobileCart.isVisible()) await mobileCart.click();
+  if (page.viewportSize()!.width <= 820) {
+    await expect(mobileCart).toBeVisible();
+    await mobileCart.click();
+  }
   await page
     .getByRole("button", { name: "Herramientas de venta", exact: true })
     .click();
@@ -188,8 +200,14 @@ async function addProductAndOpenCheckout(
     .filter({ hasText: "750104020251" })
     .click();
 
+  await expect(
+    page.getByRole("textbox", { name: "Buscar o escanear producto" }),
+  ).toBeVisible();
   const mobileCart = page.locator(".mobile-cart-toggle");
-  if (await mobileCart.isVisible()) await mobileCart.click();
+  if (page.viewportSize()!.width <= 820) {
+    await expect(mobileCart).toBeVisible();
+    await mobileCart.click();
+  }
   await page.getByRole("button", { name: "Cobrar", exact: true }).click();
 }
 

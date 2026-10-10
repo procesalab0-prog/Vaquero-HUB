@@ -8,6 +8,7 @@ import Image from "next/image";
 import { WorkspacePopover } from "@/components/workspace-popover";
 import { PosDivider } from "@/components/pos-divider";
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -15,6 +16,7 @@ import {
   useSyncExternalStore,
   type CSSProperties,
 } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { startNavigationProgress } from "@/lib/navigation-progress";
 import {
@@ -498,6 +500,12 @@ export function PosWorkspace({
     useState<CustomerSummary | null>(currentDraft?.customer ?? null);
   const [customerLookupOpen, setCustomerLookupOpen] = useState(false);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+  const [cartPortalTarget, setCartPortalTarget] = useState<Element | null>(
+    null,
+  );
+  const attachPosRoot = useCallback((node: HTMLDivElement | null) => {
+    if (node) setCartPortalTarget(node.closest(".workspace-shell"));
+  }, []);
   const cartPanelRef = useRef<HTMLElement>(null);
   const cartTriggerRef = useRef<HTMLButtonElement>(null);
   const [cashMode, setCashMode] = useState(false);
@@ -2013,149 +2021,8 @@ export function PosWorkspace({
     );
   }
 
-  return (
-    <div
-      className="pos-screen pos-live-layout"
-      style={{ "--catalog-share": `${catalogShare}%` } as CSSProperties}
-    >
-      <section className="pos-catalog" inert={cartDrawerOpen && mobileViewport}>
-        <div className="scan-row">
-          <label className="scan-input">
-            <Barcode aria-hidden="true" strokeWidth={1.8} />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key !== "Enter" && event.key !== "Tab") return;
-                if (event.key === "Tab") {
-                  const code = query.trim().toLocaleUpperCase("es-MX");
-                  if (
-                    !isTicketReceiptCode(code) &&
-                    !variants.some((variant) =>
-                      [variant.legacyCode, variant.sku].some(
-                        (value) => value?.toLocaleUpperCase("es-MX") === code,
-                      ),
-                    )
-                  )
-                    return;
-                }
-                event.preventDefault();
-                scanSaleCode(query);
-              }}
-              onFocus={() => setShowCatalog(true)}
-              placeholder="Escanea el código o busca por nombre, SKU o marca"
-              aria-label="Buscar o escanear producto"
-            />
-            <span className="scan-caret" aria-hidden="true" />
-          </label>
-          <button
-            className="catalog-button"
-            type="button"
-            aria-label="Catálogo"
-            onClick={() => setShowCatalog(true)}
-          >
-            <ListFilter aria-hidden="true" strokeWidth={1.8} />
-            <span>Catálogo</span>
-          </button>
-        </div>
-
-        <div className="frequent-row">
-          <span>Frecuentes</span>
-          {frequentCategories.map((category) => (
-            <button
-              className={activeCategory === category.label ? "selected" : ""}
-              type="button"
-              key={category.label}
-              onClick={() => selectCategory(category.label)}
-            >
-              {category.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="catalog-canvas">
-          {results.length > 0 ? (
-            <>
-              <div className="catalog-results-heading">
-                <div>
-                  <span>Catálogo</span>
-                  <strong>
-                    {resultFamilies.length} productos · {results.length}{" "}
-                    variantes
-                  </strong>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQuery("");
-                    setActiveCategory("");
-                    setShowCatalog(false);
-                  }}
-                >
-                  Cerrar
-                </button>
-              </div>
-              <div className="product-grid">
-                {resultFamilies.map(([familyId, options]) => (
-                  <ProductCard
-                    key={`${familyId}:${options.map((option) => option.id).join(",")}`}
-                    options={options}
-                    quantities={cartQuantities}
-                    onAdd={addVariant}
-                  />
-                ))}
-              </div>
-            </>
-          ) : query.trim() ? (
-            <div className="no-results-state">
-              <Search aria-hidden="true" />
-              <h2>Sin resultados para “{query}”</h2>
-              <p>Revisa el código o intenta buscar por marca, talla o color.</p>
-              <button
-                className="secondary-button"
-                type="button"
-                onClick={() => setQuery("")}
-              >
-                Limpiar búsqueda
-              </button>
-            </div>
-          ) : (
-            <div className="pos-ready-state">
-              <Image
-                src="/illustrations/pos-ready.png"
-                alt="Cajero de Vaquero SM escaneando una bota"
-                width={242}
-                height={210}
-                priority
-              />
-              <h2>Listo para vender</h2>
-              <p>
-                Escanea el primer artículo o abre el catálogo. El carrito de la
-                derecha se llena conforme agregas productos.
-              </p>
-              <div>
-                <button
-                  className="primary-button"
-                  type="button"
-                  onClick={() => setShowCatalog(true)}
-                >
-                  Abrir catálogo
-                </button>
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={() => setShowCatalog(true)}
-                >
-                  <Search aria-hidden="true" />
-                  Buscar producto
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <PosDivider value={catalogShare} onChange={setCatalogShare} />
+  const salePanel = (
+    <>
       {cartDrawerOpen ? (
         <button
           className="mobile-cart-backdrop"
@@ -2468,20 +2335,180 @@ export function PosWorkspace({
           ) : null}
         </footer>
       </aside>
+    </>
+  );
 
-      <button
-        ref={cartTriggerRef}
-        className={`mobile-cart-toggle${lastAdded ? ` cart-bump-${lastAdded.pulse % 2}` : ""}`}
-        type="button"
-        onClick={() => setCartDrawerOpen(true)}
-      >
-        <span>
-          <ShoppingCart aria-hidden="true" />
-          <b>{quantity}</b>
-        </span>
-        <strong>{quantity ? `${quantity} artículos` : "Ver carrito"}</strong>
-        <b>{money.format(total)}</b>
-      </button>
+  return (
+    <div
+      ref={attachPosRoot}
+      className="pos-screen pos-live-layout"
+      style={{ "--catalog-share": `${catalogShare}%` } as CSSProperties}
+    >
+      <section className="pos-catalog" inert={cartDrawerOpen && mobileViewport}>
+        <div className="scan-row">
+          <label className="scan-input">
+            <Barcode aria-hidden="true" strokeWidth={1.8} />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter" && event.key !== "Tab") return;
+                if (event.key === "Tab") {
+                  const code = query.trim().toLocaleUpperCase("es-MX");
+                  if (
+                    !isTicketReceiptCode(code) &&
+                    !variants.some((variant) =>
+                      [variant.legacyCode, variant.sku].some(
+                        (value) => value?.toLocaleUpperCase("es-MX") === code,
+                      ),
+                    )
+                  )
+                    return;
+                }
+                event.preventDefault();
+                scanSaleCode(query);
+              }}
+              onFocus={() => setShowCatalog(true)}
+              placeholder="Escanea el código o busca por nombre, SKU o marca"
+              aria-label="Buscar o escanear producto"
+            />
+            <span className="scan-caret" aria-hidden="true" />
+          </label>
+          <button
+            className="catalog-button"
+            type="button"
+            aria-label="Catálogo"
+            onClick={() => setShowCatalog(true)}
+          >
+            <ListFilter aria-hidden="true" strokeWidth={1.8} />
+            <span>Catálogo</span>
+          </button>
+        </div>
+
+        <div className="frequent-row">
+          <span>Frecuentes</span>
+          {frequentCategories.map((category) => (
+            <button
+              className={activeCategory === category.label ? "selected" : ""}
+              type="button"
+              key={category.label}
+              onClick={() => selectCategory(category.label)}
+            >
+              {category.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="catalog-canvas">
+          {results.length > 0 ? (
+            <>
+              <div className="catalog-results-heading">
+                <div>
+                  <span>Catálogo</span>
+                  <strong>
+                    {resultFamilies.length} productos · {results.length}{" "}
+                    variantes
+                  </strong>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery("");
+                    setActiveCategory("");
+                    setShowCatalog(false);
+                  }}
+                >
+                  Cerrar
+                </button>
+              </div>
+              <div className="product-grid">
+                {resultFamilies.map(([familyId, options]) => (
+                  <ProductCard
+                    key={`${familyId}:${options.map((option) => option.id).join(",")}`}
+                    options={options}
+                    quantities={cartQuantities}
+                    onAdd={addVariant}
+                  />
+                ))}
+              </div>
+            </>
+          ) : query.trim() ? (
+            <div className="no-results-state">
+              <Search aria-hidden="true" />
+              <h2>Sin resultados para “{query}”</h2>
+              <p>Revisa el código o intenta buscar por marca, talla o color.</p>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => setQuery("")}
+              >
+                Limpiar búsqueda
+              </button>
+            </div>
+          ) : (
+            <div className="pos-ready-state">
+              <Image
+                src="/illustrations/pos-ready.png"
+                alt="Cajero de Vaquero SM escaneando una bota"
+                width={242}
+                height={210}
+                priority
+              />
+              <h2>Listo para vender</h2>
+              <p>
+                Escanea el primer artículo o abre el catálogo. El carrito de la
+                derecha se llena conforme agregas productos.
+              </p>
+              <div>
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() => setShowCatalog(true)}
+                >
+                  Abrir catálogo
+                </button>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => setShowCatalog(true)}
+                >
+                  <Search aria-hidden="true" />
+                  Buscar producto
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <PosDivider value={catalogShare} onChange={setCatalogShare} />
+      {!mobileViewport ? salePanel : null}
+
+      {mobileViewport &&
+        cartPortalTarget &&
+        createPortal(
+          <div className="pos-live-layout pos-mobile-cart-layer">
+            {salePanel}
+            <button
+              ref={cartTriggerRef}
+              className={`mobile-cart-toggle${lastAdded ? ` cart-bump-${lastAdded.pulse % 2}` : ""}`}
+              type="button"
+              hidden={cartDrawerOpen}
+              onClick={() => setCartDrawerOpen(true)}
+              aria-label={`Ver carrito, ${quantity} artículos, ${money.format(total)}`}
+            >
+              <span>
+                <ShoppingCart aria-hidden="true" />
+                <b>{quantity}</b>
+              </span>
+              <strong>
+                Ver carrito{quantity ? ` · ${quantity} artículos` : ""}
+              </strong>
+              <b>{money.format(total)}</b>
+            </button>
+          </div>,
+          cartPortalTarget,
+        )}
 
       {toast ? (
         <div className="pos-toast" role="status">
