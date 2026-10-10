@@ -41,6 +41,7 @@ import {
 import type { WorkspaceIdentity } from "@/lib/auth/types";
 import { WorkspaceContext } from "@/components/workspace-context";
 import { EntranceCurtain, useEntrance } from "@/components/entrance-curtain";
+import { WorkspacePopover } from "@/components/workspace-popover";
 import { WorkspaceModuleMenu } from "@/components/workspace-module-menu";
 import { LA_PIEDAD_STORE } from "@/lib/business-profile";
 import {
@@ -50,6 +51,7 @@ import {
 import {
   WORKSPACE_NOTIFICATION_EVENT,
   publishWorkspaceNotification,
+  resumeNotificationSound,
   type WorkspaceNotification,
 } from "@/lib/workspace-notifications";
 
@@ -165,18 +167,39 @@ export function WorkspaceShell({
     (notice) => notice.locationId === activeLocationId,
   );
   useEffect(() => {
-    const rail=document.querySelector<HTMLElement>('.nav-rail');
-    if(!rail)return;
-    const containWheel=(event:WheelEvent)=>{
-      const target=event.target instanceof Element?event.target:null;
-      const area=target?.closest<HTMLElement>('.rail-submenu,.rail-links');
-      if(!area){event.preventDefault();return;}
-      const max=area.scrollHeight-area.clientHeight;
-      if(max<=0 || (event.deltaY<0 && area.scrollTop<=0) || (event.deltaY>0 && area.scrollTop>=max-1))event.preventDefault();
+    const prime = () => {
+      void resumeNotificationSound().catch(() => {
+        /* Visual notification remains available. */
+      });
     };
-    rail.addEventListener('wheel',containWheel,{passive:false});
-    return()=>rail.removeEventListener('wheel',containWheel);
-  },[]);
+    window.addEventListener("pointerdown", prime, { passive: true });
+    window.addEventListener("keydown", prime);
+    return () => {
+      window.removeEventListener("pointerdown", prime);
+      window.removeEventListener("keydown", prime);
+    };
+  }, []);
+  useEffect(() => {
+    const rail = document.querySelector<HTMLElement>(".nav-rail");
+    if (!rail) return;
+    const containWheel = (event: WheelEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const area = target?.closest<HTMLElement>(".rail-submenu,.rail-links");
+      if (!area) {
+        event.preventDefault();
+        return;
+      }
+      const max = area.scrollHeight - area.clientHeight;
+      if (
+        max <= 0 ||
+        (event.deltaY < 0 && area.scrollTop <= 0) ||
+        (event.deltaY > 0 && area.scrollTop >= max - 1)
+      )
+        event.preventDefault();
+    };
+    rail.addEventListener("wheel", containWheel, { passive: false });
+    return () => rail.removeEventListener("wheel", containWheel);
+  }, []);
   useEffect(() => {
     if (!identity || !activeLocationId) return;
     let disposed = false;
@@ -377,8 +400,8 @@ export function WorkspaceShell({
           <Image
             src="/brand/emblema-blanco.png"
             alt=""
-            width={64}
-            height={42}
+            width={144}
+            height={94}
             priority
           />
         </Link>
@@ -422,44 +445,24 @@ export function WorkspaceShell({
                 : pathname.startsWith(href);
             if (href === "/mas")
               return (
-                <details className="rail-more" key={label}>
-                  <summary
-                    className={active ? "rail-link active" : "rail-link"}
-                    aria-label="Más opciones"
-                    title="Más opciones"
-                    onKeyDown={(event) => {
-                      if (event.key === "Escape") {
-                        const details = event.currentTarget.closest("details");
-                        if (details) details.open = false;
-                        event.currentTarget.focus();
-                      }
-                    }}
+                <div className="rail-more" key={label}>
+                  <WorkspacePopover
+                    side
+                    label="Más opciones"
+                    title="Todo en tu tienda"
+                    triggerClassName={active ? "rail-link active" : "rail-link"}
+                    className="rail-submenu"
+                    trigger={
+                      <>
+                        <WesternHatIcon />
+                        <span>Más</span>
+                        <ChevronDown
+                          className="rail-more-chevron"
+                          aria-hidden="true"
+                        />
+                      </>
+                    }
                   >
-                    <WesternHatIcon />
-                    <span>Más</span>
-                    <ChevronDown
-                      className="rail-more-chevron"
-                      aria-hidden="true"
-                    />
-                  </summary>
-                  <div className="rail-submenu">
-                    <div className="rail-submenu-heading">
-                      <p className="rail-submenu-title">Todo en tu tienda</p>
-                      <button
-                        type="button"
-                        aria-label="Cerrar más opciones"
-                        onClick={(event) => {
-                          const details =
-                            event.currentTarget.closest("details");
-                          if (details) {
-                            details.open = false;
-                            details.querySelector("summary")?.focus();
-                          }
-                        }}
-                      >
-                        <X aria-hidden="true" />
-                      </button>
-                    </div>
                     {moreNavigation.map(({ path, title, icon: Icon, tone }) => (
                       <Link
                         key={path}
@@ -467,11 +470,6 @@ export function WorkspaceShell({
                         aria-current={
                           pathname.startsWith(path) ? "page" : undefined
                         }
-                        onClick={(event) => {
-                          const details =
-                            event.currentTarget.closest("details");
-                          if (details) details.open = false;
-                        }}
                       >
                         <span className={`rail-module-icon ${tone}`}>
                           <Icon aria-hidden="true" strokeWidth={1.8} />
@@ -482,15 +480,11 @@ export function WorkspaceShell({
                     <Link
                       className="rail-all-modules"
                       href={locationHref("/mas")}
-                      onClick={(event) => {
-                        const details = event.currentTarget.closest("details");
-                        if (details) details.open = false;
-                      }}
                     >
                       Ver todos los módulos
                     </Link>
-                  </div>
-                </details>
+                  </WorkspacePopover>
+                </div>
               );
             return (
               <Link
@@ -640,8 +634,14 @@ export function WorkspaceShell({
                 <div>
                   <strong>{notice.title}</strong>
                   <p>{notice.message}</p>
-                  {notice.href && /^\/(?:inventario|caja)(?:\?|$)/.test(notice.href) ? (
-                    <Link href={locationHref(notice.href)} onClick={() => setNotificationsOpen(false)}>Ver movimiento</Link>
+                  {notice.href &&
+                  /^\/(?:inventario|caja)(?:\?|$)/.test(notice.href) ? (
+                    <Link
+                      href={locationHref(notice.href)}
+                      onClick={() => setNotificationsOpen(false)}
+                    >
+                      Ver movimiento
+                    </Link>
                   ) : null}
                 </div>
                 <small>

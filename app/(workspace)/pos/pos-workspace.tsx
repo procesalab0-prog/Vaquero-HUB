@@ -5,12 +5,14 @@ import { UsdCheckout, type UsdTenderInput } from "@/components/usd-checkout";
 import { publishWorkspaceNotification } from "@/lib/workspace-notifications";
 
 import Image from "next/image";
+import { WorkspacePopover } from "@/components/workspace-popover";
 import { PosDivider } from "@/components/pos-divider";
 import {
   useEffect,
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -22,6 +24,7 @@ import {
   CalendarClock,
   Check,
   ChevronRight,
+  ChevronDown,
   CreditCard,
   Delete,
   Gift,
@@ -264,6 +267,15 @@ function ProductCard({
 
 type CashSession = { id: string; location_id: string; register_name: string };
 
+function subscribeMobileViewport(listener: () => void) {
+  const media = window.matchMedia("(max-width: 820px)");
+  media.addEventListener("change", listener);
+  return () => media.removeEventListener("change", listener);
+}
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 820px)").matches;
+}
+
 export function PosWorkspace({
   variants,
   initialDrafts = EMPTY_POS_DRAFTS,
@@ -443,7 +455,13 @@ export function PosWorkspace({
     [currentDraft, variantsById],
   );
   const [query, setQuery] = useState("");
-  const [showCatalog, setShowCatalog] = useState(false);
+  const [catalogRequested, setShowCatalog] = useState(false);
+  const mobileViewport = useSyncExternalStore(
+    subscribeMobileViewport,
+    isMobileViewport,
+    () => false,
+  );
+  const showCatalog = catalogRequested || mobileViewport;
   const [activeCategory, setActiveCategory] = useState("");
   const [cart, setCart] = useState<CartLine[]>(restoredCart);
   const [invalidQuantities, setInvalidQuantities] = useState<
@@ -480,6 +498,8 @@ export function PosWorkspace({
     useState<CustomerSummary | null>(currentDraft?.customer ?? null);
   const [customerLookupOpen, setCustomerLookupOpen] = useState(false);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+  const cartPanelRef = useRef<HTMLElement>(null);
+  const cartTriggerRef = useRef<HTMLButtonElement>(null);
   const [cashMode, setCashMode] = useState(false);
   const [splitMode, setSplitMode] = useState(false);
   const [cashInput, setCashInput] = useState("");
@@ -599,6 +619,47 @@ export function PosWorkspace({
     draftBusy,
     cashSession?.id,
   ]);
+
+  useEffect(() => {
+    if (!cartDrawerOpen || !mobileViewport) return;
+    const root = document.documentElement;
+    const trigger = cartTriggerRef.current;
+    const previous = root.style.overflow;
+    root.style.overflow = "hidden";
+    cartPanelRef.current
+      ?.querySelector<HTMLButtonElement>(".mobile-cart-close")
+      ?.focus();
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (document.querySelector(".modal-backdrop")) return;
+      if (event.key === "Escape" && !document.querySelector(":popover-open"))
+        setCartDrawerOpen(false);
+      if (
+        event.key !== "Tab" ||
+        document.querySelector(".modal-backdrop,:popover-open")
+      )
+        return;
+      const focusable = Array.from(
+        cartPanelRef.current?.querySelectorAll<HTMLElement>(
+          "button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href]",
+        ) ?? [],
+      ).filter((el) => el.getClientRects().length > 0);
+      const first = focusable[0],
+        last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      root.style.overflow = previous;
+      if (!document.querySelector(".modal-backdrop")) trigger?.focus();
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [cartDrawerOpen, mobileViewport]);
 
   function scanSaleCode(rawCode: string) {
     if (
@@ -1957,7 +2018,7 @@ export function PosWorkspace({
       className="pos-screen pos-live-layout"
       style={{ "--catalog-share": `${catalogShare}%` } as CSSProperties}
     >
-      <section className="pos-catalog">
+      <section className="pos-catalog" inert={cartDrawerOpen && mobileViewport}>
         <div className="scan-row">
           <label className="scan-input">
             <Barcode aria-hidden="true" strokeWidth={1.8} />
@@ -2104,6 +2165,7 @@ export function PosWorkspace({
         />
       ) : null}
       <aside
+        ref={cartPanelRef}
         className={cartDrawerOpen ? "sale-panel mobile-open" : "sale-panel"}
         aria-label="Carrito de venta"
       >
@@ -2123,90 +2185,102 @@ export function PosWorkspace({
           </button>
         </header>
 
-        <details className="sale-tools">
-          <summary>
-            Herramientas de venta <span>Espera · producto rápido · más</span>
-          </summary>
-          <div className="draft-toolbar">
-            {canAccessTransfers ? (
+        <div className="sale-controls">
+          <button
+            className={
+              selectedCustomer ? "sale-customer selected" : "sale-customer"
+            }
+            type="button"
+            disabled={draftBusy || Boolean(quoteId)}
+            onClick={() => setCustomerLookupOpen(true)}
+          >
+            <UserRoundPlus aria-hidden="true" />
+            <span>
+              {selectedCustomer ? (
+                <>
+                  <strong>{selectedCustomer.full_name}</strong>
+                  <small>Socio {selectedCustomer.member_number}</small>
+                </>
+              ) : (
+                <>
+                  <strong>Agregar cliente</strong>
+                  <small>Teléfono, socio, nombre o correo</small>
+                </>
+              )}
+            </span>
+            <ChevronRight aria-hidden="true" />
+          </button>
+          <WorkspacePopover
+            label="Herramientas de venta"
+            triggerClassName="sale-tools-trigger"
+            className="sale-tools-menu"
+            trigger={
+              <>
+                <span>Herramientas de venta</span>
+                <ChevronDown aria-hidden="true" />
+              </>
+            }
+          >
+            <div className="draft-toolbar">
+              {canAccessTransfers ? (
+                <button
+                  type="button"
+                  disabled={draftBusy}
+                  onClick={() => void openTransfersFromSale()}
+                >
+                  <ArrowRightLeft aria-hidden="true" />
+                  {draftBusy ? "Guardando…" : "Traspasos"}
+                </button>
+              ) : null}
+              {!preview ? (
+                <button
+                  className="returns-shortcut"
+                  type="button"
+                  onClick={() => {
+                    startNavigationProgress({
+                      label: "Cambios y devoluciones",
+                    });
+                    router.push("/tickets?accion=devolver");
+                  }}
+                >
+                  <ArrowRightLeft aria-hidden="true" />
+                  Cambios / devoluciones
+                </button>
+              ) : null}
               <button
                 type="button"
-                disabled={draftBusy}
-                onClick={() => void openTransfersFromSale()}
+                disabled={cart.length === 0 || draftBusy || preview}
+                onClick={() => void holdCurrentSale()}
               >
-                <ArrowRightLeft aria-hidden="true" />
-                {draftBusy ? "Guardando…" : "Traspasos"}
+                <PauseCircle aria-hidden="true" />
+                {draftBusy ? "Guardando…" : "Dejar en espera"}
               </button>
-            ) : null}
-            {!preview ? (
               <button
-                className="returns-shortcut"
                 type="button"
+                disabled={heldDrafts.length === 0 || draftBusy || preview}
+                onClick={() => setHeldTicketsOpen(true)}
+              >
+                En espera
+                <b>{heldDrafts.length}</b>
+              </button>
+              <button
+                type="button"
+                disabled={
+                  Boolean(quoteId) ||
+                  draftBusy ||
+                  (!preview && !cashSession?.id)
+                }
                 onClick={() => {
-                  startNavigationProgress({ label: "Cambios y devoluciones" });
-                  router.push("/tickets?accion=devolver");
+                  setQuickError("");
+                  setQuickOpen(true);
                 }}
               >
-                <ArrowRightLeft aria-hidden="true" />
-                Cambios / devoluciones
+                Producto rápido
               </button>
-            ) : null}
-            <button
-              type="button"
-              disabled={cart.length === 0 || draftBusy || preview}
-              onClick={() => void holdCurrentSale()}
-            >
-              <PauseCircle aria-hidden="true" />
-              {draftBusy ? "Guardando…" : "Dejar en espera"}
-            </button>
-            <button
-              type="button"
-              disabled={heldDrafts.length === 0 || draftBusy || preview}
-              onClick={() => setHeldTicketsOpen(true)}
-            >
-              En espera
-              <b>{heldDrafts.length}</b>
-            </button>
-            <button
-              type="button"
-              disabled={
-                Boolean(quoteId) || draftBusy || (!preview && !cashSession?.id)
-              }
-              onClick={() => {
-                setQuickError("");
-                setQuickOpen(true);
-              }}
-            >
-              Producto rápido
-            </button>
-            {draftStatus ? <small role="status">{draftStatus}</small> : null}
-          </div>
-        </details>
-
-        <button
-          className={
-            selectedCustomer ? "sale-customer selected" : "sale-customer"
-          }
-          type="button"
-          disabled={draftBusy || Boolean(quoteId)}
-          onClick={() => setCustomerLookupOpen(true)}
-        >
-          <UserRoundPlus aria-hidden="true" />
-          <span>
-            {selectedCustomer ? (
-              <>
-                <strong>{selectedCustomer.full_name}</strong>
-                <small>Socio {selectedCustomer.member_number}</small>
-              </>
-            ) : (
-              <>
-                <strong>Agregar cliente</strong>
-                <small>Teléfono, socio, nombre o correo</small>
-              </>
-            )}
-          </span>
-          <ChevronRight aria-hidden="true" />
-        </button>
+              {draftStatus ? <small role="status">{draftStatus}</small> : null}
+            </div>
+          </WorkspacePopover>
+        </div>
 
         <div className="sale-lines">
           {cart.length === 0 ? (
@@ -2228,7 +2302,16 @@ export function PosWorkspace({
               >
                 <div className="sale-line-top">
                   <span className="sale-thumb">
-                    <ShoppingCart aria-hidden="true" strokeWidth={1.6} />
+                    {line.variant.image ? (
+                      <Image
+                        src={line.variant.image}
+                        alt={line.variant.productName}
+                        width={180}
+                        height={160}
+                      />
+                    ) : (
+                      <ShoppingCart aria-hidden="true" strokeWidth={1.6} />
+                    )}
                   </span>
                   <div>
                     <strong>{line.variant.productName}</strong>
@@ -2383,62 +2466,11 @@ export function PosWorkspace({
               y tener hasta tres decimales.
             </p>
           ) : null}
-          <div className="sale-extras">
-            <button
-              type="button"
-              disabled={cart.length === 0 || Boolean(quoteId)}
-              onClick={() => {
-                setDiscountInput(String(discountPercent || ""));
-                setExtraDialog("discount");
-              }}
-            >
-              Descuento
-            </button>
-            <button
-              type="button"
-              disabled={cart.length === 0 || Boolean(quoteId)}
-              onClick={() => {
-                setCart((current) =>
-                  current.map((line) => ({ ...line, giftReceipt: true })),
-                );
-                notify("Todos los artículos se marcaron como regalo");
-              }}
-            >
-              Regalo
-            </button>
-            <button
-              type="button"
-              disabled={
-                cart.length === 0 ||
-                hasInvalidQuantity ||
-                !createLayawayAction ||
-                layawayBusy ||
-                Boolean(quoteId) ||
-                cart.some((line) => line.variant.quick)
-              }
-              title="Reserva la mercancía sin registrar una venta ni mover la caja."
-              onClick={() => {
-                if (!selectedCustomer) {
-                  notify("Selecciona primero al cliente del apartado");
-                  setCustomerLookupOpen(true);
-                  return;
-                }
-                if (discountPercent > 0) {
-                  notify("Quita el descuento antes de crear el apartado");
-                  return;
-                }
-                setCartDrawerOpen(false);
-                setLayawayError("");
-                setLayawayOpen(true);
-              }}
-            >
-              Apartar
-            </button>
-          </div>
         </footer>
       </aside>
 
       <button
+        ref={cartTriggerRef}
         className={`mobile-cart-toggle${lastAdded ? ` cart-bump-${lastAdded.pulse % 2}` : ""}`}
         type="button"
         onClick={() => setCartDrawerOpen(true)}
@@ -2762,7 +2794,7 @@ export function PosWorkspace({
         </div>
       ) : null}
 
-      {checkoutOpen ? (
+      {checkoutOpen && !extraDialog && !customerLookupOpen && !layawayOpen ? (
         <div className="modal-backdrop">
           <section
             className="checkout-modal"
@@ -2770,8 +2802,85 @@ export function PosWorkspace({
             aria-modal="true"
             aria-labelledby="checkout-title"
           >
-            <p className="kicker">Confirmar cobro</p>
-            <h2 id="checkout-title">{money.format(total)}</h2>
+            <div className="checkout-heading">
+              <div>
+                <p className="kicker">Confirmar cobro</p>
+                <h2 id="checkout-title">{money.format(total)}</h2>
+              </div>
+              <button
+                type="button"
+                className="secondary-button checkout-close"
+                aria-label="Cerrar cobro"
+                disabled={submitting}
+                onClick={() => {
+                  setCheckoutOpen(false);
+                  setCashMode(false);
+                  setSplitMode(false);
+                  setCashInput("");
+                  setPaymentUsed("cash");
+                  if (mobileViewport) setCartDrawerOpen(true);
+                }}
+              >
+                <X aria-hidden="true" /> Cerrar
+              </button>
+            </div>
+            <div className="sale-extras checkout-extras">
+              <button
+                type="button"
+                className="checkout-discount"
+                disabled={submitting || cart.length === 0 || Boolean(quoteId)}
+                onClick={() => {
+                  setDiscountInput(String(discountPercent || ""));
+                  setExtraDialog("discount");
+                }}
+              >
+                Descuento
+              </button>
+              <button
+                type="button"
+                className="checkout-gift"
+                disabled={submitting || cart.length === 0 || Boolean(quoteId)}
+                onClick={() => {
+                  setCart((current) =>
+                    current.map((line) => ({ ...line, giftReceipt: true })),
+                  );
+                  notify("Todos los artículos se marcaron como regalo");
+                }}
+              >
+                Regalo
+              </button>
+              <button
+                type="button"
+                className="checkout-layaway"
+                disabled={
+                  submitting ||
+                  cart.length === 0 ||
+                  hasInvalidQuantity ||
+                  !createLayawayAction ||
+                  layawayBusy ||
+                  Boolean(quoteId) ||
+                  cart.some((line) => line.variant.quick)
+                }
+                title="Reserva la mercancía sin registrar una venta ni mover la caja."
+                onClick={() => {
+                  if (!selectedCustomer) {
+                    notify("Selecciona primero al cliente del apartado");
+                    setCustomerLookupOpen(true);
+                    return;
+                  }
+                  if (discountPercent > 0) {
+                    notify("Quita el descuento antes de crear el apartado");
+                    return;
+                  }
+                  setCheckoutOpen(false);
+                  setCartDrawerOpen(false);
+                  setLayawayError("");
+                  setLayawayOpen(true);
+                }}
+              >
+                Apartar
+              </button>
+            </div>
             <div className="credit-checkout-summary loyalty-checkout-summary">
               <div>
                 <span>Puntos del cliente</span>

@@ -9,23 +9,28 @@ for (const width of [390, 768, 1440]) {
     await search.fill("750104020251");
     await search.press("Enter");
     await expect(page.locator(".sale-line")).toHaveCount(1);
+    if (width <= 820) await page.locator(".mobile-cart-toggle").click();
     await expect(page.locator(".sale-line").first()).toBeInViewport();
     await expect(page.locator(".pay-button")).toBeInViewport();
     await expect(
       page.getByRole("button", { name: "Tarjeta de débito" }),
     ).toHaveCount(0);
-    await page.getByRole("separator").press("Home");
-    await expect(page.getByRole("separator")).toHaveAttribute(
-      "aria-valuenow",
-      "35",
-    );
-    await page.getByRole("separator").press("End");
+    if (width > 820) {
+      await page.getByRole("separator").press("Home");
+      await expect(page.getByRole("separator")).toHaveAttribute(
+        "aria-valuenow",
+        "35",
+      );
+      await page.getByRole("separator").press("End");
+    }
     await expect(page.locator(".sale-line").first()).toBeInViewport();
     await expect(page.locator(".pay-button")).toBeInViewport();
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth > innerWidth + 1,
     );
     expect(overflow).toBe(false);
+    if (await page.locator(".mobile-cart-toggle").isVisible())
+      await page.locator(".mobile-cart-toggle").click();
     await page.locator(".pay-button").click();
     await expect(
       page.getByRole("button", { name: "Tarjeta de débito" }),
@@ -123,6 +128,8 @@ test("cliente se crea dentro de Venta sin perder el carrito (transporte simulado
   });
   await search.fill("750104020251");
   await search.press("Enter");
+  if (await page.locator(".mobile-cart-toggle").isVisible())
+    await page.locator(".mobile-cart-toggle").click();
   await page.getByRole("button", { name: /Agregar cliente/ }).click();
   const dialog = page.getByRole("dialog", { name: "Asociar cliente" });
   await dialog.getByRole("button", { name: "Crear cliente aquí" }).click();
@@ -147,6 +154,8 @@ test("ticket de regalo disponible después de una venta no marcada", async ({
   });
   await search.fill("750104020251");
   await search.press("Enter");
+  if (await page.locator(".mobile-cart-toggle").isVisible())
+    await page.locator(".mobile-cart-toggle").click();
   await page.locator(".pay-button").click();
   await page.getByRole("button", { name: /^Efectivo/ }).click();
   await page.getByLabel("Efectivo recibido", { exact: true }).fill("5000");
@@ -192,10 +201,10 @@ test("corte de sucursal y versión de esta entrega visibles", async ({
   await page
     .getByRole("button", { name: /Abrir información de .* y versión/ })
     .click();
-  await expect(page.getByText("Versión 0.63.1", { exact: true })).toBeVisible();
+  await expect(page.getByText("Versión 0.64.0", { exact: true })).toBeVisible();
 });
 
-for (const width of [390, 768, 1440]) {
+for (const width of [1024, 1440]) {
   test(`división se arrastra y conserva venta ${width}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1024 });
     await page.goto("/pos");
