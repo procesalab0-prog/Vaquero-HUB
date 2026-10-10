@@ -8494,7 +8494,7 @@ a:active {
   background: #fff2ef;
   font-weight: 700;
 }
-:where(.module-page, .pos-screen):has(> .modal-backdrop) > .operation-feedback {
+:where(.module-page, .pos-screen, .pos-mobile-overlays):has(> .modal-backdrop) > .operation-feedback {
   position: fixed;
   z-index: 200;
   top: max(12px, env(safe-area-inset-top));
@@ -8894,7 +8894,7 @@ a:active {
     );
     overflow-y: scroll;
   }
-  :where(.module-page, .pos-screen):has(> .modal-backdrop)
+  :where(.module-page, .pos-screen, .pos-mobile-overlays):has(> .modal-backdrop)
     > .operation-feedback {
     top: max(10px, env(safe-area-inset-top));
     right: auto;
