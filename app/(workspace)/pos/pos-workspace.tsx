@@ -5,6 +5,7 @@ import { UsdCheckout, type UsdTenderInput } from "@/components/usd-checkout";
 import { publishWorkspaceNotification } from "@/lib/workspace-notifications";
 
 import Image from "next/image";
+import { PosDivider } from "@/components/pos-divider";
 import {
   useEffect,
   useMemo,
@@ -1957,20 +1958,6 @@ export function PosWorkspace({
       style={{ "--catalog-share": `${catalogShare}%` } as CSSProperties}
     >
       <section className="pos-catalog">
-        <label className="pos-layout-control">
-          Catálogo / Venta en curso
-          <input
-            aria-label="Espacio del catálogo"
-            type="range"
-            min="35"
-            max="65"
-            value={catalogShare}
-            onChange={(event) => setCatalogShare(Number(event.target.value))}
-          />
-          <output>
-            {catalogShare}% / {100 - catalogShare}%
-          </output>
-        </label>
         <div className="scan-row">
           <label className="scan-input">
             <Barcode aria-hidden="true" strokeWidth={1.8} />
@@ -2107,6 +2094,7 @@ export function PosWorkspace({
         </div>
       </section>
 
+      <PosDivider value={catalogShare} onChange={setCatalogShare} />
       {cartDrawerOpen ? (
         <button
           className="mobile-cart-backdrop"
