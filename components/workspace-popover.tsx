@@ -24,7 +24,11 @@ export function WorkspacePopover({
   const panel = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
-  const [position, setPosition] = useState({ left: 12, top: 80 });
+  const [position, setPosition] = useState({
+    left: 12,
+    top: 80,
+    maxHeight: 360,
+  });
   function toggle() {
     if (panel.current?.matches(":popover-open")) {
       panel.current.hidePopover();
@@ -41,7 +45,12 @@ export function WorkspacePopover({
       : side
         ? 480
         : 360;
-    const maxHeight = Math.min(side ? 620 : 360, window.innerHeight - 32);
+    const navTop = document
+      .querySelector(".nav-rail")
+      ?.getBoundingClientRect().top;
+    const bottom =
+      mobile && navTop !== undefined ? navTop - 12 : window.innerHeight - 16;
+    const maxHeight = Math.min(side ? 620 : 360, Math.max(44, bottom - 16));
     setPosition({
       left: Math.max(
         12,
@@ -50,11 +59,12 @@ export function WorkspacePopover({
           window.innerWidth - width - 12,
         ),
       ),
+      maxHeight,
       top: Math.max(
         16,
         Math.min(
           mobile && side ? box.top - maxHeight - 12 : box.bottom + 8,
-          window.innerHeight - maxHeight - 16,
+          bottom - maxHeight,
         ),
       ),
     });

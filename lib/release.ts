@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.64.0";
-export const APP_RELEASE = "Venta móvil e Inicio por permisos";
+export const APP_VERSION = "0.64.1";
+export const APP_RELEASE = "Scroll móvil sin contenido bajo el menú";

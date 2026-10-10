@@ -405,3 +405,14 @@
 .workspace-redesign .checkout-extras .checkout-gift { background: #f0e5ff; color: #613691; border-color: #9771bd; }
 .workspace-redesign .checkout-extras .checkout-layaway { background: #e0efff; color: #205580; border-color: #6094bd; }
 .workspace-redesign .checkout-extras button:disabled { opacity: .5; cursor: not-allowed; }
+
+/* The mobile scroll viewport ends above navigation, even halfway down a page.
+   Bottom padding alone only protects the final rows and still lets the bar
+   cover content while scrolling. dvh follows the mobile browser's visible area. */
+@media screen and (max-width:820px) {
+ .workspace-redesign .workspace-content { height:calc(100dvh - var(--mobile-nav-height,92px) - env(safe-area-inset-bottom)); }
+ .workspace-redesign .workspace-main { padding-bottom:18px; scroll-padding-block:12px 18px; }
+ .workspace-redesign .module-page { min-height:100%; padding-bottom:24px; }
+ .workspace-redesign .workspace-main:has(.pos-live-layout) { margin-bottom:76px; padding-bottom:12px; scroll-padding-bottom:18px; }
+ .workspace-redesign .pos-screen.pos-live-layout { min-height:0; padding-bottom:18px; }
+}
