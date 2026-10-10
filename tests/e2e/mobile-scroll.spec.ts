@@ -175,6 +175,7 @@ test("Cobrar queda por encima del encabezado, carrito y menú móvil", async ({
   const dialog = page.getByRole("dialog");
   const close = dialog.getByRole("button", { name: "Cerrar cobro" });
   await expect(dialog).toBeVisible();
+  await expect(page.locator(".pos-toast")).toBeHidden();
   await expect(cart).toBeHidden();
   expect(
     await dialog.evaluate((el) => Boolean(el.closest(".workspace-main"))),

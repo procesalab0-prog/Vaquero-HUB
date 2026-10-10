@@ -428,5 +428,6 @@
 
 @media screen and (max-width:820px) {
  .pos-mobile-overlays { display:contents; }
+ .pos-mobile-overlays:has(.modal-backdrop) > .pos-toast { display:none; }
  .workspace-shell:has(.pos-mobile-overlays .modal-backdrop) .workspace-main { overflow-y:hidden; overscroll-behavior:none; -webkit-overflow-scrolling:auto; }
 }
