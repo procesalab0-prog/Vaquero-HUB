@@ -8,6 +8,10 @@
 >
 > Última actualización: 2026-10-02, avance local de cantidades comerciales y aceptación operativa.
 
+## Corrección 0.64.2 — acceso al carrito en teléfono
+
+Emmanuel reportó con captura de iPhone que el botón del carrito desaparecía en el espacio reservado. El acceso y la ventana del carrito ahora se montan fuera del área desplazable de Venta y sus capas de composición, conservando tema y área segura. Muestra «Ver carrito» también con artículos; al cerrar la venta vuelve a aparecer. Se comprueba que el control recibe pulsaciones tras navegar y hacer scroll, además de su posición. No cambia catálogo, cobros ni datos M9/Woo.
+
 ## Corrección 0.64.1 — scroll móvil sin superposición
 
 Solicitud de Emmanuel del 10 de octubre: el menú inferior no debe tapar contenido durante el scroll. El área desplazable ahora termina antes de la navegación y, en Venta, antes del botón del carrito. Conserva ventanas, carrito y escritorio; respeta área segura y altura dinámica del navegador. Verificación en Inicio, Productos, Inventario, Caja, Compras, Clientes, Tickets, Reportes, Ajustes, Más y Venta, pantallas cortas y texto grande. Sin SQL ni cambios a datos M9/Woo.

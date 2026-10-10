@@ -416,3 +416,12 @@
  .workspace-redesign .workspace-main:has(.pos-live-layout) { margin-bottom:76px; padding-bottom:12px; scroll-padding-bottom:18px; }
  .workspace-redesign .pos-screen.pos-live-layout { min-height:0; padding-bottom:18px; }
 }
+
+/* Keep the cart entry outside the clipped scrolling/composited POS layer.
+   It must stay visible on iOS even after navigation or scrolling. */
+.pos-mobile-cart-layer { display:none; }
+@media screen and (max-width:820px) {
+ .workspace-redesign .pos-mobile-cart-layer { display:block; }
+ .workspace-redesign .pos-mobile-cart-layer .mobile-cart-toggle { display:grid; position:fixed; z-index:86; left:14px; right:14px; bottom:calc(var(--mobile-nav-height,92px) + env(safe-area-inset-bottom) + 10px); min-height:56px; }
+ .workspace-redesign .pos-mobile-cart-layer .mobile-cart-toggle[hidden] { display:none; }
+}
