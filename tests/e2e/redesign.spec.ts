@@ -56,11 +56,14 @@ test("la paleta cambia superficies y botones y persiste al recargar", async ({
   if (await mobile.isVisible()) await mobile.click();
   await expect
     .poll(() =>
-      page
-        .locator(".pay-button")
-        .evaluate((el) => getComputedStyle(el).backgroundColor),
+      page.locator(".pay-button").evaluate((el) => {
+        const expected = el.matches(":hover:not(:disabled)")
+          ? "rgb(16, 81, 55)"
+          : "rgb(23, 103, 71)";
+        return getComputedStyle(el).backgroundColor === expected;
+      }),
     )
-    .toBe("rgb(23, 103, 71)"); // Cobrar conserva verde operativo en todas las paletas.
+    .toBe(true); // Cobrar conserva su verde normal o de interacción en todas las paletas.
   await expect(page.locator(".pay-brand")).toBeVisible();
 });
 
