@@ -425,3 +425,8 @@
  .workspace-redesign .pos-mobile-cart-layer .mobile-cart-toggle { display:grid; position:fixed; z-index:86; left:14px; right:14px; bottom:calc(var(--mobile-nav-height,92px) + env(safe-area-inset-bottom) + 10px); min-height:56px; }
  .workspace-redesign .pos-mobile-cart-layer .mobile-cart-toggle[hidden] { display:none; }
 }
+
+@media screen and (max-width:820px) {
+ .pos-mobile-overlays { display:contents; }
+ .workspace-shell:has(.pos-mobile-overlays .modal-backdrop) .workspace-main { overflow-y:hidden; overscroll-behavior:none; -webkit-overflow-scrolling:auto; }
+}

@@ -201,7 +201,7 @@ test("corte de sucursal y versión de esta entrega visibles", async ({
   await page
     .getByRole("button", { name: /Abrir información de .* y versión/ })
     .click();
-  await expect(page.getByText("Versión 0.64.2", { exact: true })).toBeVisible();
+  await expect(page.getByText("Versión 0.64.3", { exact: true })).toBeVisible();
 });
 
 for (const width of [1024, 1440]) {

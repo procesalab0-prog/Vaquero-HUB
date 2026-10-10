@@ -156,3 +156,66 @@ test("el acceso al carrito se puede pulsar tras navegar y hacer scroll", async (
     path: "../../outputs/venta-redisenada-privada-2026-10-10/carrito-telefono-corregido.png",
   });
 });
+
+test("Cobrar queda por encima del encabezado, carrito y menú móvil", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 430, height: 932 });
+  await page.goto("/inicio");
+  await page.getByRole("link", { name: "Venta", exact: true }).click();
+  const search = page.getByRole("textbox", {
+    name: "Buscar o escanear producto",
+  });
+  await search.fill("750104020251");
+  await search.press("Enter");
+  const cart = page.locator(".mobile-cart-toggle");
+  await expect(cart).toContainText("1 artículos");
+  await cart.click();
+  await page.locator(".pay-button").click();
+  const dialog = page.getByRole("dialog");
+  const close = dialog.getByRole("button", { name: "Cerrar cobro" });
+  await expect(dialog).toBeVisible();
+  await expect(cart).toBeHidden();
+  expect(
+    await dialog.evaluate((el) => Boolean(el.closest(".workspace-main"))),
+  ).toBe(false);
+  await expect
+    .poll(() =>
+      close.evaluate((el) => {
+        const b = el.getBoundingClientRect();
+        return el.contains(
+          document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2),
+        );
+      }),
+    )
+    .toBe(true);
+  await dialog.getByRole("button", { name: /^Efectivo/ }).click();
+  await expect(
+    dialog.getByLabel("Efectivo recibido", { exact: true }),
+  ).toBeVisible();
+  await page.setViewportSize({ width: 430, height: 580 });
+  const confirm = dialog.getByRole("button", {
+    name: "Confirmar efectivo",
+    exact: true,
+  });
+  await confirm.evaluate((el) => el.scrollIntoView({ block: "end" }));
+  await expect(confirm).toBeInViewport();
+  await expect
+    .poll(() =>
+      confirm.evaluate((el) => {
+        const b = el.getBoundingClientRect();
+        return el.contains(
+          document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2),
+        );
+      }),
+    )
+    .toBe(true);
+  await page.setViewportSize({ width: 430, height: 932 });
+  await dialog.evaluate((el) => el.scrollTo(0, 0));
+  await close.click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator(".sale-panel.mobile-open")).toBeVisible();
+  await page.locator(".mobile-cart-close").click();
+  await expect(cart).toBeVisible();
+  await expect(cart).toContainText("1 artículos");
+});
