@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.64.4";
-export const APP_RELEASE = "Cámara en Venta y tarjeta de cliente";
+export const APP_VERSION = "0.65.0";
+export const APP_RELEASE = "Logo con destellos dos segundos al abrir";

@@ -3432,3 +3432,21 @@ Validación 0.55.5: revisión visual del icono; compilación de producción/Type
 - Notificaciones operativas por usuario, permiso y sucursal, con acuse, enlaces y sonido opcional; consulta con aplicación visible, no notificaciones push. Costos sólo para gerencia, con rango y agrupación; no confundir valorización con pagos a proveedores ni inventar costos faltantes.
 - Verificación local: 125 migraciones, regresiones SQL y nuevas pruebas financieras/concurrentes; 138 unitarias, 39 de navegador, TypeScript, ESLint y build. Auth/Storage y transporte de cliente están simulados en QA: falta staging con cuentas reales, Safari/dispositivos y audibilidad física. No se repiten como nuevas las pruebas físicas ya confirmadas por Emmanuel.
 - Alcance, semántica, comandos y lista de aceptación: `docs/MEJORAS_OPERATIVAS_OCTUBRE.md`.
+
+### Entrega visible 0.65.0 — logo con destellos dos segundos al abrir
+
+- Al abrir el programa (y justo después de iniciar sesión) se ve a pantalla
+  completa el logo completo de Vaquero SM con el destello dorado, durante dos
+  segundos desde que el sistema ya responde; después se desvanece sobre Inicio.
+  La pantalla de carga usa la misma composición, así el relevo no se nota.
+  Sustituye al telón negro que se recogía hacia el riel y a la línea de carga.
+- Reglas operativas: una tecla (el lector de códigos) la termina al instante y
+  la tecla sigue su camino; un toque la cierra sin activar lo que está debajo;
+  no se repite al navegar ni al cambiar de sucursal; con movimiento reducido no
+  aparece.
+- Pruebas: 336 de navegador en computadora y teléfono (Chromium), 159
+  unitarias, ESLint, TypeScript y build. WebKit y las de integración con
+  Supabase no corrieron en este entorno (sin navegador WebKit ni Docker).
+- La espera de cambio de sección a pantalla completa (propuesta el 8 de
+  octubre) sigue sin aprobarse y no está incluida: la espera de sección sigue
+  siendo la tarjeta de 0.62.0.

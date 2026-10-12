@@ -1,6 +1,6 @@
 # Movimiento de marca en Mi Tienda SM y Mi Vaquero
 
-Implementado en las versiones 0.58.0 a 0.62.0 a petición de Emmanuel (7 y 8 de
+Implementado en las versiones 0.58.0 a 0.65.0 a petición de Emmanuel (7 al 12 de
 octubre de 2026). Aplica las reglas de la sección «Movimiento y animación» del Plan
 Maestro y los criterios de `REDISENO_MI_TIENDA.md`.
 
@@ -32,8 +32,8 @@ Maestro y los criterios de `REDISENO_MI_TIENDA.md`.
 | --- | --- | --- |
 | **Acceso** | El logo se «marca» de izquierda a derecha con una línea arena, como hierro; «Operación · Punto de venta» se revela; el titular sube línea por línea desde su máscara; la tarjeta aparece. | Escena completa la primera vez del día en el dispositivo; después versión corta (200 ms). Al volver por un error, nada. |
 | **Verificando** | Una línea arena recorre el borde inferior del botón. | Sólo mientras el servidor responde. |
-| **Pantalla de carga** | Panel negro con el logo y «Abriendo Mi Tienda SM…» con línea de progreso. Reemplaza al antiguo texto suelto «Cargando sucursal…». | Cada vez que se abre el programa y justo después de entrar, mientras el sistema carga. Nunca agrega tiempo. |
-| **Entrada** | El panel negro de la carga se recoge hacia el riel negro del sistema (en teléfono y iPad vertical, la franja sube); la barra superior aparece. 620 ms, sin bloquear. | Cada vez que se abre el programa, una vez por sesión. No se repite al navegar ni al cambiar de sucursal. |
+| **Pantalla de carga** | Pantalla completa negra con el logo completo y su destello dorado (0.65.0). Reemplaza al antiguo texto suelto «Cargando sucursal…» y a la línea de progreso. | Cada vez que se abre el programa y justo después de entrar, mientras el sistema carga. Nunca agrega tiempo. |
+| **Entrada** | El logo con destellos sigue dos segundos desde que el sistema responde y luego se desvanece (420 ms); la barra superior aparece (0.65.0). Una tecla la termina al instante; un toque la cierra sin activar lo de abajo. | Cada vez que se abre el programa, una vez por sesión. No se repite al navegar ni al cambiar de sucursal. |
 | **Inicio** | El saludo sube por su línea; en el encabezado de marca se traza el borde punteado, se revela «VAQUERO SM» y el logo, y crece el círculo; las métricas suben y las tarjetas con accesos aparecen sin desplazarse. | Cada visita a Inicio. |
 | **Agregar al carrito** | El renglón se ilumina por detrás con una marca del color de acento, la cantidad late y el contador del botón de carrito en teléfono también. | Cada artículo agregado; cada escaneo reinicia el destello sin encolarse. |
 | **Venta completada** | El sello cae, un anillo se abre, la palomita se traza y el monto sube. | Sólo en venta confirmada. Una venta cancelada no se celebra. |
@@ -115,7 +115,8 @@ carga de marca seguida del cuadro de sección.
 - `lib/entrance.ts` — escena del acceso (cookie `mts_movimiento_dia`, sólo de
   animación: no lleva identidad ni autoriza nada).
 - `components/workspace-boot.tsx`, `components/entrance-curtain.tsx` — carga y
-  telón. Comparten medidas: si cambia una, cambia la otra.
+  logo de entrada. Comparten composición (`.brand-logo-shine`): si cambia una,
+  cambia la otra.
 - `lib/transfer-progress.ts`, `app/(workspace)/inventario/transfer-progress.tsx`.
 - `lib/loyalty-motion.ts`, `app/mi/points-balance.tsx`.
 - `lib/press-feedback.ts`, `components/press-feedback.tsx` (montado en
@@ -162,3 +163,22 @@ fuera la espera al cambiar de sección. Sustituye a las huellas de 0.61.0:
 - Mismas reglas que antes: sólo aparece si la sección tarda más de 140 ms, la
   página actual sigue a la vista, nada gira ni se llena, y con movimiento
   reducido el logo se ve quieto. Al llegar la sección, la luz se detiene.
+
+## Logo con destellos dos segundos al abrir (0.65.0)
+
+Emmanuel pidió que la pantalla de carga al iniciar durara dos segundos con su
+logo. Se sustituyó el telón que se recogía hacia el riel:
+
+- La pantalla de carga y la entrada son la misma escena: negro cálido a
+  pantalla completa, logo completo al centro (`min(340px, 64vw)`) y la luz
+  dorada recortada con su silueta, la misma de la espera de sección.
+- Los dos segundos cuentan desde que el sistema ya responde
+  (`ENTRANCE_HOLD_MS`); después se desvanece en 420 ms y el destello se detiene.
+- No se queda en medio de la operación: una tecla —el lector de códigos— la
+  termina al instante y la tecla llega a su destino; un toque la cierra y no
+  activa el botón que estaba debajo sin verse. Con movimiento reducido no
+  aparece.
+- `tests/e2e/motion.spec.ts` controla el reloj de la página para comprobar los
+  dos segundos sin depender de la velocidad de la máquina. Las pruebas que
+  arrastran o hacen scroll al abrir una página primero cierran el logo con una
+  tecla.

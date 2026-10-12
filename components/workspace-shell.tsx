@@ -386,11 +386,11 @@ export function WorkspaceShell({
   return (
     <div
       className={`workspace-shell workspace-redesign${navigationCompact ? " navigation-compact" : ""}`}
-      data-entrance={entranceScene === "full" ? "full" : undefined}
+      data-entrance={entranceScene === "none" ? undefined : entranceScene}
     >
-      {entranceScene === "full" ? (
-        <EntranceCurtain onDone={finishEntrance} />
-      ) : null}
+      {entranceScene === "none" ? null : (
+        <EntranceCurtain scene={entranceScene} onDone={finishEntrance} />
+      )}
       <aside className="nav-rail" aria-label="Navegación principal">
         <Link
           className="rail-brand"

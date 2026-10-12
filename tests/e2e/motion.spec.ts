@@ -61,20 +61,45 @@ test.describe("acceso", () => {
 });
 
 test.describe("entrada al sistema", () => {
-  test("el telón se recoge al abrir el programa y no se repite al navegar", async ({
+  test("el logo con destellos se ve dos segundos al abrir y no se repite al navegar", async ({
     page,
   }) => {
+    // El reloj se controla desde la prueba: así se comprueban los dos segundos
+    // aunque la máquina vaya lenta.
+    await page.clock.install({ time: new Date("2026-10-12T15:00:00-06:00") });
+    await page.clock.pauseAt(new Date("2026-10-12T15:00:01-06:00"));
     await page.goto("/inicio");
     const shell = page.locator(".workspace-shell");
-    await expect(shell).toHaveAttribute("data-entrance", "full");
-    // Termina solo, aunque nadie toque nada.
-    await expect(page.locator(".entrance-curtain")).toHaveCount(0, {
-      timeout: 3000,
-    });
+    const curtain = page.locator(".entrance-curtain");
+    await expect(shell).toHaveAttribute("data-entrance", "hold");
+    await page.clock.runFor(16);
+    // Pantalla completa, con el logo completo y su destello dorado.
+    const box = await curtain.boundingBox();
+    const viewport = page.viewportSize()!;
+    expect(box?.width).toBe(viewport.width);
+    expect(box?.height).toBe(viewport.height);
+    await expect(curtain.locator(".brand-logo-shine img")).toBeVisible();
+    await expect(curtain.locator(".nav-wait-shine i")).toHaveCSS(
+      "animation-name",
+      "motion-logo-shine",
+    );
+    // Los dos segundos cuentan desde que el sistema ya responde; antes de eso
+    // el logo no se quita.
+    await page.clock.runFor(1900);
+    await expect(curtain).toHaveAttribute("data-scene", "hold");
+    // Luego se desvanece sola, aunque nadie toque.
+    for (
+      let step = 0;
+      step < 30 && (await curtain.getAttribute("data-scene")) === "hold";
+      step += 1
+    )
+      await page.clock.runFor(100);
+    await expect(curtain).toHaveAttribute("data-scene", "leaving");
+    await expect(curtain).toHaveCount(0, { timeout: 2000 });
     await expect(shell).not.toHaveAttribute("data-entrance", /.+/);
     await page.getByRole("link", { name: "Nueva venta" }).first().click();
     await expect(page).toHaveURL(/\/pos/);
-    await expect(page.locator(".entrance-curtain")).toHaveCount(0);
+    await expect(curtain).toHaveCount(0);
   });
 
   test("una tecla del lector termina la entrada al instante", async ({
@@ -86,20 +111,22 @@ test.describe("entrada al sistema", () => {
     await expect(page.locator(".entrance-curtain")).toHaveCount(0);
   });
 
-  test("el telón nunca recibe toques", async ({ page }) => {
+  test("un toque cierra el logo sin activar lo que está debajo", async ({
+    page,
+  }) => {
     await page.goto("/inicio");
     const curtain = page.locator(".entrance-curtain");
     await expect(curtain).toHaveCount(1);
-    expect(
-      await curtain.evaluate(
-        (element) => getComputedStyle(element).pointerEvents,
-      ),
-    ).toBe("none");
-    await page.getByRole("link", { name: "Nueva venta" }).first().click();
+    const link = page.getByRole("link", { name: "Nueva venta" }).first();
+    const box = (await link.boundingBox())!;
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(curtain).toHaveCount(0);
+    await expect(page).toHaveURL(/\/inicio/);
+    await link.click();
     await expect(page).toHaveURL(/\/pos/);
   });
 
-  test("con movimiento reducido no hay telón visible", async ({ page }) => {
+  test("con movimiento reducido no hay pantalla del logo", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/inicio");
     const curtain = page.locator(".entrance-curtain");
