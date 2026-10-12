@@ -2368,3 +2368,10 @@ humanas y la ampliación a otros módulos siguen abiertas.
 - [ ] Mantener el aviso visual aunque el sonido esté desactivado. No dar por
       cerrado el pendiente hasta probar una notificación real y el botón de
       prueba, evitando avisos duplicados.
+
+## 2026-10-12 — Cámara en Venta y preparación de correos
+
+- Conectado BarcodeScanner compartido al buscador de Venta y a Agregar cliente, QR/barras de tarjeta con checksum y coincidencia exacta. Confirmación del cliente separada de cobro/puntos; códigos originales conservados. Revisión móvil mantiene portal de diálogos y esconde Ver carrito.
+- Cámara/detector simulados: nueve comprobaciones de productos, asociación del cliente y denegación/cierre en Chrome/WebKit. Falta prueba física de esta entrada nueva en PWA.
+- Correos: usuario confirmó acceso y tickets. Plantilla Auth y renderizador de aviso de ticket protegidos preparados; remitente/proveedor todavía pendientes. No envíos reales, cambios SMTP/DNS ni conexión de envío activada. Ver CORREOS_MI_VAQUERO.md.
+- No cambios de catálogo, existencias, WooCommerce ni datos M9.

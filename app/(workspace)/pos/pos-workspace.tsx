@@ -22,6 +22,7 @@ import { useRouter } from "next/navigation";
 import { startNavigationProgress } from "@/lib/navigation-progress";
 import {
   Banknote,
+  Camera,
   ArrowRightLeft,
   Barcode,
   CalendarClock,
@@ -67,6 +68,7 @@ import {
   ThermalReceipt,
   type ReceiptLine,
 } from "@/components/thermal-receipt";
+import { BarcodeScanner } from "@/components/barcode-scanner";
 import { CustomerLookup } from "@/components/customer-lookup";
 import { useWorkspace } from "@/components/workspace-context";
 import type { CustomerSummary } from "@/lib/customers";
@@ -446,7 +448,11 @@ export function PosWorkspace({
   );
   const quoteId = activeQuote?.id ?? null;
   const scanQueue = useRef(Promise.resolve());
-  const scanContext = useRef({ blocked: false, sessionId: cashSession?.id });
+  const scanContext = useRef({
+    blocked: false,
+    cameraOpen: false,
+    sessionId: cashSession?.id,
+  });
   const restoredCart = useMemo(
     () =>
       (currentDraft?.items ?? []).flatMap((item) => {
@@ -516,6 +522,7 @@ export function PosWorkspace({
   const [selectedCustomer, setSelectedCustomer] =
     useState<CustomerSummary | null>(currentDraft?.customer ?? null);
   const [customerLookupOpen, setCustomerLookupOpen] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [cartPortalTarget, setCartPortalTarget] = useState<Element | null>(
     null,
@@ -606,7 +613,8 @@ export function PosWorkspace({
 
   useKeyboardBarcodeScanner(
     scanSaleCode,
-    !checkoutOpen &&
+    !cameraOpen &&
+      !checkoutOpen &&
       !quickOpen &&
       !completed &&
       !layawayOpen &&
@@ -618,6 +626,7 @@ export function PosWorkspace({
 
   useEffect(() => {
     scanContext.current = {
+      cameraOpen,
       blocked: Boolean(
         checkoutOpen ||
         quickOpen ||
@@ -634,6 +643,7 @@ export function PosWorkspace({
       scanContext.current.blocked = true;
     };
   }, [
+    cameraOpen,
     checkoutOpen,
     quickOpen,
     completed,
@@ -686,7 +696,7 @@ export function PosWorkspace({
     };
   }, [cartDrawerOpen, mobileViewport]);
 
-  function scanSaleCode(rawCode: string) {
+  function scanSaleCode(rawCode: string, fromCamera = false) {
     if (
       checkoutOpen ||
       quickOpen ||
@@ -717,6 +727,7 @@ export function PosWorkspace({
           .then(async () => {
             if (
               scanContext.current.blocked ||
+              (scanContext.current.cameraOpen && !fromCamera) ||
               scanContext.current.sessionId !== sessionId
             )
               return;
@@ -726,6 +737,7 @@ export function PosWorkspace({
             });
             if (
               scanContext.current.blocked ||
+              (scanContext.current.cameraOpen && !fromCamera) ||
               scanContext.current.sessionId !== sessionId
             )
               return;
@@ -2366,6 +2378,7 @@ export function PosWorkspace({
           <label className="scan-input">
             <Barcode aria-hidden="true" strokeWidth={1.8} />
             <input
+              disabled={!cartPortalTarget || draftBusy}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={(event) => {
@@ -2391,6 +2404,16 @@ export function PosWorkspace({
             />
             <span className="scan-caret" aria-hidden="true" />
           </label>
+          <button
+            className="catalog-button"
+            type="button"
+            aria-label="Escanear producto con cámara"
+            onClick={() => setCameraOpen(true)}
+            disabled={!cartPortalTarget || draftBusy}
+          >
+            <Camera aria-hidden="true" />
+            <span>Cámara</span>
+          </button>
           <button
             className="catalog-button"
             type="button"
@@ -2512,6 +2535,7 @@ export function PosWorkspace({
               type="button"
               hidden={Boolean(
                 cartDrawerOpen ||
+                cameraOpen ||
                 checkoutOpen ||
                 quickOpen ||
                 layawayOpen ||
@@ -3564,6 +3588,17 @@ export function PosWorkspace({
               </div>
             </section>
           </div>
+        ) : null}
+
+        {cameraOpen ? (
+          <BarcodeScanner
+            title="Escanear producto para la venta"
+            onClose={() => setCameraOpen(false)}
+            onDetected={(code) => {
+              setCameraOpen(false);
+              scanSaleCode(code, true);
+            }}
+          />
         ) : null}
 
         {customerLookupOpen ? (
