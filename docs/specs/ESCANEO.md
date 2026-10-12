@@ -12,7 +12,7 @@ la PWA instalada, iPhone, Android y etiquetas impresas reales.
 ## 1. Dónde se usa y dónde no
 
 La regla de la sección 16 del contexto maestro se sostiene: **lector
-físico para cobrar, cámara para moverse.**
+físico para cobro frecuente; cámara como alternativa opcional autorizada por Emmanuel el 12 de octubre de 2026.**
 
 | Uso                                        | Herramienta             | Por qué                                                                                                   |
 | ------------------------------------------ | ----------------------- | --------------------------------------------------------------------------------------------------------- |
@@ -188,3 +188,9 @@ corregir después.
 2. ¿Qué tan legibles están las etiquetas actuales? Conviene una foto de
    una etiqueta real de SICAR para probar el lector contra el caso
    verdadero y no contra uno ideal.
+
+## 12 de octubre: cámara en Venta y tarjetas de cliente
+
+Venta incorpora Escanear producto con cámara en su buscador. Reutiliza la misma resolución exacta del lector físico, conserva códigos SICAR y evita leer dos veces el mismo cuadro. Agregar cliente incorpora Escanear tarjeta del cliente: QR o CODE128 de ocho dígitos, con dígito verificador; consulta exacta por número de socio y selección explícita del resultado. No navega a URLs del QR ni autoriza puntos o cobro por escanear. Guía cuadrada para no cortar el QR. Los diálogos móviles quedan fuera del contenedor de scroll y ocultan Ver carrito mientras se escanea.
+
+Pruebas de navegador con detector y cámara simulados verifican productos, tarjetas, cierre y permiso denegado. No sustituyen aceptación física con etiquetas SICAR impresas y PWA instalada en iPhone/Android.

@@ -16,6 +16,7 @@ type NativeBarcodeDetectorConstructor = new (options?: {
 
 type Props = {
   title?: string;
+  frame?: "barcode" | "card";
   onClose: () => void;
   onDetected: (code: string) => void | Promise<void>;
 };
@@ -65,6 +66,7 @@ function playConfirmation() {
 
 export function BarcodeScanner({
   title = "Escanear código",
+  frame = "barcode",
   onClose,
   onDetected,
 }: Props) {
@@ -170,8 +172,13 @@ export function BarcodeScanner({
         lastAttemptRef.current = timestamp;
         busyRef.current = true;
         try {
-          const cropWidth = Math.round(video.videoWidth * 0.86);
-          const cropHeight = Math.round(video.videoHeight * 0.38);
+          const cardSide = Math.round(
+            Math.min(video.videoWidth, video.videoHeight) * 0.86,
+          );
+          const cropWidth =
+            frame === "card" ? cardSide : Math.round(video.videoWidth * 0.86);
+          const cropHeight =
+            frame === "card" ? cardSide : Math.round(video.videoHeight * 0.38);
           const sourceX = Math.round((video.videoWidth - cropWidth) / 2);
           const sourceY = Math.round((video.videoHeight - cropHeight) / 2);
           canvas.width = cropWidth;
@@ -288,7 +295,10 @@ export function BarcodeScanner({
               playsInline
               aria-label="Vista de la cámara"
             />
-            <div className="scanner-guide" aria-hidden="true">
+            <div
+              className={`scanner-guide${frame === "card" ? " scanner-guide-card" : ""}`}
+              aria-hidden="true"
+            >
               <ScanLine />
             </div>
             <canvas ref={canvasRef} aria-hidden="true" />

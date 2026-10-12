@@ -1,7 +1,9 @@
 "use client";
 
-import { Check, Search, UserRound, X } from "lucide-react";
+import { Camera, Check, Search, UserRound, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { BarcodeScanner } from "@/components/barcode-scanner";
+import { isValidMemberNumber } from "@/lib/customers";
 import { browserOperation } from "@/lib/browser-operations";
 import { useWorkspace } from "@/components/workspace-context";
 
@@ -17,6 +19,8 @@ export function CustomerLookup({
   onClose: () => void;
 }) {
   const [query, setQuery] = useState("");
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [scannedMember, setScannedMember] = useState<string | null>(null);
   const [results, setResults] = useState<CustomerSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const { activeLocation } = useWorkspace();
@@ -40,7 +44,14 @@ export function CustomerLookup({
         const payload = (await response.json()) as {
           customers?: CustomerSummary[];
         };
-        setResults(response.ok ? (payload.customers ?? []) : []);
+        setResults(
+          response.ok
+            ? (payload.customers ?? []).filter(
+                (customer) =>
+                  !scannedMember || customer.member_number === scannedMember,
+              )
+            : [],
+        );
       } catch (error) {
         if (!(error instanceof DOMException && error.name === "AbortError"))
           setResults([]);
@@ -52,7 +63,32 @@ export function CustomerLookup({
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [query]);
+  }, [query, scannedMember]);
+
+  if (cameraOpen) {
+    return (
+      <BarcodeScanner
+        title="Escanear tarjeta de Mi Vaquero"
+        frame="card"
+        onClose={() => setCameraOpen(false)}
+        onDetected={(code) => {
+          setCameraOpen(false);
+          setResults([]);
+          setScannedMember(null);
+          if (!isValidMemberNumber(code)) {
+            setQuery("");
+            setError(
+              "Este código no es una tarjeta válida de Mi Vaquero. Escanea su QR o código de barras, o busca al cliente por teléfono.",
+            );
+            return;
+          }
+          setError("");
+          setScannedMember(code);
+          setQuery(code);
+        }}
+      />
+    );
+  }
 
   return (
     <section
@@ -104,6 +140,17 @@ export function CustomerLookup({
       >
         {creating ? "Volver a buscar" : "Crear cliente aquí"}
       </button>
+      {!creating ? (
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => setCameraOpen(true)}
+          disabled={loading || saving}
+        >
+          <Camera aria-hidden="true" /> Escanear tarjeta del cliente
+        </button>
+      ) : null}
+      {!creating && error ? <p role="alert">{error}</p> : null}
       {creating ? (
         <form
           className="form-stack inline-customer-form"
@@ -192,6 +239,8 @@ export function CustomerLookup({
             value={query}
             onChange={(event) => {
               const value = event.target.value;
+              setScannedMember(null);
+              setError("");
               setQuery(value);
               if (value.trim().length < 3 && !/^\d{4}$/.test(value.trim()))
                 setResults([]);
