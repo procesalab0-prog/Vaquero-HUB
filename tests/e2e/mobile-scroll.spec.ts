@@ -223,3 +223,157 @@ test("Cobrar queda por encima del encabezado, carrito y menú móvil", async ({
   await expect(cart).toBeVisible();
   await expect(cart).toContainText("1 artículos");
 });
+
+test("la cámara agrega una sola pieza a Venta y libera la cámara", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: {
+        getUserMedia: async () => ({
+          getTracks: () => [
+            {
+              stop: () => {
+                document.documentElement.dataset.cameraStopped = "yes";
+              },
+            },
+          ],
+          getVideoTracks: () => [{}],
+        }),
+      },
+    });
+    Object.defineProperty(window, "BarcodeDetector", {
+      configurable: true,
+      value: class {
+        async detect() {
+          return [{ rawValue: "750104020251" }];
+        }
+      },
+    });
+    Object.defineProperties(HTMLVideoElement.prototype, {
+      srcObject: { configurable: true, set: () => undefined },
+      videoWidth: { configurable: true, get: () => 640 },
+      videoHeight: { configurable: true, get: () => 480 },
+      readyState: { configurable: true, get: () => 2 },
+      play: { configurable: true, value: async () => undefined },
+    });
+    Object.defineProperty(CanvasRenderingContext2D.prototype, "drawImage", {
+      configurable: true,
+      value: () => undefined,
+    });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/pos");
+  await page
+    .getByRole("button", { name: "Escanear producto con cámara" })
+    .click();
+  const dialog = page.getByRole("dialog", {
+    name: "Escanear producto para la venta",
+  });
+  await expect(dialog).toBeVisible();
+  await expect(page.locator(".mobile-cart-toggle")).toBeHidden();
+  await dialog.getByRole("button", { name: "Activar cámara" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.locator(".mobile-cart-toggle")).toContainText(
+    "1 artículos",
+  );
+  await expect(page.locator("html")).toHaveAttribute(
+    "data-camera-stopped",
+    "yes",
+  );
+});
+
+test("cámara de cliente muestra su tarjeta y no agrega productos", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: {
+        getUserMedia: async () => ({
+          getTracks: () => [{ stop: () => undefined }],
+          getVideoTracks: () => [{}],
+        }),
+      },
+    });
+    Object.defineProperty(window, "BarcodeDetector", {
+      configurable: true,
+      value: class {
+        async detect() {
+          return [{ rawValue: "00000018" }];
+        }
+      },
+    });
+    Object.defineProperties(HTMLVideoElement.prototype, {
+      srcObject: { configurable: true, set: () => undefined },
+      videoWidth: { configurable: true, get: () => 640 },
+      videoHeight: { configurable: true, get: () => 480 },
+      readyState: { configurable: true, get: () => 2 },
+      play: { configurable: true, value: async () => undefined },
+    });
+    Object.defineProperty(CanvasRenderingContext2D.prototype, "drawImage", {
+      configurable: true,
+      value: () => undefined,
+    });
+  });
+  await page.route("**/api/clientes/buscar?**", async (route) => {
+    expect(new URL(route.request().url()).searchParams.get("q")).toBe(
+      "00000018",
+    );
+    await route.fulfill({
+      json: {
+        customers: [
+          {
+            id: "qa-customer",
+            member_number: "00000018",
+            full_name: "Cliente cámara QA",
+            phone_e164: "+523521234567",
+            email: "qa@example.test",
+          },
+        ],
+      },
+    });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/pos");
+  await page.getByRole("button", { name: /^Ver carrito,/ }).click();
+  await page.getByRole("button", { name: /Agregar cliente/ }).click();
+  await page
+    .getByRole("button", { name: "Escanear tarjeta del cliente" })
+    .click();
+  await page.getByRole("button", { name: "Activar cámara" }).click();
+  const lookup = page.getByRole("dialog", { name: "Asociar cliente" });
+  await expect(
+    lookup.getByRole("button", { name: /Cliente cámara QA/ }),
+  ).toBeVisible();
+  await expect(page.locator(".sale-line")).toHaveCount(0);
+  await lookup.getByRole("button", { name: /Cliente cámara QA/ }).click();
+  await expect(page.locator(".sale-customer")).toContainText(
+    "Cliente cámara QA",
+  );
+});
+
+test("cerrar o denegar la cámara conserva la venta", async ({ page }) => {
+  await page.addInitScript(() =>
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: {
+        getUserMedia: async () => {
+          throw new DOMException("Denied", "NotAllowedError");
+        },
+      },
+    }),
+  );
+  await page.goto("/pos");
+  await page
+    .getByRole("button", { name: "Escanear producto con cámara" })
+    .click();
+  await page.getByRole("button", { name: "Activar cámara" }).click();
+  await expect(page.getByText("La cámara está bloqueada")).toBeVisible();
+  await page.getByRole("button", { name: "Cerrar cámara" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Escanear producto para la venta" }),
+  ).toBeHidden();
+  await expect(page.locator(".sale-line")).toHaveCount(0);
+});
