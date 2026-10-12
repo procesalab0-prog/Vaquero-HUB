@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { APP_VERSION } from "../../lib/release";
 for (const width of [390, 768, 1440]) {
   test(`venta visible y cobro después de Cobrar ${width}`, async ({ page }) => {
     await page.setViewportSize({ width, height: width === 390 ? 844 : 1024 });
@@ -201,13 +202,18 @@ test("corte de sucursal y versión de esta entrega visibles", async ({
   await page
     .getByRole("button", { name: /Abrir información de .* y versión/ })
     .click();
-  await expect(page.getByText("Versión 0.64.3", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(`Versión ${APP_VERSION}`, { exact: true }),
+  ).toBeVisible();
 });
 
 for (const width of [1024, 1440]) {
   test(`división se arrastra y conserva venta ${width}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1024 });
     await page.goto("/pos");
+    // Una tecla cierra el logo de entrada, que cubre la pantalla al abrir.
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".entrance-curtain")).toHaveCount(0);
     const divider = page.getByRole("separator");
     await expect(divider).toHaveAttribute(
       "aria-orientation",

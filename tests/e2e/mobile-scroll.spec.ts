@@ -19,6 +19,9 @@ for (const route of [
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/${route}`);
+    // Una tecla cierra el logo de entrada, que cubre la pantalla al abrir.
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".entrance-curtain")).toHaveCount(0);
     const main = page.locator(".workspace-main");
     const nav = page.locator(".nav-rail");
     await expect(main).toBeVisible();
