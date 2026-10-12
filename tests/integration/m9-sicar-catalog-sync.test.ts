@@ -62,6 +62,7 @@ function stagedRow(
 }
 
 async function createRun(source: string, rows: ReturnType<typeof stagedRow>[]) {
+  source = `${source}-${stamp}`; // Keep replay stable within this run, independent across QA runs.
   const { data: role } = await server
     .from("roles")
     .select("id")
@@ -101,7 +102,8 @@ async function createRun(source: string, rows: ReturnType<typeof stagedRow>[]) {
 async function inventorySnapshot() {
   const { data, error } = await server
     .from("inventory_by_location")
-    .select("qty");
+    .select("qty,variants!inner(legacy_sicar_code)")
+    .in("variants.legacy_sicar_code", [`0${keyA}`, keyB]);
   expect(error).toBeNull();
   return {
     rows: data!.length,

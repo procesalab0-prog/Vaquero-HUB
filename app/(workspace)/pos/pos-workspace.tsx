@@ -5,7 +5,19 @@ import { UsdCheckout, type UsdTenderInput } from "@/components/usd-checkout";
 import { publishWorkspaceNotification } from "@/lib/workspace-notifications";
 
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { WorkspacePopover } from "@/components/workspace-popover";
+import { PosDivider } from "@/components/pos-divider";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { startNavigationProgress } from "@/lib/navigation-progress";
 import {
@@ -15,6 +27,7 @@ import {
   CalendarClock,
   Check,
   ChevronRight,
+  ChevronDown,
   CreditCard,
   Delete,
   Gift,
@@ -34,10 +47,21 @@ import {
   X,
 } from "lucide-react";
 import type { CartLine, PaymentMethod, ProductVariant } from "@/lib/domain";
-import {cartLineCents,cartQuantityStep,changeCartQuantity,initialCartQuantity} from "@/lib/cart-measures";
-import {quantityUnit} from "@/lib/measure-units";
+import {
+  cartLineCents,
+  cartQuantityStep,
+  changeCartQuantity,
+  initialCartQuantity,
+} from "@/lib/cart-measures";
+import { quantityUnit } from "@/lib/measure-units";
 import { MeasureQuantityInput } from "@/components/measure-quantity-input";
-import { parseQuickProduct, posItemInput, posItemVariant, quickProductVariant, type PosItemInput } from "@/lib/quick-product";
+import {
+  parseQuickProduct,
+  posItemInput,
+  posItemVariant,
+  quickProductVariant,
+  type PosItemInput,
+} from "@/lib/quick-product";
 import {
   formatReceiptDate,
   ThermalReceipt,
@@ -73,6 +97,7 @@ type SalePaymentInput = {
   amount_cents: number;
   tendered_cents?: number;
   reference?: string;
+  card_kind?: "CREDIT" | "DEBIT";
 };
 type SaleActionInput = {
   usd?: UsdTenderInput;
@@ -120,14 +145,14 @@ type LoyaltyRedemption = {
   saleTotalCents: number;
 };
 type StoredReceipt = {
-  usd_tender?: import('@/components/thermal-receipt').UsdReceiptTender | null;
+  usd_tender?: import("@/components/thermal-receipt").UsdReceiptTender | null;
   subtotal_cents: number;
   discount_cents: number;
   total_cents: number;
   cashier_name: string;
   location: { name: string; address: string | null; phone: string | null };
   items: Array<{
-    measureUnit?: import('@/lib/measure-units').MeasureUnit;
+    measureUnit?: import("@/lib/measure-units").MeasureUnit;
     product_name: string;
     variant_description: string;
     sku: string;
@@ -165,62 +190,110 @@ function ProductCard({
   onAdd: (variant: ProductVariant) => void;
 }) {
   const [selectedId, setSelectedId] = useState(options[0].id);
-  const variant = options.find((option) => option.id === selectedId) ?? options[0];
+  const variant =
+    options.find((option) => option.id === selectedId) ?? options[0];
   const inCart = quantities.get(variant.id) ?? 0;
-  const soldOut = initialCartQuantity(variant) === 0 || variant.isActive === false || inCart >= variant.stock;
+  const soldOut =
+    initialCartQuantity(variant) === 0 ||
+    variant.isActive === false ||
+    inCart >= variant.stock;
   return (
     <article className="pos-product-family">
-    <button
-      className="product-card"
-      type="button"
-      disabled={soldOut}
-      onClick={() => onAdd(variant)}
-      aria-label={`Agregar ${variant.productName}, ${variant.color}, talla ${variant.size}`}
-    >
-      <span className="product-card-media">
-        {variant.image ? (
-          <Image
-            src={variant.image}
-            alt=""
-            fill
-            sizes="(max-width: 600px) 46vw, 180px"
-          />
-        ) : (
-          <>
-            <PackageOpen aria-hidden="true" strokeWidth={1.6} />
-            <small>Foto pendiente</small>
-          </>
-        )}
-        {soldOut ? <em>{inCart > 0 ? "Todo en carrito" : "Agotado"}</em> : null}
-      </span>
-      <span className="product-card-copy">
-        <strong>{variant.productName}</strong>
-        <code>{variant.legacyCode}</code>
-        <span className="variant-line">
-          {variant.color} · {variant.size}
+      <button
+        className="product-card"
+        type="button"
+        disabled={soldOut}
+        onClick={() => onAdd(variant)}
+        aria-label={`Agregar ${variant.productName}, ${variant.color}, talla ${variant.size}`}
+      >
+        <span className="product-card-media">
+          {variant.image ? (
+            <Image
+              src={variant.image}
+              alt=""
+              fill
+              sizes="(max-width: 600px) 46vw, 180px"
+            />
+          ) : (
+            <>
+              <PackageOpen aria-hidden="true" strokeWidth={1.6} />
+              <small>Foto pendiente</small>
+            </>
+          )}
+          {soldOut ? (
+            <em>{inCart > 0 ? "Todo en carrito" : "Agotado"}</em>
+          ) : null}
         </span>
-        <span className="product-card-bottom">
-          <b>{money.format(variant.price)}</b>
-          <small className={variant.stock === 1 ? "last-unit" : ""}>
-            {variant.stock === 1 ? "Última" : `${variant.stock} pzas`}
-          </small>
+        <span className="product-card-copy">
+          <strong>{variant.productName}</strong>
+          <code>{variant.legacyCode}</code>
+          <span className="variant-line">
+            {variant.color} · {variant.size}
+          </span>
+          <span className="product-card-bottom">
+            <b>{money.format(variant.price)}</b>
+            <small className={variant.stock === 1 ? "last-unit" : ""}>
+              {variant.stock === 1 ? "Última" : `${variant.stock} pzas`}
+            </small>
+          </span>
+          {inCart > 0 ? (
+            <small className="product-in-cart">✓ {inCart} en carrito</small>
+          ) : null}
         </span>
-        {inCart > 0 ? <small className="product-in-cart">✓ {inCart} en carrito</small> : null}
-      </span>
-    </button>
-    {options.length > 1 ? <div className="pos-variant-picker" role="group" aria-label={`Variantes de ${variant.productName}`}>
-      <span>Elige color y talla · después agrega</span>
-      {options.map((option) => <button type="button" key={option.id} aria-pressed={option.id === variant.id}
-        onClick={() => setSelectedId(option.id)}>
-        <strong>{option.size || "Única"}</strong><small>{option.color || "Sin color"}</small>
-        <small>{option.stock <= 0 ? "Agotado" : money.format(option.price)}</small>
-      </button>)}
-    </div> : null}
+      </button>
+      {options.length > 1 ? (
+        <div
+          className="pos-variant-picker"
+          role="group"
+          aria-label={`Variantes de ${variant.productName}`}
+        >
+          <span>Elige color y talla · después agrega</span>
+          {options.map((option) => (
+            <button
+              type="button"
+              key={option.id}
+              aria-pressed={option.id === variant.id}
+              onClick={() => setSelectedId(option.id)}
+            >
+              <strong>{option.size || "Única"}</strong>
+              <small>{option.color || "Sin color"}</small>
+              <small>
+                {option.stock <= 0 ? "Agotado" : money.format(option.price)}
+              </small>
+            </button>
+          ))}
+        </div>
+      ) : null}
     </article>
   );
 }
 
 type CashSession = { id: string; location_id: string; register_name: string };
+
+function subscribeMobileViewport(listener: () => void) {
+  const media = window.matchMedia("(max-width: 820px)");
+  media.addEventListener("change", listener);
+  return () => media.removeEventListener("change", listener);
+}
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 820px)").matches;
+}
+
+// Checkout and its related dialogs must escape the animated scroll container.
+function PosOverlayLayer({
+  target,
+  children,
+}: {
+  target: Element | null;
+  children: ReactNode;
+}) {
+  return target
+    ? createPortal(
+        <div className="pos-live-layout pos-mobile-overlays">{children}</div>,
+        target,
+      )
+    : children;
+}
 
 export function PosWorkspace({
   variants,
@@ -255,7 +328,12 @@ export function PosWorkspace({
   cashSession?: CashSession | null;
   preview?: boolean;
   usdEnabled?: boolean;
-  prepareUsdAction?: (sessionId: string) => Promise<{ok:true;quote:import('@/lib/usd-exchange').UsdExchangeQuote} | {ok:false;message:string}>;
+  prepareUsdAction?: (
+    sessionId: string,
+  ) => Promise<
+    | { ok: true; quote: import("@/lib/usd-exchange").UsdExchangeQuote }
+    | { ok: false; message: string }
+  >;
   status?: string;
   canAccessTransfers?: boolean;
   canCaptureQuickCost?: boolean;
@@ -355,7 +433,17 @@ export function PosWorkspace({
   const currentDraft = initialDrafts.find(
     (draft) => draft.status === "CURRENT",
   );
-  const [activeQuote, setActiveQuote] = useState<{ id: string; pricing: QuotePosPricing | null } | null>(currentDraft?.quote_id ? { id: currentDraft.quote_id, pricing: currentDraft.quote_pricing ?? null } : null);
+  const [activeQuote, setActiveQuote] = useState<{
+    id: string;
+    pricing: QuotePosPricing | null;
+  } | null>(
+    currentDraft?.quote_id
+      ? {
+          id: currentDraft.quote_id,
+          pricing: currentDraft.quote_pricing ?? null,
+        }
+      : null,
+  );
   const quoteId = activeQuote?.id ?? null;
   const scanQueue = useRef(Promise.resolve());
   const scanContext = useRef({ blocked: false, sessionId: cashSession?.id });
@@ -366,7 +454,17 @@ export function PosWorkspace({
         return variant
           ? [
               {
-                variant: currentDraft?.quote_pricing ? { ...variant, price: Number(currentDraft.quote_pricing.items.find(price => price.variant_id === item.variant_id)?.unit_price_cents ?? variant.price * 100) / 100 } : variant,
+                variant: currentDraft?.quote_pricing
+                  ? {
+                      ...variant,
+                      price:
+                        Number(
+                          currentDraft.quote_pricing.items.find(
+                            (price) => price.variant_id === item.variant_id,
+                          )?.unit_price_cents ?? variant.price * 100,
+                        ) / 100,
+                    }
+                  : variant,
                 quantity: item.quantity,
                 giftReceipt: item.gift_receipt,
               },
@@ -376,11 +474,21 @@ export function PosWorkspace({
     [currentDraft, variantsById],
   );
   const [query, setQuery] = useState("");
-  const [showCatalog, setShowCatalog] = useState(false);
+  const [catalogRequested, setShowCatalog] = useState(false);
+  const mobileViewport = useSyncExternalStore(
+    subscribeMobileViewport,
+    isMobileViewport,
+    () => false,
+  );
+  const showCatalog = catalogRequested || mobileViewport;
   const [activeCategory, setActiveCategory] = useState("");
   const [cart, setCart] = useState<CartLine[]>(restoredCart);
-  const [invalidQuantities, setInvalidQuantities] = useState<Record<string, boolean>>({});
-  const hasInvalidQuantity = cart.some(line => invalidQuantities[line.variant.id]);
+  const [invalidQuantities, setInvalidQuantities] = useState<
+    Record<string, boolean>
+  >({});
+  const hasInvalidQuantity = cart.some(
+    (line) => invalidQuantities[line.variant.id],
+  );
   const [quickOpen, setQuickOpen] = useState(false);
   const [quickError, setQuickError] = useState("");
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -388,7 +496,10 @@ export function PosWorkspace({
   const [toast, setToast] = useState("");
   // Cada alta reinicia el destello del renglón. El contador alterna entre dos
   // animaciones idénticas: así una ráfaga del lector no se encola ni se pierde.
-  const [lastAdded, setLastAdded] = useState<{ id: string; pulse: number } | null>(null);
+  const [lastAdded, setLastAdded] = useState<{
+    id: string;
+    pulse: number;
+  } | null>(null);
   const [discountPercent, setDiscountPercent] = useState(
     Number(currentDraft?.discount_percent ?? 0),
   );
@@ -406,11 +517,23 @@ export function PosWorkspace({
     useState<CustomerSummary | null>(currentDraft?.customer ?? null);
   const [customerLookupOpen, setCustomerLookupOpen] = useState(false);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+  const [cartPortalTarget, setCartPortalTarget] = useState<Element | null>(
+    null,
+  );
+  const attachPosRoot = useCallback((node: HTMLDivElement | null) => {
+    if (node) setCartPortalTarget(node.closest(".workspace-shell"));
+  }, []);
+  const cartPanelRef = useRef<HTMLElement>(null);
+  const cartTriggerRef = useRef<HTMLButtonElement>(null);
   const [cashMode, setCashMode] = useState(false);
   const [splitMode, setSplitMode] = useState(false);
   const [cashInput, setCashInput] = useState("");
   const [splitCash, setSplitCash] = useState("");
   const [splitCard, setSplitCard] = useState("");
+  const [catalogShare, setCatalogShare] = useState(50);
+  const [cardKind, setCardKind] = useState<"CREDIT" | "DEBIT">("DEBIT");
+  const [splitDebit, setSplitDebit] = useState("");
+  const [splitDebitReference, setSplitDebitReference] = useState("");
   const [splitTransfer, setSplitTransfer] = useState("");
   const [splitCredit, setSplitCredit] = useState("");
   const [splitCardReference, setSplitCardReference] = useState("");
@@ -496,7 +619,8 @@ export function PosWorkspace({
   useEffect(() => {
     scanContext.current = {
       blocked: Boolean(
-        checkoutOpen || quickOpen ||
+        checkoutOpen ||
+        quickOpen ||
         completed ||
         layawayOpen ||
         heldTicketsOpen ||
@@ -510,7 +634,8 @@ export function PosWorkspace({
       scanContext.current.blocked = true;
     };
   }, [
-    checkoutOpen, quickOpen,
+    checkoutOpen,
+    quickOpen,
     completed,
     layawayOpen,
     heldTicketsOpen,
@@ -520,9 +645,51 @@ export function PosWorkspace({
     cashSession?.id,
   ]);
 
+  useEffect(() => {
+    if (!cartDrawerOpen || !mobileViewport) return;
+    const root = document.documentElement;
+    const trigger = cartTriggerRef.current;
+    const previous = root.style.overflow;
+    root.style.overflow = "hidden";
+    cartPanelRef.current
+      ?.querySelector<HTMLButtonElement>(".mobile-cart-close")
+      ?.focus();
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (document.querySelector(".modal-backdrop")) return;
+      if (event.key === "Escape" && !document.querySelector(":popover-open"))
+        setCartDrawerOpen(false);
+      if (
+        event.key !== "Tab" ||
+        document.querySelector(".modal-backdrop,:popover-open")
+      )
+        return;
+      const focusable = Array.from(
+        cartPanelRef.current?.querySelectorAll<HTMLElement>(
+          "button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href]",
+        ) ?? [],
+      ).filter((el) => el.getClientRects().length > 0);
+      const first = focusable[0],
+        last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      root.style.overflow = previous;
+      if (!document.querySelector(".modal-backdrop")) trigger?.focus();
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [cartDrawerOpen, mobileViewport]);
+
   function scanSaleCode(rawCode: string) {
     if (
-      checkoutOpen || quickOpen ||
+      checkoutOpen ||
+      quickOpen ||
       completed ||
       layawayOpen ||
       heldTicketsOpen ||
@@ -664,7 +831,10 @@ export function PosWorkspace({
 
   async function submitLayaway() {
     if (draftOperationRef.current || layawayBusy) return;
-    if (hasInvalidQuantity) { setLayawayError("Corrige las cantidades antes de apartar."); return; }
+    if (hasInvalidQuantity) {
+      setLayawayError("Corrige las cantidades antes de apartar.");
+      return;
+    }
     if (
       !createLayawayAction ||
       !cashSession ||
@@ -732,7 +902,8 @@ export function PosWorkspace({
   );
 
   useEffect(() => {
-    if (preview || !cashSession?.id || !saveDraftAction || completed || quoteId) return;
+    if (preview || !cashSession?.id || !saveDraftAction || completed || quoteId)
+      return;
     if (draftTimer.current) window.clearTimeout(draftTimer.current);
     const revision = ++draftRevision.current;
     const snapshot = {
@@ -804,20 +975,25 @@ export function PosWorkspace({
   const resultFamilies = useMemo(() => {
     const families = new Map<string, ProductVariant[]>();
     for (const variant of results) {
-      const key = variant.productId ?? `${variant.brand}:${variant.productName}`;
+      const key =
+        variant.productId ?? `${variant.brand}:${variant.productName}`;
       const family = families.get(key) ?? [];
       family.push(variant);
       families.set(key, family);
     }
     return [...families.entries()];
   }, [results]);
-  const cartQuantities = useMemo(() => new Map(cart.map((line) => [line.variant.id, line.quantity])), [cart]);
-
-  const subtotal = activeQuote?.pricing ? Number(activeQuote.pricing.subtotal_cents) / 100 : cart.reduce(
-    (sum, line) => sum + cartLineCents(line)/100,
-    0,
+  const cartQuantities = useMemo(
+    () => new Map(cart.map((line) => [line.variant.id, line.quantity])),
+    [cart],
   );
-  const discountAmount = activeQuote?.pricing ? Number(activeQuote.pricing.discount_cents) / 100 : Math.round(Math.round(subtotal*100)*discountPercent/100)/100;
+
+  const subtotal = activeQuote?.pricing
+    ? Number(activeQuote.pricing.subtotal_cents) / 100
+    : cart.reduce((sum, line) => sum + cartLineCents(line) / 100, 0);
+  const discountAmount = activeQuote?.pricing
+    ? Number(activeQuote.pricing.discount_cents) / 100
+    : Math.round((Math.round(subtotal * 100) * discountPercent) / 100) / 100;
   const total = subtotal - discountAmount;
   const totalCents = Math.round(total * 100);
   const activeLoyaltyRedemption =
@@ -828,18 +1004,26 @@ export function PosWorkspace({
   const loyaltyValueCents = activeLoyaltyRedemption?.valueCents ?? 0;
   const amountDueCents = Math.max(0, totalCents - loyaltyValueCents);
   const amountDue = amountDueCents / 100;
-  const hasMeasuredItems=cart.some(line=>quantityUnit(line.variant).decimal_places===3);
-  const quantity = hasMeasuredItems?cart.length:cart.reduce((sum, line) => sum + line.quantity, 0);
+  const hasMeasuredItems = cart.some(
+    (line) => quantityUnit(line.variant).decimal_places === 3,
+  );
+  const quantity = hasMeasuredItems
+    ? cart.length
+    : cart.reduce((sum, line) => sum + line.quantity, 0);
   const giftCount = cart.filter((line) => line.giftReceipt).length;
   const cashTendered = Number(cashInput.replace(",", ".") || 0);
   const change = Math.max(0, cashTendered - amountDue);
   const receiptLines: ReceiptLine[] = cart.map((line) => ({
     name: line.variant.productName,
-    variant: line.variant.quick ? "Producto rápido" : `${line.variant.color} · ${line.variant.size}`,
+    variant: line.variant.quick
+      ? "Producto rápido"
+      : `${line.variant.color} · ${line.variant.size}`,
     code: line.variant.legacyCode,
     quantity: line.quantity,
     unitPrice: line.variant.price,
-    unitName: line.variant.measureUnit?quantityUnit(line.variant).name:undefined,
+    unitName: line.variant.measureUnit
+      ? quantityUnit(line.variant).name
+      : undefined,
   }));
   const paymentLabels: Record<PaymentMethod, string> = {
     cash: "Efectivo",
@@ -887,30 +1071,52 @@ export function PosWorkspace({
   }
 
   function notify(message: string, important = false) {
-    if (important && activeLocation) void publishWorkspaceNotification({ title: "Operación confirmada", message, locationId: activeLocation.id });
+    if (important && activeLocation)
+      void publishWorkspaceNotification({
+        title: "Operación confirmada",
+        message,
+        locationId: activeLocation.id,
+      });
     setToast(message);
     if (toastTimer.current) window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(""), 2600);
   }
 
   function addVariant(variant: ProductVariant) {
-    if (quoteId) { notify("Esta cotización conserva sus artículos y precios aprobados."); return; }
+    if (quoteId) {
+      notify("Esta cotización conserva sus artículos y precios aprobados.");
+      return;
+    }
     if (draftOperationRef.current) return;
-    if (invalidQuantities[variant.id]) { notify("Corrige la cantidad escrita antes de agregar más."); return; }
-    if (variant.isActive === false || initialCartQuantity(variant)===0) return;
+    if (invalidQuantities[variant.id]) {
+      notify("Corrige la cantidad escrita antes de agregar más.");
+      return;
+    }
+    if (variant.isActive === false || initialCartQuantity(variant) === 0)
+      return;
     setCart((current) => {
       const existing = current.find((line) => line.variant.id === variant.id);
       if (!existing)
-        return [...current, { variant, quantity: initialCartQuantity(variant), giftReceipt: false }];
+        return [
+          ...current,
+          {
+            variant,
+            quantity: initialCartQuantity(variant),
+            giftReceipt: false,
+          },
+        ];
       if (existing.quantity >= variant.stock) return current;
       return current.map((line) =>
         line.variant.id === variant.id
-          ? { ...line, quantity: changeCartQuantity(variant,line.quantity,1) }
+          ? { ...line, quantity: changeCartQuantity(variant, line.quantity, 1) }
           : line,
       );
     });
     notify(`Artículo agregado · ${variant.productName} ${variant.size}`);
-    setLastAdded((current) => ({ id: variant.id, pulse: (current?.pulse ?? 0) + 1 }));
+    setLastAdded((current) => ({
+      id: variant.id,
+      pulse: (current?.pulse ?? 0) + 1,
+    }));
     if ("vibrate" in navigator) navigator.vibrate(12);
   }
 
@@ -918,12 +1124,20 @@ export function PosWorkspace({
     id: string,
     action: "increase" | "decrease" | "gift" | "remove",
   ) {
-    if (quoteId) { notify("Esta cotización conserva sus artículos y precios aprobados."); return; }
-    if (draftOperationRef.current) return;
-    if (invalidQuantities[id] && (action === "increase" || action === "decrease")) {
-      notify("Corrige la cantidad escrita antes de usar las flechas."); return;
+    if (quoteId) {
+      notify("Esta cotización conserva sus artículos y precios aprobados.");
+      return;
     }
-    if (action === "remove") setInvalidQuantities(current => ({ ...current, [id]: false }));
+    if (draftOperationRef.current) return;
+    if (
+      invalidQuantities[id] &&
+      (action === "increase" || action === "decrease")
+    ) {
+      notify("Corrige la cantidad escrita antes de usar las flechas.");
+      return;
+    }
+    if (action === "remove")
+      setInvalidQuantities((current) => ({ ...current, [id]: false }));
     setCart((current) =>
       current.flatMap((line) => {
         if (line.variant.id !== id) return [line];
@@ -935,14 +1149,20 @@ export function PosWorkspace({
           return [
             {
               ...line,
-              quantity: changeCartQuantity(line.variant,line.quantity,cartQuantityStep(line.variant)),
+              quantity: changeCartQuantity(
+                line.variant,
+                line.quantity,
+                cartQuantityStep(line.variant),
+              ),
             },
           ];
         }
-        const next=changeCartQuantity(line.variant,line.quantity,-cartQuantityStep(line.variant));
-        return next===0
-          ? []
-          : [{ ...line, quantity: next }];
+        const next = changeCartQuantity(
+          line.variant,
+          line.quantity,
+          -cartQuantityStep(line.variant),
+        );
+        return next === 0 ? [] : [{ ...line, quantity: next }];
       }),
     );
   }
@@ -952,8 +1172,16 @@ export function PosWorkspace({
   }
 
   async function holdCurrentSale() {
-    if (hasInvalidQuantity) { notify("Corrige las cantidades antes de guardar el ticket en espera."); return; }
-    if (quoteId) { notify("Cobra o descarta la cotización antes de poner otra venta en espera."); return; }
+    if (hasInvalidQuantity) {
+      notify("Corrige las cantidades antes de guardar el ticket en espera.");
+      return;
+    }
+    if (quoteId) {
+      notify(
+        "Cobra o descarta la cotización antes de poner otra venta en espera.",
+      );
+      return;
+    }
     if (
       draftOperationRef.current ||
       !cashSession?.id ||
@@ -1030,7 +1258,12 @@ export function PosWorkspace({
       return;
     }
     const missing: string[] = [];
-    const resumedQuote = result.draft.quote_id ? { id: result.draft.quote_id, pricing: result.draft.quote_pricing ?? null } : null;
+    const resumedQuote = result.draft.quote_id
+      ? {
+          id: result.draft.quote_id,
+          pricing: result.draft.quote_pricing ?? null,
+        }
+      : null;
     const nextCart = result.draft.items.flatMap((item) => {
       const variant = posItemVariant(item, variantsById);
       if (!variant) {
@@ -1038,7 +1271,21 @@ export function PosWorkspace({
         return [];
       }
       return [
-        { variant: resumedQuote?.pricing ? { ...variant, price: Number(resumedQuote.pricing.items.find(price => price.variant_id === item.variant_id)?.unit_price_cents ?? variant.price * 100) / 100 } : variant, quantity: item.quantity, giftReceipt: item.gift_receipt },
+        {
+          variant: resumedQuote?.pricing
+            ? {
+                ...variant,
+                price:
+                  Number(
+                    resumedQuote.pricing.items.find(
+                      (price) => price.variant_id === item.variant_id,
+                    )?.unit_price_cents ?? variant.price * 100,
+                  ) / 100,
+              }
+            : variant,
+          quantity: item.quantity,
+          giftReceipt: item.gift_receipt,
+        },
       ];
     });
     if (!nextCart.length) {
@@ -1089,14 +1336,19 @@ export function PosWorkspace({
     usd?: UsdTenderInput,
   ) {
     if (submittingRef.current) return;
-    if (hasInvalidQuantity) { setSaleError("Corrige las cantidades antes de cobrar."); return; }
+    if (hasInvalidQuantity) {
+      setSaleError("Corrige las cantidades antes de cobrar.");
+      return;
+    }
 
     if (!preview && !cashSession?.id) {
       setSaleError("Abre una caja antes de cobrar.");
       return;
     }
     if (quoteId && !activeQuote?.pricing) {
-      setSaleError("No se pudo recuperar el precio aprobado. Recarga la cotización antes de cobrar.");
+      setSaleError(
+        "No se pudo recuperar el precio aprobado. Recarga la cotización antes de cobrar.",
+      );
       return;
     }
     if (discountPercent > 0 && !discountAuthorization) {
@@ -1153,7 +1405,13 @@ export function PosWorkspace({
         return;
       }
       setSaleFolio(result.folio);
-      if (activeLocation) void publishWorkspaceNotification({ id: `sale:${result.saleId}`, title: "Venta registrada", message: `Ticket ${result.folio} guardado.`, locationId: activeLocation.id });
+      if (activeLocation)
+        void publishWorkspaceNotification({
+          id: `sale:${result.saleId}`,
+          title: "Venta registrada",
+          message: `Ticket ${result.folio} guardado.`,
+          locationId: activeLocation.id,
+        });
       setSaleId(result.saleId);
       setStoredReceipt(result.receipt as StoredReceipt | null);
       setReceiptDate(formatReceiptDate(new Date(result.soldAt)));
@@ -1217,6 +1475,7 @@ export function PosWorkspace({
         method_code: method === "card" ? "CARD" : "TRANSFER",
         amount_cents: amountDueCents,
         reference: paymentReference.trim(),
+        ...(method === "card" ? { card_kind: cardKind } : {}),
       },
     ]);
   }
@@ -1224,11 +1483,15 @@ export function PosWorkspace({
   async function completeSplitSale() {
     const cashCents = Math.round(Number(splitCash || 0) * 100);
     const cardCents = Math.round(Number(splitCard || 0) * 100);
+    const debitCents = Math.round(Number(splitDebit || 0) * 100);
     const transferCents = Math.round(Number(splitTransfer || 0) * 100);
     const creditCents = Math.round(Number(splitCredit || 0) * 100);
     if (
-      cashCents + cardCents + transferCents + creditCents !==
-      amountDueCents
+      [cashCents, cardCents, debitCents, transferCents, creditCents].some(
+        (value) => !Number.isSafeInteger(value) || value < 0,
+      ) ||
+      cashCents + cardCents + debitCents + transferCents + creditCents !==
+        amountDueCents
     ) {
       setSaleError(
         "La suma de los pagos debe coincidir exactamente con el total.",
@@ -1270,6 +1533,7 @@ export function PosWorkspace({
     }
     if (
       (cardCents > 0 && splitCardReference.trim().length < 3) ||
+      (debitCents > 0 && splitDebitReference.trim().length < 3) ||
       (transferCents > 0 && splitTransferReference.trim().length < 3)
     ) {
       setSaleError("Captura las referencias de los pagos electrónicos.");
@@ -1287,6 +1551,14 @@ export function PosWorkspace({
         method_code: "CARD",
         amount_cents: cardCents,
         reference: splitCardReference.trim(),
+        card_kind: "CREDIT",
+      });
+    if (debitCents > 0)
+      payments.push({
+        method_code: "CARD",
+        amount_cents: debitCents,
+        reference: splitDebitReference.trim(),
+        card_kind: "DEBIT",
       });
     if (transferCents > 0)
       payments.push({
@@ -1353,6 +1625,8 @@ export function PosWorkspace({
     setCashInput("");
     setSplitCash("");
     setSplitCard("");
+    setSplitDebit("");
+    setSplitDebitReference("");
     setSplitTransfer("");
     setSplitCredit("");
     setSplitCardReference("");
@@ -1400,7 +1674,12 @@ export function PosWorkspace({
   }
 
   async function applyDiscount() {
-    if (quoteId) { setDiscountError("El descuento aprobado ya está incluido en la cotización."); return; }
+    if (quoteId) {
+      setDiscountError(
+        "El descuento aprobado ya está incluido en la cotización.",
+      );
+      return;
+    }
     const value = Math.min(100, Math.max(0, Number(discountInput)));
     if (!Number.isFinite(value)) return;
     if (value > 0 && !preview) {
@@ -1511,10 +1790,13 @@ export function PosWorkspace({
         unitPrice: Number(item.unit_price_cents) / 100,
         unitName: item.measureUnit?.name,
       })) ?? receiptLines;
-    const officialGiftLines = officialLines.filter(
+    const selectedGiftLines = officialLines.filter(
       (_, index) =>
         storedReceipt?.items[index]?.gift_receipt ?? cart[index]?.giftReceipt,
     );
+    const officialGiftLines = selectedGiftLines.length
+      ? selectedGiftLines
+      : officialLines;
     const officialPayments = storedReceipt?.payments ?? [];
     const officialTendered =
       officialPayments.reduce(
@@ -1560,14 +1842,14 @@ export function PosWorkspace({
               <Printer aria-hidden="true" />
               Ver e imprimir ticket
             </button>
-            {giftCount > 0 ? (
+            {!cancelled ? (
               <button
                 className="gift-button"
                 type="button"
                 onClick={() => setReceiptMode("gift")}
               >
                 <Gift aria-hidden="true" />
-                Ver ticket de regalo ({giftCount})
+                Generar ticket de regalo{giftCount ? ` (${giftCount})` : ""}
               </button>
             ) : null}
             {!preview && cancelSaleAction && !cancelled ? (
@@ -1756,9 +2038,330 @@ export function PosWorkspace({
     );
   }
 
+  const salePanel = (
+    <>
+      {cartDrawerOpen ? (
+        <button
+          className="mobile-cart-backdrop"
+          type="button"
+          aria-label="Cerrar carrito"
+          onClick={() => setCartDrawerOpen(false)}
+        />
+      ) : null}
+      <aside
+        ref={cartPanelRef}
+        className={cartDrawerOpen ? "sale-panel mobile-open" : "sale-panel"}
+        aria-label="Carrito de venta"
+      >
+        <header className="sale-panel-header">
+          <strong>
+            <ShoppingCart aria-hidden="true" />
+            Venta en curso
+          </strong>
+          <code>{quantity ? `${quantity} artículos` : "Ticket sin folio"}</code>
+          <button
+            className="mobile-cart-close"
+            type="button"
+            aria-label="Cerrar carrito"
+            onClick={() => setCartDrawerOpen(false)}
+          >
+            <X aria-hidden="true" />
+          </button>
+        </header>
+
+        <div className="sale-controls">
+          <button
+            className={
+              selectedCustomer ? "sale-customer selected" : "sale-customer"
+            }
+            type="button"
+            disabled={draftBusy || Boolean(quoteId)}
+            onClick={() => setCustomerLookupOpen(true)}
+          >
+            <UserRoundPlus aria-hidden="true" />
+            <span>
+              {selectedCustomer ? (
+                <>
+                  <strong>{selectedCustomer.full_name}</strong>
+                  <small>Socio {selectedCustomer.member_number}</small>
+                </>
+              ) : (
+                <>
+                  <strong>Agregar cliente</strong>
+                  <small>Teléfono, socio, nombre o correo</small>
+                </>
+              )}
+            </span>
+            <ChevronRight aria-hidden="true" />
+          </button>
+          <WorkspacePopover
+            label="Herramientas de venta"
+            triggerClassName="sale-tools-trigger"
+            className="sale-tools-menu"
+            trigger={
+              <>
+                <span>Herramientas de venta</span>
+                <ChevronDown aria-hidden="true" />
+              </>
+            }
+          >
+            <div className="draft-toolbar">
+              {canAccessTransfers ? (
+                <button
+                  type="button"
+                  disabled={draftBusy}
+                  onClick={() => void openTransfersFromSale()}
+                >
+                  <ArrowRightLeft aria-hidden="true" />
+                  {draftBusy ? "Guardando…" : "Traspasos"}
+                </button>
+              ) : null}
+              {!preview ? (
+                <button
+                  className="returns-shortcut"
+                  type="button"
+                  onClick={() => {
+                    startNavigationProgress({
+                      label: "Cambios y devoluciones",
+                    });
+                    router.push("/tickets?accion=devolver");
+                  }}
+                >
+                  <ArrowRightLeft aria-hidden="true" />
+                  Cambios / devoluciones
+                </button>
+              ) : null}
+              <button
+                type="button"
+                disabled={cart.length === 0 || draftBusy || preview}
+                onClick={() => void holdCurrentSale()}
+              >
+                <PauseCircle aria-hidden="true" />
+                {draftBusy ? "Guardando…" : "Dejar en espera"}
+              </button>
+              <button
+                type="button"
+                disabled={heldDrafts.length === 0 || draftBusy || preview}
+                onClick={() => setHeldTicketsOpen(true)}
+              >
+                En espera
+                <b>{heldDrafts.length}</b>
+              </button>
+              <button
+                type="button"
+                disabled={
+                  Boolean(quoteId) ||
+                  draftBusy ||
+                  (!preview && !cashSession?.id)
+                }
+                onClick={() => {
+                  setQuickError("");
+                  setQuickOpen(true);
+                }}
+              >
+                Producto rápido
+              </button>
+              {draftStatus ? <small role="status">{draftStatus}</small> : null}
+            </div>
+          </WorkspacePopover>
+        </div>
+
+        <div className="sale-lines">
+          {cart.length === 0 ? (
+            <div className="empty-sale">
+              <Image
+                src="/illustrations/empty-cart.png"
+                alt="Vaquero SM con un carrito vacío"
+                width={196}
+                height={215}
+              />
+              <strong>Carrito vacío</strong>
+              <p>Los artículos aparecerán aquí con talla, color y código.</p>
+            </div>
+          ) : (
+            cart.map((line) => (
+              <article
+                className={`sale-line${lastAdded?.id === line.variant.id ? ` just-added-${lastAdded.pulse % 2}` : ""}`}
+                key={line.variant.id}
+              >
+                <div className="sale-line-top">
+                  <span className="sale-thumb">
+                    {line.variant.image ? (
+                      <Image
+                        src={line.variant.image}
+                        alt={line.variant.productName}
+                        width={180}
+                        height={160}
+                      />
+                    ) : (
+                      <ShoppingCart aria-hidden="true" strokeWidth={1.6} />
+                    )}
+                  </span>
+                  <div>
+                    <strong>{line.variant.productName}</strong>
+                    <small>
+                      {line.variant.quick ? (
+                        "Producto rápido · sin código ni movimiento de inventario"
+                      ) : (
+                        <>
+                          {line.variant.color} · {line.variant.size} ·{" "}
+                          <code>{line.variant.legacyCode}</code>
+                        </>
+                      )}
+                    </small>
+                  </div>
+                  <button
+                    className="remove-line"
+                    type="button"
+                    aria-label={`Quitar ${line.variant.productName}`}
+                    onClick={() => updateLine(line.variant.id, "remove")}
+                  >
+                    <Trash2 aria-hidden="true" strokeWidth={1.8} />
+                  </button>
+                </div>
+                {line.giftReceipt ? (
+                  <span className="gift-chip">
+                    <Gift aria-hidden="true" />
+                    Regalo
+                  </span>
+                ) : null}
+                {line.variant.stock === 1 ? (
+                  <span className="stock-warning">
+                    Última pieza · confirma físicamente
+                  </span>
+                ) : null}
+                <div className="sale-line-bottom">
+                  <div className="quantity-buttons">
+                    <button
+                      type="button"
+                      aria-label="Disminuir cantidad"
+                      onClick={() => updateLine(line.variant.id, "decrease")}
+                    >
+                      <Minus aria-hidden="true" />
+                    </button>
+                    {quantityUnit(line.variant).decimal_places === 3 ? (
+                      <label>
+                        <span className="sr-only">
+                          Cantidad de {line.variant.productName} en{" "}
+                          {quantityUnit(line.variant).name}
+                        </span>
+                        <MeasureQuantityInput
+                          value={line.quantity}
+                          unit={quantityUnit(line.variant)}
+                          maximum={line.variant.stock}
+                          label={`Cantidad de ${line.variant.productName} en ${quantityUnit(line.variant).name}`}
+                          disabled={Boolean(quoteId) || draftBusy}
+                          onValidity={(valid) =>
+                            setInvalidQuantities((current) => ({
+                              ...current,
+                              [line.variant.id]: !valid,
+                            }))
+                          }
+                          onValue={(next) => {
+                            setCart((current) =>
+                              current.map((item) =>
+                                item.variant.id === line.variant.id
+                                  ? { ...item, quantity: next }
+                                  : item,
+                              ),
+                            );
+                          }}
+                        />
+                        <small>{quantityUnit(line.variant).name}</small>
+                      </label>
+                    ) : (
+                      <strong>{line.quantity}</strong>
+                    )}
+                    <button
+                      type="button"
+                      aria-label="Aumentar cantidad"
+                      onClick={() => updateLine(line.variant.id, "increase")}
+                    >
+                      <Plus aria-hidden="true" />
+                    </button>
+                  </div>
+                  <button
+                    className={
+                      line.giftReceipt ? "line-gift selected" : "line-gift"
+                    }
+                    type="button"
+                    onClick={() => updateLine(line.variant.id, "gift")}
+                  >
+                    <Gift aria-hidden="true" />
+                    Regalo
+                  </button>
+                  <b>
+                    {money.format(
+                      activeQuote?.pricing
+                        ? Number(
+                            activeQuote.pricing.items.find(
+                              (price) => price.variant_id === line.variant.id,
+                            )?.line_total_cents ?? cartLineCents(line),
+                          ) / 100
+                        : cartLineCents(line) / 100,
+                    )}
+                  </b>
+                </div>
+              </article>
+            ))
+          )}
+        </div>
+
+        <footer className="sale-summary">
+          <div>
+            <span>
+              Subtotal ({quantity}{" "}
+              {hasMeasuredItems ? "renglones" : "artículos"})
+            </span>
+            <span>{money.format(subtotal)}</span>
+          </div>
+          <div>
+            <span>
+              Descuentos {discountPercent ? `(${discountPercent}%)` : ""}
+            </span>
+            <span>−{money.format(discountAmount)}</span>
+          </div>
+          <div className="grand-total">
+            <strong>Total</strong>
+            <b>{money.format(total)}</b>
+          </div>
+          <button
+            className="pay-button"
+            type="button"
+            disabled={cart.length === 0 || draftBusy || hasInvalidQuantity}
+            onClick={() => {
+              setCartDrawerOpen(false);
+              setCheckoutOpen(true);
+            }}
+          >
+            <Image
+              className="pay-brand"
+              src="/brand/emblema-blanco.png"
+              alt=""
+              width={40}
+              height={28}
+            />
+            Cobrar
+            <ChevronRight aria-hidden="true" />
+          </button>
+          {hasInvalidQuantity ? (
+            <p role="alert">
+              Revisa las cantidades: deben ser positivas, no superar existencias
+              y tener hasta tres decimales.
+            </p>
+          ) : null}
+        </footer>
+      </aside>
+    </>
+  );
+
   return (
-    <div className="pos-screen">
-      <section className="pos-catalog">
+    <div
+      ref={attachPosRoot}
+      className="pos-screen pos-live-layout"
+      style={{ "--catalog-share": `${catalogShare}%` } as CSSProperties}
+    >
+      <section className="pos-catalog" inert={cartDrawerOpen && mobileViewport}>
         <div className="scan-row">
           <label className="scan-input">
             <Barcode aria-hidden="true" strokeWidth={1.8} />
@@ -1819,7 +2422,10 @@ export function PosWorkspace({
               <div className="catalog-results-heading">
                 <div>
                   <span>Catálogo</span>
-                  <strong>{resultFamilies.length} productos · {results.length} variantes</strong>
+                  <strong>
+                    {resultFamilies.length} productos · {results.length}{" "}
+                    variantes
+                  </strong>
                 </div>
                 <button
                   type="button"
@@ -1835,7 +2441,7 @@ export function PosWorkspace({
               <div className="product-grid">
                 {resultFamilies.map(([familyId, options]) => (
                   <ProductCard
-                    key={`${familyId}:${options.map(option => option.id).join(",")}`}
+                    key={`${familyId}:${options.map((option) => option.id).join(",")}`}
                     options={options}
                     quantities={cartQuantities}
                     onAdd={addVariant}
@@ -1892,815 +2498,796 @@ export function PosWorkspace({
         </div>
       </section>
 
-      {cartDrawerOpen ? (
-        <button
-          className="mobile-cart-backdrop"
-          type="button"
-          aria-label="Cerrar carrito"
-          onClick={() => setCartDrawerOpen(false)}
-        />
-      ) : null}
-      <aside
-        className={cartDrawerOpen ? "sale-panel mobile-open" : "sale-panel"}
-        aria-label="Carrito de venta"
-      >
-        <header className="sale-panel-header">
-          <strong>
-            <ShoppingCart aria-hidden="true" />
-            Venta en curso
-          </strong>
-          <code>{quantity ? `${quantity} artículos` : "Ticket sin folio"}</code>
-          <button
-            className="mobile-cart-close"
-            type="button"
-            aria-label="Cerrar carrito"
-            onClick={() => setCartDrawerOpen(false)}
-          >
-            <X aria-hidden="true" />
-          </button>
-        </header>
+      <PosDivider value={catalogShare} onChange={setCatalogShare} />
+      {!mobileViewport ? salePanel : null}
 
-        <details className="sale-tools">
-          <summary>Herramientas de venta <span>Espera · producto rápido · más</span></summary>
-        <div className="draft-toolbar">
-          {canAccessTransfers ? (
+      {mobileViewport &&
+        cartPortalTarget &&
+        createPortal(
+          <div className="pos-live-layout pos-mobile-cart-layer">
+            {salePanel}
             <button
+              ref={cartTriggerRef}
+              className={`mobile-cart-toggle${lastAdded ? ` cart-bump-${lastAdded.pulse % 2}` : ""}`}
               type="button"
-              disabled={draftBusy}
-              onClick={() => void openTransfersFromSale()}
+              hidden={Boolean(
+                cartDrawerOpen ||
+                checkoutOpen ||
+                quickOpen ||
+                layawayOpen ||
+                heldTicketsOpen ||
+                customerLookupOpen ||
+                extraDialog ||
+                completed,
+              )}
+              onClick={() => setCartDrawerOpen(true)}
+              aria-label={`Ver carrito, ${quantity} artículos, ${money.format(total)}`}
             >
-              <ArrowRightLeft aria-hidden="true" />
-              {draftBusy ? "Guardando…" : "Traspasos"}
+              <span>
+                <ShoppingCart aria-hidden="true" />
+                <b>{quantity}</b>
+              </span>
+              <strong>
+                Ver carrito{quantity ? ` · ${quantity} artículos` : ""}
+              </strong>
+              <b>{money.format(total)}</b>
             </button>
-          ) : null}
-          {!preview ? (
-            <button
-              className="returns-shortcut"
-              type="button"
-              onClick={() => {
-                startNavigationProgress({ label: "Cambios y devoluciones" });
-                router.push("/tickets?accion=devolver");
-              }}
-            >
-              <ArrowRightLeft aria-hidden="true" />
-              Cambios / devoluciones
-            </button>
-          ) : null}
-          <button
-            type="button"
-            disabled={cart.length === 0 || draftBusy || preview}
-            onClick={() => void holdCurrentSale()}
-          >
-            <PauseCircle aria-hidden="true" />
-            {draftBusy ? "Guardando…" : "Dejar en espera"}
-          </button>
-          <button
-            type="button"
-            disabled={heldDrafts.length === 0 || draftBusy || preview}
-            onClick={() => setHeldTicketsOpen(true)}
-          >
-            En espera
-            <b>{heldDrafts.length}</b>
-          </button>
-          <button type="button" disabled={Boolean(quoteId) || draftBusy || (!preview && !cashSession?.id)}
-            onClick={() => { setQuickError(""); setQuickOpen(true); }}>
-            Producto rápido
-          </button>
-          {draftStatus ? <small role="status">{draftStatus}</small> : null}
-        </div>
-        </details>
+          </div>,
+          cartPortalTarget,
+        )}
 
-        <button
-          className={
-            selectedCustomer ? "sale-customer selected" : "sale-customer"
-          }
-          type="button"
-          disabled={draftBusy || Boolean(quoteId)}
-          onClick={() => setCustomerLookupOpen(true)}
-        >
-          <UserRoundPlus aria-hidden="true" />
-          <span>
-            {selectedCustomer ? (
-              <>
-                <strong>{selectedCustomer.full_name}</strong>
-                <small>Socio {selectedCustomer.member_number}</small>
-              </>
-            ) : (
-              <>
-                <strong>Agregar cliente</strong>
-                <small>Teléfono, socio, nombre o correo</small>
-              </>
-            )}
-          </span>
-          <ChevronRight aria-hidden="true" />
-        </button>
-
-        <div className="sale-lines">
-          {cart.length === 0 ? (
-            <div className="empty-sale">
-              <Image
-                src="/illustrations/empty-cart.png"
-                alt="Vaquero SM con un carrito vacío"
-                width={196}
-                height={215}
-              />
-              <strong>Carrito vacío</strong>
-              <p>Los artículos aparecerán aquí con talla, color y código.</p>
-            </div>
-          ) : (
-            cart.map((line) => (
-              <article
-                className={`sale-line${lastAdded?.id === line.variant.id ? ` just-added-${lastAdded.pulse % 2}` : ""}`}
-                key={line.variant.id}
-              >
-                <div className="sale-line-top">
-                  <span className="sale-thumb">
-                    <ShoppingCart aria-hidden="true" strokeWidth={1.6} />
-                  </span>
-                  <div>
-                    <strong>{line.variant.productName}</strong>
-                    <small>
-                      {line.variant.quick ? "Producto rápido · sin código ni movimiento de inventario" : <>{line.variant.color} · {line.variant.size} · <code>{line.variant.legacyCode}</code></>}
-                    </small>
-                  </div>
-                  <button
-                    className="remove-line"
-                    type="button"
-                    aria-label={`Quitar ${line.variant.productName}`}
-                    onClick={() => updateLine(line.variant.id, "remove")}
-                  >
-                    <Trash2 aria-hidden="true" strokeWidth={1.8} />
-                  </button>
-                </div>
-                {line.giftReceipt ? (
-                  <span className="gift-chip">
-                    <Gift aria-hidden="true" />
-                    Regalo
-                  </span>
-                ) : null}
-                {line.variant.stock === 1 ? (
-                  <span className="stock-warning">
-                    Última pieza · confirma físicamente
-                  </span>
-                ) : null}
-                <div className="sale-line-bottom">
-                  <div className="quantity-buttons">
-                    <button
-                      type="button"
-                      aria-label="Disminuir cantidad"
-                      onClick={() => updateLine(line.variant.id, "decrease")}
-                    >
-                      <Minus aria-hidden="true" />
-                    </button>
-                    {quantityUnit(line.variant).decimal_places===3 ? <label>
-                      <span className="sr-only">Cantidad de {line.variant.productName} en {quantityUnit(line.variant).name}</span>
-                      <MeasureQuantityInput value={line.quantity} unit={quantityUnit(line.variant)} maximum={line.variant.stock} label={`Cantidad de ${line.variant.productName} en ${quantityUnit(line.variant).name}`} disabled={Boolean(quoteId)||draftBusy}
-                        onValidity={valid=>setInvalidQuantities(current=>({...current,[line.variant.id]:!valid}))}
-                        onValue={next=>{
-                          setCart(current=>current.map(item=>item.variant.id===line.variant.id?{...item,quantity:next}:item));
-                        }}/>
-                      <small>{quantityUnit(line.variant).name}</small>
-                    </label>:<strong>{line.quantity}</strong>}
-                    <button
-                      type="button"
-                      aria-label="Aumentar cantidad"
-                      onClick={() => updateLine(line.variant.id, "increase")}
-                    >
-                      <Plus aria-hidden="true" />
-                    </button>
-                  </div>
-                  <button
-                    className={
-                      line.giftReceipt ? "line-gift selected" : "line-gift"
-                    }
-                    type="button"
-                    onClick={() => updateLine(line.variant.id, "gift")}
-                  >
-                    <Gift aria-hidden="true" />
-                    Regalo
-                  </button>
-                  <b>{money.format(activeQuote?.pricing ? Number(activeQuote.pricing.items.find(price => price.variant_id === line.variant.id)?.line_total_cents ?? cartLineCents(line)) / 100 : cartLineCents(line)/100)}</b>
-                </div>
-              </article>
-            ))
-          )}
-        </div>
-
-        <footer className="sale-summary">
-          <div>
-            <span>Subtotal ({quantity} {hasMeasuredItems?'renglones':'artículos'})</span>
-            <span>{money.format(subtotal)}</span>
-          </div>
-          <div>
+      <PosOverlayLayer target={mobileViewport ? cartPortalTarget : null}>
+        {toast ? (
+          <div className="pos-toast" role="status">
             <span>
-              Descuentos {discountPercent ? `(${discountPercent}%)` : ""}
+              <Check aria-hidden="true" />
             </span>
-            <span>−{money.format(discountAmount)}</span>
+            {toast}
           </div>
-          <div className="grand-total">
-            <strong>Total</strong>
-            <b>{money.format(total)}</b>
-          </div>
-          <button
-            className="pay-button"
-            type="button"
-            disabled={cart.length === 0 || draftBusy || hasInvalidQuantity}
-            onClick={() => {
-              setCartDrawerOpen(false);
-              setCheckoutOpen(true);
-            }}
-          >
-            <Image className="pay-brand" src="/brand/emblema-blanco.png" alt="" width={40} height={28} />
-            Cobrar
-            <ChevronRight aria-hidden="true" />
-          </button>
-          <div className="quick-payment-actions" role="group" aria-label="Accesos rápidos de cobro">
-            {([
-              { method: "cash", label: "Efectivo", Icon: Banknote },
-              { method: "card", label: "Tarjeta", Icon: CreditCard },
-              { method: "transfer", label: "Transfer.", Icon: Landmark },
-              { method: "split", label: "Dividido", Icon: ArrowRightLeft },
-            ] as const).map(({ method, label, Icon }) => <button key={method} className={`quick-pay-${method}`} type="button" aria-label={`Cobrar con ${method === "transfer" ? "transferencia" : label.toLowerCase()}`} disabled={cart.length === 0 || draftBusy || hasInvalidQuantity || submitting} onClick={() => {
-              setCashMode(method === "cash");
-              setSplitMode(method === "split");
-              setPaymentUsed(method === "split" ? "cash" : method);
-              setCashInput("");
-              setPaymentReference("");
-              setSaleError("");
-              setCartDrawerOpen(false);
-              setCheckoutOpen(true);
-            }}><Icon aria-hidden="true" /><span>{label}</span></button>)}
-          </div>
-          {hasInvalidQuantity ? <p role="alert">Revisa las cantidades: deben ser positivas, no superar existencias y tener hasta tres decimales.</p> : null}
-          <div className="sale-extras">
-            <button
-              type="button"
-              disabled={cart.length === 0 || Boolean(quoteId)}
-              onClick={() => {
-                setDiscountInput(String(discountPercent || ""));
-                setExtraDialog("discount");
+        ) : null}
+
+        {layawayOpen ? (
+          <div className="modal-backdrop">
+            <form
+              className="checkout-modal compact-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="layaway-title"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void submitLayaway();
               }}
             >
-              Descuento
-            </button>
-            <button
-              type="button"
-              disabled={cart.length === 0 || Boolean(quoteId)}
-              onClick={() => {
-                setCart((current) =>
-                  current.map((line) => ({ ...line, giftReceipt: true })),
-                );
-                notify("Todos los artículos se marcaron como regalo");
-              }}
-            >
-              Regalo
-            </button>
-            <button
-              type="button"
-              disabled={
-                cart.length === 0 || hasInvalidQuantity || !createLayawayAction || layawayBusy || Boolean(quoteId) || cart.some(line => line.variant.quick)
-              }
-              title="Reserva la mercancía sin registrar una venta ni mover la caja."
-              onClick={() => {
-                if (!selectedCustomer) {
-                  notify("Selecciona primero al cliente del apartado");
-                  setCustomerLookupOpen(true);
-                  return;
-                }
-                if (discountPercent > 0) {
-                  notify("Quita el descuento antes de crear el apartado");
-                  return;
-                }
-                setCartDrawerOpen(false);
-                setLayawayError("");
-                setLayawayOpen(true);
-              }}
-            >
-              Apartar
-            </button>
-          </div>
-        </footer>
-      </aside>
-
-      <button
-        className={`mobile-cart-toggle${lastAdded ? ` cart-bump-${lastAdded.pulse % 2}` : ""}`}
-        type="button"
-        onClick={() => setCartDrawerOpen(true)}
-      >
-        <span>
-          <ShoppingCart aria-hidden="true" />
-          <b>{quantity}</b>
-        </span>
-        <strong>{quantity ? `${quantity} artículos` : "Ver carrito"}</strong>
-        <b>{money.format(total)}</b>
-      </button>
-
-      {toast ? (
-        <div className="pos-toast" role="status">
-          <span>
-            <Check aria-hidden="true" />
-          </span>
-          {toast}
-        </div>
-      ) : null}
-
-      {layawayOpen ? (
-        <div className="modal-backdrop">
-          <form
-            className="checkout-modal compact-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="layaway-title"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void submitLayaway();
-            }}
-          >
-            <button
-              className="modal-close"
-              type="button"
-              aria-label="Cerrar apartado"
-              onClick={() => setLayawayOpen(false)}
-            >
-              <X aria-hidden="true" />
-            </button>
-            <p className="kicker">Reserva real de inventario</p>
-            <h2 id="layaway-title">Crear apartado</h2>
-            <p>
-              La mercancía dejará de estar disponible para venta. En esta
-              primera entrega el apartado inicia sin enganche y no mueve la
-              caja.
-            </p>
-            <div className="checkout-summary">
-              <span>
-                <small>Cliente</small>
-                <strong>{selectedCustomer?.full_name}</strong>
-              </span>
-              <span>
-                <small>Artículos</small>
-                <strong>{quantity}</strong>
-              </span>
-              <span>
-                <small>Total</small>
-                <strong>{money.format(total)}</strong>
-              </span>
-            </div>
-            <label className="form-field">
-              <span>Fecha de vencimiento</span>
-              <input
-                type="date"
-                required
-                min={new Date().toISOString().slice(0, 10)}
-                value={layawayDueDate}
-                onChange={(event) => setLayawayDueDate(event.target.value)}
-              />
-              <small>
-                Se propone un mes; puedes cambiarla. Vencer no cancela
-                automáticamente.
-              </small>
-            </label>
-            <label className="form-field">
-              <span>Nota opcional</span>
-              <textarea
-                maxLength={500}
-                value={layawayNotes}
-                onChange={(event) => setLayawayNotes(event.target.value)}
-                placeholder="Acuerdo o indicación para el cliente"
-              />
-            </label>
-            {layawayError ? (
-              <p className="form-error" role="alert">
-                {layawayError}
-              </p>
-            ) : null}
-            <div className="modal-actions">
               <button
+                className="modal-close"
                 type="button"
-                className="secondary-button"
+                aria-label="Cerrar apartado"
                 onClick={() => setLayawayOpen(false)}
               >
-                Regresar
+                <X aria-hidden="true" />
               </button>
-              <button
-                type="submit"
-                className="primary-button"
-                disabled={layawayBusy}
-              >
-                {layawayBusy ? "Reservando…" : "Confirmar apartado"}
-              </button>
-            </div>
-          </form>
-        </div>
-      ) : null}
-
-      {heldTicketsOpen ? (
-        <div className="modal-backdrop">
-          <section
-            className="checkout-modal held-tickets-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="held-tickets-title"
-          >
-            <p className="eyebrow">Caja {cashSession?.register_name}</p>
-            <h2 id="held-tickets-title">Tickets en espera</h2>
-            <p>
-              Sólo tú puedes verlos durante esta sesión. No apartan existencia
-              ni mueven dinero hasta que se cobran.
-            </p>
-            <div className="held-ticket-list">
-              {heldDrafts.map((draft) => (
-                <article key={draft.id}>
-                  <div>
-                    <strong>{draft.label ?? "Ticket en espera"}</strong>
-                    <strong>
-                      {draft.quote_pricing ? `Total cotizado: ${money.format(Number(draft.quote_pricing.total_cents) / 100)}` : draft.items.every((item) =>
-                        Boolean(posItemVariant(item, variantsById)),
-                      )
-                        ? `Total estimado: ${money.format(
-                            draft.items.reduce(
-                              (sum, item) =>
-                                sum +
-                                cartLineCents({variant:posItemVariant(item,variantsById)!,quantity:item.quantity})/100,
-                              0,
-                            ) *
-                              (1 - Number(draft.discount_percent) / 100),
-                          )}`
-                        : "Total pendiente de validar"}
-                    </strong>
-                    <span>
-                      {draft.items.reduce(
-                        (sum, item) => sum + item.quantity,
-                        0,
-                      )}{" "}
-                      artículos
-                      {draft.customer ? ` · ${draft.customer.full_name}` : ""}
-                    </span>
-                    <small>
-                      Guardado{" "}
-                      {draft.held_at
-                        ? formatReceiptDate(new Date(draft.held_at))
-                        : "ahora"}
-                    </small>
-                  </div>
-                  <div>
-                    <button
-                      className="secondary-button"
-                      type="button"
-                      disabled={draftBusy || cart.length > 0}
-                      onClick={() => void resumeHeldSale(draft.id)}
-                    >
-                      Recuperar
-                    </button>
-                    <button
-                      className="text-danger-button"
-                      type="button"
-                      disabled={draftBusy}
-                      onClick={() => void discardHeldSale(draft.id)}
-                    >
-                      Descartar
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-            {cart.length > 0 ? (
-              <p className="field-hint">
-                Primero deja en espera o vacía la venta actual para recuperar
-                otra.
+              <p className="kicker">Reserva real de inventario</p>
+              <h2 id="layaway-title">Crear apartado</h2>
+              <p>
+                La mercancía dejará de estar disponible para venta. En esta
+                primera entrega el apartado inicia sin enganche y no mueve la
+                caja.
               </p>
-            ) : null}
-            {saleError ? (
-              <p className="field-error" role="alert">
-                {saleError}
-              </p>
-            ) : null}
-            <div className="modal-actions">
-              <button
-                className="primary-button"
-                type="button"
-                onClick={() => setHeldTicketsOpen(false)}
-              >
-                Volver al POS
-              </button>
-            </div>
-          </section>
-        </div>
-      ) : null}
-      {status || saleError ? (
-        <div className="inline-error operation-feedback" role="alert">
-          {saleError ||
-            "No fue posible cargar el punto de venta. Intenta de nuevo."}
-        </div>
-      ) : null}
-
-      {quickOpen ? (
-        <div className="modal-backdrop">
-          <form className="checkout-modal compact-modal" role="dialog" aria-modal="true" aria-labelledby="quick-product-title"
-            onSubmit={event => {
-              event.preventDefault();
-              if (quoteId || draftOperationRef.current) return;
-              const data = new FormData(event.currentTarget);
-              const parsed = parseQuickProduct(String(data.get('name') ?? ''), String(data.get('price') ?? ''), String(data.get('quantity') ?? ''), canCaptureQuickCost ? String(data.get('cost') ?? '') : undefined);
-              if (!parsed) { setQuickError('Revisa nombre, cantidad entera y precio con máximo dos decimales.'); return; }
-              if (cart.length >= 100) { setQuickError('El ticket admite hasta 100 renglones.'); return; }
-              setCart(current => [...current, { variant: quickProductVariant(crypto.randomUUID(), parsed.quick), quantity: parsed.quantity, giftReceipt: false }]);
-              setQuickOpen(false); notify('Producto rápido agregado. No modifica inventario.');
-            }}>
-            <h2 id="quick-product-title">Producto rápido</h2>
-            <p>Se cobra sin darlo de alta ni generar un código. Sus datos quedan en el ticket para registrarlo después; no cambia existencias.</p>
-            <label>Nombre <input name="name" required maxLength={160} /></label>
-            <label>Cantidad <input name="quantity" type="number" min="1" max="999" step="1" defaultValue="1" required /></label>
-            <label>Precio unitario <input name="price" type="number" min="0.01" max="1000000" step="0.01" required /></label>
-            {canCaptureQuickCost ? <label>Costo unitario (opcional) <input name="cost" type="number" min="0" max="1000000" step="0.01" /></label> : null}
-            {quickError ? <p role="alert">{quickError}</p> : null}
-            <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setQuickOpen(false)}>Cancelar</button><button type="submit" className="primary-button">Agregar al carrito</button></div>
-          </form>
-        </div>
-      ) : null}
-
-      {checkoutOpen ? (
-        <div className="modal-backdrop">
-          <section
-            className="checkout-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="checkout-title"
-          >
-            <p className="kicker">Confirmar cobro</p>
-            <h2 id="checkout-title">{money.format(total)}</h2>
-            <div className="credit-checkout-summary loyalty-checkout-summary">
-              <div>
-                <span>Puntos del cliente</span>
-                <strong>
-                  {selectedCustomer?.full_name ?? "Selecciona un cliente"}
-                </strong>
+              <div className="checkout-summary">
+                <span>
+                  <small>Cliente</small>
+                  <strong>{selectedCustomer?.full_name}</strong>
+                </span>
+                <span>
+                  <small>Artículos</small>
+                  <strong>{quantity}</strong>
+                </span>
+                <span>
+                  <small>Total</small>
+                  <strong>{money.format(total)}</strong>
+                </span>
               </div>
-              {activeLoyaltyRedemption ? (
-                <>
-                  <div>
-                    <span>Canje aplicado</span>
-                    <strong>
-                      {activeLoyaltyRedemption.points} puntos · −
-                      {money.format(loyaltyValueCents / 100)}
-                    </strong>
-                  </div>
-                  <div>
-                    <span>Resta por cobrar</span>
-                    <strong>{money.format(amountDue)}</strong>
-                  </div>
-                  <button
-                    className="secondary-button wide"
-                    type="button"
-                    disabled={submitting}
-                    onClick={() => {
-                      setLoyaltyRedemption(null);
-                      setLoyaltyError("");
-                    }}
-                  >
-                    Quitar puntos
-                  </button>
-                  {amountDueCents === 0 ? (
-                    <button
-                      className="primary-button wide"
-                      type="button"
-                      disabled={submitting}
-                      onClick={() => completeSale("cash")}
-                    >
-                      Confirmar venta con puntos
-                    </button>
-                  ) : null}
-                </>
-              ) : selectedCustomer ? (
-                <label>
-                  <span>Código temporal de seis dígitos</span>
-                  <input
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    maxLength={6}
-                    value={loyaltyCode}
-                    onChange={(event) =>
-                      setLoyaltyCode(event.target.value.replace(/\D/g, ""))
-                    }
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" && loyaltyCode.length === 6) {
-                        event.preventDefault();
-                        void verifyLoyaltyCode();
-                      }
-                    }}
-                    placeholder="000000"
-                  />
-                  <small>
-                    El cliente genera este código desde Mi Vaquero SM.
-                  </small>
-                  <button
-                    className="secondary-button wide"
-                    type="button"
-                    disabled={loyaltyBusy || loyaltyCode.length !== 6}
-                    onClick={() => void verifyLoyaltyCode()}
-                  >
-                    {loyaltyBusy ? "Validando…" : "Aplicar puntos"}
-                  </button>
-                </label>
-              ) : (
+              <label className="form-field">
+                <span>Fecha de vencimiento</span>
+                <input
+                  type="date"
+                  required
+                  min={new Date().toISOString().slice(0, 10)}
+                  value={layawayDueDate}
+                  onChange={(event) => setLayawayDueDate(event.target.value)}
+                />
                 <small>
-                  Asocia un cliente para usar sus puntos en esta venta.
+                  Se propone un mes; puedes cambiarla. Vencer no cancela
+                  automáticamente.
                 </small>
-              )}
-              {loyaltyError ? (
-                <p className="inline-error" role="alert">
-                  {loyaltyError}
+              </label>
+              <label className="form-field">
+                <span>Nota opcional</span>
+                <textarea
+                  maxLength={500}
+                  value={layawayNotes}
+                  onChange={(event) => setLayawayNotes(event.target.value)}
+                  placeholder="Acuerdo o indicación para el cliente"
+                />
+              </label>
+              {layawayError ? (
+                <p className="form-error" role="alert">
+                  {layawayError}
                 </p>
               ) : null}
-            </div>
-            {amountDueCents > 0 &&
-            !cashMode &&
-            !splitMode &&
-            paymentUsed !== "credit" ? (
-              <>
-                <p>Selecciona el método registrado en la venta.</p>
-                {!preview && cashSession && usdEnabled && prepareUsdAction ? <UsdCheckout prepareAction={prepareUsdAction} sessionId={cashSession.id} totalCents={amountDueCents} disabled={submitting||hasInvalidQuantity||Boolean(quoteId)||Boolean(activeLoyaltyRedemption)} onConfirm={async usd=>{await submitSale('cash',[{method_code:'USD',amount_cents:amountDueCents}],'Dólares USD',undefined,usd);}} /> : null}
-                <div className="payment-options">
-                  <button
-                    className="payment-cash"
-                    type="button"
-                    onClick={() => setCashMode(true)}
-                  >
-                    <Banknote aria-hidden="true" />
-                    <strong>Efectivo</strong>
-                    <small>Calcular cambio</small>
-                  </button>
-                  <button
-                    className="payment-card"
-                    type="button"
-                    disabled={submitting}
-                    onClick={() => setPaymentUsed("card")}
-                  >
-                    <CreditCard aria-hidden="true" />
-                    <strong>Tarjeta</strong>
-                    <small>Terminal externa</small>
-                  </button>
-                  <button
-                    className="payment-transfer"
-                    type="button"
-                    disabled={submitting}
-                    onClick={() => setPaymentUsed("transfer")}
-                  >
-                    <Landmark aria-hidden="true" />
-                    <strong>Transferencia</strong>
-                    <small>Referencia externa</small>
-                  </button>
-                  <button
-                    className="payment-credit"
-                    type="button"
-                    disabled={submitting}
-                    onClick={() => void openCreditPayment()}
-                  >
-                    <CalendarClock aria-hidden="true" />
-                    <strong>Crédito</strong>
-                    <small>
-                      {selectedCustomer ? "Saldo por cobrar" : "Elige cliente"}
-                    </small>
-                  </button>
-                </div>
+              <div className="modal-actions">
                 <button
-                  className="secondary-button wide"
                   type="button"
-                  onClick={() => {
-                    setSplitMode(true);
-                    setPaymentUsed("cash");
-                    setPaymentReference("");
-                  }}
+                  className="secondary-button"
+                  onClick={() => setLayawayOpen(false)}
                 >
-                  Dividir entre varios métodos
+                  Regresar
                 </button>
-              </>
-            ) : splitMode ? (
-              <div className="split-payment-flow">
-                <p>Distribuye el total. La suma debe ser exacta.</p>
-                <div className="form-stack">
-                  <label>
-                    <span>Efectivo</span>
-                    <input
-                      inputMode="decimal"
-                      value={splitCash}
-                      onChange={(event) => setSplitCash(event.target.value)}
-                      placeholder="0.00"
-                    />
-                  </label>
-                  <label>
-                    <span>Tarjeta</span>
-                    <input
-                      inputMode="decimal"
-                      value={splitCard}
-                      onChange={(event) => setSplitCard(event.target.value)}
-                      placeholder="0.00"
-                    />
-                  </label>
-                  {Number(splitCard) > 0 ? (
-                    <label>
-                      <span>Referencia de terminal</span>
-                      <input
-                        value={splitCardReference}
-                        onChange={(event) =>
-                          setSplitCardReference(event.target.value)
-                        }
-                      />
-                    </label>
-                  ) : null}
-                  <label>
-                    <span>Transferencia</span>
-                    <input
-                      inputMode="decimal"
-                      value={splitTransfer}
-                      onChange={(event) => setSplitTransfer(event.target.value)}
-                      placeholder="0.00"
-                    />
-                  </label>
-                  {Number(splitTransfer) > 0 ? (
-                    <label>
-                      <span>Referencia de transferencia</span>
-                      <input
-                        value={splitTransferReference}
-                        onChange={(event) =>
-                          setSplitTransferReference(event.target.value)
-                        }
-                      />
-                    </label>
-                  ) : null}
-                  <label>
-                    <span>Crédito del cliente</span>
-                    <input
-                      inputMode="decimal"
-                      value={splitCredit}
-                      onChange={(event) => setSplitCredit(event.target.value)}
-                      placeholder="0.00"
-                      disabled={!selectedCustomer}
-                    />
-                    <small>
-                      {selectedCustomer
-                        ? `Cliente: ${selectedCustomer.full_name}`
-                        : "Asocia un cliente antes de dejar saldo pendiente."}
-                    </small>
-                  </label>
-                  {Number(splitCredit) > 0 ? (
-                    <label>
-                      <span>Fecha de vencimiento</span>
-                      <input
-                        type="date"
-                        min={new Date().toISOString().slice(0, 10)}
-                        value={creditDueDate}
-                        onChange={(event) =>
-                          setCreditDueDate(event.target.value)
-                        }
-                      />
-                    </label>
-                  ) : null}
-                </div>
                 <button
-                  className="primary-button wide"
-                  type="button"
-                  disabled={submitting}
-                  onClick={completeSplitSale}
+                  type="submit"
+                  className="primary-button"
+                  disabled={layawayBusy}
                 >
-                  Confirmar pago combinado
+                  {layawayBusy ? "Reservando…" : "Confirmar apartado"}
                 </button>
               </div>
-            ) : amountDueCents === 0 ? null : (
-              <div className="cash-keypad-flow">
-                <div className="cash-display">
-                  <span>Recibido</span>
+            </form>
+          </div>
+        ) : null}
+
+        {heldTicketsOpen ? (
+          <div className="modal-backdrop">
+            <section
+              className="checkout-modal held-tickets-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="held-tickets-title"
+            >
+              <p className="eyebrow">Caja {cashSession?.register_name}</p>
+              <h2 id="held-tickets-title">Tickets en espera</h2>
+              <p>
+                Sólo tú puedes verlos durante esta sesión. No apartan existencia
+                ni mueven dinero hasta que se cobran.
+              </p>
+              <div className="held-ticket-list">
+                {heldDrafts.map((draft) => (
+                  <article key={draft.id}>
+                    <div>
+                      <strong>{draft.label ?? "Ticket en espera"}</strong>
+                      <strong>
+                        {draft.quote_pricing
+                          ? `Total cotizado: ${money.format(Number(draft.quote_pricing.total_cents) / 100)}`
+                          : draft.items.every((item) =>
+                                Boolean(posItemVariant(item, variantsById)),
+                              )
+                            ? `Total estimado: ${money.format(
+                                draft.items.reduce(
+                                  (sum, item) =>
+                                    sum +
+                                    cartLineCents({
+                                      variant: posItemVariant(
+                                        item,
+                                        variantsById,
+                                      )!,
+                                      quantity: item.quantity,
+                                    }) /
+                                      100,
+                                  0,
+                                ) *
+                                  (1 - Number(draft.discount_percent) / 100),
+                              )}`
+                            : "Total pendiente de validar"}
+                      </strong>
+                      <span>
+                        {draft.items.reduce(
+                          (sum, item) => sum + item.quantity,
+                          0,
+                        )}{" "}
+                        artículos
+                        {draft.customer ? ` · ${draft.customer.full_name}` : ""}
+                      </span>
+                      <small>
+                        Guardado{" "}
+                        {draft.held_at
+                          ? formatReceiptDate(new Date(draft.held_at))
+                          : "ahora"}
+                      </small>
+                    </div>
+                    <div>
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        disabled={draftBusy || cart.length > 0}
+                        onClick={() => void resumeHeldSale(draft.id)}
+                      >
+                        Recuperar
+                      </button>
+                      <button
+                        className="text-danger-button"
+                        type="button"
+                        disabled={draftBusy}
+                        onClick={() => void discardHeldSale(draft.id)}
+                      >
+                        Descartar
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              {cart.length > 0 ? (
+                <p className="field-hint">
+                  Primero deja en espera o vacía la venta actual para recuperar
+                  otra.
+                </p>
+              ) : null}
+              {saleError ? (
+                <p className="field-error" role="alert">
+                  {saleError}
+                </p>
+              ) : null}
+              <div className="modal-actions">
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() => setHeldTicketsOpen(false)}
+                >
+                  Volver al POS
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
+        {status || saleError ? (
+          <div className="inline-error operation-feedback" role="alert">
+            {saleError ||
+              "No fue posible cargar el punto de venta. Intenta de nuevo."}
+          </div>
+        ) : null}
+
+        {quickOpen ? (
+          <div className="modal-backdrop">
+            <form
+              className="checkout-modal quick-product-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="quick-product-title"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (quoteId || draftOperationRef.current) return;
+                const data = new FormData(event.currentTarget);
+                const parsed = parseQuickProduct(
+                  String(data.get("name") ?? ""),
+                  String(data.get("price") ?? ""),
+                  String(data.get("quantity") ?? ""),
+                  canCaptureQuickCost
+                    ? String(data.get("cost") ?? "")
+                    : undefined,
+                );
+                if (!parsed) {
+                  setQuickError(
+                    "Revisa nombre, cantidad entera y precio con máximo dos decimales.",
+                  );
+                  return;
+                }
+                if (cart.length >= 100) {
+                  setQuickError("El ticket admite hasta 100 renglones.");
+                  return;
+                }
+                setCart((current) => [
+                  ...current,
+                  {
+                    variant: quickProductVariant(
+                      crypto.randomUUID(),
+                      parsed.quick,
+                    ),
+                    quantity: parsed.quantity,
+                    giftReceipt: false,
+                  },
+                ]);
+                setQuickOpen(false);
+                notify("Producto rápido agregado. No modifica inventario.");
+              }}
+            >
+              <h2 id="quick-product-title">Producto rápido</h2>
+              <p>
+                Se cobra sin darlo de alta ni generar un código. Sus datos
+                quedan en el ticket para registrarlo después; no cambia
+                existencias.
+              </p>
+              <label>
+                Nombre <input name="name" required maxLength={160} />
+              </label>
+              <label>
+                Cantidad{" "}
+                <input
+                  name="quantity"
+                  type="number"
+                  min="1"
+                  max="999"
+                  step="1"
+                  defaultValue="1"
+                  required
+                />
+              </label>
+              <label>
+                Precio unitario{" "}
+                <input
+                  name="price"
+                  type="number"
+                  min="0.01"
+                  max="1000000"
+                  step="0.01"
+                  required
+                />
+              </label>
+              {canCaptureQuickCost ? (
+                <label>
+                  Costo unitario (opcional){" "}
                   <input
-                    ref={cashInputRef}
-                    className="cash-received-input"
-                    inputMode="decimal"
-                    aria-label="Efectivo recibido"
-                    value={cashInput}
-                    onChange={(event) => updateCashInput(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (
-                        event.key === "Enter" &&
-                        cashTendered >= amountDue &&
-                        !submitting
-                      ) {
-                        event.preventDefault();
-                        void completeSale("cash");
-                      }
-                      if (event.key === "Escape") {
-                        event.preventDefault();
-                        setCashMode(false);
-                      }
-                    }}
-                    placeholder="0.00"
+                    name="cost"
+                    type="number"
+                    min="0"
+                    max="1000000"
+                    step="0.01"
                   />
-                  <small className={cashTendered >= amountDue ? "enough" : ""}>
-                    {cashTendered >= amountDue
-                      ? `Cambio: ${money.format(change)}`
-                      : `Faltan ${money.format(amountDue - cashTendered)}`}
-                  </small>
+                </label>
+              ) : null}
+              {quickError ? <p role="alert">{quickError}</p> : null}
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setQuickOpen(false)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="primary-button">
+                  Agregar al carrito
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : null}
+
+        {checkoutOpen && !extraDialog && !customerLookupOpen && !layawayOpen ? (
+          <div className="modal-backdrop">
+            <section
+              className="checkout-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="checkout-title"
+            >
+              <div className="checkout-heading">
+                <div>
+                  <p className="kicker">Confirmar cobro</p>
+                  <h2 id="checkout-title">{money.format(total)}</h2>
                 </div>
-                <div className="cash-keypad">
-                  {["1", "2", "3", "4", "5", "6", "7", "8", "9", "00", "0"].map(
-                    (key) => (
+                <button
+                  type="button"
+                  className="secondary-button checkout-close"
+                  aria-label="Cerrar cobro"
+                  disabled={submitting}
+                  onClick={() => {
+                    setCheckoutOpen(false);
+                    setCashMode(false);
+                    setSplitMode(false);
+                    setCashInput("");
+                    setPaymentUsed("cash");
+                    if (mobileViewport) setCartDrawerOpen(true);
+                  }}
+                >
+                  <X aria-hidden="true" /> Cerrar
+                </button>
+              </div>
+              <div className="sale-extras checkout-extras">
+                <button
+                  type="button"
+                  className="checkout-discount"
+                  disabled={submitting || cart.length === 0 || Boolean(quoteId)}
+                  onClick={() => {
+                    setDiscountInput(String(discountPercent || ""));
+                    setExtraDialog("discount");
+                  }}
+                >
+                  Descuento
+                </button>
+                <button
+                  type="button"
+                  className="checkout-gift"
+                  disabled={submitting || cart.length === 0 || Boolean(quoteId)}
+                  onClick={() => {
+                    setCart((current) =>
+                      current.map((line) => ({ ...line, giftReceipt: true })),
+                    );
+                    notify("Todos los artículos se marcaron como regalo");
+                  }}
+                >
+                  Regalo
+                </button>
+                <button
+                  type="button"
+                  className="checkout-layaway"
+                  disabled={
+                    submitting ||
+                    cart.length === 0 ||
+                    hasInvalidQuantity ||
+                    !createLayawayAction ||
+                    layawayBusy ||
+                    Boolean(quoteId) ||
+                    cart.some((line) => line.variant.quick)
+                  }
+                  title="Reserva la mercancía sin registrar una venta ni mover la caja."
+                  onClick={() => {
+                    if (!selectedCustomer) {
+                      notify("Selecciona primero al cliente del apartado");
+                      setCustomerLookupOpen(true);
+                      return;
+                    }
+                    if (discountPercent > 0) {
+                      notify("Quita el descuento antes de crear el apartado");
+                      return;
+                    }
+                    setCheckoutOpen(false);
+                    setCartDrawerOpen(false);
+                    setLayawayError("");
+                    setLayawayOpen(true);
+                  }}
+                >
+                  Apartar
+                </button>
+              </div>
+              <div className="credit-checkout-summary loyalty-checkout-summary">
+                <div>
+                  <span>Puntos del cliente</span>
+                  <strong>
+                    {selectedCustomer?.full_name ?? "Selecciona un cliente"}
+                  </strong>
+                </div>
+                {activeLoyaltyRedemption ? (
+                  <>
+                    <div>
+                      <span>Canje aplicado</span>
+                      <strong>
+                        {activeLoyaltyRedemption.points} puntos · −
+                        {money.format(loyaltyValueCents / 100)}
+                      </strong>
+                    </div>
+                    <div>
+                      <span>Resta por cobrar</span>
+                      <strong>{money.format(amountDue)}</strong>
+                    </div>
+                    <button
+                      className="secondary-button wide"
+                      type="button"
+                      disabled={submitting}
+                      onClick={() => {
+                        setLoyaltyRedemption(null);
+                        setLoyaltyError("");
+                      }}
+                    >
+                      Quitar puntos
+                    </button>
+                    {amountDueCents === 0 ? (
+                      <button
+                        className="primary-button wide"
+                        type="button"
+                        disabled={submitting}
+                        onClick={() => completeSale("cash")}
+                      >
+                        Confirmar venta con puntos
+                      </button>
+                    ) : null}
+                  </>
+                ) : selectedCustomer ? (
+                  <label>
+                    <span>Código temporal de seis dígitos</span>
+                    <input
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                      value={loyaltyCode}
+                      onChange={(event) =>
+                        setLoyaltyCode(event.target.value.replace(/\D/g, ""))
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" && loyaltyCode.length === 6) {
+                          event.preventDefault();
+                          void verifyLoyaltyCode();
+                        }
+                      }}
+                      placeholder="000000"
+                    />
+                    <small>
+                      El cliente genera este código desde Mi Vaquero SM.
+                    </small>
+                    <button
+                      className="secondary-button wide"
+                      type="button"
+                      disabled={loyaltyBusy || loyaltyCode.length !== 6}
+                      onClick={() => void verifyLoyaltyCode()}
+                    >
+                      {loyaltyBusy ? "Validando…" : "Aplicar puntos"}
+                    </button>
+                  </label>
+                ) : (
+                  <small>
+                    Asocia un cliente para usar sus puntos en esta venta.
+                  </small>
+                )}
+                {loyaltyError ? (
+                  <p className="inline-error" role="alert">
+                    {loyaltyError}
+                  </p>
+                ) : null}
+              </div>
+              {amountDueCents > 0 &&
+              !cashMode &&
+              !splitMode &&
+              paymentUsed !== "credit" ? (
+                <>
+                  <p>Selecciona el método registrado en la venta.</p>
+                  {!preview && cashSession && usdEnabled && prepareUsdAction ? (
+                    <UsdCheckout
+                      prepareAction={prepareUsdAction}
+                      sessionId={cashSession.id}
+                      totalCents={amountDueCents}
+                      disabled={
+                        submitting ||
+                        hasInvalidQuantity ||
+                        Boolean(quoteId) ||
+                        Boolean(activeLoyaltyRedemption)
+                      }
+                      onConfirm={async (usd) => {
+                        await submitSale(
+                          "cash",
+                          [
+                            {
+                              method_code: "USD",
+                              amount_cents: amountDueCents,
+                            },
+                          ],
+                          "Dólares USD",
+                          undefined,
+                          usd,
+                        );
+                      }}
+                    />
+                  ) : null}
+                  <div className="payment-options">
+                    <button
+                      className="payment-cash"
+                      type="button"
+                      onClick={() => setCashMode(true)}
+                    >
+                      <Banknote aria-hidden="true" />
+                      <strong>Efectivo</strong>
+                      <small>Calcular cambio</small>
+                    </button>
+                    <button
+                      className="payment-card"
+                      type="button"
+                      disabled={submitting}
+                      onClick={() => {
+                        setPaymentUsed("card");
+                        setCardKind("DEBIT");
+                      }}
+                    >
+                      <CreditCard aria-hidden="true" />
+                      <strong>Tarjeta de débito</strong>
+                      <small>Terminal externa</small>
+                    </button>
+                    <button
+                      className="payment-card"
+                      type="button"
+                      disabled={submitting}
+                      onClick={() => {
+                        setPaymentUsed("card");
+                        setCardKind("CREDIT");
+                      }}
+                    >
+                      <CreditCard aria-hidden="true" />
+                      <strong>Tarjeta de crédito</strong>
+                      <small>Terminal externa</small>
+                    </button>
+                    <button
+                      className="payment-transfer"
+                      type="button"
+                      disabled={submitting}
+                      onClick={() => setPaymentUsed("transfer")}
+                    >
+                      <Landmark aria-hidden="true" />
+                      <strong>Transferencia</strong>
+                      <small>Referencia externa</small>
+                    </button>
+                    <button
+                      className="payment-credit"
+                      type="button"
+                      disabled={submitting}
+                      onClick={() => void openCreditPayment()}
+                    >
+                      <CalendarClock aria-hidden="true" />
+                      <strong>Crédito</strong>
+                      <small>
+                        {selectedCustomer
+                          ? "Saldo por cobrar"
+                          : "Elige cliente"}
+                      </small>
+                    </button>
+                  </div>
+                  <button
+                    className="secondary-button wide"
+                    type="button"
+                    onClick={() => {
+                      setSplitMode(true);
+                      setPaymentUsed("cash");
+                      setPaymentReference("");
+                    }}
+                  >
+                    Dividir entre varios métodos
+                  </button>
+                </>
+              ) : splitMode ? (
+                <div className="split-payment-flow">
+                  <p>Distribuye el total. La suma debe ser exacta.</p>
+                  <div className="form-stack">
+                    <label>
+                      <span>Efectivo</span>
+                      <input
+                        inputMode="decimal"
+                        value={splitCash}
+                        onChange={(event) => setSplitCash(event.target.value)}
+                        placeholder="0.00"
+                      />
+                    </label>
+                    <label>
+                      <span>Tarjeta de crédito</span>
+                      <input
+                        inputMode="decimal"
+                        value={splitCard}
+                        onChange={(event) => setSplitCard(event.target.value)}
+                        placeholder="0.00"
+                      />
+                    </label>
+                    {Number(splitCard) > 0 ? (
+                      <label>
+                        <span>Referencia de terminal</span>
+                        <input
+                          value={splitCardReference}
+                          onChange={(event) =>
+                            setSplitCardReference(event.target.value)
+                          }
+                        />
+                      </label>
+                    ) : null}
+                    <label>
+                      <span>Tarjeta de débito</span>
+                      <input
+                        inputMode="decimal"
+                        value={splitDebit}
+                        onChange={(event) => setSplitDebit(event.target.value)}
+                        placeholder="0.00"
+                      />
+                    </label>
+                    {Number(splitDebit) > 0 ? (
+                      <label>
+                        <span>Referencia de débito</span>
+                        <input
+                          value={splitDebitReference}
+                          onChange={(event) =>
+                            setSplitDebitReference(event.target.value)
+                          }
+                        />
+                      </label>
+                    ) : null}
+                    <label>
+                      <span>Transferencia</span>
+                      <input
+                        inputMode="decimal"
+                        value={splitTransfer}
+                        onChange={(event) =>
+                          setSplitTransfer(event.target.value)
+                        }
+                        placeholder="0.00"
+                      />
+                    </label>
+                    {Number(splitTransfer) > 0 ? (
+                      <label>
+                        <span>Referencia de transferencia</span>
+                        <input
+                          value={splitTransferReference}
+                          onChange={(event) =>
+                            setSplitTransferReference(event.target.value)
+                          }
+                        />
+                      </label>
+                    ) : null}
+                    <label>
+                      <span>Crédito del cliente</span>
+                      <input
+                        inputMode="decimal"
+                        value={splitCredit}
+                        onChange={(event) => setSplitCredit(event.target.value)}
+                        placeholder="0.00"
+                        disabled={!selectedCustomer}
+                      />
+                      <small>
+                        {selectedCustomer
+                          ? `Cliente: ${selectedCustomer.full_name}`
+                          : "Asocia un cliente antes de dejar saldo pendiente."}
+                      </small>
+                    </label>
+                    {Number(splitCredit) > 0 ? (
+                      <label>
+                        <span>Fecha de vencimiento</span>
+                        <input
+                          type="date"
+                          min={new Date().toISOString().slice(0, 10)}
+                          value={creditDueDate}
+                          onChange={(event) =>
+                            setCreditDueDate(event.target.value)
+                          }
+                        />
+                      </label>
+                    ) : null}
+                  </div>
+                  <button
+                    className="primary-button wide"
+                    type="button"
+                    disabled={submitting}
+                    onClick={completeSplitSale}
+                  >
+                    Confirmar pago combinado
+                  </button>
+                </div>
+              ) : amountDueCents === 0 ? null : (
+                <div className="cash-keypad-flow">
+                  <div className="cash-display">
+                    <span>Recibido</span>
+                    <input
+                      ref={cashInputRef}
+                      className="cash-received-input"
+                      inputMode="decimal"
+                      aria-label="Efectivo recibido"
+                      value={cashInput}
+                      onChange={(event) => updateCashInput(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (
+                          event.key === "Enter" &&
+                          cashTendered >= amountDue &&
+                          !submitting
+                        ) {
+                          event.preventDefault();
+                          void completeSale("cash");
+                        }
+                        if (event.key === "Escape") {
+                          event.preventDefault();
+                          setCashMode(false);
+                        }
+                      }}
+                      placeholder="0.00"
+                    />
+                    <small
+                      className={cashTendered >= amountDue ? "enough" : ""}
+                    >
+                      {cashTendered >= amountDue
+                        ? `Cambio: ${money.format(change)}`
+                        : `Faltan ${money.format(amountDue - cashTendered)}`}
+                    </small>
+                  </div>
+                  <div className="cash-keypad">
+                    {[
+                      "1",
+                      "2",
+                      "3",
+                      "4",
+                      "5",
+                      "6",
+                      "7",
+                      "8",
+                      "9",
+                      "00",
+                      "0",
+                    ].map((key) => (
                       <button
                         type="button"
                         key={key}
@@ -2708,288 +3295,293 @@ export function PosWorkspace({
                       >
                         {key}
                       </button>
-                    ),
-                  )}
+                    ))}
+                    <button
+                      type="button"
+                      aria-label="Borrar último dígito"
+                      onClick={() => appendCashKey("backspace")}
+                    >
+                      <Delete aria-hidden="true" />
+                    </button>
+                    <button
+                      className="exact-key"
+                      type="button"
+                      onClick={() => appendCashKey("exact")}
+                    >
+                      Exacto
+                    </button>
+                  </div>
                   <button
+                    className="confirm-cash-button"
                     type="button"
-                    aria-label="Borrar último dígito"
-                    onClick={() => appendCashKey("backspace")}
+                    disabled={cashTendered < amountDue || submitting}
+                    onClick={() => completeSale("cash")}
                   >
-                    <Delete aria-hidden="true" />
-                  </button>
-                  <button
-                    className="exact-key"
-                    type="button"
-                    onClick={() => appendCashKey("exact")}
-                  >
-                    Exacto
+                    Confirmar efectivo
                   </button>
                 </div>
-                <button
-                  className="confirm-cash-button"
-                  type="button"
-                  disabled={cashTendered < amountDue || submitting}
-                  onClick={() => completeSale("cash")}
-                >
-                  Confirmar efectivo
-                </button>
-              </div>
-            )}
-            {amountDueCents > 0 && !cashMode && paymentUsed === "credit" ? (
-              <div className="credit-checkout-summary">
-                <div>
-                  <span>Cliente</span>
-                  <strong>{selectedCustomer?.full_name}</strong>
-                </div>
-                <div>
-                  <span>Crédito disponible</span>
-                  <strong>
+              )}
+              {amountDueCents > 0 && !cashMode && paymentUsed === "credit" ? (
+                <div className="credit-checkout-summary">
+                  <div>
+                    <span>Cliente</span>
+                    <strong>{selectedCustomer?.full_name}</strong>
+                  </div>
+                  <div>
+                    <span>Crédito disponible</span>
+                    <strong>
+                      {money.format(
+                        Number(creditSummary?.available_cents ?? 0) / 100,
+                      )}
+                    </strong>
+                  </div>
+                  <label>
+                    <span>Vence</span>
+                    <input
+                      type="date"
+                      min={new Date().toISOString().slice(0, 10)}
+                      value={creditDueDate}
+                      onChange={(event) => setCreditDueDate(event.target.value)}
+                    />
+                  </label>
+                  <small>
+                    Saldo actual:{" "}
                     {money.format(
-                      Number(creditSummary?.available_cents ?? 0) / 100,
+                      Number(creditSummary?.balance_cents ?? 0) / 100,
+                    )}{" "}
+                    · saldo después:{" "}
+                    {money.format(
+                      (Number(creditSummary?.balance_cents ?? 0) +
+                        amountDueCents) /
+                        100,
                     )}
-                  </strong>
-                </div>
-                <label>
-                  <span>Vence</span>
-                  <input
-                    type="date"
-                    min={new Date().toISOString().slice(0, 10)}
-                    value={creditDueDate}
-                    onChange={(event) => setCreditDueDate(event.target.value)}
-                  />
-                </label>
-                <small>
-                  Saldo actual:{" "}
-                  {money.format(
-                    Number(creditSummary?.balance_cents ?? 0) / 100,
-                  )}{" "}
-                  · saldo después:{" "}
-                  {money.format(
-                    (Number(creditSummary?.balance_cents ?? 0) +
-                      amountDueCents) /
-                      100,
-                  )}
-                </small>
-                <button
-                  className="primary-button wide"
-                  type="button"
-                  disabled={
-                    submitting ||
-                    !creditDueDate ||
-                    amountDueCents > Number(creditSummary?.available_cents ?? 0)
-                  }
-                  onClick={() => completeSale("credit")}
-                >
-                  Confirmar venta a crédito
-                </button>
-              </div>
-            ) : null}
-            {amountDueCents > 0 &&
-            !cashMode &&
-            (paymentUsed === "card" || paymentUsed === "transfer") ? (
-              <div className="form-stack electronic-reference">
-                <label>
-                  <span>
-                    Referencia de{" "}
-                    {paymentUsed === "card" ? "terminal" : "transferencia"}
-                  </span>
-                  <input
-                    value={paymentReference}
-                    onChange={(event) =>
-                      setPaymentReference(event.target.value)
+                  </small>
+                  <button
+                    className="primary-button wide"
+                    type="button"
+                    disabled={
+                      submitting ||
+                      !creditDueDate ||
+                      amountDueCents >
+                        Number(creditSummary?.available_cents ?? 0)
                     }
-                    placeholder="Últimos dígitos o folio"
+                    onClick={() => completeSale("credit")}
+                  >
+                    Confirmar venta a crédito
+                  </button>
+                </div>
+              ) : null}
+              {amountDueCents > 0 &&
+              !cashMode &&
+              (paymentUsed === "card" || paymentUsed === "transfer") ? (
+                <div className="form-stack electronic-reference">
+                  <label>
+                    <span>
+                      Referencia de{" "}
+                      {paymentUsed === "card" ? "terminal" : "transferencia"}
+                    </span>
+                    <input
+                      value={paymentReference}
+                      onChange={(event) =>
+                        setPaymentReference(event.target.value)
+                      }
+                      placeholder="Últimos dígitos o folio"
+                    />
+                  </label>
+                  <button
+                    className="primary-button wide"
+                    type="button"
+                    disabled={submitting || paymentReference.trim().length < 3}
+                    onClick={() => completeSale(paymentUsed)}
+                  >
+                    Confirmar cobro
+                  </button>
+                </div>
+              ) : null}
+              <button
+                className="secondary-button wide"
+                type="button"
+                onClick={() => {
+                  if (cashMode || splitMode || paymentUsed === "credit") {
+                    setCashMode(false);
+                    setSplitMode(false);
+                    setCashInput("");
+                    setPaymentUsed("cash");
+                  } else {
+                    setCheckoutOpen(false);
+                  }
+                }}
+              >
+                {cashMode || splitMode || paymentUsed === "credit"
+                  ? "Cambiar método"
+                  : "Volver al carrito"}
+              </button>
+            </section>
+          </div>
+        ) : null}
+
+        {extraDialog === "discount" ? (
+          <div className="modal-backdrop">
+            <section
+              className="checkout-modal compact-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="discount-title"
+            >
+              <p className="eyebrow">Venta en curso</p>
+              <h2 id="discount-title">Aplicar descuento</h2>
+              <div className="form-stack">
+                <label>
+                  <span>Porcentaje autorizado</span>
+                  <input
+                    inputMode="decimal"
+                    value={discountInput}
+                    onChange={(event) => setDiscountInput(event.target.value)}
+                    placeholder="Ej. 10"
                   />
                 </label>
+                {!preview ? (
+                  <>
+                    <label>
+                      <span>Código del supervisor</span>
+                      <input
+                        autoCapitalize="characters"
+                        value={supervisorCode}
+                        onChange={(event) =>
+                          setSupervisorCode(event.target.value)
+                        }
+                        placeholder="Ej. ADMIN0"
+                      />
+                    </label>
+                    <label>
+                      <span>PIN del supervisor</span>
+                      <input
+                        type="password"
+                        inputMode="numeric"
+                        value={supervisorPin}
+                        onChange={(event) =>
+                          setSupervisorPin(event.target.value)
+                        }
+                      />
+                    </label>
+                  </>
+                ) : null}
+                {discountError ? (
+                  <p className="field-error" role="alert">
+                    {discountError}
+                  </p>
+                ) : null}
+              </div>
+              <div className="modal-actions">
                 <button
-                  className="primary-button wide"
+                  className="secondary-button"
                   type="button"
-                  disabled={submitting || paymentReference.trim().length < 3}
-                  onClick={() => completeSale(paymentUsed)}
+                  onClick={() => setExtraDialog(null)}
                 >
-                  Confirmar cobro
+                  Cancelar
+                </button>
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() => void applyDiscount()}
+                >
+                  Autorizar y aplicar
                 </button>
               </div>
-            ) : null}
-            <button
-              className="secondary-button wide"
-              type="button"
-              onClick={() => {
-                if (cashMode || splitMode || paymentUsed === "credit") {
-                  setCashMode(false);
-                  setSplitMode(false);
-                  setCashInput("");
-                  setPaymentUsed("cash");
-                } else {
-                  setCheckoutOpen(false);
-                }
-              }}
+            </section>
+          </div>
+        ) : null}
+
+        {extraDialog === "credit-override" ? (
+          <div className="modal-backdrop">
+            <section
+              className="checkout-modal compact-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="credit-override-title"
             >
-              {cashMode || splitMode || paymentUsed === "credit"
-                ? "Cambiar método"
-                : "Volver al carrito"}
-            </button>
-          </section>
-        </div>
-      ) : null}
+              <p className="eyebrow">Crédito vencido</p>
+              <h2 id="credit-override-title">Autorizar sólo esta venta</h2>
+              <p className="heading-copy">
+                El atraso seguirá visible. La autorización vence en cinco
+                minutos y no podrá reutilizarse en otra operación.
+              </p>
+              <div className="form-stack">
+                <label>
+                  <span>Código del administrador</span>
+                  <input
+                    autoCapitalize="characters"
+                    value={creditOverrideCode}
+                    onChange={(event) =>
+                      setCreditOverrideCode(event.target.value)
+                    }
+                    placeholder="Ej. ADMIN0"
+                  />
+                </label>
+                <label>
+                  <span>PIN del administrador</span>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    value={creditOverridePin}
+                    onChange={(event) =>
+                      setCreditOverridePin(event.target.value)
+                    }
+                  />
+                </label>
+                <label>
+                  <span>Motivo de la excepción</span>
+                  <textarea
+                    value={creditOverrideReason}
+                    onChange={(event) =>
+                      setCreditOverrideReason(event.target.value)
+                    }
+                    maxLength={500}
+                    placeholder="Ej. Autorizado por gerencia para esta compra"
+                  />
+                </label>
+                {creditOverrideError ? (
+                  <p className="field-error" role="alert">
+                    {creditOverrideError}
+                  </p>
+                ) : null}
+              </div>
+              <div className="modal-actions">
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => setExtraDialog(null)}
+                >
+                  No autorizar
+                </button>
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() => void authorizeCreditOverride()}
+                >
+                  Autorizar esta venta
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
 
-      {extraDialog === "discount" ? (
-        <div className="modal-backdrop">
-          <section
-            className="checkout-modal compact-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="discount-title"
-          >
-            <p className="eyebrow">Venta en curso</p>
-            <h2 id="discount-title">Aplicar descuento</h2>
-            <div className="form-stack">
-              <label>
-                <span>Porcentaje autorizado</span>
-                <input
-                  inputMode="decimal"
-                  value={discountInput}
-                  onChange={(event) => setDiscountInput(event.target.value)}
-                  placeholder="Ej. 10"
-                />
-              </label>
-              {!preview ? (
-                <>
-                  <label>
-                    <span>Código del supervisor</span>
-                    <input
-                      autoCapitalize="characters"
-                      value={supervisorCode}
-                      onChange={(event) =>
-                        setSupervisorCode(event.target.value)
-                      }
-                      placeholder="Ej. ADMIN0"
-                    />
-                  </label>
-                  <label>
-                    <span>PIN del supervisor</span>
-                    <input
-                      type="password"
-                      inputMode="numeric"
-                      value={supervisorPin}
-                      onChange={(event) => setSupervisorPin(event.target.value)}
-                    />
-                  </label>
-                </>
-              ) : null}
-              {discountError ? (
-                <p className="field-error" role="alert">
-                  {discountError}
-                </p>
-              ) : null}
-            </div>
-            <div className="modal-actions">
-              <button
-                className="secondary-button"
-                type="button"
-                onClick={() => setExtraDialog(null)}
-              >
-                Cancelar
-              </button>
-              <button
-                className="primary-button"
-                type="button"
-                onClick={() => void applyDiscount()}
-              >
-                Autorizar y aplicar
-              </button>
-            </div>
-          </section>
-        </div>
-      ) : null}
-
-      {extraDialog === "credit-override" ? (
-        <div className="modal-backdrop">
-          <section
-            className="checkout-modal compact-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="credit-override-title"
-          >
-            <p className="eyebrow">Crédito vencido</p>
-            <h2 id="credit-override-title">Autorizar sólo esta venta</h2>
-            <p className="heading-copy">
-              El atraso seguirá visible. La autorización vence en cinco minutos
-              y no podrá reutilizarse en otra operación.
-            </p>
-            <div className="form-stack">
-              <label>
-                <span>Código del administrador</span>
-                <input
-                  autoCapitalize="characters"
-                  value={creditOverrideCode}
-                  onChange={(event) =>
-                    setCreditOverrideCode(event.target.value)
-                  }
-                  placeholder="Ej. ADMIN0"
-                />
-              </label>
-              <label>
-                <span>PIN del administrador</span>
-                <input
-                  type="password"
-                  inputMode="numeric"
-                  value={creditOverridePin}
-                  onChange={(event) => setCreditOverridePin(event.target.value)}
-                />
-              </label>
-              <label>
-                <span>Motivo de la excepción</span>
-                <textarea
-                  value={creditOverrideReason}
-                  onChange={(event) =>
-                    setCreditOverrideReason(event.target.value)
-                  }
-                  maxLength={500}
-                  placeholder="Ej. Autorizado por gerencia para esta compra"
-                />
-              </label>
-              {creditOverrideError ? (
-                <p className="field-error" role="alert">
-                  {creditOverrideError}
-                </p>
-              ) : null}
-            </div>
-            <div className="modal-actions">
-              <button
-                className="secondary-button"
-                type="button"
-                onClick={() => setExtraDialog(null)}
-              >
-                No autorizar
-              </button>
-              <button
-                className="primary-button"
-                type="button"
-                onClick={() => void authorizeCreditOverride()}
-              >
-                Autorizar esta venta
-              </button>
-            </div>
-          </section>
-        </div>
-      ) : null}
-
-      {customerLookupOpen ? (
-        <div className="modal-backdrop">
-          <CustomerLookup
-            selected={selectedCustomer}
-            onSelect={(customer) => {
-              setSelectedCustomer(customer);
-              setCreditSummary(null);
-              setCreditOverrideAuthorization(null);
-              setCreditOverrideReason("");
-              setPaymentUsed("cash");
-            }}
-            onClose={() => setCustomerLookupOpen(false)}
-          />
-        </div>
-      ) : null}
+        {customerLookupOpen ? (
+          <div className="modal-backdrop">
+            <CustomerLookup
+              selected={selectedCustomer}
+              onSelect={(customer) => {
+                setSelectedCustomer(customer);
+                setCreditSummary(null);
+                setCreditOverrideAuthorization(null);
+                setCreditOverrideReason("");
+                setPaymentUsed("cash");
+              }}
+              onClose={() => setCustomerLookupOpen(false)}
+            />
+          </div>
+        ) : null}
+      </PosOverlayLayer>
     </div>
   );
 }

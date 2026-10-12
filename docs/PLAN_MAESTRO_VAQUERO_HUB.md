@@ -3424,12 +3424,11 @@ Validación 0.55.5: revisión visual del icono; compilación de producción/Type
   destello dorado que recorre su silueta y el nombre de la sección destino.
   Sustituye a las huellas de herradura de 0.61.0 por elección del dueño.
 
-### Entrega visible 0.63.0 — logo con destellos a pantalla completa
+### 2026-10-09 · Candidata 0.63.0 — operación ágil y corte por sucursal
 
-- La espera al cambiar de sección cubre toda la pantalla: fondo negro con brillo
-  cálido, logo completo al centro con destello dorado y el nombre de la sección
-  destino. Mismas reglas: sólo si tarda más de 140 ms, no recibe toques, la
-  página anterior sigue montada debajo y se detiene al llegar la sección.
-- Pendiente de confirmación visual del dueño (se le envió vista previa); si no
-  la aprueba, se regresa a la tarjeta de 0.62.0.
-
+- Emmanuel confirmó corte consolidado por sucursal y reporte tanto de entradas valorizadas como de cambios de costo. Se implementaron los 15 puntos nuevos en `codex/mejoras-operativas-octubre`, sin publicar a main ni tocar producción; M9 permanece en el otro chat.
+- Corte consolidado conserva cierres ciegos por turno, detalle de cada caja y bloqueo si hay sesiones abiertas. El primer corte puede incluir turnos históricos sin corte previo; la interfaz lo advierte. Nuevos documentos son inmutables e idempotentes.
+- Venta mantiene catálogo/carrito visibles en móvil y permite ajustar espacio; métodos aparecen al pulsar Cobrar, tarjetas crédito/débito combinables, alta de clientes y regalo posventa. Inventario incorpora entradas múltiples por marca, cantidad directa, etiquetas desde conteo y permanencia en Conteos. Categorías desde alta, cuentas de crédito/apartados separadas y Producto rápido ampliado.
+- Notificaciones operativas por usuario, permiso y sucursal, con acuse, enlaces y sonido opcional; consulta con aplicación visible, no notificaciones push. Costos sólo para gerencia, con rango y agrupación; no confundir valorización con pagos a proveedores ni inventar costos faltantes.
+- Verificación local: 125 migraciones, regresiones SQL y nuevas pruebas financieras/concurrentes; 138 unitarias, 39 de navegador, TypeScript, ESLint y build. Auth/Storage y transporte de cliente están simulados en QA: falta staging con cuentas reales, Safari/dispositivos y audibilidad física. No se repiten como nuevas las pruebas físicas ya confirmadas por Emmanuel.
+- Alcance, semántica, comandos y lista de aceptación: `docs/MEJORAS_OPERATIVAS_OCTUBRE.md`.

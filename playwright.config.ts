@@ -24,6 +24,11 @@ export default defineConfig({
       name: "mobile-chromium",
       use: { ...devices["Pixel 7"], ...localChrome },
     },
+    {
+      name: "mobile-webkit",
+      testMatch: "**/mobile-scroll.spec.ts",
+      use: { ...devices["iPhone 13 Pro Max"] },
+    },
   ],
   webServer: {
     command: useProductionServer

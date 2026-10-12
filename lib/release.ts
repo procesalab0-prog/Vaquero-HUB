@@ -1,2 +1,2 @@
-export const APP_VERSION = "0.63.0";
-export const APP_RELEASE = "Logo a pantalla completa al cambiar de sección";
+export const APP_VERSION = "0.64.3";
+export const APP_RELEASE = "Cobro móvil sin botones encima";

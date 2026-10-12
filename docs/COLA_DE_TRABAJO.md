@@ -8,6 +8,22 @@
 >
 > Última actualización: 2026-10-02, avance local de cantidades comerciales y aceptación operativa.
 
+## Corrección 0.64.3 — cobro móvil sin botones encima
+
+Video de Emmanuel del 10 de octubre: «Ver carrito» y el encabezado tapaban métodos de pago y Cerrar en Cobrar. Las ventanas de cobro y sus opciones ahora se montan fuera de la capa desplazable y animada; el acceso al carrito se oculta mientras hay un diálogo y vuelve al cerrar. El fondo deja de desplazarse durante el diálogo. Se valida navegación desde Inicio, abrir carrito/cobro, pulsación de Cerrar, métodos de pago y scroll del diálogo con WebKit y Chromium. Sin SQL, ventas reales ni modificaciones M9/Woo.
+
+## Corrección 0.64.2 — acceso al carrito en teléfono
+
+Emmanuel reportó con captura de iPhone que el botón del carrito desaparecía en el espacio reservado. El acceso y la ventana del carrito ahora se montan fuera del área desplazable de Venta y sus capas de composición, conservando tema y área segura. Muestra «Ver carrito» también con artículos; al cerrar la venta vuelve a aparecer. Se comprueba que el control recibe pulsaciones tras navegar y hacer scroll, además de su posición. No cambia catálogo, cobros ni datos M9/Woo.
+
+## Corrección 0.64.1 — scroll móvil sin superposición
+
+Solicitud de Emmanuel del 10 de octubre: el menú inferior no debe tapar contenido durante el scroll. El área desplazable ahora termina antes de la navegación y, en Venta, antes del botón del carrito. Conserva ventanas, carrito y escritorio; respeta área segura y altura dinámica del navegador. Verificación en Inicio, Productos, Inventario, Caja, Compras, Clientes, Tickets, Reportes, Ajustes, Más y Venta, pantallas cortas y texto grande. Sin SQL ni cambios a datos M9/Woo.
+
+## Entrega autorizada 0.64.0 — Venta e Inicio, 10 de octubre
+
+Cambios solicitados por Emmanuel preparados y verificados localmente. Catálogo/carrito en teléfono con scroll independiente, menús flotantes, tarjetas con foto en carrito amplio, cliente y herramientas juntos, campos de producto rápido visibles, logo mayor y acciones de descuento/regalo/apartado al cobrar. Inicio adapta accesos a permisos; sonido habilitado se reactiva con gesto después de recargar. Detalle y límites de aceptación en [`ERGONOMIA_VENTA_INICIO_2026_10_10.md`](ERGONOMIA_VENTA_INICIO_2026_10_10.md). Emmanuel autorizó publicar en main el 10 de octubre, con botones de cerrar en Más y cobro y colores distintos para Descuento, Regalo y Apartar. Staging M9 y sus datos permanecen intactos.
+
 ## Integración candidata del 7 de octubre de 2026
 
 Las mejoras locales completas están preservadas en una rama de integración

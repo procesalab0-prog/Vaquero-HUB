@@ -171,6 +171,7 @@ export function ReportsWorkspace({
       </div>
 
       <nav className="report-tabs" aria-label="Tipo de reporte">
+        <Link href={`/reportes/costos?${new URLSearchParams({ubicacion:activeLocationId,desde:filters.from,hasta:filters.to})}`}>Costos y entradas</Link>
         <Link
           className={tab === "ventas" ? "active" : ""}
           href={tabHref("ventas", activeLocationId, filters)}

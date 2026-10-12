@@ -121,3 +121,26 @@ it("si la preferencia está guardada pero el audio no se reactivó, no promete s
   expect(result.reason).toMatch(/Audio bloqueado/);
   expect(events).toHaveLength(1);
 });
+it("el gesto posterior a recargar reactiva un opt-in sin cambiar preferencias ni crear aviso", async () => {
+  const notices = await import("../../lib/workspace-notifications");
+  storage.set(notices.NOTIFICATION_SOUND_KEY, "on");
+  await notices.resumeNotificationSound();
+  expect(events).toHaveLength(0);
+  expect(
+    (
+      await notices.publishWorkspaceNotification({
+        title: "Pedido nuevo",
+        message: "Recibido",
+        locationId: "branch",
+      })
+    ).played,
+  ).toBe(true);
+  expect(audioStarts).toBe(1);
+});
+it("reactivar desde un gesto respeta sonido apagado", async () => {
+  const notices = await import("../../lib/workspace-notifications");
+  await notices.resumeNotificationSound();
+  expect(storage.has(notices.NOTIFICATION_SOUND_KEY)).toBe(false);
+  expect(events).toHaveLength(0);
+  expect(audioStarts).toBe(0);
+});
