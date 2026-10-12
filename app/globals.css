@@ -8956,3 +8956,6 @@ a:active {
 .scanner-guide.scanner-guide-card { width: min(76%, 280px); height: auto; aspect-ratio: 1; }
 
 .scanner-modal h2 { font-size: clamp(20px, 5vw, 26px); line-height: 1.2; }
+
+.pos-camera-button { width: 52px; padding: 0; flex: none; justify-content: center; }
+.pos-camera-button span { display: none; }

@@ -2405,8 +2405,9 @@ export function PosWorkspace({
             <span className="scan-caret" aria-hidden="true" />
           </label>
           <button
-            className="catalog-button"
+            className="catalog-button pos-camera-button"
             type="button"
+            title="Escanear producto con cámara"
             aria-label="Escanear producto con cámara"
             onClick={() => setCameraOpen(true)}
             disabled={!cartPortalTarget || draftBusy}
