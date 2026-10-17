@@ -114,6 +114,10 @@ function databaseErrorText(error: unknown) {
 function saleError(error: unknown): SaleActionResult {
   const raw = databaseErrorText(error);
   const definitions: Array<[string, string]> = [
+    ["M9_VARIANT_PENDING_REVIEW", "Uno de los productos está pendiente de revisión de migración. Retíralo del carrito."],
+    ["M9_VARIANT_REVIEW_CHANGED", "Cambió un producto revisado. Hay que comprobarlo nuevamente antes de vender."],
+    ["M9_REVIEW_EXPIRED", "La revisión de migración venció. Hay que renovarla antes de vender en pruebas."],
+    ["M9_REHEARSAL_QUICK_ITEM_DISABLED", "Durante este ensayo sólo se pueden usar productos del catálogo revisado."],
     ['USD_CHECKOUT_NOT_ENABLED','El cobro en dólares todavía no está habilitado.'],
     ['FX_QUOTE_EXPIRED','La tasa venció. Actualízala antes de cobrar.'],
     ['FX_QUOTE_ALREADY_USED','Esta tasa ya se usó en otro ticket. Actualízala.'],
@@ -350,6 +354,10 @@ export async function createLayawayFromCart(input: {
   } catch (error) {
     const raw = databaseErrorText(error);
     const definitions: Array<[string, string]> = [
+    ["M9_VARIANT_PENDING_REVIEW", "Uno de los productos está pendiente de revisión de migración. Retíralo del carrito."],
+    ["M9_VARIANT_REVIEW_CHANGED", "Cambió un producto revisado. Hay que comprobarlo nuevamente antes de vender."],
+    ["M9_REVIEW_EXPIRED", "La revisión de migración venció. Hay que renovarla antes de vender en pruebas."],
+    ["M9_REHEARSAL_QUICK_ITEM_DISABLED", "Durante este ensayo sólo se pueden usar productos del catálogo revisado."],
       ["INSUFFICIENT_STOCK", "La existencia cambió. Revisa el carrito antes de apartar."],
       ["SESSION_FORBIDDEN", "Abre tu caja antes de crear el apartado."],
       ["CUSTOMER_NOT_FOUND", "El cliente ya no está disponible."],
@@ -735,6 +743,10 @@ export async function cancelPosSale(
   } catch (error) {
     const raw = error instanceof Error ? error.message : "UNKNOWN_ERROR";
     const definitions: Array<[string, string]> = [
+    ["M9_VARIANT_PENDING_REVIEW", "Uno de los productos está pendiente de revisión de migración. Retíralo del carrito."],
+    ["M9_VARIANT_REVIEW_CHANGED", "Cambió un producto revisado. Hay que comprobarlo nuevamente antes de vender."],
+    ["M9_REVIEW_EXPIRED", "La revisión de migración venció. Hay que renovarla antes de vender en pruebas."],
+    ["M9_REHEARSAL_QUICK_ITEM_DISABLED", "Durante este ensayo sólo se pueden usar productos del catálogo revisado."],
       [
         "CREDIT_CANCELLATION_REQUIRES_RETURN",
         "La venta tiene crédito o abonos. Registra la operación como devolución para reducir primero la deuda y reembolsar sólo lo pagado.",
