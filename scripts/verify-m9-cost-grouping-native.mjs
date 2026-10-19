@@ -225,6 +225,28 @@ try {
   assert.equal(checks.positive_sale_tested, true);
   assert.equal(checks.sale_and_refund_history_preserved, true);
   assert.deepEqual(await audit(), before);
+  await db.query(
+    "select set_config('qa.m9.allowed_barcode','000001',false), set_config('qa.m9.held_barcode','000002',false)",
+  );
+  const exchangeBefore = await audit();
+  const exchangeResult = await db.query(
+    await readFile(
+      new URL("./m9/test-exchange-allowlist.sql", import.meta.url),
+      "utf8",
+    ),
+  );
+  const exchangeChecks = exchangeResult
+    .flatMap((r) => r.rows ?? [])
+    .find((r) => r.result)?.result;
+  assert.equal(exchangeChecks.status, "PASS");
+  assert.equal(exchangeChecks.checks, 15);
+  assert.deepEqual(await audit(), exchangeBefore);
+  console.log(
+    JSON.stringify({
+      m9_exchange_allowlist: exchangeChecks,
+      rollback_verified: true,
+    }),
+  );
   // Even an explicit caller-requested IMMEDIATE mode must stay intact. The
   // helper must never defer unrelated constraints to make a grouping succeed.
   const definitions = (

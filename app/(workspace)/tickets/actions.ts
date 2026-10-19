@@ -75,6 +75,10 @@ export async function findTicketByCode(input: {
 function exchangeMessage(error: unknown) {
   const raw = databaseErrorText(error);
   const messages: Array<[string, string]> = [
+    ["M9_VARIANT_PENDING_REVIEW", "El artículo que quieres entregar está pendiente de revisión de migración. Elige otro artículo."],
+    ["M9_VARIANT_REVIEW_CHANGED", "Los datos del artículo cambiaron desde su revisión. Hay que revisarlo de nuevo antes de entregarlo."],
+    ["M9_REVIEW_EXPIRED", "La revisión de migración venció. Hay que renovarla antes de entregar artículos en pruebas; sí puedes registrar una devolución sin cambio."],
+    ["M9_REHEARSAL_QUICK_ITEM_DISABLED", "No se pueden entregar productos rápidos en este ensayo de migración."],
     ["RETURN_EXCEEDS_SOLD", "Ese artículo ya fue cambiado o devuelto."],
     [
       "CREDIT_RETURN_REQUIRES_DEBT_SETTLEMENT",
