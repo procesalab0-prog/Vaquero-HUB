@@ -3450,3 +3450,15 @@ Validación 0.55.5: revisión visual del icono; compilación de producción/Type
 - La espera de cambio de sección a pantalla completa (propuesta el 8 de
   octubre) sigue sin aprobarse y no está incluida: la espera de sección sigue
   siendo la tarjeta de 0.62.0.
+
+### 2026-10-19 · Propuesta para agilizar M9 (pendiente de autorización)
+
+- Emmanuel pidió agilizar la migración sin depender tanto de preguntas a los
+  dueños. Propuesta para Codex en
+  [`M9_PROPUESTA_AGILIZAR_MIGRACION.md`](M9_PROPUESTA_AGILIZAR_MIGRACION.md):
+  cargar para vender y agrupar después, aprobar por regla y muestra, migrar sólo
+  lo que tiene existencia o venta, separar la web del cambio de sistema, tandas
+  más grandes y corregir en SICAR.
+- Sólo documentación: sin cambios de código, base, staging, producción ni Woo.
+  Las vías 1 a 3 cambian reglas vigentes de M9 y requieren autorización
+  explícita de Emmanuel antes de implementarse.
