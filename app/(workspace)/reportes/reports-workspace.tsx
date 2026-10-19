@@ -105,6 +105,7 @@ export type InventoryReport = {
     variant_id: string;
     product_name: string;
     category_name: string;
+    department_name?: string | null;
     brand_name: string;
     sku: string;
     variant_description: string;
@@ -474,7 +475,7 @@ function InventoryResults({ report }: { report: InventoryReport }) {
         <article>
           <CircleDollarSign aria-hidden="true" />
           <span>Valor a costo</span>
-          <strong>{summary.cost_value_cents === null ? "Incompleto" : cents(summary.cost_value_cents)}</strong>
+          <strong className={summary.cost_value_cents === null ? "report-cost-status" : undefined}>{summary.cost_value_cents === null ? "Incompleto" : cents(summary.cost_value_cents)}</strong>
           {summary.cost_value_cents === null ? <small>Subtotal con costo conocido: {cents(summary.known_cost_value_cents ?? null)}</small> : null}
           {summary.unknown_cost_variant_count ? <small>{summary.unknown_cost_variant_count} variantes sin costo definido; {summary.unvalued_stock_variant_count} con existencia sin valuar.</small> : null}
           <small>Menudeo {cents(summary.retail_value_cents)}</small>
@@ -494,6 +495,7 @@ function InventoryResults({ report }: { report: InventoryReport }) {
               <tr>
                 <th>Producto</th>
                 <th>Departamento</th>
+                <th>Categoría</th>
                 <th>Variante</th>
                 <th>Existencia</th>
                 <th>Disponible</th>
@@ -519,6 +521,7 @@ function InventoryResults({ report }: { report: InventoryReport }) {
                       {item.brand_name} · {item.sku}
                     </small>
                   </td>
+                  <td>{item.department_name ?? "Sin definir"}</td>
                   <td>{item.category_name}</td>
                   <td>{item.variant_description}</td>
                   <td>{quantity.format(item.qty)} {item.measureUnit?.name}</td>
