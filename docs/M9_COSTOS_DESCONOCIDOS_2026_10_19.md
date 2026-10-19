@@ -134,3 +134,12 @@ La reactivación persistente del ensayo no se hace implícitamente con esta
 migración. Para el corte real: fuentes SICAR/Woo renovadas, inventario autorizado,
 plan/diferencias/rollback y autorización productiva explícita. Siguen faltando
 los reportes de actividad para proponer archivo y la revisión de los 434 retenidos.
+
+
+### Actualización posterior del mismo día
+
+El ajuste ya se publicó en Preview y pasó aceptación de cobro/cancelación por
+navegador y Auth/PostgREST real. El cierre ahora conserva una venta QA cancelada
+y su historial; stock y caja netos siguen cero. El registro anterior describe
+el estado al terminar el ensayo SQL, no el estado posterior. Ver
+[M9_PREVIEW_ACEPTACION_2026_10_19.md](M9_PREVIEW_ACEPTACION_2026_10_19.md).

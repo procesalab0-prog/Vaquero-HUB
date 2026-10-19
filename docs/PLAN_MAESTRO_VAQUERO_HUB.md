@@ -4403,3 +4403,16 @@ ensayo; la revisión de venta original sigue vencida. Cobertura de catálogo
 15,876/16,310 (97.3391%), 434 retenidos. Frontend de Reportes preparado, no
 publicado; aceptación por navegador/Auth/PostgREST todavía pendiente.
 Detalle y límites: [M9_COSTOS_DESCONOCIDOS_2026_10_19.md](M9_COSTOS_DESCONOCIDOS_2026_10_19.md).
+
+
+## Registro vivo · 19 de octubre de 2026 · Preview y aceptación real
+
+Preview publicado; escaneo 2396 → cobro real del programa → ticket → cancelación
+verificados con Auth/PostgREST de staging. Snapshot de costo NULL conservado.
+Reportes legible en computadora/teléfono y filtro UNISEX corregido mediante
+lectura del departamento SICAR reconciliado cuando el padre no lo tiene.
+165 migraciones locales correctas. Al cierre: stock y caja netos cero, una venta
+QA cancelada e historial conservado; revisión QA vencida y sin códigos habilitados.
+Ya no son libros vacíos: no borrar el historial para repetir ensayos antiguos.
+No se tocó main ni producción. Catálogo: 97.3391%, 434 retenidos.
+Detalle: [M9_PREVIEW_ACEPTACION_2026_10_19.md](M9_PREVIEW_ACEPTACION_2026_10_19.md).

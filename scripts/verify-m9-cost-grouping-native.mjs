@@ -127,6 +127,85 @@ try {
     "update app.m9_rehearsal_control set enabled=true,review_sha256=$1,expires_at=now()+interval '1 hour'",
     [sha],
   );
+  // Parent department may be absent on older M9 imports. Reconciled literal
+  // variant classification must work for both reports, without rewriting it.
+  await db.query("begin");
+  const fixtureVariant = (
+    await db.query("select variant_id from app.m9_rows where barcode='000001'")
+  ).rows[0].variant_id;
+  await db.query(
+    "update products set department_name=null where id in (select product_id from variants where id in (select variant_id from app.m9_rows))",
+  );
+  await db.query(
+    "select apply_inventory_adjustment($1,$2,0,2,'CONTEO_FISICO','QA report fallback, rollback')",
+    [fixtureVariant, loc],
+  );
+  const inventory = (
+    await db.query("select get_inventory_report_v2($1,'',null,'QA') r", [loc])
+  ).rows[0].r;
+  assert.equal(Number(inventory.summary.variant_count), 1);
+  assert.equal(inventory.items[0].department_name, "QA");
+  assert.equal(inventory.summary.cost_value_cents, null);
+  const classes = (await db.query("select get_report_classifications() r"))
+    .rows[0].r;
+  assert.equal(classes.departments.includes("QA"), true);
+  await db.query(
+    "insert into app.m9_rehearsal_allowlist(variant_id,barcode,review_sha256,expected_row) values($1,'000001',$2,app.m9_rehearsal_current_row($1))",
+    [fixtureVariant, sha],
+  );
+  await db.query("select create_sale($1,$2,$3::jsonb,$4::jsonb)", [
+    crypto.randomUUID(),
+    (await db.query("select id from cash_sessions where status='OPEN'")).rows[0]
+      .id,
+    JSON.stringify([{ variant_id: fixtureVariant, quantity: 1 }]),
+    JSON.stringify([
+      { method_code: "CASH", amount_cents: 10000, tendered_cents: 10000 },
+    ]),
+  ]);
+  const sales = (
+    await db.query(
+      "select get_sales_report_v2($1,now()-interval '1 day',now()+interval '1 day','day','',null,'QA') r",
+      [loc],
+    )
+  ).rows[0].r;
+  assert.equal(Number(sales.summary.net_cents), 10000);
+  assert.equal(sales.details[0].department_name, "QA");
+  // An explicit operational parent classification still wins over source.
+  await db.query(
+    "update products set department_name='QA override' where id=(select product_id from variants where id=$1)",
+    [fixtureVariant],
+  );
+  assert.equal(
+    Number(
+      (
+        await db.query("select get_inventory_report_v2($1,'',null,'QA') r", [
+          loc,
+        ])
+      ).rows[0].r.summary.variant_count,
+    ),
+    0,
+  );
+  assert.equal(
+    Number(
+      (
+        await db.query(
+          "select get_inventory_report_v2($1,'',null,'QA override') r",
+          [loc],
+        )
+      ).rows[0].r.summary.variant_count,
+    ),
+    1,
+  );
+  await db.query("rollback");
+  console.log(
+    JSON.stringify({
+      m9_report_literal_department_fallback: true,
+      parent_override_preserved: true,
+      inventory_and_sales_filters: true,
+      classification_list: true,
+      rollback: true,
+    }),
+  );
   const audit = async () =>
     (
       await db.query(
