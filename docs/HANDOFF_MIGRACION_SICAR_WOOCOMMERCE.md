@@ -1789,3 +1789,30 @@ retirar las dos piezas QA, restaurar exactamente su fila de allowlist y dejar
 la revisión QA vencida con cero códigos permitidos. Si no se completa la
 interfaz, el cierre cancela sólo esta venta sintética como alternativa; no
 simula devolución ni borra datos. No dejar declarado saldo cero hasta auditarlo.
+
+
+## M9 · 19 de octubre · Devolución autorizada y ensayo cerrado
+
+Este cierre resuelve el estado pendiente documentado en la entrada anterior.
+El usuario introdujo su PIN y autorizó desde Preview la devolución del ticket
+LAP-V-000002. Documento LAP-D-000001, 8ab3718d-87da-4be1-a981-19d2e36ffe85:
+reembolso CASH 219000 centavos, una entrada RESELLABLE de 2396 y autorización
+consumida. No se leyó ni compartió el PIN. Sí se verificó Auth/PostgREST real.
+
+Se ensayó nuevamente el cierre con rollback sobre esa devolución y después
+se guardó el retiro de dos piezas QA. Saldo final físico/reservado/caja cero,
+movimientos netos de inventario cero; fila de allowlist restaurada exactamente,
+revisión QA vencida y cero códigos permitidos, sin deshabilitar la compuerta.
+La caja sigue abierta: no se realizó corte ciego. Catálogo, padres, códigos e
+historial previo conservan sus huellas. LAP-V-000001 permanece CANCELLED;
+LAP-V-000002 queda COMPLETED con devolución total vinculada, no se cancela dos
+veces. Persisten dos ventas, una devolución, ocho movimientos de inventario y
+cinco de caja, todos auditables; snapshots de costo NULL.
+
+Resultado y evidencia actualizados en outputs/m9-cambios-bloqueo-2026-10-19/.
+La aceptación de este flujo queda completada. No es autorización para corte
+productivo: faltan fuentes actualizadas, existencias reales verificadas y
+los pendientes comerciales retenidos. Cobertura catálogo sigue 97.3391%.
+Siguiente comprobación identificada: búsqueda de inventario desde su pantalla
+con catálogo amplio; el resumen actual informa explícitamente primeras 500
+variantes. No confundirlo con una auditoría completa del catálogo.

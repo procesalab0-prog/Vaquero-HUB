@@ -74,14 +74,31 @@ de una hora. Se conserva precio 219000 centavos y costo NULL.
 La interfaz cobró una pieza mediante escaneo y efectivo exacto, creando
 LAP-V-000002 (`a0532d9c-7793-4bb4-a789-02343f81dc51`). SQL confirmó una sola
 salida, un renglón de costo NULL e ingreso de 219000 centavos. El usuario
-configuró su PIN sin compartirlo. La devolución completa queda preparada en
-Tickets para que introduzca el PIN y autorice la operación.
+configuró su PIN sin compartirlo y autorizó la devolución desde la interfaz.
+Se registró LAP-D-000001 (`8ab3718d-87da-4be1-a981-19d2e36ffe85`): una entrada
+RESELLABLE de la variante original, reembolso CASH por 219000 centavos y token
+de autorización consumido. El remanente por devolver del ticket es cero.
+Esto sí recorrió Auth/PostgREST real; no se inyectó un token ni un éxito al
+navegador. Los tokens del ensayo SQL anterior fueron fixtures con rollback.
 
-No se declara todavía terminada esa devolución por interfaz. Al completarla
-hay que verificar recepción de la pieza y reintegro por el método original,
-retirar las dos piezas sintéticas, restaurar la fila original de la lista y
-dejar vencida la revisión QA. Si no se completa, cancelar sólo esta venta QA
-y hacer el mismo cierre; nunca borrar el historial ni falsificar una devolución.
+El cierre se volvió a ensayar con rollback sobre la devolución ya registrada,
+antes de guardarlo. Se retiraron las dos piezas sintéticas con un ajuste de
+cantidad 2 a 0. No se canceló LAP-V-000002 después de devolverla: conserva
+COMPLETED y el vínculo a su devolución; cambiarlo a CANCELLED duplicaría la
+reversión. LAP-V-000001 conserva exactamente su fila previa CANCELLED.
+
+Resultado final: inventario físico y reservado cero, movimientos de inventario
+netos cero, caja neta cero, fila original de allowlist restaurada exactamente,
+compuerta habilitada y revisión QA vencida con cero códigos coincidentes.
+La caja sigue abierta para ensayos posteriores; no se ejecutó un corte ciego.
+Se conservan dos ventas históricas, una devolución, ocho movimientos de
+inventario y cinco de caja. Ambos snapshots de costo permanecen NULL.
+
+Las huellas completas de variantes, padres, códigos y allowlist coinciden con
+la base anterior al ensayo. La pantalla Inventario confirmó disponibles y
+reservados cero en su resumen de primeras 500 variantes; la auditoría SQL
+confirmó cero sobre todo el inventario. No se afirma que esa tarjeta visual
+abarque el catálogo completo. Producción y Woo siguen intactos.
 
 ## Alcance del porcentaje y siguiente etapa
 
