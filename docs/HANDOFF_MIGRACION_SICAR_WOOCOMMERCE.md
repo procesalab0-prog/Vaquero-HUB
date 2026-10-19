@@ -1711,3 +1711,33 @@ Trabajo independiente completado: nueva exportación de las tres preguntas princ
 Reejecutado prepare-owner-load-review con entradas fijadas porSHA y nueva exportación principal:16224filas fuente,303preguntas/970filas revalidadas,3liberadas,0respuestas,0plantillas,0aprobaciones y0altas. Dos corridas idénticas en sus cinco archivos.34pruebas de revisión/cobertura aprobadas. No se liberan preguntas adicionales ni se interpreta silencio como aprobación. CAWRNIÑO3587 conserva reserva. Producción sólo leída para aclaraciones; cero escrituras en Woo, catálogo, existencias, ramas remotas o despliegues. Cobertura permanece47.516%.
 
 Evidencia outputs/m9-revalidacion-lotes-2026-10-08/:config,snapshot,respuestas,corridas,pruebas y manifiesto. Sigue acceso Supabase correcto, aplicar15pendientes por orden comprobado, comparar huellas y permisos, publicar exclusivamente Preview integrado y verificar sesión/fotos/fichas. La cuenta sin acceso al panel y el error del conector son bloqueos técnicos independientes de las respuestas comerciales. No pedir otra exportación al usuario hasta la renovación operativa que corresponda.
+
+
+## Registro vivo · 18 de octubre de 2026 · Regla y provisionales autorizados
+
+Emmanuel autoriza la vía más rápida y segura y continuar las siguientes vías,
+limitadas a staging. Nueva excepción explícita a preguntas por familia: regla
+T. con evidencia del conjunto y muestra técnica; sin atribuir respuestas a los
+dueños. 823 códigos / 209 familias por regla y 7,243 provisionales cargados.
+Total15,876/16,310=97.3391% de carga de catálogo, no de aceptación operativa.
+434sin cargar; códigos/IDs originales conservados, inventario y ventas0.
+Agrupación/desagrupación privadas ensayadas con ROLLBACK, movimiento posterior
+conservado y publicación Woo bloqueada. Filtro de actividad preparado sin
+archivar: faltan reportes completos. Sigue resolver cobro con costo desconocido,
+fuentes/corte de inventario y aceptación productiva. No main ni Woo real.
+Detalle: [M9_ACELERACION_REGLA_PROVISIONALES_2026_10_18.md](M9_ACELERACION_REGLA_PROVISIONALES_2026_10_18.md).
+
+
+## Registro vivo · 19 de octubre de 2026 · costo desconocido y venta provisional
+
+Resuelto en staging el bloqueo de sale_items.unit_cost_cents: se conserva NULL
+al cobrar/entregar, sin costo cero ficticio. Valuación incompleta y primeras
+recepciones tratadas explícitamente. Se corrigió también la modalidad global
+de restricciones de la agrupación, detectada al devolver una venta posterior.
+Dieciocho controles de venta → agrupar → devolver → desagrupar → vender/devolver
+pasaron en local y staging con rollback. 164 migraciones locales y 717 unitarias
+correctas. La auditoría conserva todos los hashes y deja cero operaciones de
+ensayo; la revisión de venta original sigue vencida. Cobertura de catálogo
+15,876/16,310 (97.3391%), 434 retenidos. Frontend de Reportes preparado, no
+publicado; aceptación por navegador/Auth/PostgREST todavía pendiente.
+Detalle y límites: [M9_COSTOS_DESCONOCIDOS_2026_10_19.md](M9_COSTOS_DESCONOCIDOS_2026_10_19.md).

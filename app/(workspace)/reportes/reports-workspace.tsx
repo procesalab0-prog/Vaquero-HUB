@@ -81,7 +81,11 @@ export type InventoryReport = {
     available_qty: number;
     out_count: number;
     low_count: number;
-    cost_value_cents: number;
+    cost_value_cents: number | null;
+    known_cost_value_cents?: number;
+    unknown_cost_variant_count?: number;
+    unvalued_stock_variant_count?: number;
+    cost_valuation_complete?: boolean;
     retail_value_cents: number;
   };
   categories: Array<{
@@ -90,7 +94,11 @@ export type InventoryReport = {
     variant_count: number;
     qty: number;
     available_qty: number;
-    cost_value_cents: number;
+    cost_value_cents: number | null;
+    known_cost_value_cents?: number;
+    unknown_cost_variant_count?: number;
+    unvalued_stock_variant_count?: number;
+    cost_valuation_complete?: boolean;
   }>;
   items: Array<{
     measureUnit?: import('@/lib/measure-units').MeasureUnit;
@@ -103,7 +111,7 @@ export type InventoryReport = {
     qty: number;
     reserved_qty: number;
     available_qty: number;
-    cost_cents: number;
+    cost_cents: number | null;
     price_cents: number;
     is_active: boolean;
     updated_at: string;
@@ -122,8 +130,8 @@ const dateTime = new Intl.DateTimeFormat("es-MX", {
   timeZone: "America/Mexico_City",
 });
 
-function cents(value: number) {
-  return money.format(Number(value ?? 0) / 100);
+function cents(value: number | null) {
+  return value === null ? "Sin definir" : money.format(Number(value) / 100);
 }
 
 function tabHref(tab: "ventas" | "inventario", locationId: string, filters: Filters) {
@@ -466,7 +474,9 @@ function InventoryResults({ report }: { report: InventoryReport }) {
         <article>
           <CircleDollarSign aria-hidden="true" />
           <span>Valor a costo</span>
-          <strong>{cents(summary.cost_value_cents)}</strong>
+          <strong>{summary.cost_value_cents === null ? "Incompleto" : cents(summary.cost_value_cents)}</strong>
+          {summary.cost_value_cents === null ? <small>Subtotal con costo conocido: {cents(summary.known_cost_value_cents ?? null)}</small> : null}
+          {summary.unknown_cost_variant_count ? <small>{summary.unknown_cost_variant_count} variantes sin costo definido; {summary.unvalued_stock_variant_count} con existencia sin valuar.</small> : null}
           <small>Menudeo {cents(summary.retail_value_cents)}</small>
         </article>
       </div>
