@@ -4416,3 +4416,38 @@ QA cancelada e historial conservado; revisión QA vencida y sin códigos habilit
 Ya no son libros vacíos: no borrar el historial para repetir ensayos antiguos.
 No se tocó main ni producción. Catálogo: 97.3391%, 434 retenidos.
 Detalle: [M9_PREVIEW_ACEPTACION_2026_10_19.md](M9_PREVIEW_ACEPTACION_2026_10_19.md).
+
+
+## M9 · 19 de octubre · Bloqueo de cambios y devolución UI pendiente
+
+Detalle: [M9_CAMBIOS_DEVOLUCIONES_2026_10_19.md](M9_CAMBIOS_DEVOLUCIONES_2026_10_19.md).
+Sólo staging/Preview. Se cerró una ruta que permitía entregar códigos pendientes
+mediante cambios: disparador privado para OUT y filtro de búsqueda v1/v2; IN
+sigue admitiendo devoluciones históricas aun con revisión vencida. No se
+cambiaron permisos, costos, códigos, datos productivos ni Woo.
+
+PASS: 15 controles locales y en staging bajo rollback; 166 migraciones y
+regresiones operativas/concurrencia; 18 controles de agrupación; 717 unitarias,
+ESLint dirigido y TypeScript. Catálogo e historial previo conservados.
+Preview de código: 19f75c53cb1e443e25d48a2e686afd94fa2a8367, READY,
+dpl_EfdvkdKMBYyhFsFfEiXxm35Pprso. Cobertura catálogo sigue 15,876/16,310
+(97.3391%); no es el porcentaje total de M9 ni una autorización de corte real.
+
+**Ensayo UI en curso, no declarar cerrado:** run
+212c70e5-de81-4bc7-b469-d6a083df531c. Se ensayó preparación con rollback y se
+cargaron únicamente dos piezas sintéticas de 2396. Cobro real por interfaz
+creó LAP-V-000002 (a0532d9c-7793-4bb4-a789-02343f81dc51), una pieza y $2,190;
+costo NULL. El usuario guardó su PIN directamente y la devolución completa
+está preparada en Tickets, pendiente de que introduzca ese PIN y autorice.
+Sin devolución registrada todavía: stock QA 1, caja QA +219000 centavos.
+La venta cancelada LAP-V-000001 permanece intacta. Nunca borrar historial.
+
+Evidencia y cierre reproducible en outputs/m9-cambios-bloqueo-2026-10-19/
+(fuera de GitHub): ui-plan.json, ui-base.json, ui-preparar*.sql, ui-cerrar*.sql.
+El cierre se ensayó con rollback y huellas idénticas. Una vez autorizada la
+devolución, comprobar REFUND/CASH por 219000, una entrada RESELLABLE del código
+2396 y ejecutar primero el cierre con rollback, luego el cierre guardado para
+retirar las dos piezas QA, restaurar exactamente su fila de allowlist y dejar
+la revisión QA vencida con cero códigos permitidos. Si no se completa la
+interfaz, el cierre cancela sólo esta venta sintética como alternativa; no
+simula devolución ni borra datos. No dejar declarado saldo cero hasta auditarlo.
