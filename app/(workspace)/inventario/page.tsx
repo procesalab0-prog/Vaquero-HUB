@@ -9,7 +9,11 @@ import type {
   InventoryTransfer,
 } from "@/lib/domain";
 import { mockVariants } from "@/lib/mock-data";
-import { INVENTORY_SNAPSHOT_LIMIT } from "@/lib/inventory-summary";
+import {
+  mapInventoryCatalog,
+  type InventoryCatalogTransport,
+} from "@/lib/inventory-catalog";
+import { lookupInventoryCatalog } from "./catalog-actions";
 import type { MeasureUnit } from "@/lib/measure-units";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
@@ -28,22 +32,6 @@ import {
 import { InventoryWorkspace } from "./inventory-workspace";
 
 export const metadata: Metadata = { title: "Inventario" };
-
-type InventoryRow = {
-  measure_unit: MeasureUnit;
-  variant_id: string;
-  product_id: string;
-  product_name: string;
-  brand_name: string;
-  sku: string;
-  primary_barcode: string | null;
-  attributes: Record<string, string> | null;
-  qty: number | string;
-  reserved_qty: number | string;
-  available_qty: number | string;
-  is_active: boolean;
-  updated_at: string;
-};
 
 type MovementRow = {
   id: number;
@@ -127,7 +115,12 @@ function previewItems(): InventoryItem[] {
 export default async function InventoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; ubicacion?: string; accion?: string }>;
+  searchParams: Promise<{
+    status?: string;
+    ubicacion?: string;
+    accion?: string;
+    codigo?: string;
+  }>;
 }) {
   const params = await searchParams;
   if (!isSupabaseConfigured()) {
@@ -169,6 +162,7 @@ export default async function InventoryPage({
     .select("permission_code")
     .eq("role_id", roleId)
     .in("permission_code", [
+      "products.read",
       "inventory.adjust",
       "inventory.count",
       "transfers.create",
@@ -224,10 +218,13 @@ export default async function InventoryPage({
     transferActorsData,
     destinations,
   ] = await Promise.all([
-    supabase.rpc("get_inventory_snapshot_v2", {
+    supabase.rpc("get_inventory_catalog", {
       p_location_id: activeLocation.id,
-      p_query: "",
-      p_limit: INVENTORY_SNAPSHOT_LIMIT,
+      p_query: (params.codigo ?? "").slice(0, 120),
+      p_filter: "all",
+      p_page: 1,
+      p_page_size: 50,
+      p_exact: Boolean(params.codigo?.trim()),
     }),
     supabase.rpc("list_inventory_movements", {
       p_location_id: activeLocation.id,
@@ -288,23 +285,10 @@ export default async function InventoryPage({
     );
   }
 
-  const items: InventoryItem[] = ((inventory.data ?? []) as InventoryRow[]).map(
-    (row) => ({
-      variantId: row.variant_id,
-      productId: row.product_id,
-      measureUnit: row.measure_unit,
-      productName: row.product_name,
-      brand: row.brand_name,
-      sku: row.sku,
-      code: row.primary_barcode ?? row.sku,
-      attributes: row.attributes ?? {},
-      quantity: Number(row.qty),
-      reservedQuantity: Number(row.reserved_qty),
-      availableQuantity: Number(row.available_qty),
-      isActive: row.is_active,
-      updatedAt: row.updated_at,
-    }),
+  const catalog = mapInventoryCatalog(
+    inventory.data as InventoryCatalogTransport,
   );
+  const items = catalog.items;
   const movements: InventoryMovement[] = (
     (movementsData.data ?? []) as MovementRow[]
   ).map((row) => ({
@@ -379,6 +363,14 @@ export default async function InventoryPage({
 
   return (
     <InventoryWorkspace
+      key={`${activeLocation.id}:${params.codigo ?? ""}`}
+      catalog={catalog}
+      lookupCatalog={lookupInventoryCatalog}
+      canReviewPending={
+        process.env.NEXT_PUBLIC_SUPABASE_URL ===
+          "https://zsezjtswqeijboezvado.supabase.co" &&
+        permissionSet.has("products.read")
+      }
       items={items}
       movements={movements}
       counts={counts}

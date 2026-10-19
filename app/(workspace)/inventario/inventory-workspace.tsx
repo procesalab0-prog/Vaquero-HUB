@@ -1,9 +1,21 @@
 "use client";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-import { INVENTORY_SNAPSHOT_LIMIT, summarizeInventory } from "@/lib/inventory-summary";
+import type {
+  InventoryCatalog,
+  InventoryCatalogLookup,
+} from "@/lib/inventory-catalog";
+import {
+  useInventoryCatalog,
+  InventoryPagination,
+} from "./inventory-catalog-browser";
 import { groupInventory } from "@/lib/inventory-groups";
-import { measureQuantityStep, parseMeasureQuantity, quantityUnit, summarizeMeasureQuantities } from "@/lib/measure-units";
+import {
+  measureQuantityStep,
+  parseMeasureQuantity,
+  quantityUnit,
+} from "@/lib/measure-units";
 
 import {
   ArrowDownLeft,
@@ -19,7 +31,6 @@ import {
 } from "lucide-react";
 import {
   type FormEvent,
-  useDeferredValue,
   useEffect,
   useMemo,
   useRef,
@@ -220,6 +231,8 @@ function ContinuousCountCapture({
   locationId,
   closeAction,
   cancelAction,
+  catalog,
+  lookupCatalog,
 }: {
   action?: InlineCountAction;
   count: InventoryCount;
@@ -227,73 +240,50 @@ function ContinuousCountCapture({
   locationId: string;
   closeAction?: ServerAction;
   cancelAction?: ServerAction;
+  catalog?: InventoryCatalog;
+  lookupCatalog?: InventoryCatalogLookup;
 }) {
-  const initialCaptured = Object.fromEntries(
-    count.items.map((item) => [item.variantId, item.countedQuantity]),
+  const [captured, setCaptured] = useState<Record<string, number>>(() =>
+    Object.fromEntries(
+      count.items.map((i) => [i.variantId, i.countedQuantity]),
+    ),
   );
-  const [captured, setCaptured] =
-    useState<Record<string, number>>(initialCaptured);
-  const firstPending =
-    items.find((item) => initialCaptured[item.variantId] === undefined) ??
-    items[0];
-  const [variantId, setVariantId] = useState(firstPending?.variantId ?? "");
+  const [capturedDetails, setCapturedDetails] = useState<
+    Record<string, InventoryItem>
+  >({});
+  const browser = useInventoryCatalog({
+    items,
+    initialData: catalog,
+    lookup: lookupCatalog,
+    locationId,
+  });
+  const candidates = browser.data?.items ?? [];
+  const [selectedId, setSelectedId] = useState("");
+  const selected = selectedId
+    ? candidates.find((i) => i.variantId === selectedId)
+    : candidates.find((i) => captured[i.variantId] === undefined);
   const [quantity, setQuantity] = useState("");
-  const selectedUnit = quantityUnit(items.find(item => item.variantId === variantId) ?? {});
-  const [query, setQuery] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const quantityRef = useRef<HTMLInputElement>(null);
-  const deferredQuery = useDeferredValue(query);
-  const visibleItems = useMemo(() => {
-    const term = deferredQuery.trim().toLocaleLowerCase("es-MX");
-    return items.filter(
-      (item) =>
-        !term ||
-        [
-          item.productName,
-          item.sku,
-          item.code,
-          ...Object.values(item.attributes),
-        ]
-          .join(" ")
-          .toLocaleLowerCase("es-MX")
-          .includes(term),
-    );
-  }, [deferredQuery, items]);
-  const capturedCount = Object.keys(captured).length;
-
+  const selectedUnit = quantityUnit(selected ?? {});
+  const selectedVariantId = selected?.variantId;
   useEffect(() => {
-    quantityRef.current?.focus();
-  }, [variantId]);
-
-  function nextVariant(currentVariantId: string, nextCaptured: Set<string>) {
-    const currentIndex = items.findIndex(
-      (item) => item.variantId === currentVariantId,
-    );
-    const ordered = [
-      ...items.slice(currentIndex + 1),
-      ...items.slice(0, currentIndex + 1),
-    ];
-    return ordered.find((item) => !nextCaptured.has(item.variantId));
-  }
-
+    if (selectedVariantId) quantityRef.current?.focus();
+  }, [selectedVariantId]);
   function submitCapture(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (isPending) return;
+    if (isPending || browser.pending || browser.error || !selected) return;
     const countedQuantity = parseMeasureQuantity(quantity, selectedUnit, true);
-    if (
-      !variantId ||
-      quantity === "" ||
-      countedQuantity === null ||
-      countedQuantity < 0
-    ) {
-      setFeedback(selectedUnit.decimal_places === 0 ? "Escribe una cantidad entera mayor o igual a cero." : "Escribe una cantidad mayor o igual a cero con hasta tres decimales.");
+    if (quantity === "" || countedQuantity === null || countedQuantity < 0) {
+      setFeedback("Escribe una cantidad válida para la unidad seleccionada.");
       return;
     }
+    const chosen = selected;
     const formData = new FormData();
     formData.set("count_id", count.id);
     formData.set("location_id", locationId);
-    formData.set("variant_id", variantId);
+    formData.set("variant_id", chosen.variantId);
     formData.set("counted_quantity", String(countedQuantity));
     startTransition(async () => {
       const result = action
@@ -306,52 +296,50 @@ function ContinuousCountCapture({
         );
         return;
       }
-      const nextValues = { ...captured, [variantId]: countedQuantity };
-      const next = nextVariant(variantId, new Set(Object.keys(nextValues)));
+      const nextValues = { ...captured, [chosen.variantId]: countedQuantity };
+      const next = candidates.find(
+        (i) => nextValues[i.variantId] === undefined,
+      );
       setCaptured(nextValues);
+      setCapturedDetails((v) => ({ ...v, [chosen.variantId]: chosen }));
       setQuantity("");
+      setSelectedId(next?.variantId ?? "");
       setFeedback(
         next
-          ? "Guardado. Ya puedes capturar el siguiente renglón."
-          : "Conteo completo. Revisa y cierra para aplicar.",
+          ? "Guardado. Puedes capturar el siguiente renglón."
+          : "Página capturada. Busca otro código o cambia de página; esto no significa que todo el catálogo esté contado.",
       );
-      if (next) setVariantId(next.variantId);
     });
   }
-
   return (
     <div className="continuous-count">
       <div className="continuous-count-progress" role="status">
         <strong>
-          {capturedCount} de {items.length} capturadas
+          {Object.keys(captured).length} capturadas ·{" "}
+          {browser.data?.summary.variantCount ?? "—"} variantes en catálogo
         </strong>
-        <span>Enter guarda y avanza automáticamente.</span>
+        <span>
+          Enter en cantidad guarda. Enter en búsqueda localiza el código exacto.
+        </span>
       </div>
       <form className="inventory-count-capture" onSubmit={submitCapture}>
         <label className="inventory-count-search">
           <span>Buscar por nombre, SKU o código</span>
           <input
             type="search"
-            value={query}
-            onChange={(event) => {
-              const value = event.target.value;
-              setQuery(value);
-              const term = value.trim().toLocaleLowerCase("es-MX");
-              const match = items.find((item) =>
-                [
-                  item.productName,
-                  item.sku,
-                  item.code,
-                  ...Object.values(item.attributes),
-                ]
-                  .join(" ")
-                  .toLocaleLowerCase("es-MX")
-                  .includes(term),
-              );
-              if (term && match) {
-                setVariantId(match.variantId);
-                const existing = captured[match.variantId];
-                setQuantity(existing === undefined ? "" : String(existing));
+            maxLength={120}
+            value={browser.query}
+            onChange={(e) => {
+              browser.setQuery(e.target.value);
+              setSelectedId("");
+              setQuantity("");
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                browser.setExact(true);
+                setSelectedId("");
+                setQuantity("");
               }
             }}
             placeholder="Escanea o escribe para filtrar"
@@ -361,18 +349,25 @@ function ContinuousCountCapture({
           <span>Producto</span>
           <select
             aria-label="Producto a contar"
-            value={variantId}
-            onChange={(event) => {
-              setVariantId(event.target.value);
-              const existing = captured[event.target.value];
-              setQuantity(existing === undefined ? "" : String(existing));
+            value={selected?.variantId ?? ""}
+            disabled={browser.pending || Boolean(browser.error)}
+            onChange={(e) => {
+              setSelectedId(e.target.value);
+              setQuantity(
+                captured[e.target.value] === undefined
+                  ? ""
+                  : String(captured[e.target.value]),
+              );
             }}
             required
           >
-            {visibleItems.map((item) => (
-              <option value={item.variantId} key={item.variantId}>
-                {captured[item.variantId] !== undefined ? "✓ " : ""}
-                {item.productName} · {variantDescription(item)} · {item.sku}
+            <option value="" disabled>
+              Selecciona un producto
+            </option>
+            {candidates.map((i) => (
+              <option key={i.variantId} value={i.variantId}>
+                {captured[i.variantId] !== undefined ? "✓ " : ""}
+                {i.productName} · {variantDescription(i)} · {i.code}
               </option>
             ))}
           </select>
@@ -385,39 +380,63 @@ function ContinuousCountCapture({
             type="number"
             min="0"
             step={measureQuantityStep(selectedUnit)}
-            inputMode={selectedUnit.decimal_places === 3 ? "decimal" : "numeric"}
+            inputMode={
+              selectedUnit.decimal_places === 3 ? "decimal" : "numeric"
+            }
             value={quantity}
-            onChange={(event) => setQuantity(event.target.value)}
+            onChange={(e) => setQuantity(e.target.value)}
             required
           />
         </label>
-        <button className="secondary-button" type="submit" disabled={isPending}>
+        <button
+          className="secondary-button"
+          type="submit"
+          disabled={
+            isPending || browser.pending || Boolean(browser.error) || !selected
+          }
+        >
           {isPending ? "Guardando…" : "Guardar y siguiente"}
         </button>
       </form>
-      {feedback ? <p className="inventory-count-feedback">{feedback}</p> : null}
-      {capturedCount ? (
-        <div className="inventory-count-results">
-          {items
-            .filter((item) => captured[item.variantId] !== undefined)
-            .map((item) => (
-              <button
-                type="button"
-                key={item.variantId}
-                onClick={() => {
-                  setVariantId(item.variantId);
-                  setQuantity(String(captured[item.variantId]));
-                }}
-              >
-                <b>{item.productName}</b>
-                <small>
-                  {variantDescription(item)} · Contado:{" "}
-                  {captured[item.variantId]}
-                </small>
-              </button>
-            ))}
-        </div>
+      {browser.exact ? (
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => browser.setExact(false)}
+        >
+          Buscar texto
+        </button>
       ) : null}
+      <InventoryPagination
+        data={browser.data}
+        pending={browser.pending}
+        error={browser.error}
+        onPage={(p) => {
+          browser.setPage(p);
+          setSelectedId("");
+          setQuantity("");
+        }}
+        onRetry={browser.refresh}
+        label="Páginas de productos a contar"
+      />
+      {feedback ? <p className="inventory-count-feedback">{feedback}</p> : null}
+      <div className="inventory-count-results">
+        {Object.entries(captured).map(([id, value]) => {
+          const item =
+            capturedDetails[id] ??
+            candidates.find((i) => i.variantId === id) ??
+            items.find((i) => i.variantId === id);
+          return (
+            <span key={id}>
+              <b>{item?.productName ?? id}</b>
+              <small>
+                {item ? variantDescription(item) : ""} · Contado:{" "}
+                {formatQuantity(value)}
+              </small>
+            </span>
+          );
+        })}
+      </div>
       <div className="inventory-document-actions">
         <form action={cancelAction}>
           <input type="hidden" name="count_id" value={count.id} />
@@ -432,7 +451,7 @@ function ContinuousCountCapture({
           <button
             className="primary-button"
             type="submit"
-            disabled={!capturedCount}
+            disabled={!Object.keys(captured).length || isPending}
           >
             Cerrar y aplicar
           </button>
@@ -478,18 +497,24 @@ function TransferItemForm({
           <label key={item.variantId}>
             <span>
               {item.productName}
-              <small>{item.sku} · {quantityUnit(item).name}</small>
+              <small>
+                {item.sku} · {quantityUnit(item).name}
+              </small>
             </span>
             <input
               type="number"
-              min={mode === "prepare" ? measureQuantityStep(quantityUnit(item)) : 0}
+              min={
+                mode === "prepare" ? measureQuantityStep(quantityUnit(item)) : 0
+              }
               max={
                 mode === "prepare"
                   ? item.requestedQuantity
                   : (item.sentQuantity ?? item.requestedQuantity)
               }
               step={measureQuantityStep(quantityUnit(item))}
-              inputMode={quantityUnit(item).decimal_places === 3 ? "decimal" : "numeric"}
+              inputMode={
+                quantityUnit(item).decimal_places === 3 ? "decimal" : "numeric"
+              }
               value={quantities[item.variantId] ?? 0}
               onChange={(event) =>
                 setQuantities((current) => ({
@@ -515,35 +540,36 @@ function NewTransferForm({
   items,
   locations,
   fromLocationId,
+  catalog,
+  lookupCatalog,
 }: {
   action?: ServerAction;
   items: InventoryItem[];
   locations: Location[];
   fromLocationId: string;
+  catalog?: InventoryCatalog;
+  lookupCatalog?: InventoryCatalogLookup;
 }) {
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [query, setQuery] = useState("");
-  const deferredQuery = useDeferredValue(query);
-  const payload = items
-    .filter((item) => (quantities[item.variantId] ?? 0) > 0)
-    .map((item) => ({
-      variant_id: item.variantId,
-      qty: quantities[item.variantId],
-    }));
-  const destinations = locations.filter(
-    (location) => location.id !== fromLocationId,
-  );
-  const availableItems = items.filter((item) => item.availableQuantity > 0);
-  const filteredItems = availableItems.filter((item) => {
-    const term = deferredQuery.trim().toLocaleLowerCase("es-MX");
-    return (
-      !term ||
-      [item.productName, item.sku, item.code, ...Object.values(item.attributes)]
-        .join(" ")
-        .toLocaleLowerCase("es-MX")
-        .includes(term)
-    );
+  const browser = useInventoryCatalog({
+    items,
+    initialData: catalog,
+    lookup: lookupCatalog,
+    locationId: fromLocationId,
+    initialFilter: "available",
   });
+  const [selected, setSelected] = useState<
+    Record<string, { item: InventoryItem; quantity: number }>
+  >({});
+  const payload = Object.values(selected)
+    .filter((s) => s.quantity > 0)
+    .map((s) => ({ variant_id: s.item.variantId, qty: s.quantity }));
+  const destinations = locations.filter((l) => l.id !== fromLocationId);
+  function choose(item: InventoryItem, value: string) {
+    setSelected((rows) => ({
+      ...rows,
+      [item.variantId]: { item, quantity: Number(value) },
+    }));
+  }
   return (
     <form
       action={action}
@@ -557,9 +583,9 @@ function NewTransferForm({
           <option value="" disabled>
             Selecciona una sucursal
           </option>
-          {destinations.map((location) => (
-            <option key={location.id} value={location.id}>
-              {location.name}
+          {destinations.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.name}
             </option>
           ))}
         </select>
@@ -570,20 +596,45 @@ function NewTransferForm({
             <span>Buscar mercancía</span>
             <input
               type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              maxLength={120}
+              value={browser.query}
+              onChange={(e) => browser.setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  browser.setExact(true);
+                }
+              }}
               placeholder="Nombre, talla, color, SKU o código"
             />
           </label>
           <small>{payload.length} renglones seleccionados</small>
         </div>
-        {filteredItems.map((item) => (
+        {browser.exact ? (
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => browser.setExact(false)}
+          >
+            Buscar texto
+          </button>
+        ) : null}
+        <InventoryPagination
+          data={browser.data}
+          pending={browser.pending}
+          error={browser.error}
+          onPage={browser.setPage}
+          onRetry={browser.refresh}
+          label="Páginas de mercancía para traspaso"
+        />
+        {(browser.data?.items ?? []).map((item) => (
           <label key={item.variantId}>
             <span>
               {item.productName}
               <small>
-                {variantDescription(item)} ·{" "}
-                {formatQuantity(item.availableQuantity)} {quantityUnit(item).name} disponibles
+                {item.code} · {variantDescription(item)} ·{" "}
+                {formatQuantity(item.availableQuantity)}{" "}
+                {quantityUnit(item).name} disponibles
               </small>
             </span>
             <input
@@ -591,24 +642,53 @@ function NewTransferForm({
               min="0"
               max={item.availableQuantity}
               step={measureQuantityStep(quantityUnit(item))}
-              inputMode={quantityUnit(item).decimal_places === 3 ? "decimal" : "numeric"}
-              value={quantities[item.variantId] ?? 0}
-              onChange={(event) =>
-                setQuantities((current) => ({
-                  ...current,
-                  [item.variantId]: Number(event.target.value),
-                }))
+              inputMode={
+                quantityUnit(item).decimal_places === 3 ? "decimal" : "numeric"
               }
+              value={selected[item.variantId]?.quantity ?? 0}
+              onChange={(e) => choose(item, e.target.value)}
               aria-label={`Cantidad de ${item.productName}`}
             />
           </label>
         ))}
-        {!filteredItems.length ? (
+        {browser.data?.totalCount === 0 ? (
           <p className="inventory-preview-note">
-            No hay mercancía que coincida.
+            No hay mercancía disponible que coincida.
           </p>
         ) : null}
       </div>
+      {payload.length ? (
+        <div className="inventory-document-items">
+          <strong>
+            Mercancía seleccionada · se conserva al cambiar de página
+          </strong>
+          {Object.values(selected)
+            .filter((s) => s.quantity > 0)
+            .map(({ item, quantity }) => (
+              <label key={item.variantId}>
+                <span>
+                  {item.productName} · {item.code}
+                  <small>
+                    {formatQuantity(quantity)} {quantityUnit(item).name}
+                  </small>
+                </span>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() =>
+                    setSelected((rows) => {
+                      const copy = { ...rows };
+                      delete copy[item.variantId];
+                      return copy;
+                    })
+                  }
+                >
+                  Quitar {item.code}
+                </button>
+              </label>
+            ))}
+        </div>
+      ) : null}
       <label>
         <span>Nota opcional</span>
         <textarea
@@ -620,7 +700,12 @@ function NewTransferForm({
       <button
         className="primary-button wide"
         type="submit"
-        disabled={!payload.length || !destinations.length}
+        disabled={
+          !payload.length ||
+          !destinations.length ||
+          browser.pending ||
+          Boolean(browser.error)
+        }
       >
         Solicitar traspaso
       </button>
@@ -636,6 +721,9 @@ export function InventoryWorkspace({
   locations,
   transferLocations,
   activeLocationId,
+  catalog,
+  lookupCatalog,
+  canReviewPending = false,
   canAdjust = false,
   canCount = false,
   canCreateTransfer = false,
@@ -663,6 +751,9 @@ export function InventoryWorkspace({
   locations: Location[];
   transferLocations: Location[];
   activeLocationId: string;
+  catalog?: InventoryCatalog;
+  lookupCatalog?: InventoryCatalogLookup;
+  canReviewPending?: boolean;
   canAdjust?: boolean;
   canCount?: boolean;
   canCreateTransfer?: boolean;
@@ -685,48 +776,52 @@ export function InventoryWorkspace({
 }) {
   const searchParams = useSearchParams();
   const requestedCode = searchParams.get("codigo") ?? "";
-  const inventorySummary = summarizeInventory(items);
+  const browser = useInventoryCatalog({
+    items,
+    initialData: catalog,
+    lookup: lookupCatalog,
+    locationId: activeLocationId,
+    initialQuery: catalog?.query ?? requestedCode,
+    initialExact: catalog?.exact ?? Boolean(requestedCode),
+  });
+  const inventorySummary =
+    catalog || preview
+      ? (browser.data?.summary ?? catalog?.summary)
+      : undefined;
   const { identity } = useWorkspace();
   const [showMovements, setShowMovements] = useState(false);
   const [showCounts, setShowCounts] = useState(false);
-  const [showTransfers, setShowTransfers] = useState(initialShowTransfers && (canCreateTransfer || canApproveTransfer || canReceiveTransfer));
+  const [showTransfers, setShowTransfers] = useState(
+    initialShowTransfers &&
+      (canCreateTransfer || canApproveTransfer || canReceiveTransfer),
+  );
   const [adjusting, setAdjusting] = useState<InventoryItem | null>(null);
-  const [searchDraft, setSearchDraft] = useState({ source: requestedCode, value: requestedCode });
-  const query = searchDraft.source === requestedCode ? searchDraft.value : requestedCode;
-  const setQuery = (value: string) => setSearchDraft({ source: requestedCode, value });
-  const [filter, setFilter] = useState("all");
+  const query = browser.query;
+  const setQuery = browser.setQuery;
+  const filter = browser.filter;
   const [expandAll, setExpandAll] = useState(false);
-  const deferredQuery = useDeferredValue(query);
   const activeLocation = locations.find(
     (location) => location.id === activeLocationId,
   );
-  const unitTotals = summarizeMeasureQuantities(items);
-  const availableUnits = unitTotals.map(group => `${formatQuantity(group.availableQuantity)} ${group.unit.name}`).join(" · ") || "0";
-  const reservedUnits = unitTotals.map(group => `${formatQuantity(group.reservedQuantity)} ${group.unit.name}`).join(" · ") || "0";
-  const filteredItems = useMemo(() => {
-    const term = deferredQuery.trim().toLocaleLowerCase("es-MX");
-    return items.filter((item) => {
-      const matchesText =
-        !term ||
-        [
-          item.productName,
-          item.brand,
-          item.code,
-          item.sku,
-          ...Object.values(item.attributes),
-        ]
-          .join(" ")
-          .toLocaleLowerCase("es-MX")
-          .includes(term);
-      const matchesStatus =
-        filter === "all" ||
-        (filter === "available" && item.availableQuantity > 1) ||
-        (filter === "last" && item.availableQuantity > 0 && item.availableQuantity <= 1) ||
-        (filter === "out" && item.availableQuantity <= 0);
-      return matchesText && matchesStatus;
-    });
-  }, [deferredQuery, filter, items]);
-  const productGroups = useMemo(() => groupInventory(filteredItems), [filteredItems]);
+  const availableUnits =
+    inventorySummary?.units
+      .map(
+        (group) =>
+          `${formatQuantity(group.availableQuantity)} ${group.unit.name}`,
+      )
+      .join(" · ") ?? "—";
+  const reservedUnits =
+    inventorySummary?.units
+      .map(
+        (group) =>
+          `${formatQuantity(group.reservedQuantity)} ${group.unit.name}`,
+      )
+      .join(" · ") ?? "—";
+  const filteredItems = browser.data?.items ?? [];
+  const productGroups = useMemo(
+    () => groupInventory(browser.data?.items ?? []),
+    [browser.data],
+  );
   const message = status ? statusMessages[status] : undefined;
 
   return (
@@ -813,9 +908,7 @@ export function InventoryWorkspace({
         </article>
         <article>
           <span>Variantes agotadas</span>
-          <strong>
-            {inventorySummary.outCount}
-          </strong>
+          <strong>{inventorySummary?.outCount ?? "—"}</strong>
         </article>
       </div>
 
@@ -823,7 +916,11 @@ export function InventoryWorkspace({
         <ShieldCheck aria-hidden="true" />
         <div>
           <strong>Inventario auditable</strong>
-          {items.length === INVENTORY_SNAPSHOT_LIMIT ? <span>Resumen de las primeras {INVENTORY_SNAPSHOT_LIMIT} variantes del catálogo, igual que Inicio.</span> : null}
+          <span>
+            {inventorySummary
+              ? `${inventorySummary.variantCount.toLocaleString("es-MX")} variantes del catálogo completo. Los totales no se recortan por búsqueda ni por página.`
+              : "No fue posible obtener el resumen del catálogo."}
+          </span>
           <span>
             Cada corrección conserva la cantidad anterior, la nueva, el motivo y
             la persona que la realizó.
@@ -837,7 +934,14 @@ export function InventoryWorkspace({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar producto, variante o código"
+            maxLength={120}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                browser.setExact(true);
+              }
+            }}
+            placeholder="Nombre, talla, SKU o código"
             aria-label="Buscar inventario"
           />
         </label>
@@ -852,18 +956,47 @@ export function InventoryWorkspace({
               className={filter === value ? "selected" : ""}
               aria-pressed={filter === value}
               type="button"
-              onClick={() => setFilter(value)}
+              onClick={() =>
+                browser.setFilter(value as "all" | "available" | "last" | "out")
+              }
               key={value}
             >
               {label}
             </button>
           ))}
         </div>
-        <button type="button" className="secondary-button" onClick={() => setExpandAll((value) => !value)}>
+        <button
+          type="button"
+          className="secondary-button"
+          disabled={!query.trim()}
+          onClick={() => browser.setExact(!browser.exact)}
+        >
+          {browser.exact ? "Buscar texto" : "Código exacto"}
+        </button>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => setExpandAll((value) => !value)}
+        >
           {expandAll ? "Contraer variantes" : "Desplegar variantes"}
         </button>
       </div>
 
+      {browser.exact ? (
+        <p className="inventory-search-mode">
+          Código exacto: <code>{query}</code>. Enter busca el código completo,
+          conservando ceros iniciales.
+        </p>
+      ) : null}
+      {catalog || preview ? (
+        <InventoryPagination
+          data={browser.data}
+          pending={browser.pending}
+          error={browser.error}
+          onPage={browser.setPage}
+          onRetry={browser.refresh}
+        />
+      ) : null}
       <div className="data-table inventory-table">
         <div className="table-row inventory-row table-header">
           <span>Producto</span>
@@ -874,63 +1007,89 @@ export function InventoryWorkspace({
           <span>Acción</span>
         </div>
         {productGroups.map((group) => (
-          <details className="inventory-product-group" key={`${activeLocationId}:${group.productId}:${deferredQuery}:${filter}:${expandAll}`}
-            open={expandAll || Boolean(deferredQuery.trim()) || filter !== "all"}>
+          <details
+            className="inventory-product-group"
+            key={`${activeLocationId}:${group.productId}:${query}:${filter}:${expandAll}`}
+            open={expandAll || Boolean(query.trim()) || filter !== "all"}
+          >
             <summary>
-              <strong>{group.name}<small>{group.brand}</small></strong>
-              <span>{group.items.length} variantes{deferredQuery.trim() || filter !== "all" ? " coincidentes" : ""}<small className="inventory-group-health">{group.items.filter(item => item.availableQuantity <= 0).length} agotadas · {group.items.filter(item => item.reservedQuantity > 0).length} con reserva</small></span>
+              <strong>
+                {group.name}
+                <small>{group.brand}</small>
+              </strong>
+              <span>
+                {group.items.length} variantes
+                {query.trim() || filter !== "all" ? " coincidentes" : ""}
+                <small className="inventory-group-health">
+                  {
+                    group.items.filter((item) => item.availableQuantity <= 0)
+                      .length
+                  }{" "}
+                  agotadas ·{" "}
+                  {
+                    group.items.filter((item) => item.reservedQuantity > 0)
+                      .length
+                  }{" "}
+                  con reserva
+                </small>
+              </span>
             </summary>
-        {group.items.map((item) => {
-          const tone =
-            item.availableQuantity <= 0
-              ? "out"
-              : item.availableQuantity <= 1
-                ? "low"
-                : "good";
-          return (
-            <div className="table-row inventory-row" key={item.variantId}>
-              <div className="table-product" data-label="Producto">
-                <span className="table-product-image">
-                  <PackageOpen aria-hidden="true" />
-                </span>
-                <strong>
-                  {item.productName}
-                  <small>{item.brand}</small>
-                </strong>
-              </div>
-              <code data-label="Código">{item.code}</code>
-              <span data-label="Variante">{variantDescription(item)} · {quantityUnit(item).name}</span>
-              <span data-label="Disponible" className={`stock-number ${tone}`}>
-                {formatQuantity(item.availableQuantity)}
-              </span>
-              <span data-label="Físico">
-                {formatQuantity(item.quantity)}
-                {item.reservedQuantity > 0 ? (
-                  <small className="inventory-reserved">
-                    {formatQuantity(item.reservedQuantity)} reservadas
-                  </small>
-                ) : null}
-              </span>
-              <span data-label="Acción">
-                {canAdjust ? (
-                  <button
-                    className="table-edit-button inventory-adjust-button"
-                    type="button"
-                    onClick={() => setAdjusting(item)}
+            {group.items.map((item) => {
+              const tone =
+                item.availableQuantity <= 0
+                  ? "out"
+                  : item.availableQuantity <= 1
+                    ? "low"
+                    : "good";
+              return (
+                <div className="table-row inventory-row" key={item.variantId}>
+                  <div className="table-product" data-label="Producto">
+                    <span className="table-product-image">
+                      <PackageOpen aria-hidden="true" />
+                    </span>
+                    <strong>
+                      {item.productName}
+                      <small>{item.brand}</small>
+                    </strong>
+                  </div>
+                  <code data-label="Código">{item.code}</code>
+                  <span data-label="Variante">
+                    {variantDescription(item)} · {quantityUnit(item).name}
+                  </span>
+                  <span
+                    data-label="Disponible"
+                    className={`stock-number ${tone}`}
                   >
-                    <ClipboardCheck aria-hidden="true" />
-                    Contar
-                  </button>
-                ) : (
-                  <span className="inventory-read-only">Sólo consulta</span>
-                )}
-              </span>
-            </div>
-          );
-        })}
+                    {formatQuantity(item.availableQuantity)}
+                  </span>
+                  <span data-label="Físico">
+                    {formatQuantity(item.quantity)}
+                    {item.reservedQuantity > 0 ? (
+                      <small className="inventory-reserved">
+                        {formatQuantity(item.reservedQuantity)} reservadas
+                      </small>
+                    ) : null}
+                  </span>
+                  <span data-label="Acción">
+                    {canAdjust ? (
+                      <button
+                        className="table-edit-button inventory-adjust-button"
+                        type="button"
+                        onClick={() => setAdjusting(item)}
+                      >
+                        <ClipboardCheck aria-hidden="true" />
+                        Contar
+                      </button>
+                    ) : (
+                      <span className="inventory-read-only">Sólo consulta</span>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
           </details>
         ))}
-        {filteredItems.length === 0 ? (
+        {!browser.pending && !browser.error && filteredItems.length === 0 ? (
           <div className="inventory-empty">
             <PackageOpen aria-hidden="true" />
             <strong>No encontramos variantes</strong>
@@ -939,9 +1098,28 @@ export function InventoryWorkspace({
                 ? "Prueba otro filtro o búsqueda."
                 : "Aún no hay productos para mostrar."}
             </span>
+            {canReviewPending && browser.exact ? (
+              <Link
+                className="secondary-button"
+                href={`/productos/migracion-pendientes?${new URLSearchParams({ q: query, mode: "exact", page: "1" })}`}
+              >
+                Consultar este código pendiente de SICAR
+              </Link>
+            ) : null}
           </div>
         ) : null}
       </div>
+
+      {catalog || preview ? (
+        <InventoryPagination
+          data={browser.data}
+          pending={browser.pending}
+          error={browser.error}
+          onPage={browser.setPage}
+          onRetry={browser.refresh}
+          label="Más páginas de inventario"
+        />
+      ) : null}
 
       {preview ? (
         <p className="inventory-preview-note">
@@ -1005,7 +1183,11 @@ export function InventoryWorkspace({
                   min="0"
                   max="999999999.999"
                   step={measureQuantityStep(quantityUnit(adjusting))}
-                  inputMode={quantityUnit(adjusting).decimal_places === 3 ? "decimal" : "numeric"}
+                  inputMode={
+                    quantityUnit(adjusting).decimal_places === 3
+                      ? "decimal"
+                      : "numeric"
+                  }
                   defaultValue={adjusting.quantity}
                   required
                 />
@@ -1181,6 +1363,8 @@ export function InventoryWorkspace({
                     {active ? (
                       <ContinuousCountCapture
                         action={recordCountAction}
+                        catalog={catalog}
+                        lookupCatalog={lookupCatalog}
                         count={count}
                         items={items}
                         locationId={activeLocationId}
@@ -1251,6 +1435,8 @@ export function InventoryWorkspace({
               <details className="inventory-new-document">
                 <summary>Nueva solicitud</summary>
                 <NewTransferForm
+                  catalog={catalog}
+                  lookupCatalog={lookupCatalog}
                   action={createTransferAction}
                   items={items}
                   locations={transferLocations}

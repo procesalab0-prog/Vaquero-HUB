@@ -8036,6 +8036,19 @@ a:active {
 .inventory-summary {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+.inventory-pagination {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin: 1rem 0;
+}
+.inventory-pagination > span {
+  flex: 1 1 16rem;
+}
+.inventory-search-mode {
+  overflow-wrap: anywhere;
+}
 .inventory-notice {
   align-items: flex-start;
 }

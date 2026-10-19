@@ -12,6 +12,7 @@ import { verifyUsdCheckout } from "./verify-usd-checkout-native.mjs";
 import { verifyUsdClose } from "./verify-usd-close-native.mjs";
 import { verifyUnknownCosts } from "./verify-unknown-cost-native.mjs";
 import { verifyUsdRefund } from "./verify-usd-refund-native.mjs";
+import { verifyInventoryCatalog } from "./verify-inventory-catalog-native.mjs";
 
 const target = new URL(process.env.QA_DATABASE_URL ?? "postgresql://invalid");
 if (
@@ -739,6 +740,7 @@ try {
   await verifyUsdClose(db, { login, admin, cashier, session, a, b });
   await verifyUsdRefund(db, { login, admin, locations, variant });
   await verifyUnknownCosts(db, { login, admin, cashier, locations });
+  await verifyInventoryCatalog(db, { login, admin, cashier, locations });
   console.log(
     `${migrations.length} migrations + quick/catalog checkout, unit guards, fractional commercial backend, note privacy, gated USD checkout/reference/original-MXN-refund/blind close and actual two-connection cost/count/stock/USD-change/USD-close locks: PASS. Fractional product assignment and USD checkout remain gated; Auth/Storage mocked; NOT staging/PostgREST.`,
   );

@@ -16,10 +16,7 @@ import { resolveActiveLocation } from "@/lib/auth/active-location";
 import { getWorkspaceSession } from "@/lib/auth/workspace-session";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { SalesReport } from "../reportes/reports-workspace";
-import {
-  INVENTORY_SNAPSHOT_LIMIT,
-  summarizeInventory,
-} from "@/lib/inventory-summary";
+import type { InventoryCatalogTransport } from "@/lib/inventory-catalog";
 import { DashboardGreeting } from "./dashboard-greeting";
 import { WorkspaceNotes } from "./workspace-notes";
 import type { WorkspaceNote } from "@/lib/workspace-notes";
@@ -94,7 +91,7 @@ export default async function DashboardPage({
   const link = (path: string) =>
     location ? `${path}?ubicacion=${encodeURIComponent(location.id)}` : path;
   let sales: SalesReport | null = null;
-  let inventory: Array<{ available_qty: number | string }> | null = null;
+  let inventory: InventoryCatalogTransport["summary"] | null = null;
   let recent: RecentTicket[] = [];
   let cashSession: CashSessionSummary | null = null;
   let canReportSales = false;
@@ -140,10 +137,10 @@ export default async function DashboardPage({
               })
             : null,
           permissions.has("inventory.read")
-            ? supabase.rpc("get_inventory_snapshot", {
+            ? supabase.rpc("get_inventory_catalog", {
                 p_location_id: location.id,
                 p_query: "",
-                p_limit: INVENTORY_SNAPSHOT_LIMIT,
+                p_page_size: 1,
               })
             : null,
           permissions.has("pos.sell")
@@ -164,9 +161,8 @@ export default async function DashboardPage({
         errors.push("No fue posible cargar el inventario.");
       else
         inventory =
-          (inventoryResult?.data as Array<{
-            available_qty: number | string;
-          }> | null) ?? null;
+          (inventoryResult?.data as InventoryCatalogTransport | null)
+            ?.summary ?? null;
       if (ticketsResult?.error)
         errors.push("No fue posible cargar los tickets recientes.");
       else recent = (ticketsResult?.data as RecentTicket[] | null) ?? [];
@@ -186,11 +182,10 @@ export default async function DashboardPage({
     )
     .join(" · ");
   const inventorySummary = inventory
-    ? summarizeInventory(
-        inventory.map((item) => ({
-          availableQuantity: Number(item.available_qty),
-        })),
-      )
+    ? {
+        outCount: Number(inventory.out_count),
+        lowCount: Number(inventory.low_count),
+      }
     : null;
   const cashLocation = locations.find(
     (item) => item.id === cashSession?.location_id,
@@ -301,7 +296,7 @@ export default async function DashboardPage({
           <strong>{inventorySummary ? inventorySummary.outCount : "—"}</strong>
           <small>
             {inventorySummary
-              ? `${inventorySummary.lowCount} con hasta 2 disponibles${inventory?.length === INVENTORY_SNAPSHOT_LIMIT ? ` · primeras ${INVENTORY_SNAPSHOT_LIMIT} variantes` : ""}`
+              ? `${inventorySummary.lowCount} con hasta 2 disponibles · catálogo completo`
               : "Disponible con acceso a Inventario"}
           </small>
         </article>
