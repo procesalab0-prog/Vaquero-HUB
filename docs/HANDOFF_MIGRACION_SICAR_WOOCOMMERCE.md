@@ -1975,3 +1975,31 @@ outputs/m9-piloto-sicar-verificacion-2026-10-19/. Siguiente: cerrar alcance de
 compromisos/entregas y corte operativo; plan de saldos y aceptación desde
 Preview con venta/devolución/caja. El ensayo técnico ya pasó, no equivale a
 haber habilitado el piloto operativo o migrado sus apartados.
+
+
+## M9 · 19 de octubre · Flujo de doce códigos ensayado con rollback
+
+Se amplió el ensayo del libro a lector, venta, ticket, efectivo y devolución
+con las funciones existentes: cuatro tandas de tres códigos, 12 ventas y 12
+devoluciones sintéticas, 140 comprobaciones, caja neta cero. Reintentos sin
+duplicados; sobreventas, devoluciones sin autorización, tokens reutilizados y
+cambios con revisión retirada rechazados. Recepción del artículo vendido
+permitida después de retirar la revisión. Token SQL sintético confinado a cada
+transacción: no se presenta como aceptación real de PIN/Auth/PostgREST.
+
+Auditoría ampliada: las 120 tablas de public/app idénticas después de cada
+rollback, con historia previa, folios, guarda, autorizaciones y colas web
+conservados. Captura y observaciones fijadas por SHA256; generador offline de
+cuatro SQL, dos corridas idénticas y coincidencia exacta con SQL ejecutado.
+Primer intento corrigió el orden de restricciones diferibles del ensayo; otro
+perdió respuesta del conector y no se contó como PASS. Ninguno dejó cambios.
+
+861 unitarias/106 archivos, 28 nuevas, TypeScript y ESLint dirigido PASS.
+Sin esquema/interfaz nuevos, stock permanente, cambios de main/producción,
+SICAR o Woo. Cobertura de catálogo sigue 15,876/16,381 (96.92%); no equivale
+a migración productiva. Falta corte de compromisos/entregas de SICAR y plan de
+saldos apto para el piloto operativo desde Preview. Default → La Piedad ya
+confirmado; no se vuelve a solicitar ni se asumen reservas cero.
+
+Detalle: docs/M9_PILOTO_FLUJO_TRANSACCIONAL_2026_10_19.md. Evidencia privada en
+outputs/m9-piloto-flujo-transaccional-2026-10-19/.
