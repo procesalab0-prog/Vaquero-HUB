@@ -4604,3 +4604,36 @@ Detalle: docs/M9_PREPARACION_SALDOS_PILOTO_2026_10_19.md. Evidencia privada:
 outputs/m9-preparacion-saldos-piloto-2026-10-19/. Siguiente: comprobar significado físico y
 evidencia de cantidades/reservas de la selección al mismo corte; después ensayo de
 carga con libro/deduplicación/reversión antes de operar el piloto junto a SICAR.
+
+
+## M9 · 19 de octubre · Existencias y créditos consultados, libro ensayado
+
+SICAR leído sin cambios: doce códigos del piloto con 40 piezas de existencia
+mostrada, iguales al XLSX. No se presenta la columna como conteo físico.
+Emmanuel ubicó apartados en Clientes → Crédito: se revisaron las 61 cuentas
+de la búsqueda APARTADO, No pagado / recepción Todos. Siete documentos en seis
+cuentas, diez líneas, ningún código del piloto coincide literalmente. No cubre
+clientes sin etiqueta, documentos pagados ni entrega física; reservas siguen
+NULL. Un código genérico queda fuera; no se asocia por nombre o saldo monetario.
+
+Se enlazó un documento de apartado con su movimiento Venta en Historial de
+existencia de SICAR. No restar automáticamente créditos otra vez al saldo.
+Evidencia de clientes/folios permanece privada local, fuera de GitHub.
+
+Ensayo técnico de libro sólo staging: 12 entradas INITIAL_IMPORT transitorias
+con las 40 unidades observadas, replay sin otros movimientos y ROLLBACK.
+Observaciones fijadas por SHA256, destino/auditoría revalidados, libro legítimo,
+sin bypass de triggers, reservas, costos, venta o guarda. No es aprobación de
+stock físico ni reservas: TECHNICAL_ROLLBACK_NOT_STOCK_APPROVAL. Las 18 tablas
+quedan idénticas, historia conservada y saldos cero. Secuencias de movimientos
+pueden avanzar por rollback; no se reinician ni se borra historia.
+
+PASS 833 unitarias/105 archivos (35 nuevas), ESLint y TypeScript. Cruces
+repetidos idénticos. Sin migración/interfaz nueva ni carga persistente, ningún
+cambio en Woo/main/producción. Cobertura catálogo 96.92% sin nuevas altas.
+
+Detalle: docs/M9_PILOTO_EXISTENCIAS_CREDITOS_2026_10_19.md. Evidencia privada:
+outputs/m9-piloto-sicar-verificacion-2026-10-19/. Siguiente: cerrar alcance de
+compromisos/entregas y corte operativo; plan de saldos y aceptación desde
+Preview con venta/devolución/caja. El ensayo técnico ya pasó, no equivale a
+haber habilitado el piloto operativo o migrado sus apartados.
