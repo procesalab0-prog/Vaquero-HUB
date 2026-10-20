@@ -4829,3 +4829,28 @@ líneas sin variante y padrón completo fuera de APARTADO; renovar corte antes d
 operar. Detalle: docs/M9_CONCILIACION_VINCULOS_PILOTO.md. Evidencia privada fuera
 de Git: outputs/m9-conciliacion-piloto-clientes-2026-10-20/. Cobertura catálogo
 96.92% sin cambio; no es porcentaje de migración total.
+
+
+## Registro heredado y hoja digital del piloto · Preview · 20 octubre 2026
+
+Conservadas 61 referencias heredadas con UUID propio, source key/lote/hash; no son
+clientes nativos, socios o Auth. Once sin teléfono y nombres repetidos preservados
+sin fusionar; sin consentimiento, portal, crédito nuevo o puntos inventados.
+Doce filas de hoja de conteo con código/variante/La Piedad y referencia SICAR;
+físico, vendido pendiente de entrega y separado sin venta permanecen NULL.
+
+Carga privada y replay comprobados; 14 negativos SQL + rollback, 957 unitarias,
+tipos/lint correctos. 129 tablas anteriores intactas y auditoría extendida de 132.
+Preview READY; aceptación con sesión real de 61 IDs, búsqueda, doce formularios,
+rechazo de sobrecompromiso y guardado de nota sin cantidades, revisión 1→2 con
+antes/después inmutable. Sólo borrador privado y evento cambian durante UI.
+Un cliente nativo, deuda vacía, sin ventas/reservas/stock/caja nuevos. A 390px,
+sin overflow. API LIST corregida por alias en migración separada tras detectarlo
+la primera prueba UI; reensayada en SQL y navegador antes de cerrar.
+
+Ruta /clientes/heredados-sicar sólo Preview. Detalle y límites:
+docs/M9_REGISTRO_HEREDADO_INVENTARIO_PILOTO.md; evidencia fuera de Git en
+outputs/m9-heredados-inventario-piloto-2026-10-20/. Sigue completar el padrón,
+acreditar conteos y compromisos y preparar cobro/apertura para el registro heredado
+o vinculación nativa validada. No se activan deudas por registrar un ID. Sin main,
+producción o cambios SICAR/Woo. Cobertura de catálogo sigue 96.92%.

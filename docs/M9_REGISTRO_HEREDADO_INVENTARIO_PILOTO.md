@@ -72,8 +72,40 @@ vigencia de la evidencia. Dos corridas byte a byte idénticas. Su SQL generado
 se ejecutó en staging con ROLLBACK y confirmó replay del registro ya conservado.
 
 Evidencia privada fuera de Git: outputs/m9-heredados-inventario-piloto-2026-10-20/.
-Publicación/aceptación de UI pendiente al escribir este resultado de datos.
+Publicación/aceptación de UI comprobada en el apartado siguiente.
 Sigue completar padrón fuera de APARTADO, acreditar conteo físico/compromisos,
 planear el servicio de cobro para identidades heredadas o su vinculación nativa
 cuando exista evidencia válida, y renovar el corte antes de activar deuda/stock.
 Registrar clientes heredados no elimina por sí solo ese pendiente financiero.
+
+## Aceptación real de Preview
+
+Código `3d48fc252f87d596a7ccb9e5d9bb02de066b86e7`, deployment
+`dpl_7kwUditx7YK9zDejK71Dn2nYH3xg` READY. La primera consulta UI detectó
+ambigüedad entre la variable d y el alias de la tabla de borradores. Se corrigió
+exclusivamente en staging con `20261020213421_m9_legacy_list_alias_fix.sql`, sin
+reescribir las migraciones anteriores. Se incorporó LIST al ensayo SQL final.
+Consulta authenticated 61/12 y nueva repetición de los 14 negativos PASS, rollback.
+La API se volvió a probar con la sesión real después de la corrección.
+
+Entrada desde la revisión, listado con 61 IDs distintos y once contactos faltantes,
+búsqueda por prefijo de ID y regreso al listado completo. Doce formularios con sus
+36 campos de cantidades vacíos. Se rechazó en UI un borrador incompatible (físico
+1 y vendido pendiente 2); no se guardaron esas cantidades. Se guardó únicamente
+la nota «Hoja preparada; conteo físico y entregas pendientes.» en el código 2396.
+Revisión 1→2, antes/después auditados, nota conservada tras recargar y cantidades
+NULL. Es una nota de preparación, no un conteo hecho ni una firma del operador.
+
+Auditoría tras navegador: sólo cambian app.m9_pilot_stock_drafts y su evento nuevo
+en app.m9_legacy_pilot_events; registro de IDs y las 129 tablas anteriores intactos.
+Los doce renglones conservan las tres cantidades NULL; un cliente nativo y libro
+de deuda vacío, sin nuevos movimientos financieros o físicos. Hay dos eventos
+privados: registro/semilla y borrador vacío. A 390px: scrollWidth=clientWidth=390;
+viewport restaurado. No se copiaron cantidades SICAR a físico ni se reabrió QA.
+
+Tablas privadas con RLS y cero grants de datos a public/anon/authenticated/service_role;
+RPC público invoker, mantenimiento privado no ejecutable por authenticated. El actor
+y los permisos se comprueban en servidor y base; no se usó una clave privilegiada
+en el navegador. El ensayo SQL de rol no se declara prueba de otro empleado real;
+no había fixture activo no ADMIN. Logs remotos del conector no disponibles en los
+bloques previos; no se afirma revisión de logs sin errores. Main/producción intactos.
