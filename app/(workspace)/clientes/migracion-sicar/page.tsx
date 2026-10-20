@@ -81,6 +81,12 @@ export default async function CustomerSourceReview({
         <Link href="/clientes" className="button secondary">
           Volver a clientes
         </Link>
+        <Link
+          href="/clientes/migracion-sicar/conciliacion"
+          className="button primary"
+        >
+          Ver conciliación del piloto
+        </Link>
       </header>
       <div className={styles.summary}>
         <section>
