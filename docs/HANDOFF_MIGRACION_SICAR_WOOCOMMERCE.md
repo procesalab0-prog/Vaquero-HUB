@@ -2138,3 +2138,32 @@ a 390px sin overflow; build local limitado por DNS de Google Fonts. Main,
 producción, SICAR y Woo sin cambios. Detalle: docs/M9_PANTALLA_REVISION_CLIENTES_PREVIEW.md.
 Evidencia privada: outputs/m9-revision-clientes-preview-2026-10-20/. Sigue
 padrón completo y vínculos reales acreditados con corte renovado.
+
+
+## Conciliación de vínculos y piloto · Preview · 20 octubre 2026
+
+Nueva ruta /clientes/migracion-sicar/conciliacion de sólo lectura y ADMIN.
+61 cuentas/73 documentos, siete abiertos por $11,910; $4,200 de abonos activos
+conciliados, $1,000 cancelados excluidos. Renovación parcial de las seis cuentas
+deudoras y sus siete documentos: sin cambios financieros. No renueva todo el
+padrón ni modifica el timestamp del lote guardado. Se descartaron capturas
+transitorias de SICAR y se exigió ID exacto/abonos cargados antes de conservar.
+
+94/99 líneas revalidadas contra barcode literal actual; cinco pendientes.
+Cero coincidencias con clientes nativos acreditados: ningún vínculo real nuevo.
+99 entregas siguen sin evidencia; recepción de pago es facturación, no entrega.
+Billetera pagada histórica reconsultada, sin certificar entrega ni descontarla.
+Cola con siete cuentas prioritarias, archivo completo y doce códigos del piloto;
+no confundir los enlaces de navegación probados con vínculos operativos creados.
+
+950 unitarias/112 archivos, ESLint/TypeScript/Prettier PASS. Dos corridas offline
+idénticas, READ ONLY + ROLLBACK con tres negativos, 129 tablas idénticas antes y
+después de toda la aceptación. Preview READY, sesión real y siete enlaces/61
+cuentas/doce códigos comprobados; 390px sin overflow. Sin nuevos saldos, cobros,
+reservas, entregas, consentimientos, main o producción. No se reabrió QA.
+
+Sigue acreditar identidades/contactos, entrega/conteo físico del piloto, cinco
+líneas sin variante y padrón completo fuera de APARTADO; renovar corte antes de
+operar. Detalle: docs/M9_CONCILIACION_VINCULOS_PILOTO.md. Evidencia privada fuera
+de Git: outputs/m9-conciliacion-piloto-clientes-2026-10-20/. Cobertura catálogo
+96.92% sin cambio; no es porcentaje de migración total.

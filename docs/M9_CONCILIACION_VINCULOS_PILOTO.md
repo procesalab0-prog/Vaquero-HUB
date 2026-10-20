@@ -87,3 +87,32 @@ de APARTADO y renovación final antes de activar cualquier saldo. La interfaz
 presenta siete cuentas priorizadas y permite consultar las 61, sin convertir
 candidatos o saldos conciliados en autorización. No se envían preguntas ni se
 publica nada en main automáticamente. Cobertura de catálogo no cambia.
+
+## Aceptación publicada con sesión real
+
+Código `c1f2defe04954ca5d92a1c9be0bee9870b3cd87c`, deployment
+`dpl_D5GRbCBcEpnSkydbPqmTyksjRpPR` READY, exclusivamente Preview.
+Sesión real de Emmanuel: entrada desde revisión de clientes, siete enlaces de
+cuenta verificados contra su nombre/documentos y bloqueo de identidad/entrega,
+vista completa de 61 cuentas y regreso a siete prioritarias, doce códigos y
+resumen 94/99, cero diferencias y $11,910. A 390px: scrollWidth=clientWidth=390;
+viewport restaurado. No se guardó ninguna revisión ni se reabrió la ventana QA.
+
+Se volvió a consultar la billetera histórica en SICAR: documento pagado de
+2025 con código literal y saldo cero; sin campo que acredite entrega física.
+El nombre histórico del documento difiere del nombre actual de esa cuenta:
+no se resuelve identidad por semejanza ni se enlaza con un cliente nativo.
+Las tablas de origen permanecen como copia del corte anterior.
+
+Auditoría final tras navegador: las 129 tablas idénticas al baseline, incluidos
+fuentes, auditoría, revisiones, clientes, libro, caja, ventas e inventario. Cero
+aperturas/abonos/entregas/vínculos reales nuevos. El panel es una conciliación
+de origen y una cola concreta de revisión, no una activación financiera.
+Las dos corridas offline coinciden byte a byte en sus hashes de salida.
+
+Limitación de observabilidad: el conector no permitió listar despliegues con
+slug y devolvió 404 al solicitar logs; el deployment concreto sí se consultó
+READY y el flujo se verificó en navegador. No afirmar que se inspeccionaron
+logs remotos sin errores. Main/producción no se modificaron. No se probó un
+empleado activo no ADMIN por falta de fixture; los tres negativos corresponden
+a actor ausente, actor no registrado y anon en SQL, no a ese rol real.
