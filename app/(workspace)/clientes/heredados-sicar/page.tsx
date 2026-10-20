@@ -55,6 +55,9 @@ export default async function LegacyCustomers({
         >
           Ver conciliación de saldos y entregas
         </Link>
+        <a href="#piloto" className="button primary">
+          Capturar inventario piloto
+        </a>
       </header>
       <div className={styles.summary}>
         <section>
