@@ -4854,3 +4854,12 @@ outputs/m9-heredados-inventario-piloto-2026-10-20/. Sigue completar el padrón,
 acreditar conteos y compromisos y preparar cobro/apertura para el registro heredado
 o vinculación nativa validada. No se activan deudas por registrar un ID. Sin main,
 producción o cambios SICAR/Woo. Cobertura de catálogo sigue 96.92%.
+
+### M9 · Apertura heredada de staging · 20 octubre 2026
+
+Siete documentos de seis cuentas APARTADO por $11,910 en libro privado con UUID
+heredado; no cliente nativo/consentimiento inventado. Fuente, apertura, replay,
+compensación y asignación de abonos ensayados con rollback. Pantalla Preview
+permite sólo abonos ficticios que se revierten; no cobro operativo ni recibo real.
+Pendiente integrar caja/métodos/corte y renovar fuentes antes del arranque. No
+cambia main/producción, stock o entregas. Ver docs/M9_APERTURA_SALDOS_HEREDADOS_STAGING.md.

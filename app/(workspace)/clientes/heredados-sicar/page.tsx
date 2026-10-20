@@ -47,13 +47,19 @@ export default async function LegacyCustomers({
         <h1>Clientes heredados e inventario piloto</h1>
         <p>
           Registro conservado desde SICAR, separado de socios y del portal. No
-          concede crédito nuevo ni activa los saldos de origen.
+          concede crédito nuevo; la apertura de ensayo se consulta por separado.
         </p>
         <Link
           href="/clientes/migracion-sicar/conciliacion"
           className="button secondary"
         >
           Ver conciliación de saldos y entregas
+        </Link>
+        <Link
+          href="/clientes/heredados-sicar/saldos"
+          className="button primary"
+        >
+          Ver apertura y ensayar abonos
         </Link>
         <a href="#piloto" className="button primary">
           Capturar inventario piloto
@@ -75,8 +81,8 @@ export default async function LegacyCustomers({
           <span>Conteos físicos por capturar</span>
         </section>
         <section>
-          <strong>Sin activar</strong>
-          <span>Deuda, portal e inventario</span>
+          <strong>Sin cobro real</strong>
+          <span>Inventario y portal sin activar</span>
         </section>
       </div>
       <section
@@ -112,7 +118,7 @@ export default async function LegacyCustomers({
                 </small>
                 <p>
                   Saldo del corte de origen: {money(c.source_balance_cents)} ·
-                  Sin deuda operativa activada
+                  Consulta la apertura de staging por separado
                 </p>
                 {!c.source_unchanged ? (
                   <p className={styles.notice}>

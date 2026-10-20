@@ -2192,3 +2192,19 @@ outputs/m9-heredados-inventario-piloto-2026-10-20/. Sigue completar el padrón,
 acreditar conteos y compromisos y preparar cobro/apertura para el registro heredado
 o vinculación nativa validada. No se activan deudas por registrar un ID. Sin main,
 producción o cambios SICAR/Woo. Cobertura de catálogo sigue 96.92%.
+
+## Apertura heredada y abonos de ensayo · 20 octubre 2026
+
+Libro privado de staging asociado al registro heredado, sin consentimiento o
+cliente nativo inventado: siete documentos/seis cuentas/$11,910 del lote real.
+No se cobran otra vez $4,200 históricos ni se incluye $1,000 cancelado. Alcance
+APARTADO; no todo el padrón. Apertura conservada únicamente en dos tablas nuevas.
+Ensayo con compensación, FIFO, replay y 17 negativos PASS; rollback deja 135
+hashes idénticos. Tras conservar apertura, 132 tablas previas intactas.
+960 unitarias/114 archivos; tipos/lint correctos. No abonos ficticios persistentes,
+caja, ventas, inventario, entregas, main o producción.
+
+Ruta Preview /clientes/heredados-sicar/saldos permite ensayar y revertir abonos;
+no emite recibo válido ni cobra dinero. Siguiente: integrar y aceptar caja/métodos/
+recibo/corte antes de habilitar cobros operativos, renovar fuentes y completar
+padrón/entregas/conteo. Detalle: docs/M9_APERTURA_SALDOS_HEREDADOS_STAGING.md.
