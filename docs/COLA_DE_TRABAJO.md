@@ -8,6 +8,19 @@
 >
 > Última actualización: 2026-10-02, avance local de cantidades comerciales y aceptación operativa.
 
+## Tutoriales en video — acordados, pendientes de empezar
+
+Lista acordada con Emmanuel el 20 de octubre: 7 videos con capítulos para el
+equipo y 1 de Mi Vaquero para clientes. Detalle en
+[`TUTORIALES.md`](TUTORIALES.md).
+
+- [ ] Esperar catálogo real cargado (M9): Emmanuel quiere grabar con productos
+      verdaderos.
+- [ ] Escribir el guion de cada video sobre la versión vigente y que Emmanuel
+      lo apruebe.
+- [ ] Grabar sin datos reales de clientes ni ventas reales.
+- [ ] Publicar en una página de Ayuda con acceso desde cada sección.
+
 ## Corrección 0.64.3 — cobro móvil sin botones encima
 
 Video de Emmanuel del 10 de octubre: «Ver carrito» y el encabezado tapaban métodos de pago y Cerrar en Cobrar. Las ventanas de cobro y sus opciones ahora se montan fuera de la capa desplazable y animada; el acceso al carrito se oculta mientras hay un diálogo y vuelve al cerrar. El fondo deja de desplazarse durante el diálogo. Se valida navegación desde Inicio, abrir carrito/cobro, pulsación de Cerrar, métodos de pago y scroll del diálogo con WebKit y Chromium. Sin SQL, ventas reales ni modificaciones M9/Woo.

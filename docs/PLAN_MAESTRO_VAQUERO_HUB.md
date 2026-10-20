@@ -3462,3 +3462,12 @@ Validación 0.55.5: revisión visual del icono; compilación de producción/Type
 - Sólo documentación: sin cambios de código, base, staging, producción ni Woo.
   Las vías 1 a 3 cambian reglas vigentes de M9 y requieren autorización
   explícita de Emmanuel antes de implementarse.
+
+### 2026-10-20 · Tutoriales en video acordados
+
+- Lista acordada con Emmanuel: 7 videos con capítulos para el equipo (Primeros
+  pasos; Vender, cobrar y devoluciones; Cotizaciones; Caja; Apartados y crédito;
+  Productos e inventario; Gerencia) y 1 aparte para clientes (Mi Vaquero).
+  Detalle en [`TUTORIALES.md`](TUTORIALES.md).
+- Se graban con productos verdaderos cuando el catálogo real esté cargado, sin
+  datos reales de clientes ni ventas. Sólo documentación; sin cambios de código.
