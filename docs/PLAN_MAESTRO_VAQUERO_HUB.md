@@ -4510,3 +4510,33 @@ GitHub: outputs/m9-inventario-completo-2026-10-19/. Cobertura SICAR sigue
 Los 434 códigos retenidos de la cohorte siguen pendientes. No confundirlos
 con los 437 registros brutos de revisión en la pantalla de SICAR pendiente.
 Antes del corte: renovar fuentes y validar inventario real; producción intacta.
+
+
+## M9 · 19 de octubre · Plan y ensayo acumulado del arranque por etapas
+
+Nuevo preparador offline con entradas fijadas por SHA256 y captura completa de
+staging: 16,310 códigos SICAR contabilizados una sola vez; 15,842 candidatos
+a ensayos, 468 retenidos (34 ya cargados sin revisión de venta y 434 sin cargar).
+Etapas: revisión anterior 7,776/32 lotes; regla T. 823/4; provisionales 7,243/29.
+Los 65 lotes conservan Clave 1, variant_id y product_id; no agrupan ni publican
+en Woo. Plantilla de 15,842 código/sucursal con cantidades y reservas NULL,
+no importable. No se toma existencia vacía como cero ni se archiva por ausencia.
+
+Tres ensayos SQL acumulados con rollback completo: 7,776, 8,599 y 15,842
+permitidos sólo en cada transacción; resto bloqueado. PASS 30 controles de
+guarda, caducidad, revisión alterada, producto rápido, identidad y permisos.
+Sin ventas, devoluciones, conteos ni ajustes nuevos. Auditoría de 18 tablas
+idéntica antes/después: dos ventas, una devolución, ocho movimientos previos
+conservados; físico/reservado cero. Guarda habilitada, revisión real vencida,
+cero filas con su SHA y variante no M9 también bloqueada. No se activa etapa.
+
+PASS 740 unitarias/101 archivos (18 nuevas), ESLint dirigido y TypeScript.
+Sin migración nueva ni cambio de interfaz: mantenimiento SQL, no aceptación
+UI de cada etapa. Reportes repetidos idénticos; fuentes aún del 12 de octubre.
+No cambia main, producción, Woo ni cobertura SICAR 97.3391%.
+
+Detalle: docs/M9_ARRANQUE_ETAPAS_2026_10_19.md. Evidencia local fuera de GitHub:
+outputs/m9-arranque-etapas-2026-10-19/. Siguiente: nuevas exportaciones del corte,
+existencias/reservas por ubicación confirmadas, piloto pequeño junto a SICAR,
+respaldo/restauración y autorización expresa antes de producción. No reutilizar
+ensayos antiguos que exigen libros vacíos ni borrar historial para repetirlos.
