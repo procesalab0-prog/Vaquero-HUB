@@ -4478,3 +4478,35 @@ los pendientes comerciales retenidos. Cobertura catálogo sigue 97.3391%.
 Siguiente comprobación identificada: búsqueda de inventario desde su pantalla
 con catálogo amplio; el resumen actual informa explícitamente primeras 500
 variantes. No confundirlo con una auditoría completa del catálogo.
+
+
+## M9 · 19 de octubre · Búsqueda e inventario completos en Preview
+
+Se elimina el recorte de primeras 500 variantes: Inventario pagina las 15,877
+variantes operativas (50 por página, 318 páginas) y busca en todo el catálogo
+por nombre, marca, atributos, SKU y códigos. Enter busca el código literal
+completo, con ceros iniciales; código visible prioriza Clave 1 SICAR. Inicio
+comparte los totales globales, sin recortarlos por filtro o página. Selectores
+de conteo/traspaso consultan por separado y preservan selecciones entre páginas.
+Código exacto sin coincidencia puede abrir su ficha pendiente, sin aprobarla.
+
+Migración aditiva 20261019223019_inventory_catalog_pagination, sólo staging;
+identidad, permiso inventory.read y sucursal autorizada. No se importan saldos,
+se modifican productos ni se escribe en Woo/main/producción. PASS: 167
+migraciones/regresiones nativas, fixture de 610 variantes con rollback, 722
+unitarias, TypeScript y ESLint. Auditoría de 18 tablas idéntica antes/después.
+
+Preview e76948c27522888a90f624c13c577ae253e1a50c, READY,
+dpl_56cbRzW1sFnidr4iCf89L1wMeLwz. Aceptación Auth/PostgREST real: páginas 1/2,
+2396 encuentra sombrero talla 59; TOMBSTONE encuentra 364 variantes;
+000007779 conserva sus ceros y abre el pendiente sin habilitar venta. Inicio
+reporta todo el catálogo. Teléfono 393×852 sin desborde ni paginación tapada.
+Sin conteos ni traspasos nuevos; prueba positiva de selección no se declara
+realizada en navegador porque staging está sin saldo/conteos.
+
+Detalles: docs/M9_INVENTARIO_COMPLETO_2026_10_19.md. Evidencia local fuera de
+GitHub: outputs/m9-inventario-completo-2026-10-19/. Cobertura SICAR sigue
+15,876/16,310 (97.3391%); este bloque aumenta funcionalidad, no ese porcentaje.
+Los 434 códigos retenidos de la cohorte siguen pendientes. No confundirlos
+con los 437 registros brutos de revisión en la pantalla de SICAR pendiente.
+Antes del corte: renovar fuentes y validar inventario real; producción intacta.
