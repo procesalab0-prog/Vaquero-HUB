@@ -14,6 +14,7 @@ import Link from "next/link";
 
 import { requirePermission } from "@/lib/auth/authorization";
 import { formatCustomerPhone } from "@/lib/customers";
+import { customerReviewEnabled } from "@/lib/customer-migration";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   createCustomer,
@@ -243,6 +244,12 @@ export default async function CustomersPage({
           Datos protegidos por RLS
         </span>
       </div>
+
+      {customerReviewEnabled(process.env.NEXT_PUBLIC_SUPABASE_URL) ? (
+        <Link className="button secondary" href="/clientes/migracion-sicar">
+          Revisar clientes y saldos SICAR · Preview
+        </Link>
+      ) : null}
 
       {params.status ? (
         <div
