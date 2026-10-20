@@ -4750,3 +4750,30 @@ nativos automáticamente para copiar antecedentes. Detalle y reproducción:
 docs/M9_CLIENTES_CREDITOS_APARTADOS_2026_10_20.md. Evidencia privada fuera de Git:
 outputs/m9-clientes-creditos-preparacion-2026-10-20/. Cobertura catálogo sigue
 96.92%; no es porcentaje de migración total ni de clientes.
+
+
+## Importador privado de clientes y saldos · staging · 20 octubre 2026
+
+Construido e instalado en staging el adaptador de cuentas de origen, separado
+de socios, consentimiento y Auth. Lote conservado: 61 cuentas, 73 documentos,
+ocho antecedentes de abono, 99 líneas y $11,910 de deuda de origen conciliada.
+Cero altas nativas, vínculos reales o cargos operativos: no son saldos activados.
+
+Ensayo real con 12 negativos y reintentos PASS. Puente nativo sintético: apertura,
+abonos FIFO, compensación antes de cobrar y rechazo de reversión después de
+recibir pago; siete negativos PASS. Los 126 hashes de tablas quedaron idénticos
+tras rollback. Carga privada posterior sólo cambia cinco tablas de origen y una
+entrada de audit_log; otras 119 tablas anteriores intactas. Replay persistente
+sin cambios, incluido audit_log. Retiro de origen ensayado y revertido, conservando
+el lote para continuar. Libro nativo vacío, clientes nativos siguen uno.
+
+929 unitarias/109 archivos, ESLint/Prettier/TypeScript PASS. Funciones privadas
+SECURITY INVOKER, sin permisos de app y con gates de staging/ADMIN. No se debilitan
+restricciones de clientes ni guardas M9. Advisors sin nuevas WARN; RLS sin política
+INFO deliberado para seis tablas privadas sin grants. No es aceptación Auth/UI.
+
+Detalle: docs/M9_IMPORTADOR_CLIENTES_SALDOS_STAGING.md. Evidencia privada fuera
+de Git: outputs/m9-importador-clientes-saldos-2026-10-20/. Sigue pantalla de
+revisión, padrón completo y vínculos confirmados; nuevo corte conciliado antes
+de operar. Entregas UNKNOWN, ninguna reserva/salida adicional. Sin producción,
+main ni escrituras SICAR/Woo; cobertura de catálogo no cambia en este bloque.
