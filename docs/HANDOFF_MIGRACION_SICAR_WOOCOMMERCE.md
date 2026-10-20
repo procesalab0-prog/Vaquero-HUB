@@ -2035,3 +2035,31 @@ en main, producción, SICAR o Woo. Cobertura catálogo sigue 96.92%. Falta corte
 físico/compromisos acreditados y aceptación operativa desde Preview, no otro
 ensayo repetido del mismo libro. Detalle: docs/M9_CONCILIACION_SALDOS_2026_10_20.md.
 Evidencia privada: outputs/m9-conciliacion-saldos-2026-10-20/.
+
+
+## Alcance confirmado · Clientes, créditos y apartados · 20 de octubre
+
+Emmanuel confirmó que los clientes de apartados y créditos también deben
+pasarse al nuevo sistema. Este bloque queda incluido en la migración completa,
+como una etapa distinta del catálogo y del saldo inicial de inventario.
+
+Preparar: clientes y sus vínculos de origen, documentos vigentes, saldos
+pendientes y abonos acreditados, artículos y cantidades comprometidas, y estado
+de entrega respaldado por evidencia. Los documentos pagados se conservan como
+historial de origen, sin recrearlos como deuda ni volver a cobrar. No generar
+ventas retroactivas para copiar un saldo ni duplicar la salida de inventario
+que SICAR ya haya registrado. Cuando la entrega o la identidad de un código
+no sea comprobable, mantenerlo en revisión, sin inventar compromiso o cliente.
+
+Distinguir historial documental de movimientos operativos nuevos. Definir por
+adelantado cómo se representarán saldos de apertura y pagos/entregas posteriores
+con referencias SICAR, deduplicación, conciliación y auditoría. Un movimiento de
+reserva o salida adicional sólo procede con su plan de efecto explícito.
+
+Estado: alcance confirmado; importador de clientes/créditos/apartados todavía
+no implementado ni ejecutado. La consulta actual sólo cubre las 61 cuentas
+APARTADO, no todos los clientes y créditos de SICAR. Para abarcar la etapa
+completa hace falta un corte/exportación de clientes y documentos del alcance
+acordado, sus abonos y compromisos; antes de operar, ensayo en staging con
+rollback, controles de duplicados, sumas por cliente/documento y aceptación
+de pagos/entregas con Auth real. Mantener la prohibición de tocar producción.
