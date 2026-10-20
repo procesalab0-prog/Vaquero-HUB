@@ -4665,3 +4665,35 @@ confirmado; no se vuelve a solicitar ni se asumen reservas cero.
 
 Detalle: docs/M9_PILOTO_FLUJO_TRANSACCIONAL_2026_10_19.md. Evidencia privada en
 outputs/m9-piloto-flujo-transaccional-2026-10-19/.
+
+
+## M9 · 20 de octubre · Conciliación de saldos y entregas
+
+SICAR leído sin cambios: 61 cuentas APARTADO con ambos estados financieros,
+66 documentos pagados, siete pendientes y 99 líneas completas. Se incluyeron
+folios históricos numéricos y código genérico sin asociarlo por nombre. El
+filtro Recepción de pago y sus abonos no prueban entrega física. Corte final
+con consultas cargadas y paginación 20/40/60/61; preliminares conservados.
+
+Doce códigos renovados: 40 piezas mostradas, sin cambio contra exportación.
+La billetera 11920 aparece en un documento pagado de marzo de 2025; no prueba
+que siga apartada hoy. Se mantiene fuera del lote siguiente hasta aclarar su
+entrega, sin restar una pieza a su saldo de dos. Once candidatos sin coincidencia
+en los créditos revisados suman 38 piezas observadas, todavía no importables.
+Se volvió a verificar una línea de crédito pendiente con su salida Venta en
+Default; sólo esa muestra tiene descuento adicional cero, sin generalizar.
+
+Plan offline fijado por SHA256, pregunta concreta con tres opciones, cantidades
+físicas/reservadas/disponibles/importables NULL y bloques globales conservados.
+Default → La Piedad sigue confirmado. Preflight real de doce destinos PASS con
+estado bloqueado; negativos de catálogo/saldo rechazados. Ensayo técnico nuevo
+derivado del expediente: 11 códigos, 38 entradas QA, replay sin duplicado y
+ROLLBACK; billetera excluida, guarda vencida habilitada, sin venta nueva.
+
+120 tablas idénticas antes/después, con dos ventas, una devolución y ocho
+movimientos previos preservados. 901 unitarias/107 archivos, 40 nuevas, ESLint
+y TypeScript PASS. Sin esquema/interfaz nuevos, saldos persistentes ni cambios
+en main, producción, SICAR o Woo. Cobertura catálogo sigue 96.92%. Falta corte
+físico/compromisos acreditados y aceptación operativa desde Preview, no otro
+ensayo repetido del mismo libro. Detalle: docs/M9_CONCILIACION_SALDOS_2026_10_20.md.
+Evidencia privada: outputs/m9-conciliacion-saldos-2026-10-20/.
