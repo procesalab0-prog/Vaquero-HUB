@@ -174,12 +174,14 @@ export function pilotStockPlan(renewal, snapshot, evidence, assessmentAt) {
     w.target_location_id !== location.id ||
     !text(w.source_facility) ||
     w.scope !== "SINGLE_STORE" ||
-    w.quantity_meaning !== "PHYSICAL_INCLUDES_RESERVED" ||
     !text(w.confirmed_by) ||
-    !fresh(w.confirmed_at, assessmentAt, 24) ||
+    !date(w.confirmed_at) ||
+    Date.parse(w.confirmed_at) > Date.parse(assessmentAt) ||
     !hash(w.evidence_sha256)
   )
     blockers.push("WAREHOUSE_MAPPING_UNCONFIRMED");
+  if (w?.quantity_meaning !== "PHYSICAL_INCLUDES_RESERVED")
+    blockers.push("PHYSICAL_STOCK_MEANING_UNCONFIRMED");
   if (
     !fresh(s.captured_at, assessmentAt, 24) ||
     !text(s.confirmed_by) ||
@@ -246,6 +248,10 @@ export function pilotStockPlan(renewal, snapshot, evidence, assessmentAt) {
     reservations_migrated: false,
     baseline_is_not_a_source_quantity: true,
     source_quantities_copied: false,
+    warehouse_location_confirmed: !blockers.includes(
+      "WAREHOUSE_MAPPING_UNCONFIRMED",
+    ),
+    warehouse_confirmation: { ...w },
     location: { ...location },
     blockers,
     rows,
@@ -335,7 +341,7 @@ export async function preparePilotStock(configPath, out) {
     "plan.json": json(plan),
     "captura-pendiente.json": json(plan.evidence_template),
     "preflight-rollback.sql": pilotStockPreflightSQL(plan, data.snapshot),
-    "reporte.html": `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Piloto: existencias pendientes</title><style>body{font:17px system-ui;max-width:1100px;margin:32px auto;padding:18px;color:#192c34;background:#f4f0e8}section{background:white;padding:20px;margin:16px 0;border-radius:12px}table{width:100%;border-collapse:collapse}td,th{padding:10px;text-align:left;border-bottom:1px solid #ccc}code{overflow-wrap:anywhere}@media print{body{background:white}} </style><h1>Preparación del piloto · ${plan.summary.codes} códigos</h1><p>No carga existencias ni habilita ventas. ${esc(plan.readiness)}.</p><section><h2>Una confirmación para el almacén</h2><p>En SICAR: Configuraciones → Productos → Almacenes. Se observó Default en VSM, contexto VAQUERO SM / MARIANO JIMENEZ. Confirmar con quien controla inventario: ¿Default corresponde solamente a La Piedad o mezcla otras sucursales/bodegas? ¿La existencia mostrada es física total o ya descuenta apartados?</p><p>No cambiar nombres ni configuraciones. Si mezcla sucursales, necesitamos el desglose; no repartimos las piezas por suposición.</p></section><section><h2>Hoja de comprobación del piloto</h2><p>Confirmar cantidades físicas y apartadas al mismo corte, con responsable y evidencia. Un espacio vacío significa pendiente, no cero. Las cantidades del archivo no se copian aquí.</p><table><tr><th>Código / producto</th><th>Talla</th><th>Precio público</th><th>Físicas</th><th>Apartadas</th></tr>${plan.rows.map((r) => `<tr><td><code>${esc(r.barcode)}</code><br>${esc(r.product_name)}</td><td>${esc(Object.values(r.attributes ?? {}).join(" · "))}</td><td>$${(r.price_cents / 100).toFixed(2)}</td><td>________</td><td>________</td></tr>`).join("")}</table><p>Fecha y hora: __________________ Responsable: __________________ Evidencia: __________________</p></section><section><h2>Cómo se probará</h2><ol><li>Confirmar almacén, cantidades y reservas; revisar cambios del corte.</li><li>Ensayar la carga en staging con libro e idempotencia, y rollback. No inventar compromisos para reservas: si existen, preparar su migración aparte.</li><li>Desde el programa: lector → producto/talla/precio → venta → ticket → devolución → saldo y caja. Mantener los otros códigos bloqueados.</li><li>Repetir intento para verificar que no duplica movimientos. Retirar sólo piezas de ensayo que no tengan compromisos; conservar tickets e historial.</li></ol><p>Este bloque verifica el paso previo por sólo lectura. La carga y prueba operativa con saldos reales todavía no se ejecutaron. Costos desconocidos NULL; no escribe en Woo ni producción.</p></section></html>`,
+    "reporte.html": `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Piloto: existencias pendientes</title><style>body{font:17px system-ui;max-width:1100px;margin:32px auto;padding:18px;color:#192c34;background:#f4f0e8}section{background:white;padding:20px;margin:16px 0;border-radius:12px}table{width:100%;border-collapse:collapse}td,th{padding:10px;text-align:left;border-bottom:1px solid #ccc}code{overflow-wrap:anywhere}@media print{body{background:white}} </style><h1>Preparación del piloto · ${plan.summary.codes} códigos</h1><p>No carga existencias ni habilita ventas. ${esc(plan.readiness)}.</p><section><h2>Almacén</h2><p>${plan.warehouse_location_confirmed ? "Confirmado: Default corresponde sólo a La Piedad." : "Equivalencia pendiente de confirmar."}</p><p>En SICAR: Configuraciones → Productos → Almacenes. Se observó Default en VSM, contexto VAQUERO SM / MARIANO JIMENEZ. Confirmar con quien controla inventario: ¿Default corresponde solamente a La Piedad o mezcla otras sucursales/bodegas? ¿La existencia mostrada es física total o ya descuenta apartados?</p><p>No cambiar nombres ni configuraciones. Si mezcla sucursales, necesitamos el desglose; no repartimos las piezas por suposición.</p></section><section><h2>Hoja de comprobación del piloto</h2><p>Confirmar cantidades físicas y apartadas al mismo corte, con responsable y evidencia. Un espacio vacío significa pendiente, no cero. Las cantidades del archivo no se copian aquí.</p><table><tr><th>Código / producto</th><th>Talla</th><th>Precio público</th><th>Físicas</th><th>Apartadas</th></tr>${plan.rows.map((r) => `<tr><td><code>${esc(r.barcode)}</code><br>${esc(r.product_name)}</td><td>${esc(Object.values(r.attributes ?? {}).join(" · "))}</td><td>$${(r.price_cents / 100).toFixed(2)}</td><td>________</td><td>________</td></tr>`).join("")}</table><p>Fecha y hora: __________________ Responsable: __________________ Evidencia: __________________</p></section><section><h2>Cómo se probará</h2><ol><li>Confirmar almacén, cantidades y reservas; revisar cambios del corte.</li><li>Ensayar la carga en staging con libro e idempotencia, y rollback. No inventar compromisos para reservas: si existen, preparar su migración aparte.</li><li>Desde el programa: lector → producto/talla/precio → venta → ticket → devolución → saldo y caja. Mantener los otros códigos bloqueados.</li><li>Repetir intento para verificar que no duplica movimientos. Retirar sólo piezas de ensayo que no tengan compromisos; conservar tickets e historial.</li></ol><p>Este bloque verifica el paso previo por sólo lectura. La carga y prueba operativa con saldos reales todavía no se ejecutaron. Costos desconocidos NULL; no escribe en Woo ni producción.</p></section></html>`,
   };
   await mkdir(out);
   for (const [name, value] of Object.entries(files))

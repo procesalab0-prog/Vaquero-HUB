@@ -175,11 +175,9 @@ it("retains real reservations for their own migration plan", () => {
 });
 it.each([
   (e) => (e.warehouse.scope = "MULTIPLE_STORES"),
-  (e) => (e.warehouse.quantity_meaning = "AVAILABLE"),
   (e) => (e.warehouse.target_location_id = "other"),
   (e) => (e.warehouse.confirmed_by = null),
   (e) => (e.warehouse.evidence_sha256 = null),
-  (e) => (e.warehouse.confirmed_at = "2026-10-18T00:00:00Z"),
   (e) => (e.warehouse.confirmed_at = "2026-10-21T00:00:00Z"),
 ])("requires explicit single-store physical mapping", (change) => {
   const f = fixture(),
@@ -188,6 +186,24 @@ it.each([
   expect(pilotStockPlan(f.renewal, f.snapshot, e, at).blockers).toContain(
     "WAREHOUSE_MAPPING_UNCONFIRMED",
   );
+});
+it("preserves the confirmed store while quantity meaning is still unknown", () => {
+  const f = fixture(),
+    e = completed(f);
+  e.warehouse.quantity_meaning = null;
+  const p = pilotStockPlan(f.renewal, f.snapshot, e, at);
+  expect(p.warehouse_location_confirmed).toBe(true);
+  expect(p.blockers).toContain("PHYSICAL_STOCK_MEANING_UNCONFIRMED");
+  expect(p.blockers).not.toContain("WAREHOUSE_MAPPING_UNCONFIRMED");
+  expect(p.inventory_import_allowed).toBe(false);
+});
+it("keeps a prior store confirmation without asking again every day", () => {
+  const f = fixture(),
+    e = completed(f);
+  e.warehouse.confirmed_at = "2026-10-01T00:00:00Z";
+  expect(
+    pilotStockPlan(f.renewal, f.snapshot, e, at).warehouse_location_confirmed,
+  ).toBe(true);
 });
 it.each([
   (e) => (e.stock.source_warehouse = "other"),

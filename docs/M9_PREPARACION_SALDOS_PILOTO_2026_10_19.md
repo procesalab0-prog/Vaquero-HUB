@@ -19,14 +19,15 @@ JIMENEZ. Ruta **Configuraciones → Productos → Almacenes**. La lista muestra
 una entrada: **Default**. No se abrió su edición ni se cambió configuración.
 La exportación recibida identifica ese almacén como `default`.
 
-Eso no prueba que sus cantidades correspondan a la ubicación La Piedad del
-programa. Quien lleva el inventario debe confirmar si concentra únicamente la
-tienda/bodega de esa sucursal o mezcla otras ubicaciones, y si la columna
-existencia expresa físico total o disponible después de apartados.
+Después de la consulta, Emmanuel confirmó directamente «Sólo La Piedad».
+La equivalencia Default → La Piedad queda registrada con la respuesta literal,
+fecha, responsable y huella de evidencia. No se vuelve a pedir esa misma
+confirmación cada día mientras no cambie su alcance. Sigue pendiente comprobar
+si la columna existencia expresa físico total o disponible después de apartados.
 Si hay mezcla, se necesita un desglose; no se reparte por suposición.
 No hay que renombrar ni crear almacenes para dar esta respuesta.
 
-Una confirmación de equivalencia puede cubrir los doce códigos. La captura
+La confirmación de equivalencia cubre los doce códigos. La captura
 del inventario y reservas debe estar fechada, identificada y respaldada por
 reporte/conteo de ese mismo alcance. Para el ensayo se puede verificar sólo la
 selección, sin pedir revisar todo el catálogo.
@@ -52,8 +53,9 @@ límites son controles elegidos para este ensayo; no certifican que una tienda
 abierta no haya tenido movimientos entre capturas. Antes de cargar se repite
 la captura/comparación y se acuerda el corte de la prueba.
 
-La confirmación exige tienda única, físico que incluya apartados, responsable,
-fecha con zona horaria y huella de evidencia. Cantidades: piezas enteras,
+La equivalencia exige tienda única, responsable, fecha con zona horaria y
+huella de evidencia. El significado físico que incluya apartados se valida
+por separado: una tienda confirmada no implica cantidades confirmadas. Cantidades: piezas enteras,
 explícitas y no negativas; reservas no mayores al físico. Cualquier reserva
 positiva queda pendiente de un plan específico para migrar sus compromisos.
 No se crea reserva anónima, se ignora un apartado ni se inventa su cliente.
@@ -81,8 +83,9 @@ identidades/proyecciones/revisión, código literal y existencia, valores y núm
 de movimientos del saldo anterior. No requiere libros vacíos ni borra historial.
 
 PASS para la integridad de los doce destinos. El resultado real permanece
-BLOCKED_MISSING_OR_CHANGED_EVIDENCE por almacén y existencias sin confirmar:
-no se convierte ese bloqueo esperado en aprobación de carga. Dos pruebas
+BLOCKED_MISSING_OR_CHANGED_EVIDENCE por significado físico y cantidades
+sin confirmar. WAREHOUSE_MAPPING_UNCONFIRMED ya no aparece tras registrar la
+respuesta: no se convierte el bloqueo restante en aprobación de carga. Dos pruebas
 negativas de sólo lectura alteran únicamente los datos esperados del script:
 STOCK_BASELINE_CHANGED y STOCK_CATALOG_CHANGED, ambas rechazadas como corresponde.
 Auditoría de 18 tablas idéntica antes/después; guarda intacta, sin movimientos
@@ -94,7 +97,8 @@ disponible y reservas cero. No se pulsó Contar. Es aceptación de búsqueda y
 lectura, no otro recorrido de cobro/fotos de las doce fichas.
 
 PASS: 798 unitarias/103 archivos, incluidas 40 nuevas, TypeScript y ESLint
-dirigido. Corridas finales 2/3 idénticas; corrida 1 intermedia conservada.
+dirigido. Corridas finales 4/5 idénticas, con almacén confirmado; corridas 1–3
+intermedias conservadas.
 No hay nueva migración ni interfaz; no se declara otra prueba de despliegue.
 
 ## Reproducción, reversión y siguiente paso
@@ -110,11 +114,12 @@ No existe carga persistente que revertir en este bloque.
 
 Evidencia privada fuera de GitHub:
 outputs/m9-preparacion-saldos-piloto-2026-10-19/: captura SQL/JSON de staging,
-auditorías, corridas 2/3, resultados positivo/negativos, doce búsquedas reales,
+auditorías, corridas 4/5, confirmacion-almacen.json, captura con equivalencia
+confirmada, resultados positivo/negativos, doce búsquedas reales,
 capturas visuales de SICAR/Preview, pruebas y manifiesto. Los archivos contienen
 datos del negocio y permanecen locales; GitHub recibe código/pruebas/docs.
 
-Siguiente: confirmar equivalencia y significado de existencias, recibir evidencia
+Siguiente: comprobar el significado de existencias y recibir evidencia
 de físico/reservas de los doce al mismo corte, regenerar el plan y resolver sus
 bloqueos. Implementar después el ensayo específico de carga con libro,
 deduplicación y reversión, manteniendo la guarda del resto del catálogo. Sólo
