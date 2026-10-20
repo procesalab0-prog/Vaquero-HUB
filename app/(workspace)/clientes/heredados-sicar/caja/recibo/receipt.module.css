@@ -1,0 +1,67 @@
+.receipt {
+  max-width: 750px;
+  margin: auto;
+  background: white;
+  color: #222;
+  padding: 24px;
+  border: 2px solid #a77934;
+  border-radius: 14px;
+  overflow-wrap: anywhere;
+}
+.watermark {
+  font-size: 1.3rem;
+  font-weight: 800;
+  border: 2px solid #9a6c29;
+  padding: 12px;
+  text-align: center;
+  color: #79501b;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0;
+}
+.table th,
+.table td {
+  text-align: left;
+  border-bottom: 1px solid #d4d0c8;
+  padding: 10px 6px;
+  vertical-align: top;
+}
+.table td:last-child,
+.table th:last-child {
+  text-align: right;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+@media print {
+  :global(body *) {
+    visibility: hidden;
+  }
+  .receipt,
+  .receipt * {
+    visibility: visible !important;
+  }
+  .receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    max-width: 80mm;
+    padding: 4mm;
+    border: 2px solid black;
+    border-radius: 0;
+  }
+  .actions,
+  .actions * {
+    display: none;
+  }
+  .watermark {
+    color: black;
+    border-color: black;
+  }
+}

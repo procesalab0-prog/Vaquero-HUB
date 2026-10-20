@@ -1,0 +1,19 @@
+.group {
+  border: 1px solid #b5aa96;
+  border-radius: 12px;
+  padding: 14px;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.group legend {
+  font-weight: 700;
+  padding: 0 6px;
+}
+.form {
+  min-width: 0;
+}
+.form select {
+  min-width: 0;
+  max-width: 100%;
+}

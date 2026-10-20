@@ -4867,3 +4867,10 @@ cambia main/producción, stock o entregas. Ver docs/M9_APERTURA_SALDOS_HEREDADOS
 Aceptación Preview de apertura heredada: tres ensayos UI revertidos, sobrepago
 rechazado, $11,910 conservados y 132 tablas anteriores intactas. Cobro real
 heredado permanece bloqueado hasta aceptar caja/recibos. Sin producción.
+
+### M9 · Motor heredado con caja y recibo de ensayo · 20 octubre
+
+Integración de prueba con caja nativa, pago combinado, cambio, FIFO y recibo
+marcado ENSAYO. Corte/cierre/reintento verificados en rollback; 137 tablas
+intactas, sin cobro real ni modificación producción. Detalle en
+ docs/M9_ABONOS_HEREDADOS_CAJA_RECIBOS_STAGING.md; pendiente aceptación de Preview.

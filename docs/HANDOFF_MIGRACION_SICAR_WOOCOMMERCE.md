@@ -2215,3 +2215,14 @@ evidencia visible tras reload. Saldo conservado $11,910, sólo eventos TRIAL
 cambian durante navegador; libro nativo vacío y caja/stock intactos. Vista
 390px sin overflow. El bloque de apertura/ensayo queda cerrado; el cobro real
 heredado aún requiere integración de caja/métodos/recibo y corte renovado.
+
+## Integración heredada con caja y recibos · staging · 20 octubre
+
+Motor de ensayo con sesión propia y sucursal, efectivo/tarjeta/transferencia,
+cambio, FIFO y recibo con folios SICAR. Sólo el efectivo aplicado va al libro
+nativo de caja; replay no duplica cobro/folio. Wrapper revierte todos los
+movimientos y guarda sólo evidencia privada, recibo NO VÁLIDO COMO PAGO.
+24 negativos, cierre/cálculo nativo de corte sintético y replay PASS; rollback
+conserva 137 tablas idénticas. 966 unitarias/115 archivos; tipos/lint correctos.
+Sin cobros reales ni cambios main/producción. Ver
+ docs/M9_ABONOS_HEREDADOS_CAJA_RECIBOS_STAGING.md. Falta aceptación de Preview.

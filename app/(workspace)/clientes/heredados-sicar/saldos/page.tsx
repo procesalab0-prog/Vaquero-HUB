@@ -46,6 +46,9 @@ export default async function LegacyBalances({
           documento; los pagos históricos no se cobran otra vez. Alcance:
           cuentas de APARTADO, no todo el padrón.
         </p>
+        <Link href="/clientes/heredados-sicar/caja" className="button primary">
+          Ensayar abonos con caja y recibo
+        </Link>
         <Link href="/clientes/heredados-sicar" className="button secondary">
           Volver al registro heredado
         </Link>
