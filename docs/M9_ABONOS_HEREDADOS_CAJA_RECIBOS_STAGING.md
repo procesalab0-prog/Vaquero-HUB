@@ -74,3 +74,10 @@ Rutas /clientes/heredados-sicar/caja y /caja/recibo dentro de heredados-sicar,
 enlazadas desde saldos. Evidencia privada fuera de Git:
 outputs/m9-abonos-heredados-caja-recibos-2026-10-20/.
 Pendiente aceptar publicación/UI; los cobros operativos siguen deshabilitados.
+
+La primera publicación falló por un selector global de impresión dentro de CSS
+Modules. Se consultó el log concreto desde el dashboard Vercel y se limitó el
+selector a body:has(.receipt). Ambos CSS nuevos pasan el parser pure de Next.
+Build local webpack limitado por descarga DNS de Google Fonts; Turbopack no
+admite el node_modules enlazado de este checkout. Son límites locales distintos
+del error CSS corregido; se exige build remoto READY antes de aceptar UI.

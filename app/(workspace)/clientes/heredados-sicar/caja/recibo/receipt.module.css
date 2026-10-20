@@ -39,7 +39,7 @@
   margin-top: 20px;
 }
 @media print {
-  :global(body *) {
+  :global(body):has(.receipt) :global(*) {
     visibility: hidden;
   }
   .receipt,
