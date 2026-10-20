@@ -4725,3 +4725,28 @@ completa hace falta un corte/exportación de clientes y documentos del alcance
 acordado, sus abonos y compromisos; antes de operar, ensayo en staging con
 rollback, controles de duplicados, sumas por cliente/documento y aceptación
 de pagos/entregas con Auth real. Mantener la prohibición de tocar producción.
+
+
+## Preparación de clientes y crédito · ensayo verificado · 20 octubre 2026
+
+Nuevo plan reproducible de sólo preparación, sin importador operativo. Lectura
+de 61 identidades APARTADO, 73 documentos: 66 pagados y siete abiertos en seis
+cuentas, $11,910 pendientes conciliados. Ocho abonos vinculados en los abiertos:
+siete activos por $4,200 y uno cancelado por $1,000, excluido del saldo abonado.
+11 contactos faltantes, dos nombres repetidos conservados por separado, sin
+consentimiento inventado. 94/99 líneas con variante exacta; entregas UNKNOWN.
+
+Ensayo TEMP en staging: 142 reintentos sin duplicados y tres negativos PASS.
+Ensayo nativo separado: aperturas sintéticas de $3, dos abonos de $1.50, FIFO,
+idempotencia y cinco negativos PASS. Cliente existente sólo como fixture QA,
+sin vincularlo a SICAR. ROLLBACK de ambos, 120 tablas idénticas; cero altas de
+clientes, deudas reales, ventas, reservas, caja o inventario persistentes.
+917 unitarias/108 archivos, ESLint y TypeScript PASS. No aceptación Auth real
+todavía. Ningún adaptador permanente, cambio main/producción o escritura SICAR/Woo.
+
+Sigue: corte completo fuera de APARTADO, abonos históricos/entregas acreditadas,
+adaptador de identidad heredada y deuda de apertura; no crear ventas ni apartados
+nativos automáticamente para copiar antecedentes. Detalle y reproducción:
+docs/M9_CLIENTES_CREDITOS_APARTADOS_2026_10_20.md. Evidencia privada fuera de Git:
+outputs/m9-clientes-creditos-preparacion-2026-10-20/. Cobertura catálogo sigue
+96.92%; no es porcentaje de migración total ni de clientes.
