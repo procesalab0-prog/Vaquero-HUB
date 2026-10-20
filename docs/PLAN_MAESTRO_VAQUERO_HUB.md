@@ -4863,3 +4863,7 @@ compensación y asignación de abonos ensayados con rollback. Pantalla Preview
 permite sólo abonos ficticios que se revierten; no cobro operativo ni recibo real.
 Pendiente integrar caja/métodos/corte y renovar fuentes antes del arranque. No
 cambia main/producción, stock o entregas. Ver docs/M9_APERTURA_SALDOS_HEREDADOS_STAGING.md.
+
+Aceptación Preview de apertura heredada: tres ensayos UI revertidos, sobrepago
+rechazado, $11,910 conservados y 132 tablas anteriores intactas. Cobro real
+heredado permanece bloqueado hasta aceptar caja/recibos. Sin producción.

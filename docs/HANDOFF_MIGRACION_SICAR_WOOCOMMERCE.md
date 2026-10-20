@@ -2208,3 +2208,10 @@ Ruta Preview /clientes/heredados-sicar/saldos permite ensayar y revertir abonos;
 no emite recibo válido ni cobra dinero. Siguiente: integrar y aceptar caja/métodos/
 recibo/corte antes de habilitar cobros operativos, renovar fuentes y completar
 padrón/entregas/conteo. Detalle: docs/M9_APERTURA_SALDOS_HEREDADOS_STAGING.md.
+
+Aceptación de apertura heredada en Preview READY `ca3850de`: tres abonos UI
+ficticios ($1, $5,000, $240), sobrepago rechazado, todos revertidos; última
+evidencia visible tras reload. Saldo conservado $11,910, sólo eventos TRIAL
+cambian durante navegador; libro nativo vacío y caja/stock intactos. Vista
+390px sin overflow. El bloque de apertura/ensayo queda cerrado; el cobro real
+heredado aún requiere integración de caja/métodos/recibo y corte renovado.

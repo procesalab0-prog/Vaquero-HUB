@@ -62,3 +62,38 @@ clientes nativos y fuentes SICAR intactos. Replay de apertura sin nueva entrada.
 Evidencia privada fuera de Git: `outputs/m9-apertura-saldos-heredados-2026-10-20/`.
 Incluye plan fijado, generador/configuración, ensayos SQL, resultados y hashes.
 Aceptación de Preview y comprobaciones finales se registran después del despliegue.
+
+## Preview y aceptación con sesión real
+
+Deployment `dpl_BWd3q72qXnUx9pQdFN7TFuA9MQtC` READY, commit Preview
+`ca3850de3bb43fb718ff87618888b85ed11dd995`, target null. Migración adicional
+`20261020215259` muestra al actor su último ensayo auditado. Pantalla comprobada
+con la sesión real de Emmanuel: seis cuentas/siete documentos/$11,910 y acceso
+por enlace desde el registro heredado.
+
+Tres ensayos aceptados desde UI: $1 sobre $600; $5,000 sobre $7,940 repartido
+$4,700 y $300 entre dos documentos; liquidación de $240 sobre una cuenta sin
+telefono. Rechazo de $600.01 sobre $600. El saldo simulado se distingue del
+conservado; reload mantiene evidencia y $11,910. La repetición verificada es la
+del núcleo dentro del ensayo; no se afirma replay HTTP idéntico desde navegador.
+
+Auditoría antes/después de la UI en 135 tablas: cambia únicamente
+app.m9_legacy_finance_events, con tres eventos TRIAL. Siete cargos OPEN intactos;
+cero PAYMENT_TRIAL o asignaciones persistentes, un cliente nativo y cero libro
+nativo. Las 36 cantidades de conteo/compromisos del piloto siguen NULL. No caja,
+inventario, ventas, source ni consentimientos alterados. Compensación de la
+apertura persistida probada nuevamente con rollback: siete compensaciones,
+saldo cero dentro de la transacción, restaurado después.
+
+Vista de 390×844: scrollWidth=clientWidth=390, seis formularios y botones de
+341×44 px. Capturas escritorio/teléfono conservadas; viewport restaurado.
+Advisors: 79 INFO RLS sin policy (tres nuevas tablas deliberadamente privadas),
+131 WARN definer authenticated y una WARN Auth preexistentes sin incremento.
+No se consultaron logs remotos: el conector tenía limitación conocida de acceso;
+no se declara revisión de logs sin errores.
+
+Este bloque cierra apertura y ensayo de abonos heredados. Sigue aceptar el
+cobro real de staging junto con caja, métodos y recibos, corte completo de todos
+los clientes/documentos y evidencia de entregas/conteos. Nada se habilita en
+producción por terminar este ensayo. Las filas de preparación de inventario
+no se convierten en stock y las entregas UNKNOWN no se tratan como entregadas.
