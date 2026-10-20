@@ -87,6 +87,9 @@ export default async function CustomerSourceReview({
         >
           Ver conciliación del piloto
         </Link>
+        <Link href="/clientes/heredados-sicar" className="button secondary">
+          Registro heredado y hoja de inventario
+        </Link>
       </header>
       <div className={styles.summary}>
         <section>

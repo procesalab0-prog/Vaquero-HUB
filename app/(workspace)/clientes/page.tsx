@@ -250,6 +250,11 @@ export default async function CustomersPage({
           Revisar clientes y saldos SICAR · Preview
         </Link>
       ) : null}
+      {customerReviewEnabled(process.env.NEXT_PUBLIC_SUPABASE_URL) ? (
+        <Link className="button secondary" href="/clientes/heredados-sicar">
+          Clientes heredados y hoja de inventario · Preview
+        </Link>
+      ) : null}
 
       {params.status ? (
         <div
