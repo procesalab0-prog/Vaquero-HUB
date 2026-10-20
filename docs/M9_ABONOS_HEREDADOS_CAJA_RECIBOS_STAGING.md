@@ -81,3 +81,41 @@ selector a body:has(.receipt). Ambos CSS nuevos pasan el parser pure de Next.
 Build local webpack limitado por descarga DNS de Google Fonts; Turbopack no
 admite el node_modules enlazado de este checkout. Son límites locales distintos
 del error CSS corregido; se exige build remoto READY antes de aceptar UI.
+
+## Aceptación de Preview con sesión real
+
+Corrección publicada en commit a749c48af7dfd9ebc6128f206964724c3db60121,
+deployment dpl_AupvUvwD9HKTdxn2qwJdsv1rBX1z READY, target null. Enlace probado
+saldos→caja→recibo y regreso a saldos. Sesión real de Emmanuel ADMIN, misma
+caja abierta de La Piedad. Sin extracción de credenciales/JWT ni claves de servicio.
+
+Cuatro ensayos UI, todos revertidos: combinado $5,000 con $100 efectivo,
+recibido $150/cambio $50, $2,000 tarjeta y $2,900 transferencia; tarjeta sola
+$10 con efectivo cero; transferencia sola $0.01 con efectivo cero; liquidación
+de $240 de cuenta sin teléfono, recibido $300/cambio $60, saldo simulado cero
+y conservado $240. Recibos con folios SICAR, marca ENSAYO REVERTIDO, referencia
+UUID única y consulta persistente de evidencia. Formulario rechaza referencia
+faltante y sobrepago $600.01 contra $600. Folio temporal puede repetirse por
+rollback, explicado al operador. No se imprimió físicamente en una impresora;
+se verificaron pantalla y estilos print, sin declarar aceptación de hardware.
+
+Auditoría de 137 tablas antes/después de UI: cambia únicamente
+app.m9_legacy_cash_trials con cuatro evidencias. Cero recibos del motor, pagos,
+asignaciones, cash_movements o folios/tipos de folio QA persistentes. Apertura
+sigue $11,910, libro nativo cero y clientes nativos uno. La sesión sigue OPEN.
+Todos los clientes fuente, caja, inventario y demás tablas anteriores intactos.
+No se inventó un pago real ni se ejecutó una entrega.
+
+Vista 390×844: formulario y recibo sin overflow (scrollWidth=clientWidth=390),
+botón final 44px de alto, bottom664 con viewport844, visible encima del menú.
+Viewport restaurado; capturas privadas de escritorio y teléfono. Replay del
+núcleo y API comprobado por SQL; no se afirma repetición HTTP idéntica desde UI.
+Advisors: 81 INFO de RLS sin policy (dos nuevas tablas deliberadamente privadas),
+131 WARN definer y una WARN Auth anteriores sin incremento. Log de build fallido
+consultado vía dashboard; no se afirma revisión completa de runtime logs.
+
+El bloque de integración y ensayo queda aceptado en Preview. No hay acción de
+cobro operativo habilitada. Para habilitarla se requiere plan de arranque,
+renovación/conciliación del corte, aceptación de recibo/caja y reglas de reversión
+de dinero realmente recibido; no convertir evidencias TRIAL en pagos. Continúa
+padrón completo, entregas y conteos físicos acreditados, sin producción.

@@ -2226,3 +2226,11 @@ movimientos y guarda sólo evidencia privada, recibo NO VÁLIDO COMO PAGO.
 conserva 137 tablas idénticas. 966 unitarias/115 archivos; tipos/lint correctos.
 Sin cobros reales ni cambios main/producción. Ver
  docs/M9_ABONOS_HEREDADOS_CAJA_RECIBOS_STAGING.md. Falta aceptación de Preview.
+
+Aceptación caja/recibo heredado: Preview a749c48a READY tras corregir selector
+CSS de impresión. Cuatro ensayos UI (combinado $5,000, tarjeta $10, transferencia
+$0.01, efectivo/liquidación $240), rechazo de referencia y sobrepago, recibos con
+folios SICAR y rollback. Sólo cuatro evidencias privadas nuevas; 137 tablas
+comparadas, ninguna caja/deuda/folio/pago ficticio persistente. $11,910 conservados,
+sesión OPEN, móvil390px correcto. Cobro operativo todavía bloqueado: no convertir
+TRIAL en pagos. Detalle en docs/M9_ABONOS_HEREDADOS_CAJA_RECIBOS_STAGING.md.

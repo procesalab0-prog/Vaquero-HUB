@@ -4874,3 +4874,8 @@ Integración de prueba con caja nativa, pago combinado, cambio, FIFO y recibo
 marcado ENSAYO. Corte/cierre/reintento verificados en rollback; 137 tablas
 intactas, sin cobro real ni modificación producción. Detalle en
  docs/M9_ABONOS_HEREDADOS_CAJA_RECIBOS_STAGING.md; pendiente aceptación de Preview.
+
+Aceptación caja/recibo M9 en Preview: cuatro ensayos UI revertidos, folios de
+origen y cambio correctos, sin efectos financieros persistentes y $11,910
+conservados. Integración de ensayo cerrada; habilitación operativa sigue sujeta
+al plan de arranque y corte conciliado. Main y producción intactos.
