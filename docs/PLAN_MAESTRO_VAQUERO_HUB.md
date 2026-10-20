@@ -4572,3 +4572,34 @@ Detalle: docs/M9_RENOVACION_PILOTO_2026_10_19.md. Evidencia privada fuera de
 GitHub: outputs/m9-renovacion-piloto-2026-10-19/. Siguiente: confirmar default
 por sucursal, obtener cantidades/reservas reales y preparar plan específico
 de saldos con ensayo y reversión antes de la prueba operativa junto a SICAR.
+
+
+## M9 · 19 de octubre · Preparación de existencias del piloto
+
+Nuevo preparador offline de evidencia para los 12 códigos confirmados. Hoja
+imprimible y JSON con físico/reservas NULL; no copia existencias del XLSX.
+Valida equivalencia de almacén, responsable/fecha/evidencia, cantidades enteras,
+reservas y captura viva por sucursal. Reservas positivas o destino no cero
+requieren otro plan; evidencia completa tampoco autoriza importar ni vender.
+
+SICAR autenticado: Configuraciones → Productos → Almacenes muestra sólo Default,
+contexto VSM / VAQUERO SM / MARIANO JIMENEZ. No se cambió configuración. Falta
+confirmar con el responsable equivalencia a La Piedad y si existencia es físico
+o disponible. No deducirlo del nombre ni inventar reparto por sucursal.
+
+Comprobación SQL READ ONLY + ROLLBACK de los 12 destinos PASS. Evidencia real
+correctamente bloqueada por equivalencia/cantidades pendientes. Dos pruebas
+negativas rechazan saldo/precio alterados. Auditoría de 18 tablas idéntica;
+2396 conserva ocho movimientos y saldo cero; once destinos sin fila de saldo
+siguen explícitamente ausentes. Sin escrituras de saldos, ventas ni activación.
+
+Preview/Auth real: doce búsquedas exactas, una variante correcta por código y
+tallas verificadas, físico/reservado/disponible cero. Sin pulsar Contar. PASS
+798 unitarias/103 archivos, TypeScript y ESLint; corridas finales 2/3 idénticas.
+Sin migración/interfaz nueva, Woo/main/producción intactos. Cobertura catálogo
+96.92% sin cambio. No confundir preflight con ensayo operativo de carga/venta.
+
+Detalle: docs/M9_PREPARACION_SALDOS_PILOTO_2026_10_19.md. Evidencia privada:
+outputs/m9-preparacion-saldos-piloto-2026-10-19/. Siguiente: confirmar default,
+evidencia física/reservas de la selección al mismo corte; después ensayo de
+carga con libro/deduplicación/reversión antes de operar el piloto junto a SICAR.
