@@ -131,6 +131,23 @@ export function wooRefresh(previous, current, sourceRows, snapshot) {
     )
       throw Error("STAGED_VARIATION_NOT_IN_VERIFIED_PARENT");
   }
+  return {
+    ...compareWooSources(previous, current, snapshot.rows),
+    version: "m9-woo-refresh-2",
+    evidence_sha256: digest({ previous, current, sourceRows, snapshot }),
+  };
+}
+
+// Source-only comparison has no inventory precondition and cannot authorize a
+// refresh. The legacy staging wrapper above retains its original strict audit.
+export function compareWooSources(previous, current, managedRows = []) {
+  const old = index(previous),
+    next = index(current);
+  if (
+    !Array.isArray(managedRows) ||
+    managedRows.some((r) => typeof r.current?.barcode !== "string")
+  )
+    throw Error("INVALID_IMPACT_CONTEXT");
   const items = [],
     movements = [];
   for (const id of [
@@ -206,7 +223,7 @@ export function wooRefresh(previous, current, sourceRows, snapshot) {
             ? "INVENTORY_ONLY_EXCLUDED"
             : "SOURCE_CHANGED_MANUAL_REVIEW";
     countState[state] = (countState[state] ?? 0) + 1;
-    const managed = snapshot.rows.filter(
+    const managed = managedRows.filter(
       (r) =>
         r.current.woo_product_id === id ||
         moved.some((m) => m.id === r.current.woo_variation_id),
@@ -251,9 +268,9 @@ export function wooRefresh(previous, current, sourceRows, snapshot) {
       });
   }
   return {
-    version: "m9-woo-refresh-2",
+    version: "m9-woo-source-comparison-1",
     purpose: "READ_ONLY_SOURCE_COMPARISON_NOT_IMPORTABLE",
-    evidence_sha256: digest({ previous, current, sourceRows, snapshot }),
+    evidence_sha256: digest({ previous, current, managedRows }),
     summary: {
       previous_parents: old.parents.size,
       current_parents: next.parents.size,

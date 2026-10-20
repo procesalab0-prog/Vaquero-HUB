@@ -6,6 +6,7 @@ import { createHash } from "node:crypto";
 import {
   wooRefresh,
   prepareWooRefresh,
+  compareWooSources,
 } from "../../scripts/m9/prepare-woo-refresh.mjs";
 const clone = (v) => structuredClone(v),
   sha = (v) => createHash("sha256").update(v).digest("hex");
@@ -86,6 +87,32 @@ function fixture() {
   };
 }
 const run = (f) => wooRefresh(f.previous, f.current, f.rows, f.snapshot);
+
+it("compares sources after operations without pretending that the inventory ledger is empty", () => {
+  const f = fixture();
+  f.snapshot.inventory_movements = 8;
+  f.snapshot.inventory_balances = 1;
+  f.current.products[0].images = "https://vaquerosm.com/new-photo.jpg";
+  expect(() => run(f)).toThrow("INVENTORY_MUST_REMAIN_EMPTY");
+  const p = compareWooSources(f.previous, f.current, f.snapshot.rows);
+  expect(p.summary.staged_codes_to_review).toBe(1);
+  expect(p.summary.approved_refreshes).toBe(0);
+  expect(p.items[0].refresh_allowed).toBe(false);
+  expect(p.write_allowed).toBe(false);
+  expect(f.snapshot.inventory_movements).toBe(8);
+});
+
+it("source comparison still requires complete authenticated exports and literal impact identity", () => {
+  const f = fixture();
+  f.current.pagination_complete = false;
+  expect(() => compareWooSources(f.previous, f.current)).toThrow(
+    "COMPLETE_AUTHENTICATED_CSV_REQUIRED",
+  );
+  f.current.pagination_complete = true;
+  expect(() =>
+    compareWooSources(f.previous, f.current, [{ current: { barcode: 42 } }]),
+  ).toThrow("INVALID_IMPACT_CONTEXT");
+});
 
 it("compares equal authenticated exports without mutation, permissions or inventory values", () => {
   const f = fixture(),

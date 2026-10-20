@@ -4540,3 +4540,35 @@ outputs/m9-arranque-etapas-2026-10-19/. Siguiente: nuevas exportaciones del cort
 existencias/reservas por ubicación confirmadas, piloto pequeño junto a SICAR,
 respaldo/restauración y autorización expresa antes de producción. No reutilizar
 ensayos antiguos que exigen libros vacíos ni borrar historial para repetirlos.
+
+
+## M9 · 19 de octubre · Fuentes renovadas y primer piloto preparado
+
+Recibidos SICAR y Woo autenticado del 19 de octubre: 16,381 códigos SICAR
+(71 nuevos, ninguno ausente), 2,174 padres Woo y 12,261 variaciones. Originales
+conservados; dos conciliaciones idénticas por SHA256. No se cargan cambios,
+saldos ni costos. Almacén SICAR default todavía sin equivalencia de sucursal.
+
+Nuevo preparador offline: piloto final de 12 códigos previamente revisados,
+de 12 padres, sobre 3,849 candidatos estables. Conserva Clave 1/UUIDs, excluye
+nuevos, provisionales, dudas y amartigones de sólo exhibición 37101/2/3.
+Corridas finales piloto-4/5 idénticas. Ensayo final sólo ROLLBACK: diez controles
+PASS, 12 permitidos dentro de transacción y resto bloqueado. Auditoría de 18
+tablas idéntica, historial conservado y guarda real sin activar para el piloto.
+Preview: búsqueda 2396/talla59/saldo0 y ficha con $2,190, descripción y fotos
+visibles cargadas; no aceptación de las doce fichas ni otra venta con PIN.
+
+PASS 758 unitarias/102 archivos, ESLint dirigido y TypeScript. Comparación Woo
+reutilizada sin debilitar la precondición del aplicador antiguo. No hay cambio
+de interfaz o esquema. No se escribe en Woo, main ni producción.
+
+Cobertura actual de catálogo 15,876/16,381 = 96.92%; faltan 505 por cargar,
+434 anteriores más 71 nuevos. El 97.3391% anterior usaba el corte del 12 de
+octubre. No es porcentaje total de M9. 28 filas cargadas tienen cambios de
+catálogo; 404 vínculos se relacionan con cambios de fuente Woo, no son 404
+preguntas ni se sobrescriben. Los lotes del corte anterior requieren renovación.
+
+Detalle: docs/M9_RENOVACION_PILOTO_2026_10_19.md. Evidencia privada fuera de
+GitHub: outputs/m9-renovacion-piloto-2026-10-19/. Siguiente: confirmar default
+por sucursal, obtener cantidades/reservas reales y preparar plan específico
+de saldos con ensayo y reversión antes de la prueba operativa junto a SICAR.
