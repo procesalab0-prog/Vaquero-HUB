@@ -2115,3 +2115,26 @@ de Git: outputs/m9-importador-clientes-saldos-2026-10-20/. Sigue pantalla de
 revisión, padrón completo y vínculos confirmados; nuevo corte conciliado antes
 de operar. Entregas UNKNOWN, ninguna reserva/salida adicional. Sin producción,
 main ni escrituras SICAR/Woo; cobertura de catálogo no cambia en este bloque.
+
+
+## Pantalla de revisión de clientes y Auth real · Preview · 20 octubre 2026
+
+Ruta /clientes/migracion-sicar publicada sólo en Preview. Consulta administrativa
+de 61 cuentas, documentos/abonos/cancelaciones y líneas; búsqueda y paginación.
+Revisión pendiente/candidato no activa deuda, fusiona clientes ni concede
+consentimiento. Tablas fuente privadas; RPC invoker con dispatcher privado
+definer que exige JWT válido, ADMIN, permisos y staging en cada acción.
+
+Aceptación desde navegador con sesión real: vínculo QA sintético $10, abonos
+$4/$6, saldo cero; sobrepago y conflicto rechazados. Otro ensayo de navegación
+terminó $4/$4/$2; reintento idéntico en navegador fue inconcluso, se verificó
+separadamente por SQL authenticated. No confundir ese SQL con Auth real.
+129 tablas auditadas: sólo cambia el estado privado de dos ensayos; después
+se cierra la ventana temporal de QA. Libro nativo, caja, inventario, ventas y
+61 fuentes reales intactos. No se aprobó un vínculo SICAR real ni cobro operativo.
+
+933 unitarias/110 archivos, ESLint/TypeScript PASS. Build Preview READY y lectura
+a 390px sin overflow; build local limitado por DNS de Google Fonts. Main,
+producción, SICAR y Woo sin cambios. Detalle: docs/M9_PANTALLA_REVISION_CLIENTES_PREVIEW.md.
+Evidencia privada: outputs/m9-revision-clientes-preview-2026-10-20/. Sigue
+padrón completo y vínculos reales acreditados con corte renovado.
