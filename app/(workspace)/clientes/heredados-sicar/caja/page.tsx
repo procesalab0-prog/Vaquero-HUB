@@ -4,7 +4,10 @@ import { notFound } from "next/navigation";
 import { requirePermission } from "@/lib/auth/authorization";
 import { customerReviewEnabled } from "@/lib/customer-migration";
 import type { LegacyFinanceView } from "@/lib/legacy-finance";
-import type { LegacyCashContext } from "@/lib/legacy-cash";
+import type {
+  LegacyCashContext,
+  LegacyOperatingStatus,
+} from "@/lib/legacy-cash";
 import { trialLegacyCash } from "./actions";
 import payment from "./payment.module.css";
 import styles from "../../migracion-sicar/review.module.css";
@@ -16,6 +19,8 @@ const money = (v: number) =>
     v / 100,
   );
 const notices: Record<string, string> = {
+  corte:
+    "El corte ya no permite ensayos o cambió la evidencia. Renueva SICAR antes de continuar.",
   sobrepago:
     "El abono supera el saldo pendiente. No se registró ningún movimiento.",
   caja: "La sesión de caja cambió o no está abierta para ti. Recarga y revisa Caja.",
@@ -35,15 +40,17 @@ export default async function LegacyCashPage({
 }) {
   if (!customerReviewEnabled(process.env.NEXT_PUBLIC_SUPABASE_URL)) notFound();
   const { supabase } = await requirePermission("credit.collect");
-  const [finance, context, params] = await Promise.all([
+  const [finance, context, operating, params] = await Promise.all([
     supabase.rpc("m9_legacy_finance", { p_action: "LIST" }),
     supabase.rpc("m9_legacy_cash", { p_action: "CONTEXT" }),
+    supabase.rpc("m9_legacy_operating", { p_action: "STATUS" }),
     searchParams,
   ]);
-  if (finance.error || context.error)
+  if (finance.error || context.error || operating.error)
     throw Error("No se pudo consultar el ensayo de abonos con caja.");
   const view = finance.data as LegacyFinanceView,
-    ctx = context.data as LegacyCashContext;
+    ctx = context.data as LegacyCashContext,
+    readiness = operating.data as LegacyOperatingStatus;
   return (
     <div className={styles.page}>
       <header>
@@ -60,6 +67,55 @@ export default async function LegacyCashPage({
           Volver a saldos heredados
         </Link>
       </header>
+      <section
+        className={styles.panel}
+        aria-label="Preparación del cobro operativo"
+      >
+        <h2>Cobro real bloqueado · Sólo ensayo</h2>
+        {readiness.cut ? (
+          <>
+            <p>
+              Corte revisado en SICAR:{" "}
+              {new Date(readiness.cut.source_at).toLocaleString("es-MX", {
+                timeZone: "America/Mexico_City",
+              })}
+              .
+            </p>
+            <p>
+              {readiness.cut.accounts} cuentas con deuda ·{" "}
+              {readiness.cut.documents} documentos ·{" "}
+              {money(readiness.cut.balance_cents)} pendientes.
+            </p>
+            <p>
+              Se renovaron las cuentas con deuda del listado APARTADO. Esto no
+              representa todo el padrón de clientes, ni confirma entregas o
+              existencias.
+            </p>
+            <p>
+              {readiness.cut.fresh_for_rehearsal
+                ? "Corte disponible para ensayo (máximo 24 horas)."
+                : "Corte vencido para ensayo. Se necesita volver a consultar SICAR."}
+            </p>
+            <p>
+              {readiness.cut.fresh_for_activation
+                ? "Antes de cobrar hace falta acordar el cambio de sistema."
+                : "Antes de cobrar será necesario renovar nuevamente el corte (máximo 30 minutos)."}
+            </p>
+          </>
+        ) : (
+          <p>Falta registrar un corte comprobado. El ensayo está bloqueado.</p>
+        )}
+        <p>
+          Para activar cobros se debe confirmar el corte, autorizar el arranque
+          y acordar un solo lugar para registrar abonos, evitando cobrarlos
+          también en SICAR. Ventanas activas para ti:{" "}
+          {readiness.operating_windows}.
+        </p>
+        <p>
+          Esta pantalla sólo ensaya el motor operativo y revierte deuda, caja y
+          folio. No activa cobros reales.
+        </p>
+      </section>
       <section className={styles.panel}>
         <h2>Caja de la prueba</h2>
         {ctx.session ? (
@@ -98,6 +154,7 @@ export default async function LegacyCashPage({
           action={trialLegacyCash}
           className={`${styles.form} ${payment.form}`}
         >
+          <input type="hidden" name="cut" value={readiness.cut?.id ?? ""} />
           <input type="hidden" name="request" value={crypto.randomUUID()} />
           <input type="hidden" name="session" value={ctx.session?.id ?? ""} />
           <label>
@@ -176,9 +233,9 @@ export default async function LegacyCashPage({
           <button
             type="submit"
             className="button primary"
-            disabled={!ctx.session}
+            disabled={!ctx.session || !readiness.cut?.fresh_for_rehearsal}
           >
-            Ensayar con caja y abrir recibo
+            Ensayar motor operativo y abrir recibo
           </button>
         </form>
       </section>

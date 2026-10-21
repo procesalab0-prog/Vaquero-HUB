@@ -39,6 +39,7 @@ export function legacyCashParts(form: Pick<FormData, "get">): LegacyCashPart[] {
   return result;
 }
 export function legacyCashFailure(message: string) {
+  if (message.includes("M9_OPERATING_")) return "corte";
   if (message.includes("M9_OVERPAYMENT")) return "sobrepago";
   if (message.includes("M9_SESSION_FORBIDDEN")) return "caja";
   if (message.includes("M9_ACCOUNT_LOCATION_MISMATCH")) return "sucursal";
@@ -74,4 +75,22 @@ export type LegacyCashReceipt = {
   parts: Array<LegacyCashPart & { name: string; change_cents?: number }>;
   rolled_back: true;
   valid_payment_receipt: false;
+  operating_engine?: true;
+  source_cut_id?: string;
+};
+
+export type LegacyOperatingStatus = {
+  cut: null | {
+    id: string;
+    source_at: string;
+    accounts: number;
+    documents: number;
+    balance_cents: number;
+    scope: string;
+    fresh_for_rehearsal: boolean;
+    fresh_for_activation: boolean;
+  };
+  operating_windows: number;
+  activation_requires: "HUMAN_APPROVAL_AND_SINGLE_WRITER";
+  production_allowed: false;
 };

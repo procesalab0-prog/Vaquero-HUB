@@ -11,10 +11,11 @@ export async function trialLegacyCash(form: FormData) {
     if (!customerReviewEnabled(process.env.NEXT_PUBLIC_SUPABASE_URL))
       throw Error("NOT_AUTHORIZED");
     const { supabase } = await requirePermission("credit.collect");
-    const { error } = await supabase.rpc("m9_legacy_cash", {
-      p_action: "TRIAL",
+    const { error } = await supabase.rpc("m9_legacy_operating", {
+      p_action: "REHEARSE",
       p_input: {
         request,
+        cut: String(form.get("cut") ?? ""),
         account: String(form.get("account") ?? ""),
         session: String(form.get("session") ?? ""),
         parts: legacyCashParts(form),

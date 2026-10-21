@@ -39,6 +39,12 @@ export default async function LegacyCashReceiptPage({
           ENSAYO REVERTIDO · NO VÁLIDO COMO PAGO
         </p>
         <h1>Abono de cliente heredado</h1>
+        {receipt.operating_engine ? (
+          <p>
+            Motor operativo probado con corte SICAR renovado. Cobro real
+            bloqueado; esta prueba se revirtió.
+          </p>
+        ) : null}
         <p>
           <strong>{receipt.folio}</strong>
         </p>
