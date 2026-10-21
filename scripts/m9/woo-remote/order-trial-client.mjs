@@ -79,9 +79,10 @@ export function remoteOrderTrialClient({
   async function call(method, path, body) {
     need(
       (method === "GET" &&
-        (path === "isolation" || /^order-trials\/[a-f0-9-]{36}$/.test(path))) ||
+        (path === "isolation" ||
+          /^(order|availability)-trials\/[a-f0-9-]{36}$/.test(path))) ||
         (method === "POST" &&
-          (path === "order-trials" ||
+          (["order-trials", "availability-trials"].includes(path) ||
             /^order-trials\/[a-f0-9-]{36}\/step$/.test(path))),
       "TRIAL_ROUTE_FORBIDDEN",
     );
@@ -116,6 +117,26 @@ export function remoteOrderTrialClient({
     return JSON.parse(Buffer.concat(chunks).toString("utf8"));
   }
   return {
+    async availabilityPreflight() {
+      const s = await this.preflight();
+      need(
+        s.availability_trial_protocol === "m9-remote-availability-trial-1",
+        "AVAILABILITY_PROTOCOL_REQUIRED",
+      );
+      return s;
+    },
+    readAvailability(id) {
+      need(uuid.test(id), "TRIAL_ID_INVALID");
+      return call("GET", `availability-trials/${id}`);
+    },
+    applyAvailability(packet) {
+      need(
+        packet?.protocol === "m9-remote-availability-trial-1" &&
+          uuid.test(packet.trial_id),
+        "AVAILABILITY_PACKET_INVALID",
+      );
+      return call("POST", "availability-trials", packet);
+    },
     async preflight() {
       const s = await call("GET", "isolation");
       need(

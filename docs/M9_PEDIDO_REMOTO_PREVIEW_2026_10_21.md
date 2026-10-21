@@ -45,3 +45,59 @@ Regresión de catálogo/fotos y permisos; ni main ni producción reciben cambios
 Pendientes separados: checkout público de prueba, documentos financieros de la
 venta Woo, devoluciones físicas y monetarias reales, webhook automático, corte
 real y autorización productiva. No llamar a este ensayo una venta real conectada.
+
+
+## Aceptación ejecutada
+
+- Preview0.81.0 READY; avatar probado; commit publicado `28a24543` y árbol Git
+  idéntico al local `6be7a7df0f69218acbadd0869fee0c7f82ed5b16`.
+- Woo pruebas1.4.0 instalado; ocho controles OK y preflight del protocolo nuevo OK.
+- Pedido49: solicitud `f578aaa5-ceb2-4882-abf5-a36dbce38d20`, código literal10582,
+  tallaM, precio público82000 centavos, cantidad2 sintética.
+- Pedido50: solicitud `fe7f6d19-17e8-4bef-b84f-eed511f5ca6a`, código literal10317,
+  tallaM, precio público89000 centavos, cantidad2 sintética.
+- Ambos pendientes→procesamiento→cancelados, verificados en Preview y Woo nativo.
+  Una repetición UI por solicitud no aumentó los dos pedidos ni los cuatro eventos.
+- Por pedido: reserva3físicas/2reservadas/1disponible; consume1/0/1; repone3/0/3.
+  Tres replays de comandos, cero cambios nativos persistentes después del rollback.
+- Auditoría146 tablas previa/final idéntica; los dos ensayos VERIFIED y sus cuatro
+  eventos privados constituyen las únicas filas nuevas en Supabase.
+- SQL15 rechazos+3 comandos+3replays;1050unitarias/119archivos; PHP32 y regresión
+  fotos42+23; tipos/lint/build aprobados. Build local inicial falló al descargar
+  Google Fonts en sandbox; repetición autorizada con red y build remoto aprobados.
+- Migración local `20261021211818` aplicada remota `20261021212335`; ambas versiones
+  se registran, sin reescribir la migración aplicada.
+- Asesores: advertencias generales de funciones DEFINER y protección de contraseña
+  filtrada revisadas; no se habilitó acceso general ni se cambiaron ajustes Auth.
+  El RPC de escritura no tiene EXECUTE para anon/authenticated y la lectura valida
+  ADMIN/propietario. El control de stock sigue deshabilitado y los conteos NULL.
+
+## Reproducción y evidencia
+
+Código en commit `39dca43`, publicado mediante GitHub Connector después de que
+Git CLI no tuvo credenciales; `force=false` y lease del head `7aa2073`. Se verificó
+igualdad exacta de árbol; historia local y remota conciliadas sin sobrescritura.
+Vercel `dpl_CWoHgkcRvSiUXnhmetoLgsRSEcz1`, target Preview, Next.js, READY.
+Credenciales existentes sólo del destino test; ninguna se publica en código/reportes.
+La contraseña administrativa de pruebas no se conoce ni se cambió; Hostinger
+permitió recuperar la sesión. Chrome no conservó una vista estable del formulario;
+se completó en una pestaña aislada del navegador de Codex.
+
+Evidencia privada local: `outputs/m9-pedido-remoto-preview-2026-10-21/`.
+Pruebas reproducibles: `node_modules/.bin/vitest run tests/unit`,
+`node scripts/m9/woo-remote/test-order-trial.mjs ../m9-woo-runtime`,
+`node scripts/m9/woo-remote/test-variant-photo-write.mjs ../m9-woo-runtime` y
+`node scripts/m9/woo-remote/test-variant-photo-read.mjs ../m9-woo-runtime`.
+SQL: ejecutar
+`scripts/m9/test-connected-woo-order.sql` únicamente en staging; termina ROLLBACK.
+Los fixtures SQL/PHP son sintéticos; los pedidos49/50 sí son objetos Woo nativos
+de prueba. No confundir ambas evidencias.
+
+## Lo que sigue sin quedar aceptado
+
+No hay captura automática de todos los movimientos POS para la salida de stock,
+ni envío continuo de disponibilidad a Woo, ni carrera POS/Woo aceptada. Este bloque
+usa lectura autenticada del pedido, no webhooks automáticos. No se validaron pago
+real, documento financiero de venta Woo ni checkout público. Continúan la revisión
+de entregas, conteo físico y corte vigente antes de autorizar producción. No cambió
+la cobertura96.92% de catálogo ni se calculó un porcentaje global nuevo.

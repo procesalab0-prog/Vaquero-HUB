@@ -4,14 +4,19 @@ import Link from "next/link";
 import { requirePermission } from "@/lib/auth/authorization";
 import { WEB_STAGING_URL } from "@/lib/web-draft";
 import { remoteWebConfigured } from "@/lib/remote-web-server";
-import { runConnectedWooTrial } from "./actions";
+import { runAvailabilityTrial, runConnectedWooTrial } from "./actions";
 import styles from "../../clientes/migracion-sicar/review.module.css";
+import { ContentionProbe } from "./contention-probe";
 export const metadata: Metadata = { title: "Pedido Woo · Ensayo conectado" };
 export const dynamic = "force-dynamic";
 type Trial = {
   id: string;
   state: string;
   created_at: string;
+  availability?: null | {
+    state: string;
+    receipt?: { quantities: number[]; restored: boolean };
+  };
   result: null | {
     order_id: number;
     barcode: string;
@@ -19,6 +24,8 @@ type Trial = {
     native_operations: number;
     idempotent_replays: number;
     remote_status: string;
+    availability_capture_rollback?: boolean;
+    pos_inventory_operations?: number;
     history: {
       phase: string;
       physical: number;
@@ -32,6 +39,8 @@ export default async function ConnectedWooTrialPage({
 }: {
   searchParams: Promise<{
     estado?: string;
+    estado_disponibilidad?: string;
+    concurrencia?: string;
     solicitud?: string;
     familia?: string;
   }>;
@@ -65,6 +74,9 @@ export default async function ConnectedWooTrialPage({
           Volver a productos
         </Link>
       </header>
+      {params.concurrencia && uuid.test(params.concurrencia) && (
+        <ContentionProbe trialId={params.concurrencia} />
+      )}
       <section className={styles.panel} aria-label="Alcance del ensayo">
         <h2>Un pedido sintético, sin cobro ni envío</h2>
         <p>
@@ -82,6 +94,20 @@ export default async function ConnectedWooTrialPage({
           una venta real ni importa existencias de SICAR.
         </p>
       </section>
+      {params.estado_disponibilidad && (
+        <section className={styles.panel} role="status">
+          <h2>
+            {params.estado_disponibilidad === "verificado"
+              ? "Disponibilidad comprobada en Woo"
+              : "La disponibilidad requiere revisión"}
+          </h2>
+          <p>
+            {params.estado_disponibilidad === "verificado"
+              ? "Woo recibió las cantidades sintéticas, pasó por agotado y recuperó sus campos de inventario originales."
+              : "Retoma el mismo comprobante. No generes otra solicitud para resolver una respuesta incierta."}
+          </p>
+        </section>
+      )}
       {params.estado === "revision" && (
         <section className={styles.panel} role="status">
           <h2>El resultado necesita revisión</h2>
@@ -160,6 +186,39 @@ export default async function ConnectedWooTrialPage({
                   Código {trial.result.barcode} · {trial.result.quantity} piezas
                   sintéticas · talla M.
                 </p>
+                {trial.result.availability_capture_rollback && (
+                  <div>
+                    <p>
+                      Captura atómica de reservas y{" "}
+                      {trial.result.pos_inventory_operations} movimientos
+                      sintéticos del inventario de caja, con rollback.
+                    </p>
+                    <form action={runAvailabilityTrial}>
+                      <input type="hidden" name="request_id" value={trial.id} />
+                      <button
+                        className="button secondary"
+                        disabled={!remoteWebConfigured()}
+                      >
+                        {trial.availability
+                          ? "Consultar el mismo ensayo de disponibilidad"
+                          : "Ensayar disponibilidad en Woo"}
+                      </button>
+                    </form>
+                    {trial.availability?.state === "VERIFIED" && (
+                      <p>
+                        Comprobado:{" "}
+                        {trial.availability.receipt?.quantities.join(" → ")}{" "}
+                        piezas de prueba. Stock original de Woo restaurado.
+                      </p>
+                    )}
+                    {trial.availability?.state === "DISPATCHING" && (
+                      <p>
+                        Resultado pendiente. Consulta este mismo ensayo; no
+                        crees otro.
+                      </p>
+                    )}
+                  </div>
+                )}
                 <ul>
                   {trial.result.history.map((row) => (
                     <li key={row.phase}>

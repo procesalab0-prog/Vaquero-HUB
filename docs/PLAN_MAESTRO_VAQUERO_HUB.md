@@ -4931,3 +4931,38 @@ aceptada: el intento MCP no observó solapamiento; quedan adapter remoto, docume
 financieros, Preview/Woo, envío de stock (incluido POS) y corte real. Sin despliegue
 web, main o producción; conteos siguen NULL y no cambia cobertura de catálogo.
 Ver docs/M9_PEDIDOS_INVENTARIO_WOO_STAGING.md.
+
+
+## M9 · Pedido sintético conectado desde Preview · 21 octubre 2026
+
+Preview 0.81.0 READY, commit publicado 28a24543a53715c0326e5e6fda80c94d8d878b6b,
+árbol 6be7a7df0f69218acbadd0869fee0c7f82ed5b16. Ruta /productos/ensayo-woo,
+sesión ADMIN real y versión comprobada desde el avatar. Plugin Woo de pruebas
+actualizado 1.3.4→1.4.0 conservando sus ocho protecciones; API general bloqueada.
+Acceso administrativo recuperado mediante Hostinger, sin cambiar contraseñas.
+
+Dos recorridos aceptados desde el programa publicado: solicitud
+f578aaa5-ceb2-4882-abf5-a36dbce38d20→pedido49/código10582/$820 y solicitud
+fe7f6d19-17e8-4bef-b84f-eed511f5ca6a→pedido50/código10317/$890; talla M,
+dos piezas SINTÉTICAS por pedido, sin cliente, cobro ni envío. Ambos pendientes→
+procesamiento→cancelados, comprobados también en la lista nativa de Woo. Repetir
+cada solicitud conserva el pedido; sólo dos pedidos, dos recibos VERIFIED y cuatro
+eventos privados persistentes. Reserva/consumo/reposición nativos y tres replays
+por pedido con rollback; historia física/reservada/disponible 3/2/1→1/0/1→3/0/3.
+No equivale a checkout público, venta financiera o stock SICAR importado.
+
+Migración local 20261021211818_m9_connected_woo_order_trials.sql aplicada sólo a
+staging con versión remota 20261021212335. Dos tablas privadas con RLS y sin grants
+API; RPC de despacho exclusivamente servidor, lectura sólo ADMIN activo dueño.
+1,050 unitarias/119 archivos, 32 controles PHP, regresiones fotos42+23, tipos/lint
+y build aprobados; SQL15 rechazos, tres comandos nativos y tres replays con rollback.
+Auditoría146 antes/después de ambos recorridos idéntica, sin cambios en caja,
+ventas, stock, catálogo o deuda. Los dos registros/evidencia nuevos son lo único
+persistente en Supabase. Conteos originales continúan NULL; control piloto apagado.
+
+Evidencia privada en outputs/m9-pedido-remoto-preview-2026-10-21/. ZIP reproducible
+SHA256 7b65a26135a9f9f2ef1fab855c917565f7ac4499b1a12eb28814b1e0f6b88c72.
+Ver docs/M9_PEDIDO_REMOTO_PREVIEW_2026_10_21.md. No main ni producción.
+Sigue salida condicionada de disponibilidad incluida venta POS, carrera real entre
+conexiones, documentos financieros Woo, transporte automático y renovación del
+corte/conteo/entregas. Cobertura de catálogo96.92% sin cambio; no es porcentaje total.

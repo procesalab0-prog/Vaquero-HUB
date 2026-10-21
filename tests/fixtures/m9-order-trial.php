@@ -19,8 +19,18 @@ function wc_format_decimal($x,$places){return number_format((float)$x,$places,'.
 function m9_bridge_isolation(){return ['mail_blocked'=>$GLOBALS['isolation'],'outbound_blocked'=>true,'purchase_blocked'=>true,'orders_blocked'=>true,'payment_gateways'=>0];}
 function m9_bridge_receipt($request){if($request['id']!==$GLOBALS['parent'] || $GLOBALS['owner']!==2)return new WP_Error('scope');return ['state'=>'SUCCEEDED','remote_product_id'=>25,'verified'=>['variants'=>[['barcode'=>'10582','price_cents'=>82000,'variant_id'=>'6a73351b-91d3-49d5-8064-0a052ccbf851','remote_variation_id'=>27]]]];}
 function m9_family_identity($entry){return $GLOBALS['identity'];}
-class FakeProduct {function get_sku($mode){return $GLOBALS['code'];}function get_status(){return 'draft';}function get_regular_price($mode){return '820.00';}}
-function wc_get_product($id){return $id===27?new FakeProduct():false;}
+class FakeProduct {
+ public $id,$manage=false,$quantity=null,$status='outofstock',$backorders='no';
+ function __construct($id){$this->id=$id;}function get_sku($mode){return $GLOBALS['code'];}function get_status(){return 'draft';}function get_regular_price($mode){return '820.00';}
+ function get_manage_stock($mode){return $this->manage;}function get_stock_quantity($mode){return $this->quantity;}function get_stock_status($mode){return $this->status;}function get_backorders($mode){return $this->backorders;}
+ function set_manage_stock($v){$this->manage=$v;}function set_stock_quantity($v){$this->quantity=$v;}function set_stock_status($v){$this->status=$v;}function set_backorders($v){$this->backorders=$v;}
+ function save(){
+  if(($GLOBALS['stock_fail']??false)&&$this->quantity===1){$GLOBALS['stock_fail']=false;throw new Exception('INJECTED_STOCK_FAILURE');}
+  if(($GLOBALS['restore_fail']??false)&&!$this->manage){throw new Exception('INJECTED_RESTORE_FAILURE');}
+  $GLOBALS['products'][$this->id]=clone $this;$GLOBALS['stock_writes']++;
+ }
+}
+function wc_get_product($id){return isset($GLOBALS['products'][$id])?clone $GLOBALS['products'][$id]:false;}
 class FakeDB {public $options='wp_options';function prepare($q,...$args){return json_encode([$q,$args]);}function get_var($q){[$query,$args]=json_decode($q,true);if(str_contains($query,'GET_LOCK'))return $GLOBALS['lock']?'1':'0';if(str_contains($query,'RELEASE_LOCK'))return '1';return isset($GLOBALS['options'][$args[0]])?serialize($GLOBALS['options'][$args[0]]):null;}}
 class WC_Order_Item_Product {
  public $id=0,$pid=0,$vid=0,$q=0,$total=0,$meta=[];
@@ -50,9 +60,10 @@ function setup_fixture(){
  $GLOBALS['wpdb']=new FakeDB();$GLOBALS['options']=[];$GLOBALS['orders']=[];$GLOBALS['owner']=2;$GLOBALS['permission']=true;$GLOBALS['origin']=true;
  $GLOBALS['isolation']=true;$GLOBALS['identity']=true;$GLOBALS['code']='10582';$GLOBALS['lock']=true;$GLOBALS['fail_receipt']=false;$GLOBALS['stock_changed']=0;
  $GLOBALS['parent']='97c82026-b3cc-4c60-8f22-13d7c00fb33a';
+ $GLOBALS['products']=[25=>new FakeProduct(25),27=>new FakeProduct(27)];$GLOBALS['stock_writes']=0;$GLOBALS['stock_fail']=false;$GLOBALS['restore_fail']=false;
  return ['protocol'=>'m9-remote-order-trial-1','trial_id'=>'11111111-1111-4111-8111-111111111111','parent_id'=>$GLOBALS['parent'],'barcode'=>'10582','quantity'=>2];
 }
-setup_fixture();require '/guard.php';require '/order-trial.php';foreach($GLOBALS['actions']['rest_api_init'] as $fn)$fn();
+setup_fixture();require '/guard.php';require '/order-trial.php';require '/availability-trial.php';foreach($GLOBALS['actions']['rest_api_init'] as $fn)$fn();
 $checks=[];function ok($v,$name){if(!$v)throw new Exception($name);$GLOBALS['checks'][]=$name;}
 function create_trial($p){return m9_order_trial_create(new Request($p));}
 function step_trial($p,$phase,$version,$op){return m9_order_trial_step(new Request(['protocol'=>'m9-remote-order-trial-1','operation_id'=>$op,'expected_version'=>$version,'phase'=>$phase],$p['trial_id']));}
@@ -84,4 +95,28 @@ $o->set_created_via('m9_synthetic_trial');$o->update_meta_data('_m9_order_trial_
 $GLOBALS['m9_order_trial_context']=['trial_id'=>$p['trial_id'],'order_id'=>0];$GLOBALS['permission']=false;
 $caught=false;try{$o->save();}catch(Throwable $e){$caught=true;}ok($caught,'write_exception_requires_scoped_auth');unset($GLOBALS['m9_order_trial_context']);
 foreach($GLOBALS['routes'] as $route=>$settings)ok($settings['permission_callback']==='m9_bridge_permission','route_permission_'.$route);
+function ready_availability(){
+ $p=setup_fixture();create_trial($p);step_trial($p,'PROCESS',1,'22222222-2222-4222-8222-222222222222');step_trial($p,'CANCEL',2,'33333333-3333-4333-8333-333333333333');
+ return ['protocol'=>'m9-remote-availability-trial-1','trial_id'=>$p['trial_id'],'quantities'=>[3,1,0,1,1,3]];
+}
+$p=ready_availability();$r=m9_availability_trial(new Request($p));
+ok(!is_wp_error($r)&&$r['restored']&&$r['synthetic']&&$r['quantities']===[3,1,0,1,1,3],'stock_native_setters_roundtrip');
+ok($r['before']===$r['after']&&$GLOBALS['products'][27]->quantity===null&&!$GLOBALS['products'][27]->manage,'stock_exact_semantic_restore');
+$writes=$GLOBALS['stock_writes'];ok(m9_availability_trial(new Request($p))===$r&&$GLOBALS['stock_writes']===$writes,'stock_replay_no_writes');
+ok(m9_availability_read(['id'=>$p['trial_id']])===$r,'stock_receipt_read');
+foreach(['quantities','string_quantity','extra_field','wrong_protocol','uuid','isolation','order_changed','identity','known_stock','lock'] as $case){
+ $p=ready_availability();switch($case){
+ case 'quantities':$p['quantities']=[100];break;case 'string_quantity':$p['quantities'][0]='3';break;case 'extra_field':$p['cost']=0;break;
+ case 'wrong_protocol':$p['protocol']='real';break;case 'uuid':$p['trial_id']='bad';break;case 'isolation':$GLOBALS['isolation']=false;break;
+ case 'order_changed':$GLOBALS['orders'][array_key_first($GLOBALS['orders'])]->status='processing';break;case 'identity':$GLOBALS['identity']=false;break;
+ case 'known_stock':$GLOBALS['products'][27]->quantity=9;break;case 'lock':$GLOBALS['lock']=false;break;}
+ ok(is_wp_error(m9_availability_trial(new Request($p)))&&$GLOBALS['stock_writes']===0,'stock_reject_before_write_'.$case);
+}
+$p=ready_availability();$GLOBALS['stock_fail']=true;$r=m9_availability_trial(new Request($p));
+ok(is_wp_error($r)&&$GLOBALS['products'][27]->quantity===null&&!$GLOBALS['products'][27]->manage,'stock_failure_restores_original');
+$writes=$GLOBALS['stock_writes'];ok(is_wp_error(m9_availability_trial(new Request($p)))&&$GLOBALS['stock_writes']===$writes,'uncertain_stock_never_redispatched');
+$p=ready_availability();$GLOBALS['restore_fail']=true;ok(is_wp_error(m9_availability_trial(new Request($p))),'restore_failure_is_not_success');
+ok(is_wp_error(m9_availability_read(['id'=>$p['trial_id']])),'restore_failure_receipt_requires_review');
+$p=ready_availability();$GLOBALS['fail_receipt']=true;ok(is_wp_error(m9_availability_trial(new Request($p)))&&$GLOBALS['products'][27]->quantity===null,'receipt_failure_after_restore_requires_review');
+$p=ready_availability();m9_availability_trial(new Request($p));$GLOBALS['owner']=9;ok(is_wp_error(m9_availability_read(['id'=>$p['trial_id']])),'stock_other_owner_no_read');
 echo json_encode(['controls'=>count($checks),'checks'=>$checks,'scope'=>'ISOLATED_PHP_FIXTURES_NOT_LIVE_WOO','network_requests'=>0,'real_database_writes'=>0]);
