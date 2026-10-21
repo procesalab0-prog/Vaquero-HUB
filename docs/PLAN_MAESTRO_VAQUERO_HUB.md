@@ -4879,3 +4879,20 @@ Aceptación caja/recibo M9 en Preview: cuatro ensayos UI revertidos, folios de
 origen y cambio correctos, sin efectos financieros persistentes y $11,910
 conservados. Integración de ensayo cerrada; habilitación operativa sigue sujeta
 al plan de arranque y corte conciliado. Main y producción intactos.
+
+
+## M9 · Corte renovado y cobro operativo preparado · 20 octubre 2026
+
+Renovado desde SICAR el listado APARTADO (61) y las seis cuentas/siete documentos
+abiertos: $11,910 pendientes, $4,200 históricos y $1,000 cancelados excluidos.
+Nuevo corte 20 octubre 20:22 México; original inalterado. Alcance parcial, no todo
+el padrón. Generador con cinco pins y tres corridas idénticas. Motor operativo
+con ventana/usuario/caja/corte vigente, activación privada con evidencia humana y
+único sistema de abonos; no activado. Ensayo del mismo motor revierte todo.
+26 rechazos SQL y ACL, 973 unitarias, tipos/lint PASS. Auditoría 140 tablas: sólo
+evidencia nueva del corte y dos ensayos UI; deuda/caja/stock intactos. Preview
+15764fce READY, sesión real, combinado/cambio/FIFO/liquidación y sobrepago probados.
+Móvil390 sin overflow. Cero ventanas/pagos reales; no main ni producción. Falta
+padrón completo, entregas/conteo y aceptar recibo/anulación operativa antes de
+renovar y autorizar el cambio. Detalle: docs/M9_COBRO_OPERATIVO_RENOVACION_STAGING.md.
+Cobertura catálogo 96.92% sin cambio; no porcentaje total de migración.
