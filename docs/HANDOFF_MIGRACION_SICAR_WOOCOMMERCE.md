@@ -2251,3 +2251,44 @@ Móvil390 sin overflow. Cero ventanas/pagos reales; no main ni producción. Falt
 padrón completo, entregas/conteo y aceptar recibo/anulación operativa antes de
 renovar y autorizar el cambio. Detalle: docs/M9_COBRO_OPERATIVO_RENOVACION_STAGING.md.
 Cobertura catálogo 96.92% sin cambio; no porcentaje total de migración.
+
+
+## M9 · Padrón general sin filtro APARTADO · 21 octubre 2026
+
+171 fichas/171 IDs comprobados; las 61 referencias anteriores están presentes,
+110 adicionales, cero conflictos de ID o cambios financieros en las anteriores.
+60 cuentas con deuda y 83 documentos no pagados por $250,128 observados; $238,218
+corresponden a las cuentas adicionales. No es apertura adicional. Folios numéricos
+literales conservados; dos cuentas con nombre igual permanecen separadas.
+Analizador offline con tres pins, dos corridas idénticas y cola de 83 detalles
+(siete anteriores/76 adicionales). READ ONLY + ROLLBACK en staging, 140 tablas
+idénticas, libro heredado $11,910/PAYMENT cero. Doce códigos del piloto sin
+cantidades. Sin DDL, importación operativa, main o producción. Diagnóstico de
+anulación: requiere evento positivo compensatorio y reversión trazable de
+asignaciones, caja/recibo y autorización; todavía no implementada.
+Sigue capturar detalle/abonos, ampliar importador y comprobar entregas/conteo.
+Ver docs/M9_PADRON_GENERAL_CONCILIADO_2026_10_21.md. Catálogo96.92% sin cambio;
+no porcentaje total de migración.
+
+## M9 · Núcleo de pedidos e inventario Woo · 21 octubre 2026
+
+Prioridad autorizada: piloto Woo sin producción. Motor privado SECURITY INVOKER,
+tienda test fijada, ADMIN/La Piedad/ventana corta; seis tablas RLS sin permisos
+para API o service_role y control deshabilitado. Reserva, consumo, liberación y
+reposición con recibo por operación/pedido, versión esperada, Clave 1 literal,
+movimientos nativos y outbox atómico. Sin endpoint, activación, pedido Woo real,
+venta financiera ni despacho de stock. Firma HMAC sólo propone releer el pedido.
+
+Ensayos SQL staging: 21 comandos, cinco replays, 31 rechazos, seis ACL y doce
+invariantes; fallo al final revierte movimiento/recibo y admite reintento seguro.
+14 movimientos de mercancía (dos semillas sintéticas) y 20 de reserva revertidos.
+Tres intentos reales anon/authenticated/service_role rechazados. 140 tablas previas
+intactas, 146 extendidas iguales tras ensayos; nuevas operativas vacías y doce
+conteos siguen NULL. 1,022 unitarias/118 archivos, tipos/lint/formato correctos.
+No aceptación de carrera concurrente: intento MCP no observó solapamiento.
+
+Sigue adaptador autenticado de pedidos/documentos financieros, transporte duradero,
+ensayo de compra desde Woo test/Preview y carrera POS/Woo, salida de disponibilidad
+(también POS) y corte de stock real. Sin nuevo frontend, main, SICAR, Woo o producción.
+Ver docs/M9_PEDIDOS_INVENTARIO_WOO_STAGING.md. No cambia cobertura96.92% ni equivale
+a porcentaje de migración total. No anunciar sincronización operativa terminada.

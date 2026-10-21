@@ -17,7 +17,7 @@ add_filter('rest_pre_dispatch', function ($result, $server, $request) {
     if (strpos($request->get_route(), '/m9-test/v1/') === 0) {
         do_action('litespeed_control_set_nocache', 'M9 authenticated catalogue');
     }
-    if (current_user_can('m9_test_catalog') && !preg_match('#^/m9-test/v1/(isolation|drafts|families|(?:gallery-updates|variant-photo-assignments)(?:/[0-9a-f-]{36})?|(?:receipts|galleries|variant-photos)/[0-9a-f-]{36}|photos/[0-9a-f-]{36}/[1-9][0-9]*)$#i', $request->get_route())) {
+    if (current_user_can('m9_test_catalog') && !preg_match('#^/m9-test/v1/(isolation|drafts|families|order-trials(?:/[0-9a-f-]{36}(?:/step)?)?|(?:gallery-updates|variant-photo-assignments)(?:/[0-9a-f-]{36})?|(?:receipts|galleries|variant-photos)/[0-9a-f-]{36}|photos/[0-9a-f-]{36}/[1-9][0-9]*)$#i', $request->get_route())) {
         return new WP_Error('m9_scope_denied', 'Acceso limitado al catálogo de pruebas.', array('status' => 403));
     }
     return $result;
@@ -37,6 +37,7 @@ function m9_bridge_permission() {
 function m9_bridge_isolation() {
     $outbound = wp_remote_get('https://example.invalid/m9-isolation');
     return array(
+        'order_trial_protocol' => function_exists('m9_order_trial_create') ? 'm9-remote-order-trial-1' : null,
         'variant_photo_write_protocol' => function_exists('m9_variant_photo_assign') ? 'm9-remote-variant-photo-write-1' : null,
         'family_protocol' => 'm9-remote-family-1', 'protocol' => 'm9-remote-draft-1', 'origin' => rtrim(home_url(), '/'),
         'mail_blocked' => apply_filters('pre_wp_mail', null, array()) === false,

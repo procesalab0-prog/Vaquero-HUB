@@ -1,0 +1,187 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { requirePermission } from "@/lib/auth/authorization";
+import { WEB_STAGING_URL } from "@/lib/web-draft";
+import { remoteWebConfigured } from "@/lib/remote-web-server";
+import { runConnectedWooTrial } from "./actions";
+import styles from "../../clientes/migracion-sicar/review.module.css";
+export const metadata: Metadata = { title: "Pedido Woo · Ensayo conectado" };
+export const dynamic = "force-dynamic";
+type Trial = {
+  id: string;
+  state: string;
+  created_at: string;
+  result: null | {
+    order_id: number;
+    barcode: string;
+    quantity: number;
+    native_operations: number;
+    idempotent_replays: number;
+    remote_status: string;
+    history: {
+      phase: string;
+      physical: number;
+      reserved: number;
+      available: number;
+    }[];
+  };
+};
+export default async function ConnectedWooTrialPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    estado?: string;
+    solicitud?: string;
+    familia?: string;
+  }>;
+}) {
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL !== WEB_STAGING_URL) notFound();
+  const { supabase } = await requirePermission("products.update");
+  const { data, error } = await supabase.rpc("m9_connected_woo_status");
+  if (error) notFound();
+  const params = await searchParams;
+  const families = data.families as { id: string; name: string }[];
+  const trials = data.trials as Trial[];
+  const uuid = /^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/;
+  const id =
+    params.solicitud && uuid.test(params.solicitud)
+      ? params.solicitud
+      : crypto.randomUUID();
+  const parent = families.some((f) => f.id === params.familia)
+    ? params.familia
+    : families[0]?.id;
+  const current = trials.find((t) => t.id === id);
+  return (
+    <div className={styles.page}>
+      <header>
+        <p className="eyebrow">M9 · Preview · Sin dinero real</p>
+        <h1>Pedido Woo de pruebas</h1>
+        <p>
+          Comprueba el recorrido entre Woo de pruebas y el inventario del
+          programa.
+        </p>
+        <Link className="button secondary" href="/productos">
+          Volver a productos
+        </Link>
+      </header>
+      <section className={styles.panel} aria-label="Alcance del ensayo">
+        <h2>Un pedido sintético, sin cobro ni envío</h2>
+        <p>
+          Se crea un pedido de dos camisas talla M en Woo de pruebas, se pasa a
+          procesamiento y queda cancelado. En el programa se ensayan la reserva,
+          el descuento y la reposición.
+        </p>
+        <p>
+          <strong>Las piezas son de prueba.</strong> Todos los cambios de
+          inventario del programa se revierten. Sólo quedan el pedido cancelado
+          y su comprobante de ensayo.
+        </p>
+        <p>
+          Los pagos, correos y compras públicas siguen bloqueados. Esto no es
+          una venta real ni importa existencias de SICAR.
+        </p>
+      </section>
+      {params.estado === "revision" && (
+        <section className={styles.panel} role="status">
+          <h2>El resultado necesita revisión</h2>
+          <p>
+            Conserva esta solicitud. Usa «Consultar y retomar» para recuperar el
+            mismo ensayo; no crees otro pedido para resolver una respuesta
+            perdida.
+          </p>
+        </section>
+      )}
+      <section className={styles.panel}>
+        <h2>
+          {current?.state === "VERIFIED"
+            ? "Ensayo confirmado"
+            : "Preparar recorrido"}
+        </h2>
+        <form action={runConnectedWooTrial}>
+          <input type="hidden" name="request_id" value={id} />
+          <label htmlFor="woo-trial-family">Familia de prueba</label>
+          <select
+            id="woo-trial-family"
+            name="parent_id"
+            defaultValue={parent}
+            required
+          >
+            {families.map((family) => (
+              <option key={family.id} value={family.id}>
+                {family.name}
+              </option>
+            ))}
+          </select>
+          <p>
+            Se conserva el código de barras de la talla M y su precio público.
+          </p>
+          <button
+            className="button"
+            disabled={!remoteWebConfigured() || !families.length}
+          >
+            {current
+              ? "Consultar y retomar el mismo ensayo"
+              : "Ensayar pedido en Woo de pruebas"}
+          </button>
+        </form>
+        <p>
+          Máximo cinco solicitudes nuevas al día. Repetir la misma conserva el
+          pedido.
+        </p>
+        {current?.state === "VERIFIED" && (
+          <Link className="button secondary" href="/productos/ensayo-woo">
+            Preparar otro ensayo
+          </Link>
+        )}
+      </section>
+      <section
+        className={styles.panel}
+        aria-label="Resultados de pedidos de prueba"
+      >
+        <h2>Comprobantes de ensayo</h2>
+        {!trials.length && (
+          <p>Todavía no hay ensayos conectados de tu usuario.</p>
+        )}
+        {trials.map((trial) => (
+          <article key={trial.id}>
+            <h3>
+              {trial.state === "VERIFIED"
+                ? `Pedido Woo ${trial.result?.order_id} · Cancelado`
+                : "Solicitud en comprobación"}
+            </h3>
+            <p>
+              Solicitud:{" "}
+              <span style={{ overflowWrap: "anywhere" }}>{trial.id}</span>
+            </p>
+            {trial.result && (
+              <>
+                <p>
+                  Código {trial.result.barcode} · {trial.result.quantity} piezas
+                  sintéticas · talla M.
+                </p>
+                <ul>
+                  {trial.result.history.map((row) => (
+                    <li key={row.phase}>
+                      {row.phase === "RESERVE"
+                        ? "Reservar"
+                        : row.phase === "CONSUME"
+                          ? "Descontar"
+                          : "Reponer"}
+                      : {row.physical} físicas · {row.reserved} reservadas ·{" "}
+                      {row.available} disponibles durante la prueba.
+                    </li>
+                  ))}
+                </ul>
+                <p>
+                  {trial.result.idempotent_replays} repeticiones verificadas sin
+                  duplicar. Inventario del programa restaurado al finalizar.
+                </p>
+              </>
+            )}
+          </article>
+        ))}
+      </section>
+    </div>
+  );
+}

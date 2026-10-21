@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Mi Tienda SM — Aislamiento de pruebas
  * Description: Bloquea ventas, correo y conexiones salientes sólo en el laboratorio remoto M9.
- * Version: 1.3.4
+ * Version: 1.4.0
  */
 if (!defined('ABSPATH')) { exit; }
 function m9_remote_test_origin() {
@@ -22,7 +22,15 @@ add_filter('woocommerce_add_to_cart_validation', '__return_false', PHP_INT_MAX);
 add_action('woocommerce_check_cart_items', function () {
     wc_add_notice('Entorno de pruebas: los pedidos están deshabilitados.', 'error');
 });
-function m9_test_block_order() {
+function m9_test_block_order($order) {
+    // Only our authenticated synthetic workflow may save its exact order.
+    $context = $GLOBALS['m9_order_trial_context'] ?? null;
+    if ($context && function_exists('m9_bridge_permission') && m9_bridge_permission()
+        && $order instanceof WC_Order && $order->get_type() === 'shop_order'
+        && (int)$order->get_id() === (int)$context['order_id']
+        && $order->get_created_via() === 'm9_synthetic_trial'
+        && $order->get_meta('_m9_order_trial_request') === $context['trial_id']
+        && (int)$order->get_meta('_m9_order_trial_owner') === get_current_user_id()) { return; }
     throw new Exception('M9_TEST_ORDERS_DISABLED');
 }
 add_action('woocommerce_before_order_object_save', 'm9_test_block_order', PHP_INT_MAX);
@@ -58,7 +66,7 @@ function m9_remote_test_status() {
         'Variaciones bloqueadas' => apply_filters('woocommerce_variation_is_purchasable', true) === false,
         'Carrito bloqueado' => apply_filters('woocommerce_add_to_cart_validation', true) === false,
     );
-    echo '<div class="wrap"><h1>Mi Tienda SM — Pruebas M9</h1><p>Protección 1.3.4. Este sitio está separado de la tienda real.</p><ul>';
+    echo '<div class="wrap"><h1>Mi Tienda SM — Pruebas M9</h1><p>Protección 1.4.0. Este sitio está separado de la tienda real.</p><ul>';
     foreach ($checks as $label => $ok) { echo '<li>'.esc_html(($ok ? 'OK — ' : 'FALLO — ').$label).'</li>'; }
     echo '</ul><p>Conector de catálogo y fotos disponible para pruebas. La API general Woo permanece bloqueada.</p></div>';
 }
@@ -71,3 +79,5 @@ require_once __DIR__ . '/family-write.php';
 require_once __DIR__ . '/variant-photo-read.php';
 
 require_once __DIR__ . '/variant-photo-write.php';
+
+require_once __DIR__ . '/order-trial.php';

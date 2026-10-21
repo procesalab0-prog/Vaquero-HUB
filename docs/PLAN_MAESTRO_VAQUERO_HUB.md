@@ -4896,3 +4896,38 @@ Móvil390 sin overflow. Cero ventanas/pagos reales; no main ni producción. Falt
 padrón completo, entregas/conteo y aceptar recibo/anulación operativa antes de
 renovar y autorizar el cambio. Detalle: docs/M9_COBRO_OPERATIVO_RENOVACION_STAGING.md.
 Cobertura catálogo 96.92% sin cambio; no porcentaje total de migración.
+
+
+## M9 · Padrón general sin filtro APARTADO · 21 octubre 2026
+
+171 fichas/171 IDs comprobados; las 61 referencias anteriores están presentes,
+110 adicionales, cero conflictos de ID o cambios financieros en las anteriores.
+60 cuentas con deuda y 83 documentos no pagados por $250,128 observados; $238,218
+corresponden a las cuentas adicionales. No es apertura adicional. Folios numéricos
+literales conservados; dos cuentas con nombre igual permanecen separadas.
+Analizador offline con tres pins, dos corridas idénticas y cola de 83 detalles
+(siete anteriores/76 adicionales). READ ONLY + ROLLBACK en staging, 140 tablas
+idénticas, libro heredado $11,910/PAYMENT cero. Doce códigos del piloto sin
+cantidades. Sin DDL, importación operativa, main o producción. Diagnóstico de
+anulación: requiere evento positivo compensatorio y reversión trazable de
+asignaciones, caja/recibo y autorización; todavía no implementada.
+Sigue capturar detalle/abonos, ampliar importador y comprobar entregas/conteo.
+Ver docs/M9_PADRON_GENERAL_CONCILIADO_2026_10_21.md. Catálogo96.92% sin cambio;
+no porcentaje total de migración.
+
+## M9 · Núcleo privado de pedidos Woo y libro central · 21 octubre 2026
+
+Piloto técnico de reserva/consumo/liberación/reposición, sólo staging y origen
+Woo test, sin habilitar pedidos, pagos o webhooks remotos. Vínculo por tienda/IDs/
+Clave 1, versión de pedido interna y recibo externo estable; operaciones nativas
+atómicas con outbox local. HMAC de aviso no implica stock ni contador de eventos.
+Control deshabilitado, cinco tablas operativas vacías, sin permisos de API.
+
+21 comandos SQL y cinco replays, 31 rechazos, seis ACL, doce invariantes y fallo
+inyectado al final del comando aprobados con rollback. 140 tablas anteriores
+intactas; 146 extendidas iguales tras ensayo. 1,022 unitarias/118 archivos y tipos/
+lint correctos. Tres denegaciones reales de roles API. Carrera simultánea no
+aceptada: el intento MCP no observó solapamiento; quedan adapter remoto, documentos
+financieros, Preview/Woo, envío de stock (incluido POS) y corte real. Sin despliegue
+web, main o producción; conteos siguen NULL y no cambia cobertura de catálogo.
+Ver docs/M9_PEDIDOS_INVENTARIO_WOO_STAGING.md.
