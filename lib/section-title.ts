@@ -2,6 +2,7 @@
 // espera al cambiar de página.
 const SECTIONS: Array<[string, string]> = [
   ["/inicio", "Inicio"],
+  ["/migracion", "Migración SICAR"],
   ["/productos", "Productos"],
   ["/inventario", "Inventario"],
   ["/compras", "Compras"],
