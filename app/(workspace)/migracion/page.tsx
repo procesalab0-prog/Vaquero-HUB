@@ -110,6 +110,16 @@ export default async function MigrationCenter({
           Revisar créditos, abonos y productos
         </Link>
       </section>
+      <section className={styles.panel}>
+        <h2>Ensayo de la venta web y su reversión</h2>
+        <p>
+          Prueba sintética de reserva, venta nativa, pago no efectivo y ticket.
+          Revierte sus efectos y conserva sólo el recibo del ensayo.
+        </p>
+        <Link className="button secondary" href="/productos/ensayo-woo/venta">
+          Probar venta Woo sin efectos operativos
+        </Link>
+      </section>
       <div className={styles.cards}>
         <section>
           <strong>{view.catalog_loaded_codes.toLocaleString("es-MX")}</strong>
