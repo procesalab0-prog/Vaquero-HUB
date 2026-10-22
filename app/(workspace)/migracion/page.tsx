@@ -82,6 +82,9 @@ export default async function MigrationCenter({
           Catálogo, cuentas, saldos y mercancía. Aquí puedes ver lo preparado y
           lo que todavía necesita comprobación.
         </p>
+        <Link className="button primary" href="/migracion/avance">
+          Ver avance, bloqueos y siguientes lotes
+        </Link>
       </header>
       <section className={styles.notice} aria-label="Alcance del corte">
         <h2>Corte conservado, pendiente de renovar para operar</h2>

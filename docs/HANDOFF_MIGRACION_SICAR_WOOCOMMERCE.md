@@ -2750,3 +2750,95 @@ concurrencia POS/Woo; cerrar conteo físico/entregas y corte renovado del piloto
 abrir saldos confirmados por etapas con compensación. Mantener17líneas históricas
 sin vínculo y entregas sin acreditar bloqueadas. Catálogo96.92% sin cambio;
 esta aceptación sintética no es porcentaje de importación ni pasarela operativa.
+
+
+## 2026-10-22 · Última pieza POS/Woo aceptada en SQL local · Preview0.87.1
+
+Plan/resultado: docs/M9_CARRERA_POS_WOO_LOCAL.md. RamaPreview únicamente,
+commit341cc4953a73fbd3159d78f281ccd69f760cd683,
+árbol6a432210ee47c78cbb8235e15d39d3dfa999c04e; VercelSUCCESS.
+Versión0.87.1 y panel «Última pieza:8escenarios simultáneos aprobados» verificados
+con sesiónADMIN en /productos/ensayo-woo/venta. Sin otra ejecución del ensayo
+anterior: se conserva su mismo recibo; no se añadieron operaciones en staging.
+
+Ocho carreras reales en PostgreSQL17.6 local aislado, PID1102/1103; todas observan
+pg_blocking_pids antes de COMMIT/ROLLBACK,87–102ms. Ambos órdenes de última pieza,
+POSTfinanciero vsPOS, POSTduplicado, cancelaciónduplicada, rollbackdelganador en
+ambossentidos y doslíneas en ordeninverso. Un ganador, rechazoINSUFFICIENT_STOCK
+del competidor; replayconservarecibo, sin dobleventa/reposición ni deadlock.
+La condición CONTENTION_NOT_OBSERVED sigue siendo fallo; no se relajó.
+
+196migraciones reconstruidas en baseqa_* nueva. HashesSHA256 de cincofunciones
+idénticos a staging: create_sale_engine/apply_movement/m9_woo_pilot_command/
+m9_woo_native_finance/cancel_sale_base. Auth/Storage locales son stubs QA; esto
+NO certifica checkout público, pasarela o Auth/PostgREST de la carrera completa.
+Historia local:8ventas/8pagossintéticos cancelados,9salidas+9reposiciones,
+12recibosfinancieros; costosNULL, reservas0 y ningunmovimientoefectivo no cero.
+Diezsemillasficticias (incluye2depreparacionesfallidas) retiradas mediante
+10ADJUSTMENTnativos:stocklocalfinal0/reservas0, auditoríaconservada. Las8aperturas
+locales deimporte0 no son cobros. InstanciaQA detenida, controlesfalse. BaseQA
+parcialpropia deshabilitada con0ventas/0movimientos. No se alteró configuración
+ni datos de otras bases locales; los contenedores fallidos propios quedaron
+detenidos para diagnóstico. No se descargó/instaló software nuevo.
+
+Validación:1,191unitarias/126archivos,tipos,lintcompleto/buildPASS;6denegaciones
+CLI de URLremota/base noqa_ antes de conectar. Auditoría165tablasstaging idénticas
+antes/después de publicación y lecturaUI. No DDL ni DMLdestaging en este bloque.
+Teléfono390×844sin desborde(documento390);últimoenlace705.02<menú760;
+viewportrestaurado. Elpanel diferencia explícitamente aceptaciónSQL de compraWoo.
+No nuevas preguntas,cuentas,abonos,stockSICAR,pedidosWoo,Auth,main ni producción.
+
+Expedienteprivado outputs/m9-carrera-pos-woo-2026-10-22/:resultadosPID/bloqueo,
+196hashesmigración,5definiciones/hashlocalstaging,auditoría165,compensación,
+6guardasURL,capturas/logs,reporte.html,manifest/verificar.mjs. VerificadorPASS.
+La carrera del motorSQL queda cerrada. Siguiente: evidencia de pago desde pasarela
+Woo de pruebas y compra completa/transporte del pedido; envío/impuestos/descuentos
+y devolucionesparciales, conteofísico/entregas/corte renovado y aperturas por etapas.
+Coberturacatálogo96.92%sin cambio; no se convierte este ensayo en porcentaje de
+importación ni se declara Woo operativo. Fuente SICAR maestra y Clave1 intactas.
+
+
+## 2026-10-22 · Bloque coordinado de tres agentes · Preview 0.88.0
+
+Autorización explícita de trabajo paralelo. Integrados, sin main/producción:
+catálogo/fotos `69ccce6`, clientes/saldos `0de7904` y Woo/pagos `5c5b5df`.
+Los agentes sólo realizaron SELECT remoto y ensayos locales; el coordinador
+aplicó exclusivamente la RPC agregada de consulta en staging y publicará Preview.
+
+- Catálogo15,876códigos:7,768conWoo/8,108sóloSICAR.5,847copias conservan
+  evidencia/vínculo/URL/alt/metadatos;113ausencias intactas. No nueva verificación
+  de bytes. Censo1,417brechas completo contra Woo19oct:24adiciones exactas/7familias
+  preparadas en lote inerte,1,385sin foto propia,5no publicadas,3sin vínculo.
+  Renovar fuentes exige preservar/revalidar25evidencias anteriores; ceroimportación.
+- Clientes60cuentas/84documentos/95abonos; evaluador por cuenta completa, corte,
+  revisión, pagos individuales y doble apertura.76documentos abiertos/53cuentas
+  requieren adaptador general;7ya abiertos no duplicables.183entregasUNKNOWN,
+  166líneas exactas/17sin variante. Separar dinero de entrega física. Ceroaperturas.
+- Woo: contrato puro con123pruebas nuevas y reporte reproducible. JSON CAPTURED
+  no autentica proveedor; siempre can_record_sale/stock_write_allowed=false.
+  Falta transporte autenticado sandbox, ledger persistente, canal web independiente
+  de caja de mostrador y conservación comercial/reembolsos. Sinsextaorden/cron.
+- Clientes70pruebas nuevas y fotos39;232nuevas en conjunto. Suite integrada
+  1,423pruebas/132archivos PASS. ESLint completo, typegen/tsc y build PASS.
+  Revisión independiente detectó sólo una precisión de texto, ya corregida:
+  «sin variante identificada» es distinto de «entrega sin acreditar».
+
+Nueva /migracion/avance desde el centro: RPC sólo lectura, activaADMIN y
+customers.manage, guardiaexacta staging, search_path vacío, wrapper públicoinvoker;
+anon/service_role sinEXECUTE, usuario inexistente rechazado42501, sin PII individual.
+Fechas originales/nulls conservados; no renueva ventanas ni autoriza importaciones.
+Ensayo local y lectura con rol authenticated en staging aprobados. Migración local
+20261022221650_m9_parallel_readonly_overview.sql; versión remota20261022221825.
+Ninguna tabla nueva. Auditoría165tablas antes/después idéntica y sin nuevos avisos
+securityadvisor. Los avisos preexistentes no se consideran corregidos por este bloque.
+
+Evidencia privada:outputs/m9-avance-paralelo-2026-10-22/ y los tres expedientes
+m9-{catalogo-fotos,clientes-etapas,woo-pagos}-paralelo-2026-10-22/. QA Docker propio
+detenido conservando datos; no se intervienen otros entornos. Producción intacta,
+controles financieros/stock/worker/capture apagados,5ensayos conectados conservados.
+
+Siguiente: adaptador general clientes con rollback/corte acreditado; renovación
+condicionada24/7fotos; diseño/autenticación de liquidación web; conteo piloto12códigos
+con36campos físicos pendientes y corte final actualizado antes del arranque por etapas.
+No se inventa porcentaje global por sumar pruebas; cobertura catálogo96.92%sin cambio.
+La aceptación visual/despliegue de0.88.0 se cierra al terminar la publicación.
