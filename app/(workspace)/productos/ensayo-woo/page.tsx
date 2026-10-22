@@ -269,6 +269,14 @@ export default async function ConnectedWooTrialPage({
               Solicitud:{" "}
               <span style={{ overflowWrap: "anywhere" }}>{trial.id}</span>
             </p>
+            {trial.state === "VERIFIED" && (
+              <Link
+                className="button secondary"
+                href={`/productos/ensayo-woo/revision?solicitud=${trial.id}`}
+              >
+                Revisar importes y pago
+              </Link>
+            )}
             {trial.result && (
               <>
                 <p>

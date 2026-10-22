@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Mi Tienda SM — Aislamiento de pruebas
  * Description: Bloquea ventas, correo y conexiones salientes sólo en el laboratorio remoto M9.
- * Version: 1.5.0
+ * Version: 1.6.0
  */
 if (!defined('ABSPATH')) { exit; }
 function m9_remote_test_origin() {
@@ -66,7 +66,7 @@ function m9_remote_test_status() {
         'Variaciones bloqueadas' => apply_filters('woocommerce_variation_is_purchasable', true) === false,
         'Carrito bloqueado' => apply_filters('woocommerce_add_to_cart_validation', true) === false,
     );
-    echo '<div class="wrap"><h1>Mi Tienda SM — Pruebas M9</h1><p>Protección 1.5.0. Este sitio está separado de la tienda real.</p><ul>';
+    echo '<div class="wrap"><h1>Mi Tienda SM — Pruebas M9</h1><p>Protección 1.6.0. Este sitio está separado de la tienda real.</p><ul>';
     foreach ($checks as $label => $ok) { echo '<li>'.esc_html(($ok ? 'OK — ' : 'FALLO — ').$label).'</li>'; }
     echo '</ul><p>Conector de catálogo y fotos disponible para pruebas. La API general Woo permanece bloqueada.</p></div>';
 }
@@ -83,3 +83,5 @@ require_once __DIR__ . '/variant-photo-write.php';
 require_once __DIR__ . '/order-trial.php';
 
 require_once __DIR__ . '/availability-trial.php';
+
+require_once __DIR__ . '/order-finance-read.php';

@@ -9,7 +9,8 @@ do $$
 declare c jsonb;bad jsonb;k text;t text;n integer:=0;caught boolean;sid uuid;
 begin
  perform set_config('request.jwt.claims','{"role":"service_role"}',true);
- update app.m9_woo_worker_control set expires_at=clock_timestamp()+interval '10 minutes' where singleton;
+ if exists(select 1 from app.m9_woo_worker_control where enabled) then raise exception 'WORKER_QA_MUST_BE_CLOSED';end if;
+ update app.m9_woo_worker_control set enabled=true,actor_id='2b5e4ba1-00f2-48c7-bbe0-273340629711',window_id=gen_random_uuid(),expires_at=clock_timestamp()+interval '10 minutes' where singleton;
  c:=jsonb_build_object('iss','https://oidc.vercel.com/procesa-lab','aud','https://vercel.com/procesa-lab',
   'sub','owner:procesa-lab:project:vaquero-hub:environment:preview','owner_id','team_eaH3A7qiH8HLO3AfbC7hzGZj',
   'project_id','prj_IDfkoWQU7qbEYbWJyZOufRw70qNP','environment','preview',

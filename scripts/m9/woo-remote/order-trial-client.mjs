@@ -80,7 +80,9 @@ export function remoteOrderTrialClient({
     need(
       (method === "GET" &&
         (path === "isolation" ||
-          /^(order|availability)-trials\/[a-f0-9-]{36}$/.test(path))) ||
+          /^(?:(?:order|availability)-trials\/[a-f0-9-]{36}|order-trials\/[a-f0-9-]{36}\/finance)$/.test(
+            path,
+          ))) ||
         (method === "POST" &&
           (["order-trials", "availability-trials"].includes(path) ||
             /^order-trials\/[a-f0-9-]{36}\/step$/.test(path))),
@@ -117,6 +119,18 @@ export function remoteOrderTrialClient({
     return JSON.parse(Buffer.concat(chunks).toString("utf8"));
   }
   return {
+    async financePreflight() {
+      const s = await this.preflight();
+      need(
+        s.finance_read_protocol === "m9-remote-order-finance-read-1",
+        "FINANCE_PROTOCOL_REQUIRED",
+      );
+      return s;
+    },
+    readFinance(id) {
+      need(uuid.test(id), "TRIAL_ID_INVALID");
+      return call("GET", `order-trials/${id}/finance`);
+    },
     async availabilityPreflight() {
       const s = await this.preflight();
       need(

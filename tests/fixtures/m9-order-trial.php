@@ -37,16 +37,18 @@ class WC_Order_Item_Product {
  function set_product($p){$this->pid=25;$this->vid=27;}function set_quantity($q){$this->q=$q;}
  function set_subtotal($x){}function set_total($x){$this->total=$x;}function add_meta_data($k,$v,$unique){$this->meta[$k]=$v;}
  function get_product_id(){return $this->pid;}function get_variation_id(){return $this->vid;}function get_quantity(){return $this->q;}
+ function get_subtotal(){return $this->total;}function get_subtotal_tax(){return '0.00';}function get_total_tax(){return '0.00';}
  function get_total(){return $this->total;}function get_meta($k){return $this->meta[$k]??'';}function get_id(){return $this->id;}
 }
 class WC_Order {
- public $id=0,$via='',$customer=0,$currency='MXN',$status='pending',$meta=[],$items=[],$total=0;
+ public $method='', $id=0,$via='',$customer=0,$currency='MXN',$status='pending',$meta=[],$items=[],$total=0;
  function get_type(){return 'shop_order';}function set_created_via($s){$this->via=$s;}function get_created_via(){return $this->via;}
  function set_customer_id($n){$this->customer=$n;}function get_customer_id(){return $this->customer;}
  function set_currency($s){$this->currency=$s;}function get_currency(){return $this->currency;}
- function set_status($s){$this->status=$s;}function get_status(){return $this->status;}function set_payment_method($s){}
+ function set_status($s){$this->status=$s;}function get_status(){return $this->status;}function set_payment_method($s){$this->method=$s;}
  function update_meta_data($k,$v){$this->meta[$k]=$v;}function get_meta($k){return $this->meta[$k]??'';}function get_id(){return $this->id;}
- function add_item($i){$i->id=500+count($this->items);$this->items[$i->id]=$i;}function get_items($type){return $this->items;}
+ function add_item($i){$i->id=500+count($this->items);$this->items[$i->id]=$i;}function get_items($type){return $type==='line_item'?$this->items:[];}
+ function get_subtotal(){return $this->total;}function get_discount_total(){return '0.00';}function get_shipping_total(){return '0.00';}function get_shipping_tax(){return '0.00';}function get_cart_tax(){return '0.00';}function get_total_tax(){return '0.00';}function get_total_refunded(){return '0.00';}function get_date_paid(){return null;}function get_payment_method(){return $this->method;}function get_transaction_id(){return '';}function is_paid(){return false;}function get_refunds(){return [];}
  function set_total($s){$this->total=$s;}function get_total(){return $this->total;}
  function save(){m9_test_block_order($this);if(!$this->id)$this->id=1000+count($GLOBALS['orders']);$GLOBALS['orders'][$this->id]=clone $this;return $this->id;}
  function update_status($s,$note,$manual){$this->status=$s;$this->save();if(apply_filters($s==='cancelled'?'woocommerce_can_restore_order_stock':'woocommerce_can_reduce_order_stock',true,$this))$GLOBALS['stock_changed']++;}
@@ -63,7 +65,7 @@ function setup_fixture(){
  $GLOBALS['products']=[25=>new FakeProduct(25),27=>new FakeProduct(27)];$GLOBALS['stock_writes']=0;$GLOBALS['stock_fail']=false;$GLOBALS['restore_fail']=false;
  return ['protocol'=>'m9-remote-order-trial-1','trial_id'=>'11111111-1111-4111-8111-111111111111','parent_id'=>$GLOBALS['parent'],'barcode'=>'10582','quantity'=>2];
 }
-setup_fixture();require '/guard.php';require '/order-trial.php';require '/availability-trial.php';foreach($GLOBALS['actions']['rest_api_init'] as $fn)$fn();
+setup_fixture();require '/guard.php';require '/order-trial.php';require '/availability-trial.php';require '/order-finance-read.php';foreach($GLOBALS['actions']['rest_api_init'] as $fn)$fn();
 $checks=[];function ok($v,$name){if(!$v)throw new Exception($name);$GLOBALS['checks'][]=$name;}
 function create_trial($p){return m9_order_trial_create(new Request($p));}
 function step_trial($p,$phase,$version,$op){return m9_order_trial_step(new Request(['protocol'=>'m9-remote-order-trial-1','operation_id'=>$op,'expected_version'=>$version,'phase'=>$phase],$p['trial_id']));}
@@ -119,4 +121,14 @@ $p=ready_availability();$GLOBALS['restore_fail']=true;ok(is_wp_error(m9_availabi
 ok(is_wp_error(m9_availability_read(['id'=>$p['trial_id']])),'restore_failure_receipt_requires_review');
 $p=ready_availability();$GLOBALS['fail_receipt']=true;ok(is_wp_error(m9_availability_trial(new Request($p)))&&$GLOBALS['products'][27]->quantity===null,'receipt_failure_after_restore_requires_review');
 $p=ready_availability();m9_availability_trial(new Request($p));$GLOBALS['owner']=9;ok(is_wp_error(m9_availability_read(['id'=>$p['trial_id']])),'stock_other_owner_no_read');
+$p=ready_availability();$id=$p['trial_id'];$before=serialize([$GLOBALS['orders'],$GLOBALS['options'],$GLOBALS['products']]);
+$r=m9_order_finance_read(['id'=>$id]);ok(!is_wp_error($r)&&$r['money']['total']==='1640.00'&&$r['payment']['is_paid']===false&&$r['payment']['paid_at']===null,'finance_native_unpaid_totals');
+ok($r['reference']['barcode']==='10582'&&$r['lines'][0]['line_id']===$r['reference']['line_id'],'finance_exact_line_identity');
+ok(!isset($r['billing'])&&!isset($r['shipping_address'])&&!isset($r['email']),'finance_no_buyer_pii');
+ok(serialize([$GLOBALS['orders'],$GLOBALS['options'],$GLOBALS['products']])===$before,'finance_get_has_no_writes');
+ok($GLOBALS['routes']['/order-trials/(?P<id>[0-9a-f-]{36})/finance']['methods']==='GET','finance_route_get_only');
+$GLOBALS['permission']=false;ok(is_wp_error(m9_order_finance_read(['id'=>$id])),'finance_role_required');$GLOBALS['permission']=true;
+$GLOBALS['owner']=9;ok(is_wp_error(m9_order_finance_read(['id'=>$id])),'finance_owner_required');$GLOBALS['owner']=2;
+$GLOBALS['origin']=false;ok(is_wp_error(m9_order_finance_read(['id'=>$id])),'finance_origin_required');$GLOBALS['origin']=true;
+$GLOBALS['isolation']=false;ok(is_wp_error(m9_order_finance_read(['id'=>$id])),'finance_isolation_required');$GLOBALS['isolation']=true;
 echo json_encode(['controls'=>count($checks),'checks'=>$checks,'scope'=>'ISOLATED_PHP_FIXTURES_NOT_LIVE_WOO','network_requests'=>0,'real_database_writes'=>0]);

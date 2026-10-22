@@ -44,7 +44,10 @@ begin
  if c->>'attempt'<>'3' or public.m9_woo_worker('FAIL',f||'{"code":"TRIAL_HTTP_503"}')->>'state'<>'REVIEW' then raise exception 'WORKER_RETRY_CAP_MISSING';end if;
  if public.m9_woo_worker('CLAIM','{}')<>'{}'::jsonb then raise exception 'WORKER_REVIEW_RECLAIMED';end if;
  -- Both phases may finish only against durable, previously accepted receipts.
- tid:='fa7c3585-be58-45af-94f7-ee4839f06b03';i:=jsonb_set(i,'{id}',to_jsonb(tid));
+ select t.id,t.parent_id into strict tid,parent from app.m9_woo_connected_trials t join app.m9_remote_availability_trials a on a.id=t.id
+  where t.actor_id=actor and t.state='VERIFIED' and t.result->'availability_capture_rollback'='true'::jsonb and a.state='VERIFIED'
+   and not exists(select 1 from app.m9_woo_worker_jobs j where j.id=t.id) order by t.created_at limit 1;
+ i:=jsonb_set(jsonb_set(i,'{id}',to_jsonb(tid)),'{parent_id}',to_jsonb(parent));
  perform public.m9_woo_worker('ENQUEUE',i);c:=public.m9_woo_worker('CLAIM','{}');f:=jsonb_build_object('id',tid,'lease_token',c->'lease_token');
  if public.m9_woo_worker('COMPLETE',f)->>'phase'<>'AVAILABILITY' then raise exception 'WORKER_PHASE_NOT_PERSISTED';end if;
  perform pg_temp.expect_worker('COMPLETE',f,'WORKER_LEASE_LOST');checks:=checks+1;
