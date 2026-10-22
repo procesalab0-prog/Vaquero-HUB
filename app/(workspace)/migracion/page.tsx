@@ -99,6 +99,17 @@ export default async function MigrationCenter({
           incluye clientes eliminados ni todo el historial pagado.
         </p>
       </section>
+      <section className={styles.panel}>
+        <h2>Detalle de créditos conciliado por separado</h2>
+        <p>
+          Consulta la revisión documental posterior: abonos activos y
+          cancelados, productos y diferencias. Conserva sus propias fechas y no
+          cambia este padrón histórico.
+        </p>
+        <Link className="button primary" href="/migracion/creditos">
+          Revisar créditos, abonos y productos
+        </Link>
+      </section>
       <div className={styles.cards}>
         <section>
           <strong>{view.catalog_loaded_codes.toLocaleString("es-MX")}</strong>
@@ -133,9 +144,9 @@ export default async function MigrationCenter({
           <strong>{view.summary.documents}</strong>
           <h2>Documentos con saldo observado</h2>
           <p>
-            {pesos(view.summary.observed_balance_cents)} por conciliar en
-            detalle. Apertura del primer paquete en staging:{" "}
-            {pesos(view.legacy_operating_balance_cents)}.
+            {pesos(view.summary.observed_balance_cents)} en el padrón histórico.
+            El detalle posterior se consulta por separado. Apertura del primer
+            paquete en staging: {pesos(view.legacy_operating_balance_cents)}.
           </p>
           <Link
             className="button secondary"
@@ -170,8 +181,9 @@ export default async function MigrationCenter({
         <h2>Padrón visible completo y cola de documentos</h2>
         <p>
           Busca por nombre, referencia SICAR o folio. Un nombre repetido
-          conserva su cuenta independiente. Los documentos de las cuentas
-          adicionales siguen sin ID de detalle, abonos o entrega comprobados.
+          conserva su cuenta independiente. Este padrón conserva lo observado en
+          su fecha; el detalle y los abonos posteriores se consultan en la
+          revisión de créditos. La entrega sigue sin acreditar.
         </p>
         <form className={styles.filters}>
           <label>
@@ -231,7 +243,8 @@ export default async function MigrationCenter({
                       <strong>Folio {d.folio}</strong> · Pendiente observado{" "}
                       {pesos(d.balance_cents)} de {pesos(d.total_cents)}.{" "}
                       <span>
-                        Detalle, abonos y entrega: comprobar con el nuevo corte.
+                        Ver detalle y abonos en la revisión posterior; entrega
+                        sin acreditar.
                       </span>
                     </li>
                   ))}
@@ -286,8 +299,8 @@ export default async function MigrationCenter({
         <h2>Para el siguiente corte</h2>
         <ol>
           <li>
-            Comprobar detalle y abonos de los documentos adicionales,
-            manteniendo su cuenta y folio literal.
+            Revisar las diferencias de la conciliación documental posterior,
+            manteniendo la cuenta y el folio literal.
           </li>
           <li>
             Capturar físico y mercancía comprometida del piloto; una deuda no

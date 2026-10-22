@@ -5195,3 +5195,101 @@ app.m9_customer_census_archives; replay devuelve el mismo hash sin duplicar.
 outputs/m9-integral-padron-catalogo-2026-10-22/. Pendiente aceptación de Preview
 con sesión real, paginación/filtros/móvil y auditoría al cierre. Main/producción,
 SICAR/Woo, deuda/caja/stock/entregas intactos. No es migración financiera final.
+
+
+## Cierre del bloque integral SICAR · Preview0.85.2 · 22 octubre2026
+
+Publicación sólo codex/m9-staging-review:5fab93067921a11dc7d960d9c20aa4438213fefc,
+árbol0b4b43f7c3739b4570fa7abcaa2c9b62181da84e. La primera0.85.0 publicó
+el archivo/centro;0.85.1 corrigió el nombre de cabecera;0.85.2 añade botones
+visibles, foco y objetivos táctiles44px, limitados al ancho de las tarjetas.
+No se reutilizaron versiones ya publicadas. El estado de despliegue se consulta
+por el statusVercel del commit GitHub: la sesión CLI anterior devuelve403, sin
+necesidad de recuperar, crear o ampliar credenciales para este bloque.
+
+Archivo privado histórico persistente:1 fila,171 cuentas/83 documentos,61 claves
+previas y110 adicionales. Reintento idéntico conservahash/fecha y devuelve replay.
+Saldo observado$250,128 no es apertura operativa. El libro heredado conserva
+$11,910/PAYMENT0 y61 registros; cliente nativo1, sin nuevos consentimientos/Auth.
+No se consultó ni escribió SICAR/Woo en este bloque; se conservan las capturas
+del21 con su fecha y alcance original. No se extiende su vigencia para operar.
+
+Pruebas:1,154 unitarias/124 archivos, tipos/lint/buildPASS; SQL22 negativos,
+replay e inmutabilidad conROLLBACK, consulta real SET ROLE authenticated y
+denegaciones de alta/anon. Se conservaron el intento con alias ambiguo y sus
+correcciones hacia delante. Migraciones local→remota:
+20261022145259→20261022145752,
+20261022150118→20261022150135,
+20261022150339→20261022150352. Ningún SQL aplicado se reescribió.
+
+Paginación completa de la consulta en base:171 filas/171 claves/171 UUIDsfuente
+únicos,9 páginas; filtro110 adicionales,60 con deuda y2 nombres repetidos. UI
+con sesión ADMIN real: búsqueda por folio→1 cuenta, filtro110, página2de6,
+nombres iguales abiertos→dosUUIDsdistintos. Catálogo completo15877variantes
+(15876SICAR+fixtureprevio); búsqueda exacta2396→sombreroTombstone/talla59,
+una variante. Hoja piloto12códigos y36 camposUIvacíos; no se guardaron cantidades.
+
+Teléfono390×844 y tableta1024×768 sin desborde. Al final del teléfono,
+contenido termina722.20 y menú empieza760; no tapa el último bloque. Tamaño de
+navegador restaurado. No certificaSafari,hardware o impresión física. Entrada
+al centro desde /clientes/heredados-sicar; revisión de versión final y botones
+se añade a la evidencia de aceptación. La interfaz no habilita una etapa o cobro.
+
+157 tablas anteriores (todas lasBASE TABLEapp/public previas) idénticas tras
+ROLLBACK, archivo y recorridoUI; sólo cambia la nueva tabla de archivo. Captura
+stockfalse, workerfalse,cron0, 36cantidadesNULL,12códigospiloto. No nuevo pedido,
+venta, pago, caja, folio, entrega o stock. INFO RLSprivado esperado, sin nuevas
+categoríasWARN; advertencias previas no declaradas resueltas.
+
+Evidencia privada outputs/m9-integral-padron-catalogo-2026-10-22/: dos corridas,
+payload/SQLprivados, resultados, auditorías157, capturas, reporte.html,
+verificar.mjs y manifiesto. Código y pruebas no contienen identidades de clientes.
+Sigue revisar76 detalles adicionales/abonos, conteo y compromisos físicos del
+piloto, compensación de abonos heredados y corte actualizado antes de abrir
+saldos. La unión financiera Woo sigue pendiente como otro frente del conjunto.
+Catálogo96.92% sin cambio, no porcentajeglobal. Main/producción intactos.
+
+
+Aceptación final0.85.2: statusVercel del SHA publicado success/Deployment has
+completed, dashboard https://vercel.com/procesa-lab/vaquero-hub/DR92MiZQyzfvZFPDXcgBjipXUkeW.
+Avatar muestra0.85.2; cabeceraMigraciónSICAR; botones visibles con mínimo44px.
+Teléfono final390×844: ancho390=scrollWidth390, último bloque722.09<menú760;
+tableta final1024×768: ancho1024=scrollWidth1024. Viewport restaurado y centro
+abierto como entrega. Capturas y medidas finales conservadas en el expediente.
+No se añadieron preguntas a los dueños. Próxima consulta de fuentes puede avanzar
+sobre la cola documental; las cantidades físicas requieren captura acreditada,
+no deducción a partir de saldo financiero. Esta entrega no cambia96.92%catálogo.
+
+
+## Cierre · detalle general de créditos · 22 octubre2026
+
+Lectura real de60 cuentas enSICAR tras renovar sesión:83 de83 documentos
+previstos, más1 nuevoVSM7407;84 en total. El faltanteVSM3477 se localizó en
+Pagado, con liquidación posterior al corte del21. No se infirió cero por ausencia.
+Las60 cuentas concilian:83 abiertos/1 pagado ysaldoobservado$240,558.
+95abonos vinculados:92activos por$70,589 y3cancelados por$1,850 excluidos.
+En36 documentos el desglose muestra ceroactivo; la falta del botón de vínculos
+no prueba completitud histórica. Ocho diferencias de nombre histórico quedan
+marcadas; no se fusionanUUIDs. Ninguna apertura ni abono nuevo se creó.
+
+183líneas:166con variante única literal;15genéricasSX00000 y2sin variante
+(18275 y7501140700032) quedan sin asignar. Se conservan descuentos/recargos
+fuente; no se inventan costos. Las183entregas siguenUNKNOWN y las reservas/
+deduccionesNULL. La lectura cubre las60cuentas con saldo delcortevisible
+anterior, no renueva171cuentas ni acredita un cierre simultáneo.
+
+Preparador scripts/m9/reconcile-general-credit-details.mjs y29pruebas nuevas;
+suite final1,183/125archivos ylintPASS. Configcon4entradasfijadasSHA,
+corridas4/5idénticas. Ensayo TEMP real staging:84replays y5rechazos;ROLLBACK.
+157tablas previas idénticas yarchivo histórico delpadrón con1fila/hashigual:158
+BASE TABLESapp/public sin cambios. SQLensayadocorrida3=SQLfinalcorrida5.
+SinDDL, nueva versión, publicación, main, producción, caja o inventario.
+Worker/capturastock/piloto desactivados,cron0, cincoensayosWooanteriores sin
+ampliar. Preview sigue0.85.2. Catálogo96.92%, sin alterarporcentajeglobal.
+
+Expediente privado outputs/m9-detalles-creditos-general-2026-10-22/: fuente
+porcuenta/documento,config,mapeoliteral,planes,SQL,auditorías,reporte,manifest
+yverificar.mjs. Pendiente integrar el nuevo archivo de detalles a la revisión
+Preview con controles propios; no cambiar el archivo inmutable anterior ni
+extender silenciosamente el importador APARTADOde61. Después apertura por
+etapas/compensación, entregas/conteopiloto y uniónfinancieraWoo con cortefresco.
