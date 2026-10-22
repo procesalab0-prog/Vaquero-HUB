@@ -29,3 +29,22 @@ falla; ningún dato de migración previo debe cambiar ni borrarse.
 Tres agentes integrados;232pruebas nuevas,1,423/132PASS,lint/tipos/buildPASS.
 165tablas idénticas;ACL comprobada;sin nuevos avisos de seguridad.
 Ver cierres del handoff y plan maestro para alcance,límites y próximos adaptadores.
+
+
+### Cierre aceptado · Preview0.88.0 · Tres frentes paralelos
+
+DespliegueSUCCESS `fccde53bd5815beb8db095ecb80bada99f804162`, árbol idéntico
+local/remoto `09e81637b071b0dae78afede5ba26df1148ba30a`, rama codex/m9-staging-review.
+Vercel: https://vercel.com/procesa-lab/vaquero-hub/Cp4AYwmEHXawFMxWMf1fChhkB3US .
+SesiónADMIN real: /migracion→botón «Ver avance, bloqueos y siguientes lotes»→
+/migracion/avance; versión0.88.0 visible en avatar. Cifras agregadas coinciden.
+Escritorio1440x1000 y teléfono390x844 aceptados. ScrollWidth390=viewport390;
+botón final termina704.83px, por encima de navegación inferior752px. Restituido
+viewport original y dejado resumen abierto. No se ejecutan botones de ensayo.
+
+Auditoría165tablas repetida después de la navegación: hashes/conteos idénticos
+al inicio. Evidencia privada y reporte conjunto con manifiesto/verificador en
+outputs/m9-avance-paralelo-2026-10-22/. Verificadores de clientes55archivos,
+Woo y fotos3/4 idénticos PASS. Las variantes/copias comprobadas son metadatos,
+no nuevos bytes; el contrato financiero documental nunca autoriza una venta.
+No se importó saldo, existencia o costo ni se crearon pedidos. No main/producción.

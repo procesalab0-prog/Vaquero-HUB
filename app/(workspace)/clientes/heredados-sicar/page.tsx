@@ -29,17 +29,30 @@ const notices: Record<string, string> = {
 export default async function LegacyCustomers({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; page?: string }>;
 }) {
   if (!customerReviewEnabled(process.env.NEXT_PUBLIC_SUPABASE_URL)) notFound();
   const { supabase } = await requirePermission("customers.manage");
   const params = await searchParams;
-  const { data, error } = await supabase.rpc("m9_legacy_pilot", {
-    p_action: "LIST",
-    p_input: { q: (params.q ?? "").slice(0, 100) },
+  const q = (params.q ?? "").slice(0, 100);
+  const page = /^[1-9][0-9]{0,5}$/.test(params.page ?? "")
+    ? Number(params.page)
+    : 1;
+  const { data, error } = await supabase.rpc("m9_legacy_registry_read", {
+    p_input: { q, page },
   });
-  if (error) throw Error("No se pudo consultar el registro heredado.");
+  if (error?.code === "42501") notFound();
+  if (
+    error ||
+    data?.protocol !== "m9-legacy-registry-page-1" ||
+    data?.read_only !== true
+  )
+    throw Error("No se pudo consultar el registro heredado.");
   const view = data as LegacyPilotView;
+  const pageLink = (n: number) =>
+    "/clientes/heredados-sicar?" +
+    new URLSearchParams({ q, page: String(n) }).toString() +
+    "#registro";
   return (
     <div className={styles.page}>
       <header>
@@ -89,18 +102,21 @@ export default async function LegacyCustomers({
         </section>
       </div>
       <section
+        id="registro"
         className={styles.panel}
         aria-label="Registro de clientes heredados"
       >
         <h2>Buscar una cuenta heredada</h2>
         <p>
-          Alcance: 61 cuentas de APARTADO. Los nombres repetidos conservan
+          Incluye el primer paquete de APARTADO y {view.general_archived}{" "}
+          cuentas adicionales del archivo general. Registrar el origen no abre
+          una deuda ni habilita cobros. Los nombres repetidos conservan
           referencias distintas; faltar teléfono no elimina la cuenta.
         </p>
         <form className={styles.search}>
           <label>
-            Nombre, teléfono o ID interno
-            <input name="q" maxLength={100} defaultValue={params.q ?? ""} />
+            Nombre, teléfono, referencia SICAR o ID interno
+            <input name="q" maxLength={100} defaultValue={q} />
           </label>
           <button className="button primary" type="submit">
             Buscar heredados
@@ -109,7 +125,10 @@ export default async function LegacyCustomers({
             Limpiar
           </Link>
         </form>
-        <p>{view.customers.length} registros encontrados.</p>
+        <p>
+          {view.total} registros encontrados · Página {view.page} de{" "}
+          {view.pages}.
+        </p>
         <div className={styles.accounts}>
           {view.customers.map((c) => (
             <article key={c.id}>
@@ -123,6 +142,15 @@ export default async function LegacyCustomers({
                   Saldo del corte de origen: {money(c.source_balance_cents)} ·
                   Consulta la apertura de staging por separado
                 </p>
+                <p>
+                  {c.source_scope === "GENERAL_ARCHIVED_INDEBTED_SUBSET"
+                    ? "Archivo general · Sin apertura operativa"
+                    : "Primer paquete de APARTADO · Apertura revisada por separado"}
+                  {" · "}Corte desde{" "}
+                  {new Date(c.source_at).toLocaleString("es-MX", {
+                    timeZone: "America/Mexico_City",
+                  })}
+                </p>
                 {!c.source_unchanged ? (
                   <p className={styles.notice}>
                     Origen cambiado: requiere conciliar.
@@ -130,7 +158,11 @@ export default async function LegacyCustomers({
                 ) : null}
               </div>
               <Link
-                href={`/clientes/migracion-sicar?key=${c.key}`}
+                href={
+                  c.source_scope === "GENERAL_ARCHIVED_INDEBTED_SUBSET"
+                    ? `/migracion/creditos?q=${encodeURIComponent(c.source_ref)}#documentos`
+                    : `/clientes/migracion-sicar?key=${c.key}`
+                }
                 className="button secondary"
               >
                 Consultar documentos SICAR
@@ -138,6 +170,21 @@ export default async function LegacyCustomers({
             </article>
           ))}
         </div>
+        <nav
+          className={styles.search}
+          aria-label="Páginas del registro heredado"
+        >
+          {view.page > 1 ? (
+            <Link className="button secondary" href={pageLink(view.page - 1)}>
+              Anterior
+            </Link>
+          ) : null}
+          {view.page < view.pages ? (
+            <Link className="button primary" href={pageLink(view.page + 1)}>
+              Siguiente
+            </Link>
+          ) : null}
+        </nav>
       </section>
       <section
         id="piloto"

@@ -2842,3 +2842,90 @@ condicionada24/7fotos; diseño/autenticación de liquidación web; conteo piloto
 con36campos físicos pendientes y corte final actualizado antes del arranque por etapas.
 No se inventa porcentaje global por sumar pruebas; cobertura catálogo96.92%sin cambio.
 La aceptación visual/despliegue de0.88.0 se cierra al terminar la publicación.
+
+
+### Cierre aceptado · Preview0.88.0 · Tres frentes paralelos
+
+DespliegueSUCCESS `fccde53bd5815beb8db095ecb80bada99f804162`, árbol idéntico
+local/remoto `09e81637b071b0dae78afede5ba26df1148ba30a`, rama codex/m9-staging-review.
+Vercel: https://vercel.com/procesa-lab/vaquero-hub/Cp4AYwmEHXawFMxWMf1fChhkB3US .
+SesiónADMIN real: /migracion→botón «Ver avance, bloqueos y siguientes lotes»→
+/migracion/avance; versión0.88.0 visible en avatar. Cifras agregadas coinciden.
+Escritorio1440x1000 y teléfono390x844 aceptados. ScrollWidth390=viewport390;
+botón final termina704.83px, por encima de navegación inferior752px. Restituido
+viewport original y dejado resumen abierto. No se ejecutan botones de ensayo.
+
+Auditoría165tablas repetida después de la navegación: hashes/conteos idénticos
+al inicio. Evidencia privada y reporte conjunto con manifiesto/verificador en
+outputs/m9-avance-paralelo-2026-10-22/. Verificadores de clientes55archivos,
+Woo y fotos3/4 idénticos PASS. Las variantes/copias comprobadas son metadatos,
+no nuevos bytes; el contrato financiero documental nunca autoriza una venta.
+No se importó saldo, existencia o costo ni se crearon pedidos. No main/producción.
+
+
+## 2026-10-22 · Adaptadores paralelos y registro general · Preview0.89.0
+
+Implementaciones revisadas de clientes8e10ae4, fotosac8ad98 y libro web84de127.
+Root integra en codex/m9-reglas-provisionales y publica únicamente codex/m9-staging-review.
+No main/producción ni sexto pedido Woo. Clave1/UUIDs y costosNULL preservados.
+
+**Carga conservada de archivo general en staging:**53cuentas,76documentosOPEN,
+85antecedentes deabono(2cancelados),168líneas,$228,648observados. Registro total114
+frente61previos. Source_at original/alcanceGENERAL_ARCHIVED_INDEBTED_SUBSET;
+ningún socio/Auth/consentimiento, deuda operativa, caja, reserva o stock creado.
+Los7documentos previamenteabiertos y$11,910del libro heredado quedan intactos.
+Registro yreplay ensayadosconROLLBACK; retiro lógico+replay también.165tablasprevias
+idénticas trasensayo. AlCOMMIT cambiaron sólo6tablas deorigen/registro+1audit_log;
+158tablasprevias permanecieronidénticas. Nueva bitácoraREGISTER1,RETIRE0; repetición
+persistente no duplicó filas/auditoría. Guardasimpiden abrir el lotegeneral por
+lasvías financieras anteriores; un nuevo corte/plan seránecesario paraoperar.
+
+Consulta nuevaADMIN paginada20registros, búsqueda porrefSICAR/ID/nombre,scopeyfecha
+original, enlaces alarchivo general o revisiónAPARTADO correspondiente. Reemplaza
+límite silencioso100ytexto61fijo. El inventario piloto conserva API/36camposNULL.
+RPCprivadadefiner/públicainvoker,search_pathvacío,deny anon/service_role,actorguard.
+QA45cuentas ficticias/3páginas/búsquedaexacta/5inputsnegativos/actorajeno/4ACL PASS.
+Consulta readonlyStage61cuentas antescarga; después114,sin operar.
+
+Libro web privado con5tablas/RLS/denyall: evidenciaSYNTHETIC_TEST_ONLY, diario
+balanceado/inmutable y recibos, independiente decaja/ventas/stock. Diferencia feeWoo
+vscomisiónproveedor y liquidaciónpendiente vsbanco. Unicidad transacciónmonetaria
+por proveedor/cuenta/kind/tx; evento/opnuevos no duplicancobro.13invariantes,
+50rechazos,3replays y3carreras reales locales conbloqueo observado. Stage9invariantes,
+6rechazos/3replays/7eventos/10apuntes revertidos;172tablasidénticas ycontrolfalse.
+JSONpagado no autenticaproveedor; no provideradapter ni compraWoo certificada.
+
+Fotos:7archivos públicos/1,361,036bytes verificadoslocalmente; lote24/7 y25previas
+conservadas. Servicio privado instalado pero **aplicación de datos pendiente de
+cierre de revisión cruzada** en esta entrada. Se detectóguardade catálogo anterior
+yorden de bloqueo a reforzar por migración forward antesDML. No editar SQLaplicado.
+7bindingscategoría se invalidarán porguardanativa; lasAPIsexistentes no admiten
+reactivación por cambio devariants.images_woo. No re-fecharWoo19ni deshabilitarguarda.
+
+Expedientesprivados outputs/m9-adaptadores-aplicados-2026-10-22/ y
+m9-{adaptador-general-clientes,fotos-renovacion-protegida,libro-web}-2026-10-22/.
+Fuentes/SQLreales/bytes/recibos fuera deGit. Los7INFO nuevos RLSsinpolicy son tablas
+privadas sin acceso declientes; ningún nuevoWARN; avisosprevios noresueltos.
+Restan corteactualacreditado,conteofísico/entregas,proveedorsandboxautenticado y
+aceptaciónWoo completa antesdeautorizarelarranque. No confundirarchivo condeuda.
+
+
+### Cierre de fotos del bloque · 22 octubre2026
+
+La revisión cruzada quedó resuelta mediante migración forward20261022231252:
+huella/atributos SICAR actuales obligatorios en25previas, excepción complementaria
+estricta para3filas legítimas, barrera products EXCLUSIVE antes deotros locks y
+metadatos de objetos guardados enestado esperado.29controles SQLlocales, incluidas
+dos carreras observadas,11unitariasdirigidas. Sin editar migraciones aplicadas.
+
+Stage: aplicar24/replay/revertir24 yrestaurar25, todo enROLLBACK;172tablas idénticas.
+LuegoCOMMIT24evidencias/7familias+revalidación25previas yreplay sin duplicar.
+DesdePreviewconADMINreal, botón «Copiar fotos devariantes»:1024/1024familias,
+5871copias frente5847;5984evidencias frente5960. Las25copias anteriores conservan
+photos exacto.5749objetosStorage antes/después: se verificaron yreutilizaron bytes
+existentes, no seafirma subida de7objetos nuevos. Las7categorías SOURCE_CHANGED
+continúan retenidas;113ausencias originales no se inventan. Sin cambio de catálogo,
+código, precio, costo, existencia, saldo nativo, caja oWoo real. ACLforbiddengrants0.
+
+Validaciónintegradafinal:1471pruebas/135archivos PASS;lint/tipos/buildPASS.
+Preview0.89.0 preparado; publicación/aceptación se documentan alconcluir.

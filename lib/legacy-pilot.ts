@@ -34,7 +34,13 @@ export function legacyPilotFailure(message: string) {
   return "error";
 }
 export type LegacyPilotView = {
+  protocol: "m9-legacy-registry-page-1";
+  read_only: true;
   registered: number;
+  general_archived: number;
+  total: number;
+  page: number;
+  pages: number;
   customers: Array<{
     id: string;
     key: string;
@@ -42,6 +48,9 @@ export type LegacyPilotView = {
     phone: string | null;
     source_balance_cents: number;
     source_unchanged: boolean;
+    source_ref: string;
+    source_scope: string;
+    source_at: string;
   }>;
   stock: Array<{
     barcode: string;

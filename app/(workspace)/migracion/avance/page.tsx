@@ -125,15 +125,19 @@ export default async function MigrationProgress() {
             revisión documental.
           </p>
           <p>
+            {n(v.customers.registered_legacy_accounts)} cuentas conservadas en
+            el registro de origen. No son altas de socios ni saldos operativos.
+          </p>
+          <p>
             {n(v.customers.unmapped_lines)} líneas sin variante identificada en
             Mi Tienda; {n(v.customers.unconfirmed_deliveries)} entregas sin
             acreditar. Tener un saldo no demuestra que falte entregar el
             producto.
           </p>
           <p>
-            <b>Siguiente:</b> comparar el corte nuevo por cuenta y documento
-            completo, conservar abonos cancelados y evitar abrir dos veces la
-            misma deuda.
+            <b>Siguiente:</b> acreditar un corte actualizado por cuenta completa
+            antes de abrir saldos; conservar abonos cancelados y evitar abrir
+            dos veces la misma deuda.
           </p>
           <Link className="button primary" href="/migracion/creditos">
             Revisar créditos y abonos
@@ -186,6 +190,11 @@ export default async function MigrationProgress() {
             <b>Siguiente:</b> verificar el pago con evidencia independiente de
             la pasarela de pruebas y comprobar el pedido completo, sus importes
             y su inventario.
+          </p>
+          <p>
+            El libro web de pruebas ya separa capturas, reembolsos, comisiones y
+            liquidación pendiente de la caja física. Su ensayo se revirtió y no
+            acredita un proveedor conectado ni un pago operativo.
           </p>
           <Link className="button primary" href="/productos/ensayo-woo/venta">
             Ver pruebas de venta y reversión
