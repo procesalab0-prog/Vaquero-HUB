@@ -6,6 +6,42 @@
   margin: auto;
   min-width: 0;
 }
+.page :global(.button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.65rem 1rem;
+  border: 1px solid #aca18c;
+  border-radius: 10px;
+  font-weight: 650;
+  text-decoration: none;
+  line-height: 1.3;
+  box-sizing: border-box;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+.page :global(.button.primary) {
+  background: #245569;
+  color: #fff;
+  border-color: #245569;
+}
+.page :global(.button.secondary) {
+  background: var(--surface, #fff);
+  color: inherit;
+}
+.page :global(.button):focus-visible {
+  outline: 3px solid #a57b35;
+  outline-offset: 3px;
+}
+.cards a:not(:global(.button)) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .page h1 {
   font-size: clamp(1.8rem, 4vw, 2.6rem);
   line-height: 1.12;
