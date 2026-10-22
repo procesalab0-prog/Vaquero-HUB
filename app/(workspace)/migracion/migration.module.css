@@ -1,0 +1,138 @@
+.page {
+  display: grid;
+  gap: 1.4rem;
+  padding: 1.25rem;
+  max-width: 1400px;
+  margin: auto;
+  min-width: 0;
+}
+.page h1 {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  line-height: 1.12;
+}
+.page h2 {
+  font-size: 1.2rem;
+}
+.page p {
+  line-height: 1.55;
+}
+.notice {
+  background: var(--warning-soft, #fff2c6);
+  border: 1px solid #c5a952;
+  border-radius: 14px;
+  padding: 1rem;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 1rem;
+}
+.cards section,
+.panel {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #ded8ce);
+  border-radius: 16px;
+  padding: 1.25rem;
+  min-width: 0;
+}
+.cards strong {
+  font-size: 2rem;
+}
+.cards section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.filters {
+  display: flex;
+  gap: 0.8rem;
+  align-items: end;
+  flex-wrap: wrap;
+}
+.filters label {
+  display: grid;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: min(100%, 220px);
+}
+.filters input,
+.filters select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #aaa08d;
+  border-radius: 9px;
+  padding: 0.6rem;
+  background: var(--surface, #fff);
+  color: inherit;
+  box-sizing: border-box;
+}
+.accounts {
+  display: grid;
+  gap: 0.8rem;
+}
+.accounts details {
+  border: 1px solid var(--border, #ded8ce);
+  border-radius: 12px;
+  padding: 1rem;
+  min-width: 0;
+}
+.accounts summary {
+  cursor: pointer;
+  min-height: 44px;
+}
+.accounts summary span {
+  display: block;
+  margin: 0.2rem 0;
+  overflow-wrap: anywhere;
+}
+.accounts summary span:first-child {
+  font-weight: 700;
+}
+.accounts li {
+  margin: 0.8rem 0;
+  line-height: 1.55;
+}
+.accounts li span {
+  display: block;
+}
+.accounts code {
+  overflow-wrap: anywhere;
+}
+.links,
+.pagination {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+.links a {
+  max-width: 100%;
+  white-space: normal;
+}
+.page ol {
+  padding-left: 1.4rem;
+}
+.page ol li {
+  margin: 0.7rem 0;
+}
+@media (max-width: 600px) {
+  .page {
+    padding: 0.75rem;
+  }
+  .filters {
+    align-items: stretch;
+  }
+  .filters button,
+  .filters > a {
+    flex: 1;
+    min-height: 44px;
+  }
+  .cards section,
+  .panel {
+    padding: 1rem;
+  }
+  .links a {
+    width: 100%;
+  }
+}

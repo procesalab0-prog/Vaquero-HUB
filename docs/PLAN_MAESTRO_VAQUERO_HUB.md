@@ -5122,3 +5122,76 @@ La unión futura de pedido con venta exige una operación atómica: CONSUME del
 núcleo y create_sale descuentan ambos inventario, por lo que no deben ejecutarse
 juntos. Este bloque prepara esa revisión, no acepta pagos reales ni resuelve aún
 la contabilización. No cambia cobertura catálogo96.92% ni representa avance global.
+
+
+### Cierre aceptado · Preview0.84.1 · Revisión financiera M9
+
+Publicado sólo codex/m9-staging-review: SHA
+d4945e918fc91e014747c34aaf2204c646fcf943,
+árbol0c65a52e1f4e5a5a51729674769e8a79532a7495,
+Vercel dpl_4fJXxvoR7eGRWMytApTdfKUYoBD8 READY, targetPreview.
+0.84.0 se aceptó primero; 0.84.1 corrige artículo de la confirmación e incluye
+el plan del siguiente servicio financiero, sin cambiar permisos ni protocolo.
+Versión0.84.1 comprobada pulsando avatar en Preview con Auth real.
+
+UI aceptada en pedidos nativos sintéticos53/54: código10317,2×$890=$1,780;
+código10582,2×$820=$1,640. Ambos cancelados, referencia de transacción vacía,
+is_paidfalse, método sintético, fecha de pago nativa observada: revisión, no cobro.
+Se conservan dos observaciones inmutables con costoNULL/pagadoNULL y venta,
+ticket e inventariofalse. Repetición en0.84.0 y0.84.1 conserva IDs, hashes,
+created_at y conteo2, sin nuevos pedidos. GET anónimo Woo rechazado401.
+Se releyó también el recibo de restauración54: before=after/restoredtrue;
+esto es evidencia del ensayo previo, no un conteo físico SICAR nuevo.
+
+Auditoría146 preexistentes idéntica antes/después y al cierre. Workerfalse con
+actor/window/expires/identity_expiresNULL, cron0, captura/concurrencia/pilotofalse,
+outboxstock0, outbox/eventosdisponibilidad0. Connectedtrials5, jobs2/eventos10
+sin cambios. No ventas, pagos, folios, caja, costos ni existencias reales nuevos.
+Dos filas privadas de evidencia financiera y actualización pluginWoo test1.6.0
+son los cambios persistentes del ensayo; las fixtures SQL fueron ROLLBACK.
+Ocho aislamientos Woo test comprobados en panel; main/producción intactos.
+
+1,136 unitarias/123 archivos; PHP64 controles, SQL20 rechazos, tipos/lint/build
+PASS. Evidencia privada outputs/m9-pedido-finanzas-2026-10-21/: reporte.html,
+resumen.json, auditorías, pruebas, capturas, ZIP determinista y verificar.mjs,
+manifest.json. Advisors: tabla privada con RLS sin políticas por diseño; nueva
+RPC de contexto definer authenticated sólo ADMIN propietario; advertencias
+preexistentes de funciones definer y contraseñas filtradas continúan abiertas.
+No se declara auditoría global cerrada ni aceptación de compras reales.
+
+Sigue el servicio atómico pedido/venta/pago/reserva/ticket, sin ejecutar CONSUME
+y create_sale sobre las mismas unidades. Requiere evidencia conciliada de pago,
+tratamiento explícito de totales y medio web (no efectivo ficticio), contención
+financiera POS/Woo y reversión integral. Después sincronización operativa de
+stock, corte final actualizado y autorización por etapas. Catálogo96.92% sin
+cambio; no porcentaje global de migración. Ver plan financiero para secuencia.
+
+
+## M9 · Centro integral SICAR y padrón histórico · 22 octubre2026
+
+Preview candidato0.85.0. Archivo privado inmutable del padrón visible:171
+cuentas,83 documentos no pagados,$250,128 observados. Conserva61 referencias
+anteriores y110 adicionales, sin abrir deuda adicional ni crear clientes/Auth/
+consentimientos. Fecha original21oct14:22–16:31UTC, conservada aunque supera24h:
+es histórico, no corte operativo actualizado. No relaja vigencia del importador.
+
+Centro /migracion: catálogoSICAR15,876 códigos canónicos, cuentas con búsqueda/
+filtros/paginación20 y folios literales, apertura previa$11,910 separada,12 códigos
+piloto con36 cantidadesNULL y vínculos a herramientas existentes. Sólo staging,
+ADMIN activo+customers.manage en base, RLS privada/cero grants de datos, wrapper
+público invoker y consulta definer privada. No botón de importar o cobrar.
+
+Preparador scripts/m9/archive-general-census.mjs: origen porSHA, dos corridas
+idénticas, archivo idempotente. SQL22 rechazos/permisos/inmutabilidad/replayPASS,
+con SET ROLE authenticated positivo y anon/alta denegados. Primer ensayo detectó
+alias ambiguo: rollback, corrección nueva sin editar migración aplicada. Consulta
+inicial contaba metadatos del importador antiguo vacíos; corrección nueva usa
+barcodes.source=SICAR y join a variants, cuenta15,876 real. No se rellenó esa
+metadata ni cambió catálogo. Ver docs/M9_PADRON_ARCHIVADO_CENTRO_MIGRACION.md.
+
+157 tablas preexistentes idénticas tras ensayo, archivo persistente sólo en
+app.m9_customer_census_archives; replay devuelve el mismo hash sin duplicar.
+1,154 unitarias/124 archivos, tipos/lint/buildPASS. Evidencia privada
+outputs/m9-integral-padron-catalogo-2026-10-22/. Pendiente aceptación de Preview
+con sesión real, paginación/filtros/móvil y auditoría al cierre. Main/producción,
+SICAR/Woo, deuda/caja/stock/entregas intactos. No es migración financiera final.

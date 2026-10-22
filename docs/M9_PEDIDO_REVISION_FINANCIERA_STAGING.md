@@ -69,3 +69,46 @@ de pago true siguen rechazados. No se toma la fecha como prueba de liquidación.
 
 Esta lista es diseño pendiente, no una ruta pública de contabilización ni una
 afirmación de que las compras reales ya llegan al libro de ventas.
+
+
+### Cierre aceptado · Preview0.84.1 · Revisión financiera M9
+
+Publicado sólo codex/m9-staging-review: SHA
+d4945e918fc91e014747c34aaf2204c646fcf943,
+árbol0c65a52e1f4e5a5a51729674769e8a79532a7495,
+Vercel dpl_4fJXxvoR7eGRWMytApTdfKUYoBD8 READY, targetPreview.
+0.84.0 se aceptó primero; 0.84.1 corrige artículo de la confirmación e incluye
+el plan del siguiente servicio financiero, sin cambiar permisos ni protocolo.
+Versión0.84.1 comprobada pulsando avatar en Preview con Auth real.
+
+UI aceptada en pedidos nativos sintéticos53/54: código10317,2×$890=$1,780;
+código10582,2×$820=$1,640. Ambos cancelados, referencia de transacción vacía,
+is_paidfalse, método sintético, fecha de pago nativa observada: revisión, no cobro.
+Se conservan dos observaciones inmutables con costoNULL/pagadoNULL y venta,
+ticket e inventariofalse. Repetición en0.84.0 y0.84.1 conserva IDs, hashes,
+created_at y conteo2, sin nuevos pedidos. GET anónimo Woo rechazado401.
+Se releyó también el recibo de restauración54: before=after/restoredtrue;
+esto es evidencia del ensayo previo, no un conteo físico SICAR nuevo.
+
+Auditoría146 preexistentes idéntica antes/después y al cierre. Workerfalse con
+actor/window/expires/identity_expiresNULL, cron0, captura/concurrencia/pilotofalse,
+outboxstock0, outbox/eventosdisponibilidad0. Connectedtrials5, jobs2/eventos10
+sin cambios. No ventas, pagos, folios, caja, costos ni existencias reales nuevos.
+Dos filas privadas de evidencia financiera y actualización pluginWoo test1.6.0
+son los cambios persistentes del ensayo; las fixtures SQL fueron ROLLBACK.
+Ocho aislamientos Woo test comprobados en panel; main/producción intactos.
+
+1,136 unitarias/123 archivos; PHP64 controles, SQL20 rechazos, tipos/lint/build
+PASS. Evidencia privada outputs/m9-pedido-finanzas-2026-10-21/: reporte.html,
+resumen.json, auditorías, pruebas, capturas, ZIP determinista y verificar.mjs,
+manifest.json. Advisors: tabla privada con RLS sin políticas por diseño; nueva
+RPC de contexto definer authenticated sólo ADMIN propietario; advertencias
+preexistentes de funciones definer y contraseñas filtradas continúan abiertas.
+No se declara auditoría global cerrada ni aceptación de compras reales.
+
+Sigue el servicio atómico pedido/venta/pago/reserva/ticket, sin ejecutar CONSUME
+y create_sale sobre las mismas unidades. Requiere evidencia conciliada de pago,
+tratamiento explícito de totales y medio web (no efectivo ficticio), contención
+financiera POS/Woo y reversión integral. Después sincronización operativa de
+stock, corte final actualizado y autorización por etapas. Catálogo96.92% sin
+cambio; no porcentaje global de migración. Ver plan financiero para secuencia.

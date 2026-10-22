@@ -45,6 +45,9 @@ export default async function LegacyCustomers({
       <header>
         <p className="eyebrow">M9 · Sólo Preview</p>
         <h1>Clientes heredados e inventario piloto</h1>
+        <Link href="/migracion" className="button primary">
+          Ver migración completa y padrón general
+        </Link>
         <p>
           Registro conservado desde SICAR, separado de socios y del portal. No
           concede crédito nuevo; la apertura de ensayo se consulta por separado.
