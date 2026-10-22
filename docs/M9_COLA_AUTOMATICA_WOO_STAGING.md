@@ -36,3 +36,18 @@ Documentación consultada: [programación Supabase](https://supabase.com/docs/gu
 [duración Vercel](https://vercel.com/docs/functions/configuring-functions/duration).
 Índice de cambios Supabase revisado; no se usan cifrados TLS/PGP obsoletos ni se
 actualiza PostgreSQL como parte de este bloque.
+
+
+## Acceso protegido a Preview
+
+El primer tick llegó a Vercel Authentication, sin alcanzar el trabajador ni crear
+pedido. Se pausó el programador. La corrección0.83.1 usa `@vercel/oidc`4.0.0 para
+leer en servidor la identidad efímera del propio proyecto/Preview y guardarla
+cifrada en Vault sólo durante la ventana. SQL valida proyecto, equipo, entorno,
+emisor, audiencia y vigencia; no usa ese parseo como autenticación. Vercel verifica
+la firma al recibirla. El programador añade `x-vercel-trusted-oidc-idp-token`, además
+del bearer limitado al trabajador. No se desactiva Vercel Authentication ni se
+crean reglas de acceso entre entornos o credenciales de bypass permanentes.
+Cada invocación renueva la identidad desde el contexto del servidor. Si falta o
+vence se detiene; cerrar la prueba limpia identidad/vigencia y desprograma cron.
+Ver [Trusted Sources](https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/trusted-sources).

@@ -1,6 +1,6 @@
 {
   "name": "vaquero-hub",
-  "version": "0.83.0",
+  "version": "0.83.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -29,6 +29,7 @@
   "dependencies": {
     "@supabase/ssr": "0.12.5",
     "@supabase/supabase-js": "2.112.4",
+    "@vercel/oidc": "4.0.0",
     "@zxing/browser": "0.2.1",
     "exceljs": "4.4.0",
     "jsbarcode": "3.12.3",

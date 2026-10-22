@@ -1,5 +1,6 @@
 "use server";
 import { redirect } from "next/navigation";
+import { refreshWooSchedulerIdentity } from "@/lib/m9-woo-worker-server";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "@/lib/auth/authorization";
 import { remoteWebConfigured } from "@/lib/remote-web-server";
@@ -141,6 +142,7 @@ export async function enqueueWooTrial(form: FormData) {
     const { userId, supabase } = await requirePermission("products.update");
     const allowed = await supabase.rpc("m9_woo_worker_status");
     if (allowed.error) throw Error("NOT_AUTHORIZED");
+    await refreshWooSchedulerIdentity();
     const result = await createAdminClient().rpc("m9_woo_worker", {
       p_action: "ENQUEUE",
       p_input: { actor_id: userId, id, parent_id: parentId },

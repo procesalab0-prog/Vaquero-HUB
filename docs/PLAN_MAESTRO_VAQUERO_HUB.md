@@ -5026,3 +5026,16 @@ concesión/esperas/fases/privilegios pasan; fixture completo ROLLBACK. Se corrig
 límite de importación de la sonda cliente pasando la acción desde el servidor.
 Ver docs/M9_COLA_AUTOMATICA_WOO_STAGING.md. Falta ensayo conectado del programador,
 cierre de ventana y comparación final146 tablas. No main ni producción.
+
+
+### M9 · Corrección del acceso del programador protegido · 21 octubre 2026
+
+Preview0.83.0 READY c10af8b76f7232e63668ff7136760ea37cc10035 publicó la cola.
+La solicitud UI87427c06-b889-41a1-960b-930b1ed8e8df quedó READY/ORDER, claims0:
+el primer HTTP del programador fue rechazado por Vercel Authentication antes de
+llegar a la aplicación. Se pausó cron1; no se creó pedido. Corrección0.83.1 usa
+@vercel/oidc4.0.0, token efímero del contexto Preview, Vault y cabecera Trusted
+Sources del mismo proyecto/entorno. Sin cambiar protección ni reglas de acceso.
+Migración nueva20261022000552; once rechazos SQL, rotación cifrada sin duplicar,
+vigencia limitada a ventana y tick nulo si vence, todo ROLLBACK. 1,100 unitarias,
+tipos/lint/build pasan. Falta aceptar la invocación programada y limpiar identidad.
