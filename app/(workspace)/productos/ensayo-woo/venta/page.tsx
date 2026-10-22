@@ -186,12 +186,43 @@ export default async function NativeWooRehearsal({
           </p>
         </section>
       )}
+      <section
+        className={styles.panel}
+        aria-label="Pruebas simultáneas del motor"
+      >
+        <p className="eyebrow">
+          Verificado el 22 de octubre · SQL local aislado
+        </p>
+        <h2>Última pieza: 8 escenarios simultáneos aprobados</h2>
+        <p>
+          Dos procesos distintos compitieron por existencias ficticias. Se
+          observó el bloqueo antes de confirmar cada operación: la última pieza
+          no se vendió dos veces.
+        </p>
+        <ul>
+          <li>Reserva Woo primero: POS rechaza la segunda salida.</li>
+          <li>Venta POS primero: Woo rechaza la reserva sin existencias.</li>
+          <li>Venta nativa Woo contra POS: un solo descuento.</li>
+          <li>Dos pagos iguales: una sola venta y el mismo recibo.</li>
+          <li>Dos cancelaciones iguales: una sola reposición.</li>
+          <li>POS se revierte: Woo puede reservar la pieza.</li>
+          <li>Woo se revierte: POS puede vender la pieza.</li>
+          <li>Dos artículos en orden opuesto: sin bloqueo circular.</li>
+        </ul>
+        <p>
+          Se reconstruyeron las 196 migraciones y coincidieron las huellas de
+          las cinco funciones críticas con staging. Esto verifica el motor SQL
+          con datos sintéticos; la compra completa desde Woo, su pasarela y la
+          red todavía requieren su propia aceptación. Estas pruebas no habilitan
+          cobros ni existencias operativas.
+        </p>
+      </section>
       <section className={styles.panel}>
         <h2>Lo que sigue separado</h2>
         <p>
           La pasarela de pruebas, descuentos, impuestos, envío, devoluciones
-          parciales y aceptación simultánea con POS requieren sus propias
-          comprobaciones. Ningún estado Woo por sí solo acredita pago ni
+          parciales y aceptación de compra completa desde Woo requieren sus
+          propias comprobaciones. Ningún estado Woo por sí solo acredita pago ni
           reposición física.
         </p>
         <Link className="button secondary" href="/migracion">
