@@ -38,3 +38,34 @@ y se añadió una migración nueva: fecha presente ⇒ CANCELLED_PAYMENT_DATE_RE
 importe pagadoNULL, contabilizarfalse, ticketfalse, inventariofalse. No se corrige
 ni se borra la fecha en Woo. Una fecha inválida, un método distinto o un indicador
 de pago true siguen rechazados. No se toma la fecha como prueba de liquidación.
+
+## Siguiente unión financiera: orden de implementación y aceptación
+
+1. Mantener este lector separado de la contabilización. Una observación, incluso
+   con fecha de pago, no abre caja ni habilita un medio de cobro. Para un pedido
+   pagado se requerirán lectura autenticada actual, evidencia de la pasarela y
+   conciliación de moneda, total, descuentos, impuestos, envío y devolución.
+   Cualquier campo desconocido o diferencia retiene el pedido completo.
+2. Diseñar un único servicio transaccional que registre la venta web y consuma
+   su reserva una sola vez. No encadenar `CONSUME` con `create_sale`. El núcleo
+   actual llama `app.apply_movement` y la venta nativa también lo hace; la venta
+   nativa además requiere una sesión de caja y genera folio, pagos y auditoría.
+   No reutilizar efectivo de mostrador para simular una liquidación web.
+3. El servicio deberá conservar `origin/order_id/line_id`, vínculo a `variant_id`
+   y Clave 1 literal, documento financiero, referencia de pago y recibo idempotente
+   en la misma transacción. Serializar pedido y bloquear variantes en orden
+   estable con el libro de inventario canónico. Si se consume una reserva,
+   disminuir reservado y físico juntos; comprobar que no toca otras reservas.
+4. Probar primero SQL con ROLLBACK y pagos explícitamente sintéticos: repetición,
+   última pieza frente a POS, pedido cancelado, cobro parcial o duplicado,
+   cambio de importe/código, múltiples líneas, devolución parcial y fallo después
+   de folio/movimiento/outbox. Todo fallo revierte venta, pago, reserva, mercancía
+   y vínculo. No borrar historia ni reiniciar secuencias para ocultar ensayos.
+5. Aceptar desde Preview con identidad real y evidencia del medio de pago de
+   pruebas, conservando los bloqueos del sitio real. La reposición física y el
+   reembolso monetario siguen siendo operaciones separadas. Después vendrán
+   actualización continua de disponibilidad, roles operativos y corte final de
+   fuentes, existencias, apartados y entregas para autorizar el arranque por etapas.
+
+Esta lista es diseño pendiente, no una ruta pública de contabilización ni una
+afirmación de que las compras reales ya llegan al libro de ventas.

@@ -116,7 +116,7 @@ export default async function WooFinanceReview({
             envío e impuestos del pedido fueron comprobados por separado.
           </p>
           <p>
-            Comprobación guardada. Repetir una lectura idéntica conserva el
+            Comprobación guardada. Repetir una lectura idéntica conserva la
             misma observación.
           </p>
         </section>
