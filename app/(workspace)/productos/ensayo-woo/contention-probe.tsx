@@ -1,12 +1,14 @@
 "use client";
 import { useActionState } from "react";
-import { runInventoryProbe } from "./actions";
-export function ContentionProbe({ trialId }: { trialId: string }) {
-  const [holder, hold, holding] = useActionState(runInventoryProbe, "");
-  const [contender, contend, contending] = useActionState(
-    runInventoryProbe,
-    "",
-  );
+export function ContentionProbe({
+  trialId,
+  runProbeAction,
+}: {
+  trialId: string;
+  runProbeAction: (previous: string, form: FormData) => Promise<string>;
+}) {
+  const [holder, hold, holding] = useActionState(runProbeAction, "");
+  const [contender, contend, contending] = useActionState(runProbeAction, "");
   return (
     <section aria-label="Comprobación técnica simultánea">
       <h2>Ensayo técnico entre dos conexiones</h2>

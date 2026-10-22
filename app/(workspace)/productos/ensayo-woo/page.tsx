@@ -4,7 +4,12 @@ import Link from "next/link";
 import { requirePermission } from "@/lib/auth/authorization";
 import { WEB_STAGING_URL } from "@/lib/web-draft";
 import { remoteWebConfigured } from "@/lib/remote-web-server";
-import { runAvailabilityTrial, runConnectedWooTrial } from "./actions";
+import {
+  enqueueWooTrial,
+  runAvailabilityTrial,
+  runConnectedWooTrial,
+  runInventoryProbe,
+} from "./actions";
 import styles from "../../clientes/migracion-sicar/review.module.css";
 import { ContentionProbe } from "./contention-probe";
 export const metadata: Metadata = { title: "Pedido Woo · Ensayo conectado" };
@@ -38,6 +43,7 @@ export default async function ConnectedWooTrialPage({
   searchParams,
 }: {
   searchParams: Promise<{
+    cola?: string;
     estado?: string;
     estado_disponibilidad?: string;
     concurrencia?: string;
@@ -49,6 +55,15 @@ export default async function ConnectedWooTrialPage({
   const { supabase } = await requirePermission("products.update");
   const { data, error } = await supabase.rpc("m9_connected_woo_status");
   if (error) notFound();
+  const queue = await supabase.rpc("m9_woo_worker_status");
+  const jobs = (queue.data?.jobs ?? []) as {
+    id: string;
+    state: string;
+    phase: string;
+    attempts: number;
+    last_error: string | null;
+  }[];
+  const queueOpen = queue.data?.window_open === true;
   const params = await searchParams;
   const families = data.families as { id: string; name: string }[];
   const trials = data.trials as Trial[];
@@ -75,7 +90,10 @@ export default async function ConnectedWooTrialPage({
         </Link>
       </header>
       {params.concurrencia && uuid.test(params.concurrencia) && (
-        <ContentionProbe trialId={params.concurrencia} />
+        <ContentionProbe
+          trialId={params.concurrencia}
+          runProbeAction={runInventoryProbe}
+        />
       )}
       <section className={styles.panel} aria-label="Alcance del ensayo">
         <h2>Un pedido sintético, sin cobro ni envío</h2>
@@ -118,6 +136,77 @@ export default async function ConnectedWooTrialPage({
           </p>
         </section>
       )}
+      <section
+        className={styles.panel}
+        aria-label="Recorrido automático de prueba"
+      >
+        <h2>Pedido y disponibilidad en un solo recorrido</h2>
+        <p>
+          Guarda la solicitud una vez. Durante la ventana de ensayo, el
+          programador continúa cada fase aunque cierres esta pantalla.
+        </p>
+        <p>
+          {queueOpen
+            ? "Ventana de ensayo abierta."
+            : "Ventana cerrada: no se envían trabajos."}{" "}
+          Un fallo de conexión se retoma con la misma solicitud. Un resultado
+          incierto queda en revisión.
+        </p>
+        {params.cola && (
+          <p role="status">
+            {params.cola === "guardado"
+              ? "Solicitud guardada. Actualiza para consultar su progreso."
+              : "No se pudo guardar. Conserva esta solicitud para revisarla."}
+          </p>
+        )}
+        <form action={enqueueWooTrial}>
+          <input type="hidden" name="request_id" value={id} />
+          <label htmlFor="queue-family">
+            Familia para el recorrido completo
+          </label>
+          <select
+            id="queue-family"
+            name="parent_id"
+            defaultValue={parent}
+            required
+          >
+            {families.map((family) => (
+              <option key={family.id} value={family.id}>
+                {family.name}
+              </option>
+            ))}
+          </select>
+          <button
+            className="button"
+            disabled={!queueOpen || !remoteWebConfigured() || !families.length}
+          >
+            Guardar recorrido automático de prueba
+          </button>
+        </form>
+        <Link className="button secondary" href="/productos/ensayo-woo">
+          Actualizar progreso
+        </Link>
+        <ul>
+          {jobs.map((job) => (
+            <li key={job.id} style={{ overflowWrap: "anywhere" }}>
+              {job.id} ·{" "}
+              {job.state === "DONE"
+                ? "Pedido y disponibilidad comprobados; inventarios restaurados"
+                : job.state === "REVIEW"
+                  ? "Requiere revisión; envío detenido"
+                  : job.state === "RUNNING"
+                    ? "Comprobando"
+                    : job.state === "RETRY"
+                      ? "Esperando reintento de conexión"
+                      : "En espera"}
+              {job.state !== "DONE" && (
+                <> · {job.phase === "ORDER" ? "Pedido" : "Disponibilidad"}</>
+              )}
+              {job.last_error && <> · {job.last_error}</>}
+            </li>
+          ))}
+        </ul>
+      </section>
       <section className={styles.panel}>
         <h2>
           {current?.state === "VERIFIED"

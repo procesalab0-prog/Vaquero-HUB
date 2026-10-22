@@ -131,3 +131,26 @@ export async function runInventoryProbe(
       : "CONTENTION_REVIEW";
   }
 }
+
+export async function enqueueWooTrial(form: FormData) {
+  const id = String(form.get("request_id") ?? "");
+  const parentId = String(form.get("parent_id") ?? "");
+  let status = "guardado";
+  try {
+    if (!remoteWebConfigured()) throw Error("WORKER_NOT_CONFIGURED");
+    const { userId, supabase } = await requirePermission("products.update");
+    const allowed = await supabase.rpc("m9_woo_worker_status");
+    if (allowed.error) throw Error("NOT_AUTHORIZED");
+    const result = await createAdminClient().rpc("m9_woo_worker", {
+      p_action: "ENQUEUE",
+      p_input: { actor_id: userId, id, parent_id: parentId },
+    });
+    if (result.error) throw Error("WORKER_ENQUEUE_REVIEW");
+  } catch {
+    status = "revision";
+  }
+  revalidatePath("/productos/ensayo-woo");
+  redirect(
+    `/productos/ensayo-woo?cola=${status}&solicitud=${encodeURIComponent(id)}&familia=${encodeURIComponent(parentId)}`,
+  );
+}

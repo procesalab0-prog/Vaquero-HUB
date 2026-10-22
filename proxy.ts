@@ -23,6 +23,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Dedicated machine endpoint authenticates its scoped token in the route.
+  if (request.nextUrl.pathname === "/api/m9/woo-worker")
+    return NextResponse.next();
+
   return updateSession(request);
 }
 
