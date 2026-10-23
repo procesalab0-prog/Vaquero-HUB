@@ -103,6 +103,17 @@ export default async function MigrationCenter({
         </p>
       </section>
       <section className={styles.panel}>
+        <h2>Referencias de catálogo pendientes</h2>
+        <p>
+          Consulta los 435 códigos del corte del 22 de octubre que todavía no
+          tienen catálogo activo. Los motivos se agrupan con ejemplos; una
+          referencia retenida no habilita ventas, existencias ni envíos a Woo.
+        </p>
+        <Link className="button primary" href="/migracion/retenidos">
+          Ver pendientes por motivo
+        </Link>
+      </section>
+      <section className={styles.panel}>
         <h2>Detalle de créditos conciliado por separado</h2>
         <p>
           Consulta la revisión documental posterior: abonos activos y

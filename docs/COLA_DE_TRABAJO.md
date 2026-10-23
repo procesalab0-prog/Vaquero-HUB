@@ -2352,3 +2352,40 @@ humanas y la ampliación a otros módulos siguen abiertas.
 - [ ] Mantener el aviso visual aunque el sonido esté desactivado. No dar por
       cerrado el pendiente hasta probar una notificación real y el botón de
       prueba, evitando avisos duplicados.
+
+
+### Integración operativa Preview 0.92 · 22 de octubre de 2026
+
+Tres frentes integrados tras revisión cruzada: índice de 435 retenidos, captura
+documental por folio y evidencia física por campo en la hoja existente del piloto.
+Detalle: [M9_INTEGRACION_OPERATIVA_2026_10_22.md](M9_INTEGRACION_OPERATIVA_2026_10_22.md).
+El catálogo activo sigue en 15,961/16,396 = 97.35% de presencia literal; las
+435 referencias retenidas no aumentan ese porcentaje. Fuentes históricas intactas: 
+433 referencias reutilizadas y dos deltas de proyección separados.
+
+Archivo/replay/retiro/replay del índice y sus 22 páginas ensayados con rollback:
+178 tablas idénticas. COMMIT posterior sólo del índice y su auditoría. Captura
+UNKNOWN/replay/retirada/replay con rollback: 176 tablas idénticas. Piloto con
+NULL/replay y rollback: 178 tablas idénticas; los 36 campos siguen NULL. La
+columna JSON nueva conserva exactamente las doce proyecciones previas.
+
+Se cerró el riesgo de inversión de locks con el escritor nativo: NOWAIT, intento
+inmediato del nonce y handler 55P03 que libera barreras parciales. Cinco escenarios
+locales sin deadlocks; dos ajustes nativos sintéticos revertidos y seis libros
+intactos. Frontera cliente/servidor corregida pasando la Server Action desde la
+página; no se debilitó el test. 1,849 unitarias en 149 archivos, lint, tipos y
+build aprobados. Seguridad: se conservan 134 avisos de definers y uno de
+contraseñas filtradas; INFO 120→122 por dos archivos privados con RLS, sin
+políticas ni acceso directo. No se abrieron compuertas operativas.
+
+Woo público renovado mediante GET sin credenciales: 2,064 padres observados el
+22oct (23oct02:04UTC), cero IDs ajenos al CSV del 19, nueve antiguos borradores
+ahora observados públicamente y 110 no observados que se preservan. Dos corridas
+idénticas; diferencias HTML/CDN son literales y no se aplican como cambios
+semánticos. El CSV autenticado completo del 19 sigue canónico; Chrome fue
+aplazado por el usuario. No renueva stock, variaciones ocultas ni estados privados.
+
+Sólo staging y Preview. Sin main, producción, Woo real, existencias, saldos,
+cobros ni entregas operativas. Los cinco ensayos conectados siguen congelados.
+Las 36 cantidades y los pendientes de revisión requieren evidencia real.
+Sigue aceptación final desde Preview.

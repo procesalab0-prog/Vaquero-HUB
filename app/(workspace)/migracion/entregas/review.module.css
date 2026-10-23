@@ -92,3 +92,38 @@
     padding-left: 1.1rem;
   }
 }
+.capture {
+  border: 1px solid var(--border, #d4c9b9);
+  border-radius: 1rem;
+  padding: 1rem;
+  display: grid;
+  gap: 1rem;
+  background: var(--panel, #fffdf8);
+}
+.capture form,
+.capture fieldset {
+  display: grid;
+  gap: 0.8rem;
+}
+.capture fieldset {
+  border: 1px solid #b9ae9f;
+  padding: 1rem;
+  border-radius: 0.75rem;
+}
+.capture label {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  min-height: 44px;
+}
+.capture input[type="radio"],
+.capture input[type="checkbox"] {
+  flex: none;
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-top: 0.1rem;
+}
+.capture button {
+  min-height: 44px;
+  white-space: normal;
+}

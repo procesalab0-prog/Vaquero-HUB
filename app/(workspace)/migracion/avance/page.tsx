@@ -91,10 +91,10 @@ export default async function MigrationProgress() {
       >
         <h2>Corte de SICAR del 22 de octubre</h2>
         <p>
-          Se revisaron 16,396 códigos. En los últimos dos bloques se incorporaron
-          85 productos provisionales: 15 en el primero y 70 en el segundo.
-          Conservan su código de barras; sus existencias no se cargaron y su
-          agrupación por modelo sigue pendiente.
+          Se revisaron 16,396 códigos. En los últimos dos bloques se
+          incorporaron 85 productos provisionales: 15 en el primero y 70 en el
+          segundo. Conservan su código de barras; sus existencias no se cargaron
+          y su agrupación por modelo sigue pendiente.
         </p>
         <p>
           La comparación conservada del 22 de octubre encontró 15,961 códigos
@@ -104,9 +104,10 @@ export default async function MigrationProgress() {
         </p>
         <p>
           La conciliación completa de Woo usa todavía el archivo del 19 de
-          octubre. Se consultaron nuevamente las categorías públicas de siete
-          familias y se revalidaron después de completar sus fotos. Esto no
-          autoriza publicar ni cobrar.
+          octubre. El complemento público del 22 de octubre observó 2,064
+          productos; conserva aparte sus fotos, textos y categorías. No cubre
+          borradores, privados ni variaciones no publicadas, y no sustituye el
+          corte completo. Esto no autoriza publicar ni cobrar.
         </p>
       </section>
       <div className={styles.cards}>
@@ -136,8 +137,8 @@ export default async function MigrationProgress() {
           >
             Consultar catálogo completo
           </Link>
-          <Link href="/productos/migracion-pendientes">
-            Revisar casos retenidos
+          <Link href="/migracion/retenidos">
+            Revisar los 435 códigos retenidos del corte actual
           </Link>
         </section>
         <section>
@@ -164,8 +165,9 @@ export default async function MigrationProgress() {
             dos veces la misma deuda.
           </p>
           <p>
-            Las entregas se preparan para revisión por documento completo. Una
-            observación de revisión no mueve mercancía ni modifica el saldo.
+            Las respuestas se capturan por documento completo, con autor, fecha
+            y evidencia del corte. «Aún no se sabe» conserva el pendiente. Una
+            respuesta documental no mueve mercancía ni modifica el saldo.
           </p>
           <Link className="button primary" href="/migracion/creditos">
             Revisar créditos y abonos
@@ -173,6 +175,7 @@ export default async function MigrationProgress() {
           <Link href="/clientes/heredados-sicar/saldos">
             Consultar apertura de ensayo
           </Link>
+          <Link href="/migracion/entregas">Revisar y responder entregas</Link>
         </section>
         <section>
           <strong>{n(v.inventory.pending_fields)}</strong>
@@ -185,6 +188,11 @@ export default async function MigrationProgress() {
             <b>Siguiente:</b> completar conteos y entregas con evidencia,
             conciliar lo observado en SICAR y ensayar sólo el lote confirmado.
             La exportación no sustituye el conteo físico.
+          </p>
+          <p>
+            Cada cantidad declarada requiere su fuente. La fecha y el
+            responsable se registran al guardarla; dejarla vacía conserva «sin
+            confirmar», incluso si otro campo tiene un cero explícito.
           </p>
           <Link
             className="button primary"

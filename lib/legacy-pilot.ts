@@ -25,9 +25,16 @@ export function physicalComparison(
   };
 }
 export function legacyPilotFailure(message: string) {
+  if (message.includes("M9_PILOT_BUSY_RETRY")) return "ocupado";
   if (message.includes("IDEMPOTENCY_CONFLICT")) return "conflicto";
   if (message.includes("M9_DRAFT_REVISION_CHANGED")) return "revision";
   if (message.includes("M9_PILOT_BASELINE_CHANGED")) return "base-cambiada";
+  if (message.includes("M9_FIELD_SOURCE_CHANGED")) return "base-cambiada";
+  if (
+    message.includes("M9_FIELD_DECLARATION_REQUIRED") ||
+    message.includes("M9_FIELD_QUANTITY_REQUIRED")
+  )
+    return "evidencia";
   if (message.includes("M9_COMMITMENTS_EXCEED_PHYSICAL")) return "cantidades";
   if (message.includes("M9_EXPLICIT_WHOLE_QUANTITY_REQUIRED")) return "formato";
   if (message.includes("NOT_AUTHORIZED")) return "sin-permiso";
@@ -66,5 +73,12 @@ export type LegacyPilotView = {
     revision: number;
     catalog_current: boolean;
     balance_current: boolean;
+    field_source_sha256?: string;
+    field_evidence?: Partial<
+      Record<
+        import("./legacy-pilot-declarations").PilotCountKey,
+        import("./legacy-pilot-declarations").PilotFieldView
+      >
+    >;
   }>;
 };

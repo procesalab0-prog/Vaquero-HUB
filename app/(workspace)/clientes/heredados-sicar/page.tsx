@@ -5,7 +5,12 @@ import { requirePermission } from "@/lib/auth/authorization";
 import { customerReviewEnabled } from "@/lib/customer-migration";
 import { physicalComparison, type LegacyPilotView } from "@/lib/legacy-pilot";
 import { saveLegacyPilotDraft } from "./actions";
+import {
+  PILOT_COUNT_FIELDS,
+  pilotEvidenceComplete,
+} from "@/lib/legacy-pilot-declarations";
 import styles from "../migracion-sicar/review.module.css";
+import pilotStyles from "./pilot.module.css";
 export const metadata: Metadata = {
   title: "Clientes heredados e inventario piloto",
 };
@@ -14,6 +19,10 @@ const money = (v: number) =>
     v / 100,
   );
 const notices: Record<string, string> = {
+  ocupado:
+    "Otro proceso está usando el catálogo o inventario. No se guardó este intento; recarga y vuelve a intentarlo.",
+  "recibo-historico":
+    "Esta solicitud ya tenía un recibo histórico. No se volvió a guardar; revisa el borrador actual.",
   guardado: "Borrador guardado. Ningún saldo de inventario fue cargado.",
   revision: "Alguien cambió este borrador. Recarga antes de editar.",
   conflicto: "La solicitud cambió al repetirse. No se duplicó.",
@@ -25,6 +34,8 @@ const notices: Record<string, string> = {
     "Cambió el catálogo o inventario de destino. Hay que conciliar de nuevo.",
   "sin-permiso": "No tienes permiso para editar esta hoja.",
   error: "No se pudo guardar el borrador. Revisa los datos.",
+  evidencia:
+    "Para declarar una cantidad, marca que revisaste ese dato ahora y explica cómo lo comprobaste. Vacío queda pendiente.",
 };
 export default async function LegacyCustomers({
   searchParams,
@@ -202,6 +213,13 @@ export default async function LegacyCustomers({
           descuenta mercancía. Los responsables y la evidencia del conteo
           definitivo se validarán antes de importar.
         </p>
+        <p>
+          Para cada dato nuevo o corregido, confirma que lo revisaste ahora y
+          explica su fuente. El programa guarda tu usuario y la fecha de la
+          declaración por campo. No vuelvas a marcar los datos que no revisaste:
+          conservan su declaración anterior. Para retirar un dato, déjalo vacío
+          y explica la corrección en la nota; el historial permanece.
+        </p>
         {params.status && notices[params.status] ? (
           <p role="status" className={styles.notice}>
             {notices[params.status]}
@@ -236,39 +254,73 @@ export default async function LegacyCustomers({
                 <input type="hidden" name="revision" value={s.revision} />
                 <input
                   type="hidden"
+                  name="expected_source_sha256"
+                  value={s.field_source_sha256 ?? ""}
+                />
+                <input
+                  type="hidden"
                   name="request"
                   value={crypto.randomUUID()}
                 />
-                <label>
-                  Total físico presente
-                  <input
-                    name="physical_qty"
-                    inputMode="numeric"
-                    pattern="(0|[1-9][0-9]{0,5})"
-                    placeholder="Pendiente"
-                    defaultValue={s.physical_qty ?? ""}
-                  />
-                </label>
-                <label>
-                  Ya vendido y guardado para entregar
-                  <input
-                    name="sold_waiting_qty"
-                    inputMode="numeric"
-                    pattern="(0|[1-9][0-9]{0,5})"
-                    placeholder="Pendiente"
-                    defaultValue={s.sold_waiting_qty ?? ""}
-                  />
-                </label>
-                <label>
-                  Separado sin venta registrada
-                  <input
-                    name="separated_qty"
-                    inputMode="numeric"
-                    pattern="(0|[1-9][0-9]{0,5})"
-                    placeholder="Pendiente"
-                    defaultValue={s.separated_qty ?? ""}
-                  />
-                </label>
+                {PILOT_COUNT_FIELDS.map(({ key, label, sourceHelp }) => {
+                  const evidence = s.field_evidence?.[key];
+                  return (
+                    <fieldset key={key} className={pilotStyles.field}>
+                      <legend>{label}</legend>
+                      <label>
+                        Cantidad
+                        <input
+                          name={key}
+                          inputMode="numeric"
+                          pattern="(0|[1-9][0-9]{0,5})"
+                          placeholder="Pendiente"
+                          defaultValue={s[key] ?? ""}
+                        />
+                      </label>
+                      <label className={pilotStyles.confirmation}>
+                        <input
+                          type="checkbox"
+                          className={pilotStyles.checkbox}
+                          name={key + "_declared"}
+                        />{" "}
+                        Revisé este dato ahora y declaro esta cantidad.
+                      </label>
+                      <label>
+                        Cómo lo comprobé
+                        <input
+                          name={key + "_source"}
+                          maxLength={200}
+                          placeholder={sourceHelp}
+                          defaultValue={evidence?.declaration?.source ?? ""}
+                        />
+                      </label>
+                      {evidence?.declaration ? (
+                        <p>
+                          Declaró{" "}
+                          {evidence.actor_name ??
+                            evidence.declaration.actor_user_id}{" "}
+                          el{" "}
+                          {new Date(
+                            evidence.declaration.declared_at,
+                          ).toLocaleString("es-MX", {
+                            timeZone: "America/Mexico_City",
+                          })}
+                          . Fuente: {evidence.declaration.source}.{" "}
+                          {evidence.status === "DECLARED_CURRENT"
+                            ? "Declaración vigente para esta referencia; no es conteo certificado."
+                            : "Declaración retenida: cambió la fuente, el catálogo o el saldo; requiere revisión."}
+                        </p>
+                      ) : (
+                        <p>
+                          Sin declaración de este campo.{" "}
+                          {s[key] === null
+                            ? "Sigue pendiente."
+                            : "El borrador previo no acredita quién verificó esta cantidad."}
+                        </p>
+                      )}
+                    </fieldset>
+                  );
+                })}
                 <label>
                   Nota del borrador
                   <textarea
@@ -280,14 +332,19 @@ export default async function LegacyCustomers({
                   />
                 </label>
                 <p>
-                  {comparison.available === null
+                  {comparison.available === null ||
+                  !pilotEvidenceComplete(s.field_evidence)
                     ? "Comparación física pendiente."
                     : `Disponibilidad física comparativa: ${comparison.available} pieza(s). Requiere revisión; no es saldo autorizado.`}
                 </p>
                 <button
                   type="submit"
                   className="button primary"
-                  disabled={!s.catalog_current || !s.balance_current}
+                  disabled={
+                    !s.catalog_current ||
+                    !s.balance_current ||
+                    !s.field_source_sha256
+                  }
                 >
                   Guardar borrador sin cargar inventario
                 </button>

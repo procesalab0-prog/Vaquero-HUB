@@ -219,3 +219,32 @@ marcasCLI; no repetir dbpush ni editarSQLaplicado. Expediente privado
 outputs/m9-avance-operativo-2026-10-22 y m9-hitos-preparacion-2026-10-22.
 SICAR22 intacto;Woo completo sigue19octubre. Usuario aplazó Chrome; se continúa
 staging sin exigir acceso. Deploy/aceptaciónPreview0.91 se documentan al terminar.
+
+
+### Preview0.91 aceptado · cierre de ampliación
+
+DespliegueSUCCESS f72e17b46e7858ae2c9ead6d5b9fa624458be9c4, árbol exacto
+3f6411fc79234fcab1f7f7d56268d7904d4e4ced, sólo codex/m9-staging-review.
+Vercel: https://vercel.com/procesa-lab/vaquero-hub/4ES2fHKATx6HEXzWoyuzvjdJU1aD .
+
+AuthADMINreal: versión0.91.0,15961códigos y97.35% explícitamente limitado a
+presencia en corte22. /migracion/entregas muestra84folios por8,11páginas;
+primerasdos tandas sin solapamiento, enlace abre exactamente eldocumento.
+Desktop1440 y móvil390 sin desborde horizontal;viewportrestituido. Norespuestas
+ni cobros/entregas/stock. Código nuevo18307 encontrado a2490;11425 a1150.
+Trasnavegación ybúsquedas,176tablas idénticas alestado posterior de precios.
+
+Expediente outputs/m9-avance-operativo-2026-10-22/reporte.html,manifest.json y
+verificar.mjs. PASS16comprobaciones offline,67archivos+5entradas externas
+fijados. Verifica intersección antes/después,fuente22 intacta,planes70,cuatro
+rollback175/COMMIT,deltasdeprecios/rollback176,11páginasreales,seguridad,
+controlescerrados yPreviewligado alcommit/árbolprobado. Nored,SQLniescrituras.
+Verificadores de agentes PASS:precios16archivos+3fuentes,lector12archivos,
+hitos3salidas+121entradas. Contenedor localm9-woo-qa-20261022 detenido,
+bases e historia sintética conservadas. Worktree raíz limpio al cierre.
+
+Sigue faltando renovarWoo completo(accesoChrome aplazado porusuario),36datos
+físicos/12códigos,entregas y corte porcuenta antesdeapertura operativa, yprimer
+cicloauténtico sandbox conperfilaislado/campañanueva autorizada.435retenidos y
+11cambiosexistentes no se fuerzan. No se inventa porcentajeglobal niETA.
+Bloque cerrado; producción ymain intactos, migración total todavía pendiente.

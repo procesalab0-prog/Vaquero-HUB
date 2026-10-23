@@ -5739,3 +5739,69 @@ marcasCLI; no repetir dbpush ni editarSQLaplicado. Expediente privado
 outputs/m9-avance-operativo-2026-10-22 y m9-hitos-preparacion-2026-10-22.
 SICAR22 intacto;Woo completo sigue19octubre. Usuario aplazó Chrome; se continúa
 staging sin exigir acceso. Deploy/aceptaciónPreview0.91 se documentan al terminar.
+
+
+### Preview0.91 aceptado · cierre de ampliación
+
+DespliegueSUCCESS f72e17b46e7858ae2c9ead6d5b9fa624458be9c4, árbol exacto
+3f6411fc79234fcab1f7f7d56268d7904d4e4ced, sólo codex/m9-staging-review.
+Vercel: https://vercel.com/procesa-lab/vaquero-hub/4ES2fHKATx6HEXzWoyuzvjdJU1aD .
+
+AuthADMINreal: versión0.91.0,15961códigos y97.35% explícitamente limitado a
+presencia en corte22. /migracion/entregas muestra84folios por8,11páginas;
+primerasdos tandas sin solapamiento, enlace abre exactamente eldocumento.
+Desktop1440 y móvil390 sin desborde horizontal;viewportrestituido. Norespuestas
+ni cobros/entregas/stock. Código nuevo18307 encontrado a2490;11425 a1150.
+Trasnavegación ybúsquedas,176tablas idénticas alestado posterior de precios.
+
+Expediente outputs/m9-avance-operativo-2026-10-22/reporte.html,manifest.json y
+verificar.mjs. PASS16comprobaciones offline,67archivos+5entradas externas
+fijados. Verifica intersección antes/después,fuente22 intacta,planes70,cuatro
+rollback175/COMMIT,deltasdeprecios/rollback176,11páginasreales,seguridad,
+controlescerrados yPreviewligado alcommit/árbolprobado. Nored,SQLniescrituras.
+Verificadores de agentes PASS:precios16archivos+3fuentes,lector12archivos,
+hitos3salidas+121entradas. Contenedor localm9-woo-qa-20261022 detenido,
+bases e historia sintética conservadas. Worktree raíz limpio al cierre.
+
+Sigue faltando renovarWoo completo(accesoChrome aplazado porusuario),36datos
+físicos/12códigos,entregas y corte porcuenta antesdeapertura operativa, yprimer
+cicloauténtico sandbox conperfilaislado/campañanueva autorizada.435retenidos y
+11cambiosexistentes no se fuerzan. No se inventa porcentajeglobal niETA.
+Bloque cerrado; producción ymain intactos, migración total todavía pendiente.
+
+
+### Integración operativa Preview 0.92 · 22 de octubre de 2026
+
+Tres frentes integrados tras revisión cruzada: índice de 435 retenidos, captura
+documental por folio y evidencia física por campo en la hoja existente del piloto.
+Detalle: [M9_INTEGRACION_OPERATIVA_2026_10_22.md](M9_INTEGRACION_OPERATIVA_2026_10_22.md).
+El catálogo activo sigue en 15,961/16,396 = 97.35% de presencia literal; las
+435 referencias retenidas no aumentan ese porcentaje. Fuentes históricas intactas: 
+433 referencias reutilizadas y dos deltas de proyección separados.
+
+Archivo/replay/retiro/replay del índice y sus 22 páginas ensayados con rollback:
+178 tablas idénticas. COMMIT posterior sólo del índice y su auditoría. Captura
+UNKNOWN/replay/retirada/replay con rollback: 176 tablas idénticas. Piloto con
+NULL/replay y rollback: 178 tablas idénticas; los 36 campos siguen NULL. La
+columna JSON nueva conserva exactamente las doce proyecciones previas.
+
+Se cerró el riesgo de inversión de locks con el escritor nativo: NOWAIT, intento
+inmediato del nonce y handler 55P03 que libera barreras parciales. Cinco escenarios
+locales sin deadlocks; dos ajustes nativos sintéticos revertidos y seis libros
+intactos. Frontera cliente/servidor corregida pasando la Server Action desde la
+página; no se debilitó el test. 1,849 unitarias en 149 archivos, lint, tipos y
+build aprobados. Seguridad: se conservan 134 avisos de definers y uno de
+contraseñas filtradas; INFO 120→122 por dos archivos privados con RLS, sin
+políticas ni acceso directo. No se abrieron compuertas operativas.
+
+Woo público renovado mediante GET sin credenciales: 2,064 padres observados el
+22oct (23oct02:04UTC), cero IDs ajenos al CSV del 19, nueve antiguos borradores
+ahora observados públicamente y 110 no observados que se preservan. Dos corridas
+idénticas; diferencias HTML/CDN son literales y no se aplican como cambios
+semánticos. El CSV autenticado completo del 19 sigue canónico; Chrome fue
+aplazado por el usuario. No renueva stock, variaciones ocultas ni estados privados.
+
+Sólo staging y Preview. Sin main, producción, Woo real, existencias, saldos,
+cobros ni entregas operativas. Los cinco ensayos conectados siguen congelados.
+Las 36 cantidades y los pendientes de revisión requieren evidencia real.
+Sigue aceptación final desde Preview.

@@ -8,6 +8,7 @@ import {
   type DeliveryReviewPage,
 } from "@/lib/m9-delivery-review";
 import { CUSTOMER_REVIEW_STAGING_URL } from "@/lib/customer-migration";
+import type { DeliveryCapturePage } from "@/lib/m9-delivery-capture";
 const mocks = vi.hoisted(() => ({
   permission: vi.fn(),
   rpc: vi.fn(),
@@ -17,11 +18,18 @@ vi.mock("@/lib/auth/authorization", () => ({
   requirePermission: mocks.permission,
 }));
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
+vi.mock("../../app/(workspace)/migracion/entregas/capture-form", () => ({
+  DeliveryCaptureForm: ({ document }: { document: string }) => (
+    <div data-documentary-form={document}>
+      Captura documental sin operación física
+    </div>
+  ),
+}));
 import Page from "../../app/(workspace)/migracion/entregas/page";
 import CreditPage from "../../app/(workspace)/migracion/creditos/page";
 const ref = "11111111-1111-4111-8111-111111111111",
   key = "a".repeat(64);
-function sample(): DeliveryReviewPage {
+function originalSample(): DeliveryReviewPage {
   return {
     protocol: "m9-delivery-review-page-1",
     ready: true,
@@ -91,6 +99,33 @@ function sample(): DeliveryReviewPage {
     ],
   };
 }
+function sample(): DeliveryCapturePage {
+  const v = originalSample();
+  return {
+    ...v,
+    protocol: "m9-delivery-capture-page-1",
+    responses_enabled: true,
+    documentary_only: true,
+    stock_delivery_allowed: false,
+    financial_opening_allowed: false,
+    summary: {
+      ...v.summary,
+      concrete_documentary_reviews: 0,
+      pending_documentary_reviews: 84,
+    },
+    rows: v.rows.map((d) => ({
+      ...d,
+      capture_context: {
+        archive_payload_hash: "1".repeat(64),
+        document_snapshot_hash: "2".repeat(64),
+        revision: 0,
+        latest_request_id: null,
+        latest_action: null,
+        status: "NONE",
+      },
+    })),
+  };
+}
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", CUSTOMER_REVIEW_STAGING_URL);
@@ -141,17 +176,25 @@ it("handles the array role relation and makes one read call only", async () => {
     supabase: { rpc: mocks.rpc },
   });
   await render({ q: "000123", filter: "sidecar", page: "2" });
-  expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith("m9_delivery_review_read", {
-    p_input: { q: "000123", filter: "sidecar", page: 2 },
-  });
+  expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith(
+    "m9_delivery_capture_read",
+    {
+      p_input: {
+        q: "000123",
+        filter: "sidecar",
+        page: 2,
+        review_filter: "pending",
+      },
+    },
+  );
 });
 it("database denial does not render private content", async () => {
   mocks.rpc.mockResolvedValue({ data: sample(), error: { code: "42501" } });
   await expect(render()).rejects.toThrow("NOT_FOUND");
 });
-it("fails closed if a read response claims to enable answers", async () => {
+it("fails closed if a capture response claims to enable stock", async () => {
   mocks.rpc.mockResolvedValue({
-    data: { ...sample(), responses_enabled: true },
+    data: { ...sample(), stock_delivery_allowed: true },
     error: null,
   });
   await expect(render()).rejects.toThrow("No se pudo consultar");
@@ -159,10 +202,13 @@ it("fails closed if a read response claims to enable answers", async () => {
 it("keeps a missing archive inert", async () => {
   mocks.rpc.mockResolvedValue({
     data: {
-      protocol: "m9-delivery-review-page-1",
+      protocol: "m9-delivery-capture-page-1",
+      documentary_only: true,
+      stock_delivery_allowed: false,
+      financial_opening_allowed: false,
       ready: false,
       read_only: true,
-      responses_enabled: false,
+      responses_enabled: true,
       operational_import_allowed: false,
     },
     error: null,
@@ -196,14 +242,12 @@ it("does not turn generic debt quantity into physical pieces", async () => {
   expect(html).not.toContain("Cantidad anotada en origen: 2");
   expect(html).not.toContain("2 pza");
 });
-it("only the GET search form is interactive, with no answer inputs or actions", async () => {
+it("keeps the GET search separate from one documentary form per document", async () => {
   const html = await render();
   expect(html).toContain('method="get"');
-  expect(html).not.toContain('method="post"');
-  expect(html).not.toContain('type="radio"');
-  expect(html).not.toContain("Autorizar");
-  expect(html).toContain("las respuestas todavía no están habilitadas");
-  expect(html.match(/<button/g)).toHaveLength(1);
+  expect(html).toContain('data-documentary-form="' + key + '"');
+  expect(html).toContain("no registra entregas, cobros ni movimientos");
+  expect(html).toContain("Documentos por revisar");
 });
 it("evidence links preserve client UUID and full document key", async () => {
   const html = await render();
@@ -259,14 +303,14 @@ it("does not build evidence links from malformed identities", () => {
   ).toThrow("DELIVERY_DOCUMENT_IDENTITY_INVALID");
 });
 it("rejects duplicate line/document identity and inconsistent summary counts", () => {
-  const v = sample();
+  const v = originalSample();
   expect(isDeliveryReviewPage(v)).toBe(true);
   v.rows[0].lines[1].index = 0;
   expect(isDeliveryReviewPage(v)).toBe(false);
-  const d = sample();
+  const d = originalSample();
   d.rows.push(structuredClone(d.rows[0]));
   expect(isDeliveryReviewPage(d)).toBe(false);
-  const counts = sample();
+  const counts = originalSample();
   counts.summary.effective_documentary_identities = 183;
   expect(isDeliveryReviewPage(counts)).toBe(false);
 });
