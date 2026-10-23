@@ -3166,3 +3166,56 @@ Sólo staging y Preview. Sin main, producción, Woo real, existencias, saldos,
 cobros ni entregas operativas. Los cinco ensayos conectados siguen congelados.
 Las 36 cantidades y los pendientes de revisión requieren evidencia real.
 Sigue aceptación final desde Preview.
+
+
+### Preview 0.92 aceptado · cierre del bloque paralelo
+
+Publicado únicamente en `codex/m9-staging-review`: commit
+`5a7483999e0fb612309a112e5c9106d0b5274ba1`, árbol probado exacto
+`4659b8bece20da74c01956e1006ef8b19bb80da1`. Despliegue SUCCESS:
+https://vercel.com/procesa-lab/vaquero-hub/Ezbcv1XytwH8fHKs62idT8o2uDfW .
+La sesión ADMIN real confirmó versión 0.92.0 y el recorrido programa→RPC→staging.
+
+Los cuatro filtros de retenidos devolvieron 40/86/3/316 resultados; código
+000007779 y precio 6299.99944 literales. En entregas no hay radio por defecto;
+SX00000 bloquea opciones físicas. Se guardó UNKNOWN y se retiró desde Preview:
+dos eventos aditivos, cero declaraciones concretas y 84 folios/183 líneas aún
+sin acreditar. No es una respuesta de los dueños ni una entrega real.
+
+La hoja física mantiene 36 cantidades vacías. Guardado autenticado de 2396 con
+la misma nota anterior y sin cantidades: revisión 2→3 y un recibo nuevo, sin
+declaraciones por campo ni apertura. No se sustituyó una cantidad por cero.
+Tres pantallas verificadas a 390px sin desborde horizontal; viewport temporal
+restituido. Ensayos y captura no cambian catálogo, imágenes, caja, créditos,
+inventario, costos ni controles Woo. Cinco ensayos conectados y compuertas apagadas.
+
+Auditoría tras UI: 175 de 178 tablas idénticas a la fase previa; sólo cambiaron
+el diario documental (+2), el diario del piloto (+1) y su borrador (revisión).
+Al inicio del bloque se conservó únicamente el índice de 435 y una auditoría;
+se añadió columna JSON vacía a 12 borradores, con proyección antigua exacta.
+Archivo histórico de 8,515 referencias y 15,961 filas administradas intactos.
+
+Expediente privado: outputs/m9-integracion-operativa-2026-10-22/reporte.html,
+manifest.json y verificar.mjs. Verificador offline PASS: 18 controles, 47 archivos
+y 20 entradas externas fijadas por SHA256. Revisión independiente: 14 controles
+PASS; complemento Woo recomputado y aprobado. QA local cerrado, contenedor propio
+m9-woo-qa-20261022 detenido; clones e historia sintética conservados.
+
+Migraciones remotas: 20261023021240 delivery_document_capture; 20261023022123
+held_reference_index; 20261023022623 pilot_field_declarations. Archivos locales
+CLI: 20261023021223, 20261023022107 y 20261023022550 respectivamente.
+
+Siguiente: conteo real de 36 campos y evidencia de entregas; renovar Woo completo
+cuando Chrome esté disponible (usuario aplazó el acceso), renovar padrón y corte
+antes de operar y preparar apertura por etapas sólo con datos conciliados.
+El 97.35% mide códigos presentes, no avance global. No se abre otra campaña ni
+se autoriza producción. Main y Woo real no modificados por este bloque.
+
+
+### Renovación adicional en staging · siete textos y padrón completo
+
+Cerrado el bloque descrito en [M9_RENOVACION_STAGING_2026_10_22.md](M9_RENOVACION_STAGING_2026_10_22.md). Siete descripciones SICAR actualizadas sólo en los dos campos de fuente, sin cambiar nombres, códigos, UUIDs, precios, costos ni evidencia original. Ensayo/reversión/rollback de 179 tablas exactas.
+
+Padrón general capturado por intervalo el 22 octubre 20:53–21:38: 172 cuentas, 84 documentos, $242,958 observados. Nuevo archivo histórico añadido tras preparación doble idéntica, revisión independiente y ensayo+replay+rollback de 179 tablas. Sólo cambia el archivo (1→2), sin actualizar fuentes, registro, saldos operativos ni entregas. 114 identidades registradas y 58 adicionales; 171 miembros del censo previo, sin reescribir su flag histórico. Dos diferencias de saldo/documentos conservadas para revisión, sin inferir pagos. Auth real de Preview confirmó lectura del nuevo corte.
+
+Se mantienen 15,961/16,396 códigos presentes (97.35% de presencia), 435 retenidos, cuatro cambios de renovación no aplicados, 36 cantidades y 183 entregas sin confirmar; cinco ensayos Woo congelados y compuertas apagadas. QA raíz: 1,912 unitarias/151 archivos, lint y build PASS. Usuario aplazó Chrome; no pedir de nuevo en este bloque. Woo completo autenticado y conteo físico siguen pendientes. Sin main ni producción.

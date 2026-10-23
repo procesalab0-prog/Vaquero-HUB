@@ -70,3 +70,53 @@ El expediente privado de esta integración se conserva en
 `outputs/m9-integracion-operativa-2026-10-22/`; las pruebas de cada agente tienen
 expediente independiente. Los resultados finales, despliegue y limitaciones se
 agregan al cerrar la verificación desde Preview.
+
+
+### Preview 0.92 aceptado · cierre del bloque paralelo
+
+Publicado únicamente en `codex/m9-staging-review`: commit
+`5a7483999e0fb612309a112e5c9106d0b5274ba1`, árbol probado exacto
+`4659b8bece20da74c01956e1006ef8b19bb80da1`. Despliegue SUCCESS:
+https://vercel.com/procesa-lab/vaquero-hub/Ezbcv1XytwH8fHKs62idT8o2uDfW .
+La sesión ADMIN real confirmó versión 0.92.0 y el recorrido programa→RPC→staging.
+
+Los cuatro filtros de retenidos devolvieron 40/86/3/316 resultados; código
+000007779 y precio 6299.99944 literales. En entregas no hay radio por defecto;
+SX00000 bloquea opciones físicas. Se guardó UNKNOWN y se retiró desde Preview:
+dos eventos aditivos, cero declaraciones concretas y 84 folios/183 líneas aún
+sin acreditar. No es una respuesta de los dueños ni una entrega real.
+
+La hoja física mantiene 36 cantidades vacías. Guardado autenticado de 2396 con
+la misma nota anterior y sin cantidades: revisión 2→3 y un recibo nuevo, sin
+declaraciones por campo ni apertura. No se sustituyó una cantidad por cero.
+Tres pantallas verificadas a 390px sin desborde horizontal; viewport temporal
+restituido. Ensayos y captura no cambian catálogo, imágenes, caja, créditos,
+inventario, costos ni controles Woo. Cinco ensayos conectados y compuertas apagadas.
+
+Auditoría tras UI: 175 de 178 tablas idénticas a la fase previa; sólo cambiaron
+el diario documental (+2), el diario del piloto (+1) y su borrador (revisión).
+Al inicio del bloque se conservó únicamente el índice de 435 y una auditoría;
+se añadió columna JSON vacía a 12 borradores, con proyección antigua exacta.
+Archivo histórico de 8,515 referencias y 15,961 filas administradas intactos.
+
+Expediente privado: outputs/m9-integracion-operativa-2026-10-22/reporte.html,
+manifest.json y verificar.mjs. Verificador offline PASS: 18 controles, 47 archivos
+y 20 entradas externas fijadas por SHA256. Revisión independiente: 14 controles
+PASS; complemento Woo recomputado y aprobado. QA local cerrado, contenedor propio
+m9-woo-qa-20261022 detenido; clones e historia sintética conservados.
+
+Migraciones remotas: 20261023021240 delivery_document_capture; 20261023022123
+held_reference_index; 20261023022623 pilot_field_declarations. Archivos locales
+CLI: 20261023021223, 20261023022107 y 20261023022550 respectivamente.
+
+Siguiente: conteo real de 36 campos y evidencia de entregas; renovar Woo completo
+cuando Chrome esté disponible (usuario aplazó el acceso), renovar padrón y corte
+antes de operar y preparar apertura por etapas sólo con datos conciliados.
+El 97.35% mide códigos presentes, no avance global. No se abre otra campaña ni
+se autoriza producción. Main y Woo real no modificados por este bloque.
+
+Los dos archivos nuevos conservan RLS sin políticas y ACL cerrada, por lo que
+el aviso INFO es esperado. Los avisos WARN públicos no aumentaron. Referencias
+del linter: [RLS sin política](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy),
+[definers autenticados](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable),
+[protección de contraseñas](https://supabase.com/docs/guides/auth/password-security).

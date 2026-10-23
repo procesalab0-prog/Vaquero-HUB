@@ -159,7 +159,7 @@ export default async function MigrationCenter({
           <strong>{view.summary.accounts}</strong>
           <h2>Cuentas de origen observadas</h2>
           <p>
-            {view.legacy_registered} del primer paquete registrado y{" "}
+            {view.legacy_registered} ya registradas como cuentas de origen y{" "}
             {view.summary.additional_accounts} adicionales para revisión. No son
             altas de socios ni de portal.
           </p>
@@ -226,7 +226,7 @@ export default async function MigrationCenter({
             Mostrar
             <select name="filter" defaultValue={filter}>
               <option value="all">Todas las cuentas</option>
-              <option value="additional">Adicionales al primer paquete</option>
+              <option value="additional">Pendientes de registrar</option>
               <option value="debt">Con documentos pendientes</option>
               <option value="review">Con nombre repetido</option>
             </select>
@@ -251,13 +251,31 @@ export default async function MigrationCenter({
               </summary>
               <p>
                 {a.previously_registered
-                  ? "Identidad conservada en el primer paquete; consulta su apertura por separado."
+                  ? "Identidad registrada como cuenta de origen; consulta su apertura por separado."
                   : "Cuenta adicional del padrón histórico. No se abrió este saldo para cobrar."}
               </p>
-              {a.holds.length > 0 && (
+              {a.holds.includes("DUPLICATE_NAME_NOT_MERGED") && (
                 <p className={styles.notice}>
                   Hay otra cuenta con el mismo nombre. Se mantienen separadas
                   por su referencia SICAR.
+                </p>
+              )}
+              {a.holds.some((hold) =>
+                [
+                  "PREVIOUS_BALANCE_CHANGED",
+                  "PREVIOUS_DOCUMENTS_CHANGED",
+                ].includes(hold),
+              ) && (
+                <p className={styles.notice}>
+                  El saldo o sus documentos cambiaron frente al corte anterior.
+                  La diferencia queda por revisar; no acredita un abono,
+                  liquidación ni entrega.
+                </p>
+              )}
+              {a.holds.includes("PRIOR_NAME_CHANGED") && (
+                <p className={styles.notice}>
+                  Cambió el nombre de esta referencia SICAR. Se conserva su
+                  identidad y el cambio queda por revisar.
                 </p>
               )}
               <p>
@@ -288,7 +306,7 @@ export default async function MigrationCenter({
                     className="button secondary"
                     href={`/clientes/migracion-sicar?key=${a.key}`}
                   >
-                    Ver documentos del primer paquete
+                    Ver documentos de la cuenta registrada
                   </Link>
                 )}
                 <a

@@ -270,6 +270,9 @@ export function generalDetailQueue(plan, previous) {
 export function prepareGeneralCustomers(configPath, out) {
   const cfg = JSON.parse(readFileSync(configPath, "utf8")),
     inputs = {};
+  if (cfg.mode === "RENEWAL_ARCHIVE_ONLY")
+    return prepareGeneralCustomerRenewal(cfg, out);
+  if (cfg.mode !== undefined) throw Error("CENSUS_PREPARATION_MODE_INVALID");
   for (const k of ["list", "accounts", "previous"]) {
     const pin = cfg.inputs[k],
       raw = readFileSync(pin.path);
@@ -302,6 +305,254 @@ export function prepareGeneralCustomers(configPath, out) {
     { mode: 0o600 },
   );
   console.log(JSON.stringify(plan.summary));
+  return plan;
+}
+
+export function censusCanonicalUTC(value) {
+  if (
+    typeof value !== "string" ||
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value) ||
+    !Number.isFinite(Date.parse(value)) ||
+    new Date(value).toISOString() !== value
+  )
+    throw Error("CENSUS_RENEWAL_DATE_INVALID");
+  return value;
+}
+export function validateCensusRegistry(context) {
+  if (
+    context?.version !== "m9-census-registry-context-1" ||
+    context.project_id !== "zsezjtswqeijboezvado" ||
+    !/^[a-f0-9]{64}$/.test(context.registry_sha256 ?? "") ||
+    !Array.isArray(context.registered_accounts) ||
+    context.registry_count !== context.registered_accounts.length ||
+    context.registry_count > 5000 ||
+    !context.prior_archive ||
+    !/^[a-f0-9]{64}$/.test(context.prior_archive.source_plan_sha256 ?? "") ||
+    !/^[a-f0-9]{64}$/.test(context.prior_archive.payload_hash ?? "")
+  )
+    throw Error("CENSUS_RENEWAL_REGISTRY_INVALID");
+  const keys = new Set(),
+    refs = new Set();
+  for (const r of context.registered_accounts) {
+    if (
+      !/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(r.ref ?? "") ||
+      r.key !== digest({ tenant: "VSM", client_ref: r.ref }) ||
+      keys.has(r.key) ||
+      refs.has(r.ref)
+    )
+      throw Error("CENSUS_RENEWAL_REGISTRY_INVALID");
+    keys.add(r.key);
+    refs.add(r.ref);
+  }
+}
+export function censusRenewalDelta(prior, current) {
+  const old = new Map(prior.accounts.map((a) => [a.key, a])),
+    now = new Map(current.map((a) => [a.key, a]));
+  const signature = (a) =>
+    JSON.stringify(
+      a.documents
+        .map((d) => ({
+          key: d.key,
+          folio: d.folio,
+          total_cents: d.total_cents,
+          balance_cents: d.balance_cents,
+          occurred_label: d.occurred_label,
+        }))
+        .sort((a, b) => a.key.localeCompare(b.key)),
+    );
+  const sorted = (xs) => xs.sort();
+  return {
+    added_keys: sorted([...now.keys()].filter((k) => !old.has(k))),
+    missing_from_visible_scope: sorted(
+      [...old.keys()].filter((k) => !now.has(k)),
+    ),
+    name_changed_keys: sorted(
+      [...now.keys()].filter(
+        (k) => old.has(k) && old.get(k).name !== now.get(k).name,
+      ),
+    ),
+    balance_changed_keys: sorted(
+      [...now.keys()].filter(
+        (k) => old.has(k) && old.get(k).used_cents !== now.get(k).used_cents,
+      ),
+    ),
+    documents_changed_keys: sorted(
+      [...now.keys()].filter(
+        (k) => old.has(k) && signature(old.get(k)) !== signature(now.get(k)),
+      ),
+    ),
+  };
+}
+export function generalCustomerRenewal(
+  list,
+  captures,
+  prior,
+  context,
+  at,
+  evidence,
+) {
+  validateCensusRegistry(context);
+  censusCanonicalUTC(at);
+  censusCanonicalUTC(list.captured_at);
+  if (
+    !Array.isArray(prior?.accounts) ||
+    prior.source_plan_sha256 !== context.prior_archive.source_plan_sha256 ||
+    prior.source_at !== context.prior_archive.source_at ||
+    prior.observed_until !== context.prior_archive.observed_until ||
+    new Set(prior.accounts.map((a) => a.key)).size !== prior.accounts.length
+  )
+    throw Error("CENSUS_RENEWAL_PRIOR_INVALID");
+  for (const a of captures) {
+    censusCanonicalUTC(a.captured_at);
+    if (
+      a.rows.some(
+        (row) =>
+          row.includes("$") &&
+          (/\b(?:USD|EUR|CAD|GBP|JPY|CNY)\b/.test(row) || !/\bMXN\b/.test(row)),
+      )
+    )
+      throw Error("CENSUS_RENEWAL_CURRENCY_AMBIGUOUS");
+  }
+  const previous = {
+    customers: prior.accounts.map((a) => ({
+      customer_key: a.key,
+      source_ref: a.ref,
+      used_cents: a.used_cents,
+    })),
+    documents: prior.accounts.flatMap((a) =>
+      a.documents.map((d) => ({
+        customer_key: a.key,
+        document_key: d.key,
+        financial_status: "OPEN",
+        source_folio: d.folio,
+        balance_cents: d.balance_cents,
+        source_document_id: null,
+      })),
+    ),
+  };
+  const plan = generalCustomerCensus(list, captures, previous, at);
+  if (Date.parse(plan.source_at) <= Date.parse(prior.observed_until))
+    throw Error("CENSUS_RENEWAL_OVERLAPS_PRIOR");
+  const priorKeys = new Set(prior.accounts.map((a) => a.key)),
+    registered = new Map(
+      context.registered_accounts.map((r) => [r.key, r.ref]),
+    );
+  for (const a of plan.accounts) {
+    a.present_in_prior_census = priorKeys.has(a.customer_key);
+    a.previously_registered = registered.has(a.customer_key);
+    if (
+      a.previously_registered &&
+      registered.get(a.customer_key) !== a.source_ref
+    )
+      throw Error("CENSUS_RENEWAL_REGISTRY_INVALID");
+  }
+  const normalized = plan.accounts.map((a) => ({
+    key: a.customer_key,
+    name: a.name,
+    used_cents: a.used_cents,
+    documents: a.documents.map((d) => ({
+      key: d.document_key,
+      folio: d.folio,
+      total_cents: d.total_cents,
+      balance_cents: d.balance_cents,
+      occurred_label: d.occurred_label,
+    })),
+  }));
+  const delta = censusRenewalDelta(prior, normalized);
+  for (const a of plan.accounts) {
+    a.holds = a.holds.filter((h) => !h.startsWith("PREVIOUS_"));
+    if (delta.balance_changed_keys.includes(a.customer_key))
+      a.holds.push("PREVIOUS_BALANCE_CHANGED");
+    if (delta.documents_changed_keys.includes(a.customer_key))
+      a.holds.push("PREVIOUS_DOCUMENTS_CHANGED");
+    if (delta.name_changed_keys.includes(a.customer_key))
+      a.holds.push("PRIOR_NAME_CHANGED");
+    if (
+      a.used_cents !== null &&
+      a.overdue_cents !== null &&
+      a.overdue_cents > a.used_cents
+    )
+      a.holds.push("OVERDUE_EXCEEDS_USED");
+    a.holds.sort();
+  }
+  const registeredCount = plan.accounts.filter(
+    (a) => a.previously_registered,
+  ).length;
+  plan.summary = {
+    ...plan.summary,
+    previous_accounts_present: registeredCount,
+    new_source_accounts: plan.accounts.length - registeredCount,
+    prior_census_members: plan.accounts.filter((a) => a.present_in_prior_census)
+      .length,
+    previous_accounts_missing: delta.missing_from_visible_scope.length,
+    review_accounts: plan.accounts.filter((a) => a.holds.length).length,
+    accounts_financially_changed: new Set([
+      ...delta.balance_changed_keys,
+      ...delta.documents_changed_keys,
+    ]).size,
+  };
+  const allowed = new Set([
+    "DUPLICATE_NAME_NOT_MERGED",
+    "PREVIOUS_BALANCE_CHANGED",
+    "PREVIOUS_DOCUMENTS_CHANGED",
+    "PRIOR_NAME_CHANGED",
+  ]);
+  return {
+    ...plan,
+    protocol: "m9-census-renewal-plan-1",
+    expected_context: context,
+    evidence,
+    delta,
+    archive_eligible:
+      plan.accounts.every(
+        (a) =>
+          a.holds.every((h) => allowed.has(h)) &&
+          Number.isSafeInteger(a.used_cents) &&
+          a.used_cents >= 0,
+      ) && Number.isSafeInteger(plan.summary.source_used_cents),
+  };
+}
+export function prepareGeneralCustomerRenewal(cfg, out) {
+  const inputs = {},
+    evidence = {};
+  for (const k of ["list", "accounts", "prior", "registry"]) {
+    const pin = cfg.inputs[k],
+      raw = readFileSync(pin.path);
+    if (sha(raw) !== pin.sha256) throw Error("INPUT_CHANGED:" + k);
+    inputs[k] = JSON.parse(raw);
+    evidence[
+      {
+        list: "list_sha256",
+        accounts: "accounts_sha256",
+        prior: "prior_payload_sha256",
+        registry: "registry_snapshot_sha256",
+      }[k]
+    ] = pin.sha256;
+  }
+  const plan = generalCustomerRenewal(
+    inputs.list,
+    inputs.accounts,
+    inputs.prior,
+    inputs.registry,
+    cfg.assessment_at,
+    evidence,
+  );
+  // Renewal outputs are immutable expedients; legacy preparation stays unchanged.
+  mkdirSync(resolve(out), { mode: 0o700 });
+  const files = {
+    "plan-lectura.json": JSON.stringify(plan, null, 2) + "\n",
+    "resumen.json": JSON.stringify(plan.summary, null, 2) + "\n",
+    "delta.json": JSON.stringify(plan.delta, null, 2) + "\n",
+    "cola-detalles.json":
+      JSON.stringify(generalDetailQueue(plan, { documents: [] }), null, 2) +
+      "\n",
+    "reporte.html": censusHTML(plan).replace(
+      "<h1>Padrón general SICAR</h1>",
+      `<h1>Renovación histórica SICAR</h1><section class="notice"><p>${plan.delta.added_keys.length} cuentas nuevas respecto al censo anterior; ${plan.delta.missing_from_visible_scope.length} no visibles, sin presumir su eliminación ni saldo cero. Las etiquetas de registro corresponden al snapshot actual y no cambian el archivo anterior. Sólo archivo: no abre deudas.</p></section>`,
+    ),
+  };
+  for (const [name, content] of Object.entries(files))
+    writeFileSync(resolve(out, name), content, { mode: 0o600, flag: "wx" });
   return plan;
 }
 if (
