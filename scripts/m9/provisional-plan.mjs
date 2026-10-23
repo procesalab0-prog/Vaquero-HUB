@@ -151,7 +151,7 @@ export function provisionalPlan({
     source_rows_sha256: digest(rows),
     destination_sha256: digest(snapshot),
     summary: {
-      pending: rows.length - staged.size,
+      pending: records.length + held.length,
       eligible_codes: records.length,
       held_codes: held.length,
     },

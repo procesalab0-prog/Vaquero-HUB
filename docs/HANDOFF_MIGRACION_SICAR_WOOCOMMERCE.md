@@ -3023,3 +3023,80 @@ fueraGit. Publicar sólo Preview; aceptación/despliegue se documentan al conclu
 Siguiente: corteWoo autenticado, actualizar21cambios mediante planes independientes,
 36campos físicos del piloto y entregas aún UNKNOWN, proveedor sandbox auténtico.
 No main, producción ni Woo real modificados.
+
+
+### Aceptación Preview 0.90 y cierre del bloque
+
+Despliegue SUCCESS fe8ac8845e2e6db795dc24945ceeb8c22f2b7efe; árbol idéntico
+c1dd24d561cf33b3b9ac48dc90f3e7d07493678b, sólo codex/m9-staging-review.
+Vercel: https://vercel.com/procesa-lab/vaquero-hub/3f6ms2ges7HzXPUFRpQ1GwL5jkkr .
+ADMIN real verificó versión0.90.0, aviso del corte16,396/15altas, resumen15,891,
+Woo19 claramente distinguido y búsqueda del código nuevo con precio público exacto.
+Escritorio1440 y teléfono390 sin desborde horizontal; viewport restituido. No se
+pulsaron controles financieros. Navegación conserva las175tablas completas.
+
+Expediente privado: outputs/m9-renovacion-integrada-2026-10-22/reporte.html,
+manifest.json y verificar-bloque.mjs. Verificador offline PASS19comprobaciones,
+103archivos fijados; sin red, SQL ni escrituras. Cubre fuentes, dos corridas,
+rollback172/174/175, deltas de COMMIT, controles apagados, seguridad y aceptación
+Preview ligada al mismo commit/árbol. Recibos de agentes re-verificados:12,23,17
+archivos. Se detuvo únicamente el contenedor localm9-woo-qa-20261022, conservando
+sus bases. No main ni producción. Bloque cerrado; no declara terminada la
+migración total ni autoriza arranque operativo.
+
+
+### Bloque de ampliación y preparación operativa · Preview 0.91 · 22 octubre2026
+
+Tres agentes y coordinador:70altas provisionales adicionales,10precios públicos
+y lector de entregas por documento. Sigue exclusivamente staging; no main,
+Woo real, existencias, costos ni saldos operativos.
+
+Cobertura por intersección literal con SICAR22:15,891→15,961 de16,396,0códigos
+administrados ajenos al origen.97.35% de presencia de catálogo;435 pendientes.
+No representa un porcentaje global. Cuatro lotes20/20/20/10 ensayados con
+alta/replay/ROLLBACK,175tablas idénticas cada vez. LuegoCOMMIT y comprobación
+de toda fila previa bajo barrera; ocho tablas+70 y audit+420, sin cambios ajenos.
+85altas en los últimos dos bloques, cada una con código literal,costoNULL,
+atributos{},sin WooID ni inventario,web_release=false. Los motivos de435held
+se superponen:316exhibición,86taxonomía,40precioinválido,3conflictocategoría.
+Se corrigió pending para no descontar códigos de destino ajenos a SICAR.
+
+Diez precios980→1150 conservados exclusivamente enMiTienda, con m9_rows como
+proyección vigente. Corteoriginal/source_sha/raw/source_evidence inmutables;
+la procedencia nueva queda en eventoAPPLY. Provisional/UUID/Clave1/costoNULL/
+webfalse conservados, sin contexto Woo. Los otros11cambios siguen held.
+APPLY/replay/REVERSE/replay conROLLBACK176idénticas;COMMIT10/replay sólo cambia
+variants,m9_rows,diario+1 y audit+11, otras172tablas idénticas. Compensación
+condicionada rechaza una edición posterior.24SQL+24unitarias y2carreras reales
+locales, sin interbloqueos; revisión independiente sinP1.
+
+Nuevo /migracion/entregas:8documentos por página, opciones informativas juntas,
+enlace por documento exacto y deudaSX00000 sin convertir cantidad en piezas.
+SóloGET/lectura, todavía sin captura de respuestas ni cambios de deuda/stock.
+ADMIN activo+customers.manage+guardia de staging antes de cada ruta del lector;
+wrapperpublicinvoker/helperappdefiner consearch_pathvacío y actoreslimitados.
+Escritores siguenprivados. QA22negativos/6ACL/25unitarias,168tablas idénticas.
+Lectura real previa aldeploy:11páginas,84documentos únicos,166/17archivo más1
+sidecar=167identidades;183UNKNOWN y0observaciones;176tablas idénticas. Anon y
+service_role sin acceso;0grants nuevos sobre escritores o helpers de precios.
+
+Evaluador reproducible por hitos con36unitarias: conserva medición anterior y
+posterior70 por separado.5,871/5,871copias de variantes confoto documentada es
+un subconjunto, no cobertura de fotos de todo catálogo.113ausencias explícitas
+preservadas. Piloto0/36campos,0/12códigos completos. Entregas0/183confirmadas,
+primer ciclo externo auténtico0/1. GlobalyETAsinmedir; no sumar unidades.
+Falta proveedor sandbox acreditado y perfil de aislamiento: guard1.6 impide
+checkout/egress/gateways y el GET financiero sólo admite pedidos sintéticos
+cancelados. No habilitar esto ni un sexto ensayo bajo autorizaciones anteriores.
+
+Validación integrada:1761pruebas/144archivos,lint/tipos/buildPASS. Seguridad119→120
+INFO por nuevo diario privado conRLS;WARN134+1 anteriores idénticos. Worker,
+captura,stockyfinanzas false,ensayos5,libroweb0; libro nativo de crédito0.
+7saldos/$11,910 en libro separado de ensayo intactos; no son apertura nativa.
+
+DDL remoto real:20261023012737 m9_sicar_public_price_refresh,
+20261023013222 m9_delivery_document_review_read. Archivos locales conservan sus
+marcasCLI; no repetir dbpush ni editarSQLaplicado. Expediente privado
+outputs/m9-avance-operativo-2026-10-22 y m9-hitos-preparacion-2026-10-22.
+SICAR22 intacto;Woo completo sigue19octubre. Usuario aplazó Chrome; se continúa
+staging sin exigir acceso. Deploy/aceptaciónPreview0.91 se documentan al terminar.

@@ -1,0 +1,94 @@
+.page {
+  composes: page from "../migration.module.css";
+}
+.notice {
+  composes: notice from "../migration.module.css";
+}
+.cards {
+  composes: cards from "../migration.module.css";
+}
+.panel {
+  composes: panel from "../migration.module.css";
+}
+.filters {
+  composes: filters from "../migration.module.css";
+}
+.links {
+  composes: links from "../migration.module.css";
+}
+.pagination {
+  composes: pagination from "../migration.module.css";
+}
+.documents {
+  display: grid;
+  gap: 1rem;
+}
+.document {
+  border: 1px solid var(--border, #ded8ce);
+  border-radius: 14px;
+  padding: 1.1rem;
+  min-width: 0;
+}
+.document h3 {
+  font-size: 1.2rem;
+  overflow-wrap: anywhere;
+}
+.document h4 {
+  font-size: 1.1rem;
+}
+.badge {
+  display: inline-block;
+  border: 1px solid #bd9b3a;
+  border-radius: 99px;
+  padding: 0.25rem 0.7rem;
+  background: #fff2c6;
+  color: #583f08;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 0.6rem;
+  list-style: none;
+  padding: 0;
+}
+.options li {
+  border: 1px solid var(--border, #ded8ce);
+  border-radius: 10px;
+  padding: 0.8rem;
+  background: var(--surface-secondary, #f5f2ec);
+}
+.caption {
+  font-size: 0.92rem;
+  color: var(--muted, #625d54);
+}
+.products,
+.references {
+  border-top: 1px solid var(--border, #ded8ce);
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+}
+.products summary,
+.references summary {
+  cursor: pointer;
+  min-height: 44px;
+  font-weight: 650;
+}
+.products li {
+  margin: 0.9rem 0;
+}
+.document code {
+  overflow-wrap: anywhere;
+}
+.document p {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .document {
+    padding: 0.85rem;
+  }
+  .products ul {
+    padding-left: 1.1rem;
+  }
+}

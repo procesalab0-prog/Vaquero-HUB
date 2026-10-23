@@ -76,3 +76,29 @@ La cuarentena local de eventos sandbox verifica firmas QA y replays; no existe
 un proveedor de pagos autenticado ni un receptor habilitado. Siguen cinco
 ensayos conectados, worker/captura/stock/finanzas false y libro web vacío.
 Una firma QA no acredita que Woo haya cobrado.
+
+
+## Continuación · 70 provisionales adicionales
+
+Comparación literal del corte22 con todos los códigos administrados de staging:
+15,891/16,396 antes, cero códigos administrados fuera de ese corte. Los505
+restantes se revisaron mediante provisionalPlan existente:70elegibles y435
+retenidos. Motivos superpuestos:316sóloexhibición,86clasificación,40precio no
+válido para esta vía y3conflictos de categoría. No se publica ni agrupa nada.
+
+Se corrigió el contador pending para contar sólo filas del origen realmente
+pendientes: un código de ensayo ajeno al origen en destino no debe descontarse.
+Prueba de regresión con código externo, incluido el caso todo origen ya cargado.
+
+Plan privado y cuatro lotes20+20+20+10. Antes de cada COMMIT: alta/replay,
+ROLLBACK y175tablas idénticas. Cada COMMIT comprueba todas las filas previas
+bajo barrera y sólo ocho tablas de registro/catálogo incrementadas más seis
+entradas de auditoría por código.70altas conservadas, sin existencias, costos,
+WooID, atributos inferidos ni habilitaciónweb.15961códigos ahora en staging,
+intersección15961/16396=97.35% de presencia en el catálogo;435 pendientes.
+No es un porcentaje de preparación operativa ni de migración global.
+
+Expediente outputs/m9-avance-operativo-2026-10-22. Las capturas antes y después
+son independientes y conservadas; el corteWoo permanece19octubre. Usuario
+aplazó desbloqueo de Chrome, sin detener staging. Tres agentes continúan precio
+público limitado, lectura de expedientes de entrega y medición por hitos.

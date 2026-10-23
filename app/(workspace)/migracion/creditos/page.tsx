@@ -96,11 +96,19 @@ type CreditView = {
 export default async function CreditDetailReview({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; filter?: string; page?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    filter?: string;
+    page?: string;
+    document?: string;
+  }>;
 }) {
   if (!customerReviewEnabled(process.env.NEXT_PUBLIC_SUPABASE_URL)) notFound();
   const { supabase } = await requirePermission("customers.manage");
   const params = await searchParams;
+  const focusedDocument = /^[a-f0-9]{64}$/.test(params.document ?? "")
+    ? params.document
+    : null;
   const q = (params.q ?? "").slice(0, 100),
     filter = ["all", "review", "unmapped", "paid"].includes(params.filter ?? "")
       ? params.filter!
@@ -235,7 +243,10 @@ export default async function CreditDetailReview({
         </p>
         <div className={styles.accounts}>
           {view.rows.map((a) => (
-            <details key={a.key}>
+            <details
+              key={a.key}
+              open={a.documents.some((d) => d.key === focusedDocument)}
+            >
               <summary>
                 <span>{a.name}</span>
                 <span>
@@ -248,7 +259,11 @@ export default async function CreditDetailReview({
                 identidad aunque coincida el nombre con otra.
               </p>
               {a.documents.map((d) => (
-                <details key={d.key}>
+                <details
+                  key={d.key}
+                  id={`documento-${d.key}`}
+                  open={d.key === focusedDocument}
+                >
                   <summary>
                     <span>
                       Folio {d.folio} ·{" "}
@@ -317,8 +332,10 @@ export default async function CreditDetailReview({
                       <li key={l.index}>
                         <strong>{l.description}</strong>
                         <span>
-                          Código literal: <code>{l.barcode}</code> · Cantidad de
-                          origen: {l.quantity} pza.
+                          Código literal: <code>{l.barcode}</code> ·{" "}
+                          {l.barcode === "SX00000"
+                            ? "Renglón contable; cantidad física sin confirmar."
+                            : `Cantidad anotada en origen: ${l.quantity}.`}
                         </span>
                         <span>
                           {l.variant_id

@@ -91,10 +91,16 @@ export default async function MigrationProgress() {
       >
         <h2>Corte de SICAR del 22 de octubre</h2>
         <p>
-          Se revisaron 16,396 códigos y se incorporaron 15 productos
-          provisionales adicionales a este ambiente. Conservan su código de
-          barras; sus existencias no se cargaron. Los cambios de precio y
-          descripción quedaron separados para revisión.
+          Se revisaron 16,396 códigos. En los últimos dos bloques se incorporaron
+          85 productos provisionales: 15 en el primero y 70 en el segundo.
+          Conservan su código de barras; sus existencias no se cargaron y su
+          agrupación por modelo sigue pendiente.
+        </p>
+        <p>
+          La comparación conservada del 22 de octubre encontró 15,961 códigos
+          del corte en staging: 97.35% del catálogo y 435 pendientes. Este
+          porcentaje mide presencia de códigos; no mide inventario confirmado,
+          entregas ni preparación para operar.
         </p>
         <p>
           La conciliación completa de Woo usa todavía el archivo del 19 de

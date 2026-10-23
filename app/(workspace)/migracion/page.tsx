@@ -112,6 +112,9 @@ export default async function MigrationCenter({
         <Link className="button primary" href="/migracion/creditos">
           Revisar créditos, abonos y productos
         </Link>
+        <Link className="button secondary" href="/migracion/entregas">
+          Revisar entregas por documento
+        </Link>
       </section>
       <section className={styles.panel}>
         <h2>Ensayo de la venta web y su reversión</h2>

@@ -61,6 +61,13 @@ describe("M9 independent provisional identity", () => {
     a.snapshot.codes.push({ barcode: "0007" });
     expect(provisionalPlan(a).summary.eligible_codes).toBe(0);
   });
+  it("counts only source codes as pending when staging has unrelated codes", () => {
+    const a = args(row());
+    a.snapshot.codes.push({ barcode: "QA-OUTSIDE-SICAR" });
+    expect(provisionalPlan(a).summary.pending).toBe(1);
+    a.snapshot.codes.push({ barcode: "0007" });
+    expect(provisionalPlan(a).summary.pending).toBe(0);
+  });
   it("does not reactivate or rename a conflicting destination category", () => {
     const a = args(row());
     a.snapshot.categories = [{ name: "BOTAS", is_active: false }];
