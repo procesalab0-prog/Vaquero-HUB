@@ -2,6 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requirePermission } from "@/lib/auth/authorization";
 import { customerReviewEnabled } from "@/lib/customer-migration";
+import {
+  historicalCreditEvidence,
+  hasPreviousCreditDifference,
+} from "@/lib/migration-credit-evidence";
 import styles from "./migration.module.css";
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -70,6 +74,28 @@ export default async function MigrationCenter({
   });
   if (error) throw Error("No se pudo consultar la preparación de migración.");
   const view = data as Census;
+  const evidencePairs = await Promise.allSettled(
+    view.rows
+      .filter(hasPreviousCreditDifference)
+      .slice(0, 20)
+      .map(async (a) => {
+        const { data: detail, error: detailError } = await supabase.rpc(
+          "m9_credit_detail_read",
+          {
+            p_input: { q: a.ref, filter: "all", page: 1 },
+          },
+        );
+        return [
+          a.key,
+          detailError ? null : historicalCreditEvidence(a, detail),
+        ] as const;
+      }),
+  );
+  const historicalEvidence = new Map(
+    evidencePairs.flatMap((result) =>
+      result.status === "fulfilled" && result.value[1] ? [result.value] : [],
+    ),
+  );
   const pageLink = (n: number) =>
     "/migracion?" +
     new URLSearchParams({ q, filter, page: String(n) }).toString();
@@ -270,6 +296,18 @@ export default async function MigrationCenter({
                   El saldo o sus documentos cambiaron frente al corte anterior.
                   La diferencia queda por revisar; no acredita un abono,
                   liquidación ni entrega.
+                </p>
+              )}
+              {historicalEvidence.get(a.key) && (
+                <p className={styles.notice}>
+                  Saldo y folios coinciden con el detalle histórico del{" "}
+                  {fecha(historicalEvidence.get(a.key)!.source_until)}. No
+                  acredita vigencia, pagos nuevos ni entregas.{" "}
+                  <Link
+                    href={`/migracion/creditos?${new URLSearchParams({ q: a.ref })}`}
+                  >
+                    Ver evidencia histórica
+                  </Link>
                 </p>
               )}
               {a.holds.includes("PRIOR_NAME_CHANGED") && (

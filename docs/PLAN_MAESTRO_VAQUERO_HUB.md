@@ -5858,3 +5858,20 @@ Cerrado el bloque descrito en [M9_RENOVACION_STAGING_2026_10_22.md](M9_RENOVACIO
 Padrón general capturado por intervalo el 22 octubre 20:53–21:38: 172 cuentas, 84 documentos, $242,958 observados. Nuevo archivo histórico añadido tras preparación doble idéntica, revisión independiente y ensayo+replay+rollback de 179 tablas. Sólo cambia el archivo (1→2), sin actualizar fuentes, registro, saldos operativos ni entregas. 114 identidades registradas y 58 adicionales; 171 miembros del censo previo, sin reescribir su flag histórico. Dos diferencias de saldo/documentos conservadas para revisión, sin inferir pagos. Auth real de Preview confirmó lectura del nuevo corte.
 
 Se mantienen 15,961/16,396 códigos presentes (97.35% de presencia), 435 retenidos, cuatro cambios de renovación no aplicados, 36 cantidades y 183 entregas sin confirmar; cinco ensayos Woo congelados y compuertas apagadas. QA raíz: 1,912 unitarias/151 archivos, lint y build PASS. Usuario aplazó Chrome; no pedir de nuevo en este bloque. Woo completo autenticado y conteo físico siguen pendientes. Sin main ni producción.
+
+
+### Aceptación del Preview de renovación
+
+Commit publicado `b4a77a08b64f2b236ff14191a4d29b7adc67bef1`, árbol probado `713796bf6db319d1761cd7c100fd55820d0dd495`, sólo `codex/m9-staging-review`. Despliegue SUCCESS: https://vercel.com/procesa-lab/vaquero-hub/CpqPxkNNqbt49uxEXfJ8yuVzbbef . La versión de aplicación sigue en 0.92.0; no se anuncia una versión distinta por este bloque.
+
+Auth ADMIN real comprobó el padrón 172/84/114/58 y los dos casos con diferencia: aumento documental y cero observado, ambos retenidos sin atribuir abonos ni entregas. Las etiquetas distinguen registro de origen de pertenencia al censo anterior; nombres duplicados y diferencias financieras ya no comparten un aviso engañoso. Auditoría de las 179 tablas sin diferencias después de las consultas; fila anterior del archivo exacta y payload nuevo íntegro.
+
+Expediente privado reproducible: `outputs/m9-renovacion-staging-2026-10-22/reporte.html`, `manifest.json` y `verificar.mjs`. Se conservan capturas, recibos, auditorías, revisiones, pares reproducidos y snapshots del código publicado. QA local detenido al cerrar; fuentes e historia conservadas. Sin main, Woo real, producción ni activación operativa.
+
+## Continuación paralela de M9 · 23 octubre 2026
+
+Bloque de catálogo, clientes y Woo detallado en [M9_CONTINUACION_INTEGRAL_2026_10_23.md](M9_CONTINUACION_INTEGRAL_2026_10_23.md). Sólo staging/Preview. Precio1 de 11777 actualizado $8,100→$8,300 después de ensayo reversible y auditoría exacta de 179 tablas; familia, fotos, origen y Woo conservados. Quedan tres cambios de renovación retenidos. Presencia 15,961/16,396 (97.35%), distinta de migración global.
+
+Dos cuentas/tres documentos consultados otra vez, ensayo TEMP de siete líneas con cinco rechazos y rollback completo; sin aperturas ni nuevos pagos. Indicador documental histórico en Preview conserva holds y fecha. Anexo adicional separado con conflicto de talla retenido. Las 36 cantidades físicas y 183 entregas globales siguen sin confirmar. No se reemplazó el archivo global por uno parcial.
+
+Lector privado de recuperación de recibos instalado con ACL cerradas y escritor financiero idéntico. Ciclo local con COMMIT recupera resultados sin reposteo; staging verifica rechazos sin crear campaña/recibos. Cancelaciones con caja original cerrada siguen pendientes; cinco ensayos Woo y compuertas congelados. Usuario aplazó Woo completo autenticado en Chrome. QA raíz 1,992 unitarias/154 archivos, lint, tipos y build correctos. Sin main ni producción.

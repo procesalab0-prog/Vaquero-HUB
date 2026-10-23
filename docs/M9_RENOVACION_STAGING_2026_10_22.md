@@ -35,3 +35,12 @@ DDL remoto: `20261023033246 m9_sicar_description_refresh_seven` y `2026102303350
 Expediente privado: `outputs/m9-renovacion-staging-2026-10-22/`, con ensayos/commits, auditorías completas, controles, contratos, QA, manifest y verificador offline. Capturas de clientes y payloads permanecen fuera de Git, carpetas 700/archivos 600.
 
 Siguiente: renovar Woo completo cuando Chrome esté disponible; confirmar físico y mercancía comprometida del piloto; revisar las dos diferencias documentales con detalle vigente antes de cualquier apertura. La prueba completa de pasarela sigue aparte. El arranque permanece por etapas y sólo con evidencias confirmadas.
+
+
+### Aceptación del Preview de renovación
+
+Commit publicado `b4a77a08b64f2b236ff14191a4d29b7adc67bef1`, árbol probado `713796bf6db319d1761cd7c100fd55820d0dd495`, sólo `codex/m9-staging-review`. Despliegue SUCCESS: https://vercel.com/procesa-lab/vaquero-hub/CpqPxkNNqbt49uxEXfJ8yuVzbbef . La versión de aplicación sigue en 0.92.0; no se anuncia una versión distinta por este bloque.
+
+Auth ADMIN real comprobó el padrón 172/84/114/58 y los dos casos con diferencia: aumento documental y cero observado, ambos retenidos sin atribuir abonos ni entregas. Las etiquetas distinguen registro de origen de pertenencia al censo anterior; nombres duplicados y diferencias financieras ya no comparten un aviso engañoso. Auditoría de las 179 tablas sin diferencias después de las consultas; fila anterior del archivo exacta y payload nuevo íntegro.
+
+Expediente privado reproducible: `outputs/m9-renovacion-staging-2026-10-22/reporte.html`, `manifest.json` y `verificar.mjs`. Se conservan capturas, recibos, auditorías, revisiones, pares reproducidos y snapshots del código publicado. QA local detenido al cerrar; fuentes e historia conservadas. Sin main, Woo real, producción ni activación operativa.
