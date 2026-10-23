@@ -85,6 +85,24 @@ export default async function MigrationProgress() {
           distintas. No se suman para inventar un porcentaje global.
         </p>
       </section>
+      <section
+        className={styles.notice}
+        aria-label="Último corte de catálogo preparado"
+      >
+        <h2>Corte de SICAR del 22 de octubre</h2>
+        <p>
+          Se revisaron 16,396 códigos y se incorporaron 15 productos
+          provisionales adicionales a este ambiente. Conservan su código de
+          barras; sus existencias no se cargaron. Los cambios de precio y
+          descripción quedaron separados para revisión.
+        </p>
+        <p>
+          La conciliación completa de Woo usa todavía el archivo del 19 de
+          octubre. Se consultaron nuevamente las categorías públicas de siete
+          familias y se revalidaron después de completar sus fotos. Esto no
+          autoriza publicar ni cobrar.
+        </p>
+      </section>
       <div className={styles.cards}>
         <section>
           <strong>{n(v.catalog.loaded_codes)}</strong>
@@ -138,6 +156,10 @@ export default async function MigrationProgress() {
             <b>Siguiente:</b> acreditar un corte actualizado por cuenta completa
             antes de abrir saldos; conservar abonos cancelados y evitar abrir
             dos veces la misma deuda.
+          </p>
+          <p>
+            Las entregas se preparan para revisión por documento completo. Una
+            observación de revisión no mueve mercancía ni modifica el saldo.
           </p>
           <Link className="button primary" href="/migracion/creditos">
             Revisar créditos y abonos
