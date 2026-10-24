@@ -3249,3 +3249,22 @@ Emmanuel fijó esa fecha el 23 de octubre, con el flujo completo funcionando. Pl
 Continuación en [M9_ARRANQUE_INTEGRAL_2026_10_23.md](M9_ARRANQUE_INTEGRAL_2026_10_23.md): hoja autenticada imprimible del piloto (12 códigos, 36 campos vacíos), revisión compacta de ocho folios y retorno contextual desde evidencia. Relectura SICAR de los doce códigos: 40 piezas mostradas, sin cambios de identidad; no constituye conteo físico ni existencia disponible.
 
 Cancelación Woo acotada a FULL_CANCEL sintético de mantenimiento, con capacidad privada de un uso y sesión original cerrada: aceptación local 40 controles/34 rechazos y dos carreras. Ensayo reversible y rechazos en staging conservaron las 179 tablas; después se instaló sólo el forward revisado. No hubo cobros, inventario o sexta campaña conectada remotos. Compuertas Woo apagadas, físico pendiente y apertura financiera de clientes sin habilitar. Producción y main permanecen intactos. Objetivo de pruebas: 2 de noviembre en La Piedad, sujeto a corte actualizado y aceptación integral.
+
+## M9 · Auditoría actual y preparación del corte · 23 octubre 2026
+
+[Expediente y límites](M9_PREPARACION_CORTE_INTEGRAL_2026_10_23.md). Lectura completa
+de 15,961 filas actuales: 15,876 UUID previos conservados y 85 adicionales
+observados; 435 retenidos del corte SICAR22. Taxonomía coincide en todas las
+filas. Los 1,205 deltas de proyección no equivalen a nuevas preguntas ni bloqueos.
+Doce diferencias sólo de Precio1 (1,790 → 1,990) tienen plan protegido pendiente
+de QA, sin aplicación. Fotos: 5,871 copias con metadatos/mapeo/lector exactos,
+sin releer bytes; 113 ausencias explícitas y 1,393 huecos de evidencia separados.
+
+La hoja imprimible del piloto añade referencias de documentos mediante lectores
+existentes y sin datos personales. Archivo histórico completo 84/183, cero
+coincidencias literales con doce códigos no significa cero compromisos.
+Las 36 casillas físicas siguen vacías. Paquete siguiente Woo sólo preparado,
+no ejecutado, con snapshot caducado y nuevas condiciones de QA/autorización.
+WordPress real quedó autenticado con intervención del usuario; formulario de exportación
+recuperado y CSV generándose, sin acreditar aún fuente nueva ni cambios comerciales. 2,175 unitarias, lint, tipos
+y build correctos. Sólo Preview; main y producción intactos.

@@ -114,4 +114,25 @@ describe("complete staging catalog audit", () => {
     expect(reasons).toContain("INVALID_SOURCE_PUBLIC_PRICE");
     expect(reasons).toContain("DUPLICATE_SOURCE_ATTRIBUTE");
   });
+  it("uses an observed native parent only when an independent projection omits it", () => {
+    const { snapshot, source } = fixture();
+    source[0].product_id = null;
+    delete snapshot.rows[0].current.woo_product_id;
+    delete snapshot.rows[0].stored.woo_product_id;
+    snapshot.rows[0].native_woo_product_id = null;
+    const before = JSON.stringify(snapshot);
+    expect(auditStagedCatalog(snapshot, source).summary.exact_rows).toBe(1);
+    expect(JSON.stringify(snapshot)).toBe(before);
+    delete snapshot.rows[0].native_woo_product_id;
+    expect(auditStagedCatalog(snapshot, source).summary.review_rows).toBe(1);
+  });
+  it("retains a contradiction between observed native Woo IDs and the projection", () => {
+    const { snapshot, source } = fixture();
+    snapshot.rows[0].native_woo_product_id = 12;
+    snapshot.rows[0].native_woo_variation_id = 13;
+    expect(auditStagedCatalog(snapshot, source).results[0].reasons).toEqual([
+      "NATIVE_WOO_PRODUCT_DIFFERS_FROM_PROJECTION",
+      "NATIVE_WOO_VARIATION_DIFFERS_FROM_PROJECTION",
+    ]);
+  });
 });

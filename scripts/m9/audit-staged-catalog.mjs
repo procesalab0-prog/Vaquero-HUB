@@ -53,6 +53,17 @@ export function auditStagedCatalog(snapshot, sourceRows) {
         reasons.push("CATALOG_DIFFERS_FROM_APPLIED_ROW");
       if (current.cost_cents !== null)
         reasons.push("UNKNOWN_COST_MUST_REMAIN_NULL");
+      if (
+        Object.hasOwn(row, "native_woo_product_id") &&
+        Object.hasOwn(current, "woo_product_id") &&
+        row.native_woo_product_id !== current.woo_product_id
+      )
+        reasons.push("NATIVE_WOO_PRODUCT_DIFFERS_FROM_PROJECTION");
+      if (
+        Object.hasOwn(row, "native_woo_variation_id") &&
+        row.native_woo_variation_id !== current.woo_variation_id
+      )
+        reasons.push("NATIVE_WOO_VARIATION_DIFFERS_FROM_PROJECTION");
       const candidates = byCode.get(current.barcode) ?? [];
       if (candidates.length !== 1)
         reasons.push(
@@ -88,13 +99,23 @@ export function auditStagedCatalog(snapshot, sourceRows) {
         };
         if (expected.price_cents === null)
           reasons.push("INVALID_SOURCE_PUBLIC_PRICE");
-        for (const [field, value] of Object.entries(expected))
-          if (stable(current[field]) !== stable(value))
+        for (const [field, value] of Object.entries(expected)) {
+          // Independent SICAR families omit the Woo parent in their installed
+          // projection. Only an explicitly observed native sidecar may supply it;
+          // never infer it from the source candidate or alter current/stored.
+          const actual =
+            field === "woo_product_id" &&
+            !Object.hasOwn(current, field) &&
+            Object.hasOwn(row, "native_woo_product_id")
+              ? row.native_woo_product_id
+              : current[field];
+          if (stable(actual) !== stable(value))
             differences.push({
               field,
-              current: current[field] ?? null,
+              current: actual ?? null,
               source: value ?? null,
             });
+        }
       }
       return {
         barcode: current.barcode,

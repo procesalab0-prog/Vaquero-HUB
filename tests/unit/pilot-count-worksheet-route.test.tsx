@@ -63,11 +63,43 @@ function view() {
     })),
   };
 }
+function emptyDocuments() {
+  return {
+    protocol: "m9-delivery-review-page-1",
+    ready: true,
+    read_only: true,
+    responses_enabled: false,
+    operational_import_allowed: false,
+    archive_sha256: "b".repeat(64),
+    source_from: "2026-10-22T18:00:00.000Z",
+    source_until: "2026-10-22T18:00:00.000Z",
+    source_older_than_24h: true,
+    summary: {
+      documents: 0,
+      lines: 0,
+      unknown_documents: 0,
+      unknown_lines: 0,
+      raw_mapped_lines: 0,
+      raw_unmapped_lines: 0,
+      live_documentary_links: 0,
+      effective_documentary_identities: 0,
+      observed_documents: 0,
+    },
+    total: 0,
+    page: 1,
+    pages: 1,
+    page_size: 8,
+    rows: [],
+  };
+}
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.enabled = true;
   mocks.permission.mockResolvedValue({ supabase: { rpc: mocks.rpc } });
-  mocks.rpc.mockResolvedValue({ data: view(), error: null });
+  mocks.rpc.mockImplementation(async (name) => ({
+    data: name === "m9_legacy_registry_read" ? view() : emptyDocuments(),
+    error: null,
+  }));
 });
 describe("pilot sheet read-only server boundary", () => {
   it("rejects production before authorization or any RPC", async () => {
@@ -86,15 +118,17 @@ describe("pilot sheet read-only server boundary", () => {
       ...view(),
       customers: [{ name: "PRIVATE CUSTOMER", phone: "PRIVATE PHONE" }],
     };
-    mocks.rpc.mockResolvedValue({ data, error: null });
+    mocks.rpc.mockImplementation(async (name) => ({
+      data: name === "m9_legacy_registry_read" ? data : emptyDocuments(),
+      error: null,
+    }));
     const response = await GET(),
       html = await response.text();
     expect(response.status).toBe(200);
     expect(mocks.permission).toHaveBeenCalledWith("inventory.count");
-    expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith(
-      "m9_legacy_registry_read",
-      { p_input: { q: "", page: 1 } },
-    );
+    expect(mocks.rpc).toHaveBeenNthCalledWith(1, "m9_legacy_registry_read", {
+      p_input: { q: "", page: 1 },
+    });
     expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect(response.headers.get("content-security-policy")).toContain(
       "default-src 'none'",
@@ -102,7 +136,37 @@ describe("pilot sheet read-only server boundary", () => {
     expect(html).not.toContain("PRIVATE");
     expect(html).toContain("12 códigos / 36 campos");
     expect(html).not.toContain("<script");
+    expect(mocks.rpc).toHaveBeenCalledTimes(3);
+    expect(mocks.rpc).toHaveBeenNthCalledWith(2, "m9_delivery_review_read", {
+      p_input: { q: "", filter: "all", page: 1 },
+    });
+    expect(html).toContain(
+      "Sin coincidencia en este archivo histórico; compromisos actuales no evaluados",
+    );
   });
+  it.each(["permission", "archive-drift", "unavailable"])(
+    "refuses partial printable output after documentary %s",
+    async (kind) => {
+      let reads = 0;
+      mocks.rpc.mockImplementation(async (name) => {
+        if (name === "m9_legacy_registry_read")
+          return { data: view(), error: null };
+        reads++;
+        const data = emptyDocuments();
+        if (kind === "permission")
+          return { data: null, error: { code: "42501", message: "PRIVATE" } };
+        if (kind === "archive-drift" && reads > 1)
+          data.archive_sha256 = "c".repeat(64);
+        if (kind === "unavailable") data.ready = false;
+        return { data, error: null };
+      });
+      const response = await GET(),
+        html = await response.text();
+      expect(response.status).toBe(409);
+      expect(html).toContain("no se generó una lista parcial");
+      expect(html).not.toMatch(/PRIVATE|<table|Físico total/);
+    },
+  );
   it.each(["permission", "error", "protocol", "not-read-only", "scope"])(
     "fails closed for%s",
     async (kind) => {

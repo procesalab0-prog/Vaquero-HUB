@@ -1,3 +1,4 @@
+import { loadPilotDocumentReferences } from "@/lib/m9-pilot-document-references";
 import { requirePermission } from "@/lib/auth/authorization";
 import { customerReviewEnabled } from "@/lib/customer-migration";
 import {
@@ -28,10 +29,26 @@ export async function GET() {
   // The existing RPC enforces ADMIN, customers.manage, stage and location.
   // Only stock fields enter the worksheet; customers and their PII are omitted.
   try {
+    // Validate the fixed pilot scope before spending any document reads.
+    buildPilotCountWorksheet(data.stock, {
+      generated_at: new Date().toISOString(),
+      source_kind: "RPC_READ_NOW",
+      source_label: "Hoja existente de staging · m9_legacy_registry_read",
+    });
+    const documentReferences = await loadPilotDocumentReferences(
+      async (page) => {
+        const reply = await supabase.rpc("m9_delivery_review_read", {
+          p_input: { q: "", filter: "all", page },
+        });
+        if (reply.error) throw Error("PILOT_DOCUMENT_READ_UNAVAILABLE");
+        return reply.data;
+      },
+    );
     const sheet = buildPilotCountWorksheet(data.stock, {
       generated_at: new Date().toISOString(),
       source_kind: "RPC_READ_NOW",
       source_label: "Hoja existente de staging · m9_legacy_registry_read",
+      document_references: documentReferences,
     });
     return new Response(renderPilotCountWorksheet(sheet), {
       headers: {
@@ -45,7 +62,7 @@ export async function GET() {
     });
   } catch {
     return new Response(
-      "Cambió el alcance de la hoja. Revisa los doce códigos.",
+      "No se pudo completar la hoja con un único archivo histórico. Revisa permisos, corte y doce códigos; no se generó una lista parcial.",
       {
         status: 409,
         headers: { "Cache-Control": "private, no-store" },
