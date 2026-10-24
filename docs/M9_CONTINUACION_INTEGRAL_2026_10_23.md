@@ -51,3 +51,11 @@ Contrato: [M9_RECUPERACION_RECIBO_WOO_2026_10_23.md](M9_RECUPERACION_RECIBO_WOO_
 Archivos generados por CLI: 20261023184525 y 20261023184526. Versiones remotas: **20261023184559 m9_linked_sicar_public_price_11777** y **20261023184624 m9_woo_native_finance_receipt_recovery**, respectivamente. Contenido SQL exacto; no usar db push para repetirlos. No se añadieron tablas: auditoría de 179 tablas app/public. El inventario MD5 no cubre secuencias, Auth/ACL ni bytes de Storage; esas protecciones tienen comprobaciones separadas.
 
 Expediente privado: outputs/m9-continuacion-integral-2026-10-23/. Incluye recibos, ensayos, auditorías, capturas, manifiestos de agentes, pares reproducidos y verificador offline. Además de los tres clones previstos, se usaron qa_m9_precio11777_v1_20261023 y qa_m9_precio11777_race2_20261023. Se preservan historia y expedientes anteriores; sólo se detiene el contenedor propio al cerrar.
+
+### Aceptación publicada y cierre
+
+Preview SUCCESS: commit `68ed08c3c8d5370651fdad594291cb6f10c9b2e4`, árbol `35e2a0a3b2013795ecff4c06b373cee2e5fe32e4`, sólo `codex/m9-staging-review`. Despliegue: https://vercel.com/procesa-lab/vaquero-hub/FHgBRGtFfAjnyJ4G1d42VkED4mBq . Auth ADMIN real confirmó los dos indicadores históricos y sus fechas, aviso original intacto y enlace de la primera cuenta con sus dos folios. La segunda conserva cero observado y evidencia pagada, sin apertura.
+
+Búsqueda exacta 11777 devuelve una variante talla 56; Productos y ficha muestran $8,300 y foto cargada. Las cuatro variantes hermanas siguen a $8,100 con sus códigos y vínculos; envío Woo deshabilitado. La auditoría de 179 tablas después del navegador es exacta respecto al commit de precio. Seguridad permanece en INFO123 y WARN134+1, sin hallazgos nuevos por este bloque.
+
+Expediente privado cerrado: `outputs/m9-continuacion-integral-2026-10-23/reporte.html`, `manifest.json` y `verificar.mjs`: PASS10 controles, 170 archivos y 75 pins de preimágenes. Revisión independiente sin bloqueantes, sin afirmar aceptación de navegador por el agente; esa aceptación la hizo root. Contenedor propio detenido, clones e historia conservados. Esta nota posterior al despliegue sólo agrega documentación local y no exige otra publicación del mismo código.

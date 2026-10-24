@@ -11,6 +11,7 @@ import {
 } from "@/lib/legacy-pilot-declarations";
 import styles from "../migracion-sicar/review.module.css";
 import pilotStyles from "./pilot.module.css";
+import { pilotCountProgress } from "@/lib/pilot-count-worksheet.mjs";
 export const metadata: Metadata = {
   title: "Clientes heredados e inventario piloto",
 };
@@ -60,6 +61,7 @@ export default async function LegacyCustomers({
   )
     throw Error("No se pudo consultar el registro heredado.");
   const view = data as LegacyPilotView;
+  const pilotProgress = pilotCountProgress(view.stock);
   const pageLink = (n: number) =>
     "/clientes/heredados-sicar?" +
     new URLSearchParams({ q, page: String(n) }).toString() +
@@ -203,6 +205,53 @@ export default async function LegacyCustomers({
         aria-label="Hoja del inventario piloto"
       >
         <h2>Inventario piloto · La Piedad</h2>
+        <p role="status">
+          {pilotProgress.declared_current} de {pilotProgress.required} campos
+          con declaración vigente para su referencia · {pilotProgress.unknown}{" "}
+          desconocidos · {pilotProgress.unattributed} sin atribución ·{" "}
+          {pilotProgress.held} retenidos. Esto no certifica ni autoriza
+          inventario.
+        </p>
+        <Link
+          href="/clientes/heredados-sicar/hoja"
+          className="button primary"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Abrir hoja para imprimir y comprobar en tienda
+        </Link>
+        <details className={pilotStyles.guide}>
+          <summary>Cómo contar sin descontar dos veces</summary>
+          <p>
+            Para esta captura, el físico incluye todo lo presente en anaquel,
+            bodega y mercancía guardada o separada. Vendido y guardado y
+            separado sin venta son partes distintas de ese total: una pieza no
+            va en ambos. Ésta es la definición del nuevo conteo; aún hay que
+            comprobar qué incluye la existencia mostrada por SICAR.
+          </p>
+          <ol>
+            <li>Cuenta cada área y registra fecha, responsable y evidencia.</li>
+            <li>
+              Para mercancía guardada, identifica folio y línea sin nombres de
+              clientes, verifica que esté físicamente aquí y distingue vendido
+              de separado sin venta. El saldo o abono no prueba entrega.
+            </li>
+            <li>
+              Revisa los movimientos SICAR del código y almacén Default en el
+              mismo corte, incluidas cancelaciones. Si no se acredita el efecto
+              anterior, queda pendiente: no vuelvas a restar ni crear reserva.
+            </li>
+            <li>
+              Si no puedes comprobar un dato, déjalo vacío. Una búsqueda sin
+              coincidencias no demuestra cero ni ausencia de compromisos.
+            </li>
+          </ol>
+          <p>
+            La revisión de entregas por folio es documental y no rellena estas
+            cantidades. Guarda aquí sólo declaraciones actuales por campo; la
+            carga final y sus movimientos requieren otra conciliación.
+          </p>
+        </details>
         <p>
           Captura lo que realmente se cuente en tienda. No copies la referencia
           SICAR como conteo físico. Vacío queda pendiente; cero se escribe
@@ -226,6 +275,7 @@ export default async function LegacyCustomers({
           </p>
         ) : null}
         {view.stock.map((s) => {
+          const progress = pilotCountProgress([s]);
           const comparison = physicalComparison(
             s.physical_qty,
             s.sold_waiting_qty,
@@ -333,7 +383,8 @@ export default async function LegacyCustomers({
                 </label>
                 <p>
                   {comparison.available === null ||
-                  !pilotEvidenceComplete(s.field_evidence)
+                  !pilotEvidenceComplete(s.field_evidence) ||
+                  progress.declared_current !== 3
                     ? "Comparación física pendiente."
                     : `Disponibilidad física comparativa: ${comparison.available} pieza(s). Requiere revisión; no es saldo autorizado.`}
                 </p>

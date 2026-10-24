@@ -4,15 +4,14 @@ import { saveDeliveryObservation } from "./actions";
 import {
   isDeliveryCapturePage,
   deliveryCaptureQuery,
+  deliveryEvidenceContextHref,
 } from "@/lib/m9-delivery-capture";
 import Link from "next/link";
+import { deliveryBatchRow, deliveryBatchScope } from "@/lib/m9-delivery-batch";
 import { notFound } from "next/navigation";
 import { requirePermission } from "@/lib/auth/authorization";
 import { customerReviewEnabled } from "@/lib/customer-migration";
-import {
-  deliveryEvidenceHref,
-  deliveryReviewPageHref,
-} from "@/lib/m9-delivery-review";
+import { deliveryReviewPageHref } from "@/lib/m9-delivery-review";
 import styles from "./review.module.css";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Entregas SICAR · Revisión por documento" };
@@ -53,6 +52,7 @@ export default async function DeliveryReview({
         </Link>
       </div>
     );
+  const batchScope = deliveryBatchScope(view.rows);
   return (
     <div className={styles.page}>
       <header>
@@ -162,125 +162,169 @@ export default async function DeliveryReview({
           {view.total} documentos encontrados · Página {view.page} de{" "}
           {view.pages}
         </p>
-        <div className={styles.documents}>
-          {view.rows.length === 0 ? (
-            <p>
-              No hay documentos con estos filtros. Esto no confirma entregas ni
-              ausencia de deuda.
-            </p>
-          ) : (
-            view.rows.map((doc) => (
-              <article className={styles.document} key={doc.document_key}>
-                <header>
-                  <p className={styles.badge}>Entrega sin confirmar</p>
-                  <h3>
-                    {doc.account_name} · Folio {doc.folio}
-                  </h3>
-                  <p>
-                    Leído el {date(doc.source_at)} · {doc.lines.length}{" "}
-                    renglón(es).
-                    {doc.historical_name !== doc.account_name
-                      ? ` Nombre en el documento: ${doc.historical_name}.`
-                      : ""}
-                  </p>
-                </header>
-                <h4>¿Qué mercancía de este documento ya se entregó?</h4>
-                <p>
-                  Declaración documental:{" "}
-                  {doc.capture_context.status === "LIVE"
-                    ? ({
-                        ALL_PENDING: "Todo pendiente",
-                        ALL_DELIVERED: "Todo entregado",
-                        MIXED: "Parcial: detalle pendiente",
-                        UNKNOWN: "Sin confirmar",
-                      }[doc.documentary_statement] ?? "En revisión")
-                    : doc.capture_context.status === "STALE"
-                      ? "La evidencia cambió; necesita nueva revisión"
-                      : doc.capture_context.status === "REVOKED"
-                        ? "Última declaración retirada"
-                        : "Todavía sin respuesta"}
-                  . El estado físico de origen sigue sin confirmar.
-                </p>
-                <DeliveryCaptureForm
-                  saveAction={saveDeliveryObservation}
-                  key={`${doc.document_key}/${doc.capture_context.revision}`}
-                  archive={view.archive_sha256}
-                  document={doc.document_key}
-                  context={doc.capture_context}
-                  generic={doc.generic_lines > 0}
-                  requestId={randomUUID()}
-                  revokeRequestId={randomUUID()}
-                />
-                <details className={styles.products}>
-                  <summary>
-                    Ver los {doc.lines.length} renglón(es) de este documento
-                  </summary>
-                  <ul>
-                    {doc.lines.map((line) => (
-                      <li key={line.index}>
-                        <strong>{line.description}</strong>
-                        <p>
-                          Código literal: <code>{line.barcode}</code>.
-                        </p>
-                        <p>
-                          {line.generic_debt
-                            ? "Renglón genérico de deuda. No identifica piezas físicas ni permite convertir su cantidad en mercancía."
-                            : `Cantidad anotada en origen: ${line.source_quantity}. No acredita existencia, reserva o entrega.`}
-                        </p>
-                        <p>
-                          {line.identity_kind === "ARCHIVE"
-                            ? "Identidad conservada en el archivo histórico."
-                            : line.identity_kind === "SIDECAR"
-                              ? "Identidad documental adicional vigente; el archivo original no se modificó."
-                              : "Identidad de producto pendiente; no se asigna por nombre o talla."}
-                        </p>
-                        {line.identity_kind === "UNRESOLVED" &&
-                        line.sidecar_status !== "UNREVIEWED" ? (
-                          <p>
-                            El vínculo documental necesita revisión o fue
-                            anulado.
-                          </p>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-                <div className={styles.links}>
-                  <Link
-                    className="button primary"
-                    href={deliveryEvidenceHref(doc)}
+        <p className={styles.notice}>
+          Hoja de esta tanda: {batchScope.documents} folios y{" "}
+          {batchScope.sourceLines} renglones de origen. El archivo completo
+          conserva {view.summary.lines} líneas sin entrega acreditada. No son
+          cantidades físicas ni una evaluación para abrir saldos. Cada folio se
+          guarda por separado.
+        </p>
+        {view.rows.length === 0 ? (
+          <p>
+            No hay documentos con estos filtros. Esto no confirma entregas ni
+            ausencia de deuda.
+          </p>
+        ) : (
+          <table className={styles.batchTable}>
+            <caption>
+              Hoja documental · Página {view.page} de {view.pages} ·{" "}
+              {view.total} folios con estos filtros
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Folio, productos y procedencia</th>
+                <th scope="col">Revisión y límites</th>
+                <th scope="col">Declarar por folio</th>
+              </tr>
+            </thead>
+            <tbody>
+              {view.rows.map((doc) => {
+                const row = deliveryBatchRow(doc);
+                return (
+                  <tr
+                    className={styles.batchRow}
+                    key={doc.document_key}
+                    id={`folio-${doc.document_key}`}
                   >
-                    Ver documento y evidencia de origen
-                  </Link>
-                </div>
-                <details className={styles.references}>
-                  <summary>Referencias para distinguir este documento</summary>
-                  <p>
-                    Cuenta SICAR: <code>{doc.client_ref}</code>
-                  </p>
-                  <p>
-                    ID original del documento:{" "}
-                    <code>{doc.source_document_id}</code>
-                  </p>
-                  <p>
-                    Huella de evidencia:{" "}
-                    <code>{doc.source_evidence_sha256}</code>
-                  </p>
-                </details>
-                {doc.observation_revision > 0 ? (
-                  <p>
-                    Hay historial de revisión documental. No sustituye el estado
-                    físico ni autoriza movimientos.
-                  </p>
-                ) : null}
-                <p className={styles.caption}>
-                  Un documento pagado o un producto identificado no significa
-                  que la mercancía ya se entregó.
-                </p>
-              </article>
-            ))
-          )}
-        </div>
+                    <th scope="row">
+                      <h3>
+                        {doc.account_name} · Folio {doc.folio}
+                      </h3>
+                      <p>
+                        Leído el {date(doc.source_at)} · {row.lineCount}{" "}
+                        renglón(es).
+                      </p>
+                      {doc.historical_name !== doc.account_name ? (
+                        <p>Nombre en el documento: {doc.historical_name}.</p>
+                      ) : null}
+                      <details className={styles.products}>
+                        <summary>
+                          Ver los {doc.lines.length} renglón(es) de este
+                          documento
+                        </summary>
+                        <ul>
+                          {doc.lines.map((line) => (
+                            <li key={line.index}>
+                              <strong>{line.description}</strong>
+                              <p>
+                                Código literal: <code>{line.barcode}</code>.
+                              </p>
+                              <p>
+                                {line.generic_debt
+                                  ? "Renglón genérico de deuda. No identifica piezas físicas ni permite convertir su cantidad en mercancía."
+                                  : `Cantidad anotada en origen: ${line.source_quantity}. No acredita existencia, reserva o entrega.`}
+                              </p>
+                              <p>
+                                {line.identity_kind === "ARCHIVE"
+                                  ? "Identidad conservada en el archivo histórico."
+                                  : line.identity_kind === "SIDECAR"
+                                    ? "Identidad documental adicional vigente; el archivo original no se modificó."
+                                    : "Identidad de producto pendiente; no se asigna por nombre o talla."}
+                              </p>
+                              {line.identity_kind === "UNRESOLVED" &&
+                              line.sidecar_status !== "UNREVIEWED" ? (
+                                <p>
+                                  El vínculo documental necesita revisión o fue
+                                  anulado.
+                                </p>
+                              ) : null}
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                      <div className={styles.links}>
+                        <Link
+                          className="button primary"
+                          href={deliveryEvidenceContextHref(doc, query)}
+                        >
+                          Ver documento y evidencia de origen
+                        </Link>
+                      </div>
+                      <details className={styles.references}>
+                        <summary>
+                          Referencias para distinguir este documento
+                        </summary>
+                        <p>
+                          Cuenta SICAR: <code>{doc.client_ref}</code>
+                        </p>
+                        <p>
+                          ID original del documento:{" "}
+                          <code>{doc.source_document_id}</code>
+                        </p>
+                        <p>
+                          Huella de evidencia:{" "}
+                          <code>{doc.source_evidence_sha256}</code>
+                        </p>
+                      </details>
+                    </th>
+                    <td data-label="Revisión y límites">
+                      <dl className={styles.batchStatus}>
+                        <dt>Entrega física acreditada</dt>
+                        <dd>UNKNOWN · Sin confirmar</dd>
+                        <dt>Declaración documental</dt>
+                        <dd>{row.declaration}</dd>
+                        <dt>Revisión de identidad</dt>
+                        <dd>
+                          {row.unresolvedLines} renglón(es) sin variante
+                          identificada.
+                        </dd>
+                        <dt>Apertura de saldo</dt>
+                        <dd>No evaluada en esta hoja.</dd>
+                      </dl>
+                      <p>
+                        Una declaración, incluso «todo entregado», no observa el
+                        físico ni autoriza stock. Los saldos y abonos se
+                        concilian por separado.
+                      </p>
+                      {row.genericLines > 0 ? (
+                        <p>
+                          Deuda genérica: no representa piezas; sólo permite
+                          dejar sin confirmar.
+                        </p>
+                      ) : null}
+                      {doc.observation_revision > 0 ? (
+                        <p>
+                          Hay historial de revisión documental. No sustituye el
+                          estado físico ni autoriza movimientos.
+                        </p>
+                      ) : null}
+                    </td>
+                    <td data-label="Declarar por folio">
+                      <h4>¿Qué mercancía de este documento ya se entregó?</h4>
+                      <p>
+                        Revisa el comprobante y la mercancía con la tienda. Si
+                        no puedes acreditarlo, deja sin confirmar; el saldo no
+                        prueba una entrega.
+                      </p>
+                      <DeliveryCaptureForm
+                        compact
+                        documentLabel={`${doc.account_name} · Folio ${doc.folio}`}
+                        saveAction={saveDeliveryObservation}
+                        key={`${doc.document_key}/${doc.capture_context.revision}`}
+                        archive={view.archive_sha256}
+                        document={doc.document_key}
+                        context={doc.capture_context}
+                        generic={row.genericLines > 0}
+                        requestId={randomUUID()}
+                        revokeRequestId={randomUUID()}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
         <nav className={styles.pagination} aria-label="Páginas de documentos">
           {view.page > 1 ? (
             <Link

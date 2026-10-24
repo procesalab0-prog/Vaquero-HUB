@@ -2,6 +2,8 @@ import {
   isDeliveryReviewPage,
   type DeliveryReviewPage,
   deliveryReviewQuery,
+  deliveryEvidenceHref,
+  deliveryReviewPageHref,
 } from "./m9-delivery-review";
 export const DELIVERY_CHOICES = [
   "ALL_PENDING",
@@ -208,4 +210,63 @@ export function deliveryCaptureQuery(
       ? params.review_filter!
       : "pending",
   };
+}
+
+// Carry only normalized query fields, never a caller-provided return URL.
+const returnFields = [
+  "q",
+  "filter",
+  "page",
+  "document",
+  "review_filter",
+] as const;
+export function deliveryReturnParams(
+  params: Record<string, unknown>,
+): Record<string, string> | null {
+  if (
+    params.delivery_return !== "1" ||
+    returnFields.some(
+      (k) =>
+        params[`delivery_${k}`] !== undefined &&
+        typeof params[`delivery_${k}`] !== "string",
+    )
+  )
+    return null;
+  const query = deliveryCaptureQuery(
+    Object.fromEntries(returnFields.map((k) => [k, params[`delivery_${k}`]])),
+  );
+  return {
+    delivery_return: "1",
+    ...Object.fromEntries(
+      Object.entries(query).map(([k, v]) => [`delivery_${k}`, String(v)]),
+    ),
+  };
+}
+export function deliveryReturnHref(params: Record<string, unknown>) {
+  const safe = deliveryReturnParams(params);
+  return safe
+    ? deliveryReviewPageHref(
+        deliveryCaptureQuery(
+          Object.fromEntries(
+            returnFields.map((k) => [k, safe[`delivery_${k}`]]),
+          ),
+        ),
+        Number(safe.delivery_page),
+      )
+    : null;
+}
+export function deliveryEvidenceContextHref(
+  doc: Parameters<typeof deliveryEvidenceHref>[0],
+  query: ReturnType<typeof deliveryCaptureQuery>,
+) {
+  const params = deliveryReturnParams({
+    delivery_return: "1",
+    ...Object.fromEntries(
+      Object.entries(query).map(([k, v]) => [`delivery_${k}`, String(v)]),
+    ),
+  })!;
+  return deliveryEvidenceHref(doc).replace(
+    "#",
+    `&${new URLSearchParams(params)}#`,
+  );
 }

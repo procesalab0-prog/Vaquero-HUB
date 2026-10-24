@@ -274,3 +274,52 @@ it("disables all-physical declarations on generic debt", () => {
   expect(html).not.toContain("2 pza");
   expect(html).toContain("no conocemos sus piezas físicas");
 });
+it("compact capture has one empty selection and preserves the exact context once", () => {
+  const html = renderToStaticMarkup(
+    <DeliveryCaptureForm
+      compact
+      saveAction={saveDeliveryObservation}
+      archive={key}
+      document={key}
+      context={ctx}
+      generic={false}
+      requestId={id}
+      revokeRequestId={id}
+    />,
+  );
+  expect(html.match(/name="choice"/g)).toHaveLength(1);
+  expect(html).toMatch(/<option value="" disabled="" selected=""/);
+  expect(html).not.toContain('type="radio"');
+  expect(html).not.toContain('checked=""');
+  for (const name of [
+    "request_id",
+    "document_key",
+    "archive_sha256",
+    "expected_revision",
+    "expected_document_snapshot_hash",
+    "expected_archive_payload_hash",
+  ])
+    expect(html.match(new RegExp(`name="${name}"`, "g"))).toHaveLength(1);
+  expect(html).toContain(`value="${ctx.document_snapshot_hash}"`);
+  expect(html).toContain('type="submit" disabled=""');
+  expect(m.rpc).not.toHaveBeenCalled();
+});
+it("compact generic capture disables concrete and partial choices without inventing units", () => {
+  const html = renderToStaticMarkup(
+    <DeliveryCaptureForm
+      compact
+      saveAction={saveDeliveryObservation}
+      archive={key}
+      document={key}
+      context={ctx}
+      generic
+      requestId={id}
+      revokeRequestId={id}
+    />,
+  );
+  for (const value of ["ALL_PENDING", "ALL_DELIVERED", "PARTIAL_REVIEW"])
+    expect(html).toContain(`<option value="${value}" disabled="">`);
+  expect(html).toContain('<option value="UNKNOWN">');
+  expect(html).not.toContain('value="UNKNOWN" selected');
+  expect(m.rpc).not.toHaveBeenCalled();
+});

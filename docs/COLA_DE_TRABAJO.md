@@ -2459,3 +2459,16 @@ Bloque de catálogo, clientes y Woo detallado en [M9_CONTINUACION_INTEGRAL_2026_
 Dos cuentas/tres documentos consultados otra vez, ensayo TEMP de siete líneas con cinco rechazos y rollback completo; sin aperturas ni nuevos pagos. Indicador documental histórico en Preview conserva holds y fecha. Anexo adicional separado con conflicto de talla retenido. Las 36 cantidades físicas y 183 entregas globales siguen sin confirmar. No se reemplazó el archivo global por uno parcial.
 
 Lector privado de recuperación de recibos instalado con ACL cerradas y escritor financiero idéntico. Ciclo local con COMMIT recupera resultados sin reposteo; staging verifica rechazos sin crear campaña/recibos. Cancelaciones con caja original cerrada siguen pendientes; cinco ensayos Woo y compuertas congelados. Usuario aplazó Woo completo autenticado en Chrome. QA raíz 1,992 unitarias/154 archivos, lint, tipos y build correctos. Sin main ni producción.
+
+Aceptación publicada: Preview `68ed08c3`, árbol `35e2a0a3`, SUCCESS. Auth real verificó dos indicadores históricos y 11777 talla 56/$8,300 con foto y vínculo conservados. Auditoría final 179 tablas sin cambios adicionales; WARN sin aumento. Expediente reproducible PASS10/170 archivos/75 pins. QA propio detenido; pendientes físicos, Woo completo y cancelación con caja cerrada conservados. Detalle del cierre en M9_CONTINUACION_INTEGRAL_2026_10_23.md.
+
+
+## Fecha objetivo de pruebas en La Piedad: 2 noviembre 2026
+
+Emmanuel fijó esa fecha el 23 de octubre, con el flujo completo funcionando. Plan de hitos y criterios de aceptación: [M9_PRUEBAS_LA_PIEDAD_2026_11_02.md](M9_PRUEBAS_LA_PIEDAD_2026_11_02.md). Revisión integral objetivo el 30 de octubre; cortes y conciliación próximos a la visita. El plazo no acredita datos faltantes ni habilita producción. Prioridad: inventario/compromisos, saldos/entregas y ciclo Woo completo, incluida cancelación con caja original cerrada.
+
+## M9 · Preparación integral de arranque · 23 octubre 2026
+
+Continuación en [M9_ARRANQUE_INTEGRAL_2026_10_23.md](M9_ARRANQUE_INTEGRAL_2026_10_23.md): hoja autenticada imprimible del piloto (12 códigos, 36 campos vacíos), revisión compacta de ocho folios y retorno contextual desde evidencia. Relectura SICAR de los doce códigos: 40 piezas mostradas, sin cambios de identidad; no constituye conteo físico ni existencia disponible.
+
+Cancelación Woo acotada a FULL_CANCEL sintético de mantenimiento, con capacidad privada de un uso y sesión original cerrada: aceptación local 40 controles/34 rechazos y dos carreras. Ensayo reversible y rechazos en staging conservaron las 179 tablas; después se instaló sólo el forward revisado. No hubo cobros, inventario o sexta campaña conectada remotos. Compuertas Woo apagadas, físico pendiente y apertura financiera de clientes sin habilitar. Producción y main permanecen intactos. Objetivo de pruebas: 2 de noviembre en La Piedad, sujeto a corte actualizado y aceptación integral.

@@ -1,4 +1,8 @@
 import Link from "next/link";
+import {
+  deliveryReturnHref,
+  deliveryReturnParams,
+} from "@/lib/m9-delivery-capture";
 import { notFound } from "next/navigation";
 import { requirePermission } from "@/lib/auth/authorization";
 import { customerReviewEnabled } from "@/lib/customer-migration";
@@ -101,11 +105,24 @@ export default async function CreditDetailReview({
     filter?: string;
     page?: string;
     document?: string;
+    delivery_return?: string;
+    delivery_q?: string;
+    delivery_filter?: string;
+    delivery_page?: string;
+    delivery_document?: string;
+    delivery_review_filter?: string;
   }>;
 }) {
   if (!customerReviewEnabled(process.env.NEXT_PUBLIC_SUPABASE_URL)) notFound();
   const { supabase } = await requirePermission("customers.manage");
   const params = await searchParams;
+  const returnParams = deliveryReturnParams(params),
+    returnHref = deliveryReturnHref(params);
+  const returnLink = returnHref ? (
+    <Link className="button secondary" href={returnHref}>
+      Volver a la misma tanda de entregas
+    </Link>
+  ) : null;
   const focusedDocument = /^[a-f0-9]{64}$/.test(params.document ?? "")
     ? params.document
     : null;
@@ -133,11 +150,17 @@ export default async function CreditDetailReview({
         <Link className="button secondary" href="/migracion">
           Volver a migración
         </Link>
+        {returnLink}
       </div>
     );
   const pageLink = (n: number) =>
     "/migracion/creditos?" +
-    new URLSearchParams({ q, filter, page: String(n) }).toString() +
+    new URLSearchParams({
+      q,
+      filter,
+      page: String(n),
+      ...returnParams,
+    }).toString() +
     "#documentos";
   return (
     <div className={styles.page}>
@@ -151,6 +174,7 @@ export default async function CreditDetailReview({
         <Link className="button secondary" href="/migracion">
           Volver al centro de migración
         </Link>
+        {returnLink}
       </header>
       <section className={styles.notice} aria-label="Alcance de la revisión">
         <h2>Saldo observado, sin apertura para cobrar</h2>
@@ -212,6 +236,9 @@ export default async function CreditDetailReview({
           producto pendiente del tipo seleccionado.
         </p>
         <form className={styles.filters}>
+          {Object.entries(returnParams ?? {}).map(([name, value]) => (
+            <input key={name} type="hidden" name={name} value={value} />
+          ))}
           <label>
             Buscar
             <input
@@ -233,7 +260,13 @@ export default async function CreditDetailReview({
           <button className="button primary">Buscar documentos</button>
           <Link
             className="button secondary"
-            href="/migracion/creditos#documentos"
+            href={
+              "/migracion/creditos" +
+              (returnParams
+                ? "?" + new URLSearchParams(returnParams).toString()
+                : "") +
+              "#documentos"
+            }
           >
             Limpiar
           </Link>

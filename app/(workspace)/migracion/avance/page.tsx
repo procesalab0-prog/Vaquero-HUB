@@ -87,6 +87,34 @@ export default async function MigrationProgress() {
       </section>
       <section
         className={styles.notice}
+        aria-label="Preparación para las pruebas en La Piedad"
+      >
+        <h2>Pruebas en La Piedad · 2 de noviembre</h2>
+        <p>
+          La preparación incluye venta, inventario, clientes y conexión Woo.
+          Primero se comprueba cada flujo en staging. La fecha objetivo no
+          convierte una referencia histórica en un saldo vigente.
+        </p>
+        <p>
+          Para el inventario hay {n(v.inventory.pending_fields)} cantidades
+          pendientes de los {n(v.inventory.codes)} códigos del piloto. Usa la
+          hoja de comprobación para contar y distinguir mercancía vendida y
+          guardada de mercancía separada sin venta.
+        </p>
+        <p>
+          Las entregas se revisan por folio, con sus productos juntos. Cada
+          respuesta se guarda por separado; no rellena cantidades físicas ni
+          abre saldos para cobrar.
+        </p>
+        <Link className="button primary" href="/clientes/heredados-sicar#piloto">
+          Preparar conteo del piloto
+        </Link>{" "}
+        <Link className="button secondary" href="/migracion/entregas">
+          Revisar entregas por tandas
+        </Link>
+      </section>
+      <section
+        className={styles.notice}
         aria-label="Último corte de catálogo preparado"
       >
         <h2>Corte de SICAR del 22 de octubre</h2>

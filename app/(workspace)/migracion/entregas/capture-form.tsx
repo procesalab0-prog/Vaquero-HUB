@@ -15,7 +15,11 @@ export function DeliveryCaptureForm({
   requestId,
   revokeRequestId,
   saveAction,
+  compact = false,
+  documentLabel = "este folio",
 }: {
+  compact?: boolean;
+  documentLabel?: string;
   archive: string;
   document: string;
   context: CaptureContext;
@@ -49,7 +53,11 @@ export function DeliveryCaptureForm({
     </>
   );
   return (
-    <div className={styles.capture}>
+    <div
+      className={
+        compact ? `${styles.capture} ${styles.compactCapture}` : styles.capture
+      }
+    >
       <p>
         Esta declaración se guarda con tu usuario y la evidencia mostrada. No
         registra una entrega física.
@@ -101,28 +109,54 @@ export function DeliveryCaptureForm({
             ) : (
               <fieldset disabled={pending}>
                 <legend>Selecciona una respuesta para este folio</legend>
-                {[
-                  ["ALL_PENDING", "Todo está pendiente de entregar"],
-                  ["ALL_DELIVERED", "Ya se entregó todo"],
-                  [
-                    "PARTIAL_REVIEW",
-                    "Se entregó una parte; falta revisar el detalle",
-                  ],
-                  ["UNKNOWN", "Aún no lo puedo confirmar"],
-                ].map(([v, label]) => (
-                  <label key={v}>
-                    <input
-                      type="radio"
-                      name="choice"
-                      value={v}
-                      checked={choice === v}
-                      onChange={() => setChoice(v)}
-                      disabled={generic && v !== "UNKNOWN"}
-                      required
-                    />
-                    {label}
-                  </label>
-                ))}
+                {compact ? (
+                  <select
+                    aria-label={`Declaración documental para ${documentLabel}`}
+                    name="choice"
+                    value={choice}
+                    onChange={(event) => setChoice(event.target.value)}
+                    required
+                  >
+                    <option value="" disabled>
+                      Elige una declaración…
+                    </option>
+                    <option value="ALL_PENDING" disabled={generic}>
+                      Todo pendiente
+                    </option>
+                    <option value="ALL_DELIVERED" disabled={generic}>
+                      Todo entregado
+                    </option>
+                    <option value="PARTIAL_REVIEW" disabled={generic}>
+                      Parcial: falta revisar
+                    </option>
+                    <option value="UNKNOWN">Aún sin confirmar</option>
+                  </select>
+                ) : (
+                  <>
+                    {[
+                      ["ALL_PENDING", "Todo está pendiente de entregar"],
+                      ["ALL_DELIVERED", "Ya se entregó todo"],
+                      [
+                        "PARTIAL_REVIEW",
+                        "Se entregó una parte; falta revisar el detalle",
+                      ],
+                      ["UNKNOWN", "Aún no lo puedo confirmar"],
+                    ].map(([v, label]) => (
+                      <label key={v}>
+                        <input
+                          type="radio"
+                          name="choice"
+                          value={v}
+                          checked={choice === v}
+                          onChange={() => setChoice(v)}
+                          disabled={generic && v !== "UNKNOWN"}
+                          required
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </>
+                )}
               </fieldset>
             )}
             <label>

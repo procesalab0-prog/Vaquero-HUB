@@ -13,17 +13,26 @@ const mocks = vi.hoisted(() => ({
   permission: vi.fn(),
   rpc: vi.fn(),
   notFound: vi.fn(),
+  capture: vi.fn(),
 }));
 vi.mock("@/lib/auth/authorization", () => ({
   requirePermission: mocks.permission,
 }));
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
 vi.mock("../../app/(workspace)/migracion/entregas/capture-form", () => ({
-  DeliveryCaptureForm: ({ document }: { document: string }) => (
-    <div data-documentary-form={document}>
-      Captura documental sin operación física
-    </div>
-  ),
+  DeliveryCaptureForm: (props: {
+    document: string;
+    requestId: string;
+    revokeRequestId: string;
+    compact?: boolean;
+  }) => {
+    mocks.capture(props);
+    return (
+      <div data-documentary-form={props.document}>
+        Captura documental sin operación física
+      </div>
+    );
+  },
 }));
 import Page from "../../app/(workspace)/migracion/entregas/page";
 import CreditPage from "../../app/(workspace)/migracion/creditos/page";
@@ -251,7 +260,8 @@ it("keeps the GET search separate from one documentary form per document", async
 });
 it("evidence links preserve client UUID and full document key", async () => {
   const html = await render();
-  expect(html).toContain(`q=${ref}&amp;document=${key}#documento-${key}`);
+  expect(html).toContain(`q=${ref}&amp;document=${key}&amp;delivery_return=1`);
+  expect(html).toContain(`#documento-${key}`);
   expect(html).not.toContain("file://");
   expect(html).not.toContain("outputs/");
 });
@@ -347,8 +357,8 @@ it("evidence opens the exact document and its account without inferring generic 
       source_until: doc.source_at,
       source_older_than_24h: false,
       page: 1,
-      pages: 1,
-      total: 1,
+      pages: 2,
+      total: 2,
       rows: [
         {
           key: "c".repeat(64),
@@ -384,4 +394,64 @@ it("evidence opens the exact document and its account without inferring generic 
   expect(html.match(/<details[^>]* open=""/g)).toHaveLength(2);
   expect(html).toContain("Renglón contable; cantidad física sin confirmar");
   expect(html).not.toContain("2 pza");
+  expect(html).not.toContain("Volver a la misma tanda");
+  mocks.rpc.mockClear();
+  const contextual = renderToStaticMarkup(
+    await CreditPage({
+      searchParams: Promise.resolve({
+        q: ref,
+        document: key,
+        delivery_return: "1",
+        delivery_q: "SYNTHETIC SEARCH",
+        delivery_filter: "sidecar",
+        delivery_page: "2",
+        delivery_review_filter: "all",
+      }),
+    }),
+  );
+  expect(contextual).toContain(
+    'href="/migracion/entregas?q=SYNTHETIC+SEARCH&amp;filter=sidecar&amp;page=2&amp;review_filter=all#documentos"',
+  );
+  expect(contextual).toContain('name="delivery_page" value="2"');
+  expect(contextual).toContain(
+    `href="/migracion/creditos?q=${ref}&amp;filter=all&amp;page=2&amp;delivery_return=1`,
+  );
+  expect(contextual).not.toContain("data-documentary-form=");
+  expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith("m9_credit_detail_read", {
+    p_input: { q: ref, filter: "all", page: 1 },
+  });
+});
+it("renders a bounded batch worksheet with separate physical and opening status", async () => {
+  const html = await render();
+  expect(html).toContain("<table");
+  expect(html).toContain(
+    "Hoja de esta tanda: 1 folios y 2 renglones de origen",
+  );
+  expect(html).toContain("No evaluada en esta hoja");
+  expect(html).toContain("UNKNOWN · Sin confirmar");
+  expect(html).toContain("incluso «todo entregado»");
+  expect(html.match(/data-documentary-form=/g)).toHaveLength(1);
+  expect(html).not.toContain("Guardar tanda");
+  expect(mocks.rpc).toHaveBeenCalledTimes(1);
+});
+
+it("keeps all eight document contexts independent and never reuses a batch nonce", async () => {
+  const v = sample();
+  v.rows = Array.from({ length: 8 }, (_, i) => ({
+    ...structuredClone(v.rows[0]),
+    document_key: String(i + 1).repeat(64),
+  }));
+  mocks.rpc.mockResolvedValue({ data: v, error: null });
+  const html = await render({ page: "3", q: "SYNTHETIC" });
+  expect(html).toContain(
+    "Hoja de esta tanda: 8 folios y 16 renglones de origen",
+  );
+  expect(mocks.capture).toHaveBeenCalledTimes(8);
+  const props = mocks.capture.mock.calls.map(([p]) => p);
+  expect(new Set(props.map((p) => p.document)).size).toBe(8);
+  expect(
+    new Set(props.flatMap((p) => [p.requestId, p.revokeRequestId])).size,
+  ).toBe(16);
+  expect(props.every((p) => p.compact === true)).toBe(true);
+  expect(mocks.rpc).toHaveBeenCalledTimes(1);
 });
