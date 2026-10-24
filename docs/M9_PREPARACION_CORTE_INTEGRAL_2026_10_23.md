@@ -29,8 +29,10 @@ El plan inicial dejó pendiente elegir acceso Woo real/pruebas. Durante el bloqu
 Emmanuel confirmó expresamente vaquerosm.com, root rellenó los datos existentes y
 el usuario completó la comprobación humana y el acceso. No se guardó la
 captura de credenciales rechazada por revisión automática. El panel y catálogo
-se observaron autenticados; los exportadores quedaron en blanco y no se declara
-una exportación nueva. No se cambiaron ajustes ni datos comerciales de Woo.
+se observaron autenticados. La vista inicial del exportador estaba obsoleta en
+el control nativo de Chrome; se recuperó la ventana actual y se descargó el CSV
+completo, validado al cierre descrito abajo. No se cambiaron ajustes ni datos
+comerciales de Woo.
 Cada dato nuevo requiere su propio origen y fecha, no la fecha de generación.
 Orden: plan → análisis/implementación acotada → QA → revisión → ensayo si
 corresponde → Preview → auditoría y cierre reproducible. Reversión de mejoras
@@ -73,7 +75,8 @@ checkout conectado ni operación 24/7. Las cinco campañas y compuertas se conse
 QA integrada: 2,175 pruebas unitarias en 162 archivos, ESLint, tipos y build
 correctos. Revisión independiente de clientes/hoja y del preparador Woo
 completada. La aceptación de Preview y auditoría final se registran en el
-expediente privado, sin afirmar una renovación Woo que no se obtuvo.
+expediente privado. La renovación Woo posterior se documenta abajo y no
+adopta automáticamente datos nuevos en staging.
 
 Contratos: [auditoría completa](M9_AUDITORIA_CATALOGO_INTEGRAL_2026_10_23.md),
 [referencias del piloto](M9_REFERENCIAS_DOCUMENTALES_PILOTO_2026_10_23.md) y
@@ -87,3 +90,41 @@ nativo de Chrome había conservado una vista obsoleta del exportador; al obtener
 la ventana actual se recuperó el formulario sin cambiar Woo. La generación del
 CSV completo está en curso; su fuente no se renueva hasta conservar y validar
 el archivo descargado.
+
+## Cierre posterior a la publicación
+
+Preview publicado en 4d77b95006cb7501584664deb19e7722c4d4ca75, árbol
+86b5edb2cd6338f3ba27c70634cdeb00f906be57. Aceptación autenticada de la hoja y
+la tanda de ocho folios, sin guardar formularios ni saldos. Las 36 casillas
+físicas siguen vacías. No se midió HTTP desde el navegador ni se certificó
+móvil. Auditoría final: 179 tablas app/public idénticas a las iniciales; excluye
+Auth, bytes Storage, secuencias y ACL. Sin escritura remota de datos en el bloque.
+
+CSV Woo completo obtenido en sesión autenticada el 23 octubre (hora de México),
+4,551,768 bytes, SHA256
+7b91614687a0bebedbe8409624d427cb3c2108ff4425c03cae7b0f392b769658.
+El panel independiente coincide antes y después: 2,173 padres = 2,064 publicados
++ 87 borradores + 22 privados. Normalización: 14,431 registros, incluidas 12,258
+variaciones. Se preservan el corte Woo19 y SICAR22; no es un nuevo corte SICAR.
+
+Comparación Woo19→23: 1,799 padres idénticos, 55 sólo existencias excluidas,
+319 con otros cambios y un padre ausente retenido sin borrar. Los 1,154 códigos
+de staging relacionados por IDs con padres cambiados no son 1,154 errores ni
+preguntas. El conciliador original m9-readonly-5 reproduce 11 archivos históricos
+idénticos; dos corridas SICAR22/Woo23 conservan los 16,396 códigos y cambian sólo
+90 resultados. De éstos, 19 cambian par Woo producto/variación y 88 clasificación
+(conjuntos que se solapan); 61 resultados sólo cambian por comparación de stock
+entre cortes. Son diagnóstico, no autorización para alterar inventario.
+Hay 7,673 resultados exactos del analizador, 57 netos más; no significa 57 altas
+aprobadas o cargadas. Fuentes, pares de archivos y verificadores quedan privados.
+
+Siguiente orden: revisar los 19 pares de identidad y cambios editoriales sin
+asumir equivalencias; extender de forma acotada el escritor de los 12 precios
+sólo después de QA aislada con reversión/repetición/carreras; verificar las
+cantidades y compromisos del piloto en tienda; renovar evidencia y ejecutar
+el ensayo financiero preparado sólo cuando disponga de aceptación aislada y
+autorización específica. Ningún desconocido se convierte en cero, ningún corte
+nuevo sustituye automáticamente a la proyección gestionada.
+
+Este cierre documental queda local después del árbol publicado; no se vuelve
+a publicar Preview por documentación y no toca main ni producción.

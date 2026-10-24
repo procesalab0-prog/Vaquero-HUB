@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requirePermission } from "@/lib/auth/authorization";
 import { customerReviewEnabled } from "@/lib/customer-migration";
 import styles from "../migration.module.css";
+import PilotControl from "./pilot-control";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Avance de migración · Frentes y pendientes" };
 type Overview = {
@@ -48,7 +49,11 @@ const date = (value: string | null) =>
     : new Date(value).toLocaleString("es-MX", {
         timeZone: "America/Mexico_City",
       });
-export default async function MigrationProgress() {
+export default async function MigrationProgress({
+  searchParams,
+}: {
+  searchParams?: Promise<{ control?: string }>;
+}) {
   if (!customerReviewEnabled(process.env.NEXT_PUBLIC_SUPABASE_URL)) notFound();
   const { supabase } = await requirePermission("customers.manage");
   const { data, error } = await supabase.rpc("m9_parallel_readonly_overview");
@@ -60,6 +65,7 @@ export default async function MigrationProgress() {
   )
     throw Error("No se pudo comprobar el resumen de migración.");
   const v = data as Overview;
+  const showPilotControl = (await searchParams)?.control === "piloto";
   return (
     <div className={styles.page}>
       <header>
@@ -73,6 +79,14 @@ export default async function MigrationProgress() {
           Volver al centro de migración
         </Link>
       </header>
+      <Link
+        className="button primary"
+        href="/migracion/avance?control=piloto#control-piloto"
+        prefetch={false}
+      >
+        Abrir control único del piloto
+      </Link>
+      {showPilotControl ? <PilotControl overview={data} /> : null}
       <section className={styles.notice}>
         <h2>Esta pantalla no habilita el arranque</h2>
         <p>
@@ -106,7 +120,10 @@ export default async function MigrationProgress() {
           respuesta se guarda por separado; no rellena cantidades físicas ni
           abre saldos para cobrar.
         </p>
-        <Link className="button primary" href="/clientes/heredados-sicar#piloto">
+        <Link
+          className="button primary"
+          href="/clientes/heredados-sicar#piloto"
+        >
           Preparar conteo del piloto
         </Link>{" "}
         <Link className="button secondary" href="/migracion/entregas">
@@ -131,11 +148,13 @@ export default async function MigrationProgress() {
           entregas ni preparación para operar.
         </p>
         <p>
-          La conciliación completa de Woo usa todavía el archivo del 19 de
-          octubre. El complemento público del 22 de octubre observó 2,064
-          productos; conserva aparte sus fotos, textos y categorías. No cubre
-          borradores, privados ni variaciones no publicadas, y no sustituye el
-          corte completo. Esto no autoriza publicar ni cobrar.
+          El corte autenticado de Woo del 23 de octubre conserva 2,173 productos
+          padre y 12,258 variaciones. Su comparación con SICAR del 22 reproduce
+          90 resultados distintos, incluidos 19 pares de identidad Woo que
+          requieren revisión. Es evidencia de análisis conservada: todavía no se
+          adopta automáticamente en la proyección de staging, ni actualiza
+          fotos, precios o existencias. Los resultados exactos del analizador
+          tampoco equivalen a altas aprobadas.
         </p>
       </section>
       <div className={styles.cards}>

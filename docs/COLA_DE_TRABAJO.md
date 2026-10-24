@@ -2491,3 +2491,36 @@ no ejecutado, con snapshot caducado y nuevas condiciones de QA/autorización.
 WordPress real quedó autenticado con intervención del usuario; formulario de exportación
 recuperado y CSV generándose, sin acreditar aún fuente nueva ni cambios comerciales. 2,175 unitarias, lint, tipos
 y build correctos. Sólo Preview; main y producción intactos.
+
+
+## M9 · Continuación con vínculos renovados y control del piloto · 24 octubre 2026
+
+Woo completo autenticado del 23 de octubre ya está conservado y validado:
+2,173 padres y 12,258 variaciones. El estado histórico anterior de estos
+documentos no implica que siga faltando esa exportación. SICAR conserva el
+corte del 22. La fuente nueva no se adoptó automáticamente en staging.
+
+[Plan del bloque](M9_SIGUIENTE_BLOQUE_2026_10_24.md). Revisión de 19 pares contra
+15,961 variantes: cuatro ya conservan el vínculo, ocho requieren revisión y
+siete son propuestas inertes. Dos temas para dueños, sin decisiones inventadas
+ni reasignar la variación ocupada. [Detalle](M9_REVISION_19_PARES_WOO_2026_10_24.md).
+
+Control de cuatro pasos en /migracion/avance?control=piloto, mediante lectores
+existentes y sin formularios ni SQL nuevo. Requiere staging y ambos permisos
+antes de tres RPC adicionales; navegación sin prefetch. Distingue 36 cantidades
+desconocidas, declaraciones por folio, fechas originales del corte y apertura
+financiera NO_EVALUADA. Los ensayos no se convierten en deuda operativa.
+[Contrato](M9_CONTROL_OPERATIVO_PILOTO_2026_10_24.md).
+
+[Doce precios](M9_PRECIOS_3416_3427_2026_10_24.md): candidato fijo al mismo
+preparador y APPLY/REVERSE, 1790→1990, sin alterar fuente original, UUID, costos
+NULL o stock. Dos preparaciones idénticas y 60 unitarias puras no sustituyen
+QA SQL. PostgreSQL local no disponible: NO_SQL_ACCEPTED, sin instalación ni
+aplicación remota. No se generó migración. Se pidió al usuario abrir Docker
+mientras continúa trabajo independiente; no se infiere su respuesta.
+
+QA integrada: 2,258 pruebas en 166 archivos, lint, tipos y build correctos.
+La aceptación final de Preview se registra en el expediente privado al cierre.
+Baseline de 179 tablas idéntico al cierre anterior. Sin main, producción,
+Woo real, altas, vínculos, stock, saldos o habilitación operativa. El 97.35%
+sigue siendo presencia del catálogo.

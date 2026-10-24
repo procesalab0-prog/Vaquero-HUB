@@ -4,6 +4,10 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { catalogoPreciosCortePlan } from "./catalogo-precios-corte-plan.mjs";
 import { stable } from "./woo-test/plan.mjs";
+import {
+  prepareTwelveSicarPublicPrices,
+  TWELVE_PROTOCOL,
+} from "./catalogo-precio-publico-twelve.mjs";
 export const PRICE_CODES = Object.freeze([
   "11425",
   "11426",
@@ -31,6 +35,16 @@ export function prepareSicarPublicPrices({
   asOf,
   protocol = "m9-sicar-public-price-1",
 }) {
+  if (protocol === TWELVE_PROTOCOL)
+    return prepareTwelveSicarPublicPrices({
+      before,
+      after,
+      context,
+      source_before_sha256,
+      source_after_sha256,
+      request_id,
+      asOf,
+    });
   if (protocol === "m9-sicar-public-price-linked-1")
     return prepareLinkedSicarPublicPrice({
       before,
